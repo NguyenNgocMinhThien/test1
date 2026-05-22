@@ -19,4 +19,6 @@ html {
 
 body {
   margin-bottom: 60px;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background-color: #f5f7fb;
 }

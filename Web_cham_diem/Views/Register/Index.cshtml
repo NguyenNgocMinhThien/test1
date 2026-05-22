@@ -1,0 +1,112 @@
+﻿@model Web_cham_diem.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+    ViewData["UseFluidContainer"] = true;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+}
+
+<section class="login-page">
+    <div class="container py-4 py-lg-5">
+        <div class="login-shell shadow-lg">
+            <div class="row g-0">
+                <div class="col-lg-6 login-aside">
+                    <div class="login-aside-inner p-4 p-lg-5 h-100 d-flex flex-column">
+                        <div class="login-aside-header">
+                            <div class="login-logo d-flex align-items-center gap-3 mb-3">
+                                <img src="https://tse2.mm.bing.net/th/id/OIP.SFZkB5O0ySpL7-f6EG_ExQHaHa?r=0&cb=thfvnextfalcon&rs=1&pid=ImgDetMain&o=7&rm=3" alt="University Logo" onerror="this.src='https://via.placeholder.com/64'" />
+                                <div>
+                                    <span class="text-uppercase fw-semibold small">University Portal</span>
+                                    <h1 class="h4 fw-bold mb-0">Student Competition Management</h1>
+                                </div>
+                            </div>
+                            <p class="login-slogan mb-4">
+                                Đăng ký tài khoản để tham gia sân chơi học thuật, đồng hành cùng hệ thống quản trị minh bạch.
+                            </p>
+                        </div>
+
+                        <div class="login-illustration mb-4">
+                            <img src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=1200&auto=format&fit=crop" alt="University Collaboration" />
+                        </div>
+
+                        <div class="login-stats mb-4">
+                            <div>
+                                <span class="login-stat-value">120+</span>
+                                <span class="login-stat-label">Cuộc thi</span>
+                            </div>
+                            <div>
+                                <span class="login-stat-value">5000+</span>
+                                <span class="login-stat-label">Sinh viên</span>
+                            </div>
+                            <div>
+                                <span class="login-stat-value">35+</span>
+                                <span class="login-stat-label">Khoa/ngành</span>
+                            </div>
+                        </div>
+
+                        <ul class="login-features list-unstyled mb-0">
+                            <li><i class="bi bi-check2-circle"></i>Quản lý cuộc thi tập trung</li>
+                            <li><i class="bi bi-check2-circle"></i>Đăng ký trực tuyến nhanh chóng</li>
+                            <li><i class="bi bi-check2-circle"></i>Theo dõi kết quả minh bạch</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="login-card p-4 p-lg-5">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="login-icon"><i class="bi bi-person-plus"></i></span>
+                            <div>
+                                <h2 class="h4 fw-bold mb-1">Đăng ký tài khoản</h2>
+                                <p class="text-muted mb-0">Tạo tài khoản sinh viên để tham gia hệ thống quản lý cuộc thi.</p>
+                            </div>
+                        </div>
+
+                        <form asp-action="Index" method="post" class="login-form" novalidate>
+                            @Html.AntiForgeryToken()
+                            <div class="form-floating mb-3">
+                                <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                                <label asp-for="FullName">Họ và tên</label>
+                                <span asp-validation-for="FullName" class="invalid-feedback d-block"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="StudentCode" class="form-control" placeholder="SV20240001" />
+                                <label asp-for="StudentCode">Mã sinh viên</label>
+                                <span asp-validation-for="StudentCode" class="invalid-feedback d-block"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Email" class="form-control" placeholder="name@university.edu.vn" />
+                                <label asp-for="Email">Email trường</label>
+                                <span asp-validation-for="Email" class="invalid-feedback d-block"></span>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                                <label asp-for="Password">Mật khẩu</label>
+                                <span asp-validation-for="Password" class="invalid-feedback d-block"></span>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="••••••••" />
+                                <label asp-for="ConfirmPassword">Xác nhận mật khẩu</label>
+                                <span asp-validation-for="ConfirmPassword" class="invalid-feedback d-block"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 login-submit">
+                                Tạo tài khoản
+                            </button>
+
+                            <p class="text-center text-muted mt-4 mb-0">
+                                Đã có tài khoản?
+                                <a href="/Login" class="link-primary fw-semibold">Đăng nhập ngay</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
