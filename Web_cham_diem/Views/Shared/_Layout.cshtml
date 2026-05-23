@@ -13,6 +13,114 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Web_cham_diem.styles.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- ÉP TOÀN BỘ NAVBAR TRÊN 1 HÀNG DUY NHẤT --- */
+        .custom-header-container {
+            display: flex !important;
+            flex-wrap: nowrap !important; /* Tuyệt đối không cho xuống hàng */
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        /* Giới hạn kích thước vùng logo để nhường chỗ cho các thành phần khác */
+        .brand-zone {
+            flex-shrink: 0;
+            min-width: 260px;
+        }
+
+        /* Ô tìm kiếm co giãn thông minh nhưng không chiếm quá nhiều diện tích */
+        .search-zone {
+            flex-grow: 1;
+            max-width: 320px;
+            margin: 0 15px !important;
+        }
+
+        /* Thanh menu chứa Cuộc thi, Đội thi... */
+        .menu-zone {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center;
+            gap: 4px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none;
+        }
+
+            .menu-zone .nav-link {
+                display: flex !important;
+                align-items: center;
+                white-space: nowrap !important; /* Khóa chữ không cho tự rớt dòng */
+                padding: 6px 10px !important; /* Thu nhỏ padding để vừa vặn hơn */
+                font-size: 14px;
+                border-radius: 20px;
+                color: #212529 !important;
+                transition: all 0.2s ease-in-out;
+            }
+
+                /* Hiệu ứng Hover đổi màu nền và màu chữ */
+                .menu-zone .nav-link:hover {
+                    background-color: #fff5f5;
+                    color: #dc3545 !important;
+                }
+
+                .menu-zone .nav-link.active {
+                    color: #dc3545 !important;
+                    font-weight: 700;
+                    background-color: #fff1f2;
+                }
+
+        /* Cụm nút Đăng nhập / Đăng ký */
+        .auth-zone {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+            .auth-zone .btn {
+                white-space: nowrap !important;
+                padding: 6px 14px !important;
+                font-size: 14px;
+            }
+
+        /* Hover hiệu ứng nút bấm */
+        .btn-outline-danger.rounded-pill:hover {
+            background-color: #dc3545;
+            color: #ffffff !important;
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.15);
+        }
+
+        .btn-danger.rounded-pill:hover {
+            background-color: #bb2d3b !important;
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+        }
+
+        /* Topbar links */
+        .topbar-links a {
+            transition: color 0.2s ease;
+        }
+
+            .topbar-links a:hover {
+                color: #ffc107 !important;
+            }
+
+        /* Footer links */
+        .main-footer a {
+            color: #b3b3b3 !important;
+            transition: color 0.2s ease;
+        }
+
+            .main-footer a:hover {
+                color: #ffc107 !important;
+            }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
 
@@ -30,52 +138,48 @@
             </div>
         </div>
 
-        <nav class="navbar navbar-expand-lg navbar-light py-3 border-bottom">
-            <div class="container">
-                <a class="navbar-brand d-flex align-items-center" href="/">
-                    <img src="~/images/logo-uni.png" alt="Logo" width="50" class="me-2" onerror="this.src='https://via.placeholder.com/50'">
+        <nav class="navbar navbar-expand-lg navbar-light py-2 border-bottom">
+            <div class="container custom-header-container">
+
+                <a class="navbar-brand d-flex align-items-center brand-zone" href="/">
+                    <img src="~/images/logo-uni.png" alt="Logo" width="42" class="me-2" onerror="this.src='https://via.placeholder.com/42'">
                     <div>
-                        <span class="fw-bold text-danger d-block lh-1" style="font-size: 16px; letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ CUỘC THI</span>
-                        <small class="text-secondary fw-semibold" style="font-size: 12px;">ĐẠI HỌC CÔNG NGHỆ & KHẢO THÍ</small>
+                        <span class="fw-bold text-danger d-block lh-1" style="font-size: 14px; letter-spacing: 0.3px;">HỆ THỐNG QUẢN LÝ CUỘC THI</span>
+                        <small class="text-secondary fw-semibold" style="font-size: 11px;">ĐẠI HỌC CÔNG NGHỆ & KHẢO THÍ</small>
                     </div>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                <form class="d-flex search-zone position-relative">
+                    <input class="form-control rounded-pill pe-5 shadow-none form-control-sm" type="search" placeholder="Tìm kiếm cuộc thi..." aria-label="Search">
+                    <button class="btn btn-danger rounded-pill position-absolute end-0 top-0 h-100 px-3 border-0 d-flex align-items-center justify-content-center" type="submit">
+                        <i class="bi bi-search" style="font-size: 13px;"></i>
+                    </button>
+                </form>
 
-                <div class="collapse navbar-collapse" id="navbarContent">
-                    <form class="d-flex mx-auto my-3 my-lg-0 col-12 col-lg-5 position-relative">
-                        <input class="form-control rounded-pill pe-5 shadow-none" type="search" placeholder="Tìm kiếm cuộc thi, đề tài, kết quả..." aria-label="Search">
-                        <button class="btn btn-danger rounded-pill position-absolute end-0 top-0 h-100 px-3 border-0" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </form>
+                <ul class="menu-zone fw-semibold">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/Competitions"><i class="bi bi-trophy me-1 text-danger"></i>Cuộc thi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Teams"><i class="bi bi-people me-1 text-primary"></i>Đội thi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Submissions"><i class="bi bi-cloud-upload me-1 text-success"></i>Nộp bài</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Scores"><i class="bi bi-bar-chart-line me-1 text-warning"></i>Bảng điểm</a>
+                    </li>
+                </ul>
 
-                    <ul class="navbar-nav mb-2 mb-lg-0 fw-semibold align-items-lg-center gap-2">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark active" href="/Competitions"><i class="bi bi-trophy me-1 text-danger"></i>Cuộc thi</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Teams"><i class="bi bi-people me-1 text-primary"></i>Đội thi</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Submissions"><i class="bi bi-cloud-upload me-1 text-success"></i>Nộp bài</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Scores"><i class="bi bi-bar-chart-line me-1 text-warning"></i>Bảng điểm</a>
-                        </li>
-                    </ul>
-
-                    <div class="auth-buttons d-flex align-items-center ms-lg-4 gap-2 mt-3 mt-lg-0">
-                        <a href="/Login" class="btn btn-outline-danger btn-sm px-3 rounded-pill fw-semibold">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
-                        </a>
-                        <a href="/Register" class="btn btn-danger btn-sm px-3 rounded-pill fw-semibold">
-                            <i class="bi bi-person-plus me-1"></i>Đăng ký
-                        </a>
-                    </div>
+                <div class="auth-zone fw-semibold">
+                    <a href="/Login" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1">
+                        <i class="bi bi-box-arrow-in-right"></i>Đăng nhập
+                    </a>
+                    <a href="/Register" class="btn btn-danger btn-sm rounded-pill d-flex align-items-center gap-1">
+                        <i class="bi bi-person-plus"></i>Đăng ký
+                    </a>
                 </div>
+
             </div>
         </nav>
     </header>
@@ -102,20 +206,20 @@
                 <div class="col-6 col-md-2">
                     <h5 class="text-white fw-bold mb-3 border-bottom border-danger pb-2 d-inline-block">TIỆN ÍCH</h5>
                     <ul class="list-unstyled small d-grid gap-2">
-                        <li><a href="/Competitions" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tất cả cuộc thi</a></li>
-                        <li><a href="/Guidelines" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thể lệ tham gia</a></li>
-                        <li><a href="/Criteria" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tiêu chí chấm điểm</a></li>
-                        <li><a href="/Statistics" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thống kê số liệu</a></li>
+                        <li><a href="/Competitions" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tất cả cuộc thi</a></li>
+                        <li><a href="/Guidelines" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thể lệ tham gia</a></li>
+                        <li><a href="/Criteria" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tiêu chí chấm điểm</a></li>
+                        <li><a href="/Statistics" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thống kê số liệu</a></li>
                     </ul>
                 </div>
 
                 <div class="col-6 col-md-3">
                     <h5 class="text-white fw-bold mb-3 border-bottom border-danger pb-2 d-inline-block">QUY ĐỊNH & BẢO MẬT</h5>
                     <ul class="list-unstyled small d-grid gap-2">
-                        <li><a href="/Terms" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Điều khoản sử dụng</a></li>
-                        <li><a href="/Privacy" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Chính sách bảo mật JWT</a></li>
-                        <li><a href="/AntiCheat" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Cơ chế chống gian lận</a></li>
-                        <li><a href="/Support" class="text-decoration-none text-muted-hover text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Giải đáp thắc mắc (Q&A)</a></li>
+                        <li><a href="/Terms" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Điều khoản sử dụng</a></li>
+                        <li><a href="/Privacy" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Chính sách bảo mật JWT</a></li>
+                        <li><a href="/AntiCheat" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Cơ chế chống gian lận</a></li>
+                        <li><a href="/Support" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Giải đáp thắc mắc (Q&A)</a></li>
                     </ul>
                 </div>
 
@@ -154,23 +258,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
-
-    <style>
-        .text-muted-hover {
-            transition: color 0.2s ease-in-out;
-        }
-
-            .text-muted-hover:hover {
-                color: #ffc107 !important;
-            }
-
-        .main-footer a {
-            color: #b3b3b3 !important;
-        }
-
-            .main-footer a:hover {
-                color: #ffc107 !important;
-            }
-    </style>
 </body>
 </html>
