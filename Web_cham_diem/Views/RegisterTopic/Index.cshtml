@@ -1,0 +1,266 @@
+﻿@model Web_cham_diem.Models.RegisterTopicViewModel
+@{
+    ViewData["Title"] = "Đăng ký cuộc thi";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/register-topic.css" asp-append-version="true" />
+}
+
+<div class="register-topic-page py-4 py-lg-5">
+    <div class="container">
+        <!-- Header -->
+        <div class="register-topic-header mb-5">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="register-topic-icon">
+                    <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div>
+                    <h1 class="h3 fw-bold text-dark mb-1">Đăng ký tham gia cuộc thi</h1>
+                    <p class="text-muted mb-0">Hoàn thành biểu mẫu dưới đây để đăng ký tham gia cuộc thi sinh viên cấp trường</p>
+                </div>
+            </div>
+        </div>
+
+        <form asp-action="Index" method="post" enctype="multipart/form-data" novalidate class="register-topic-form">
+            @Html.AntiForgeryToken()
+
+            <div class="row g-4">
+                <!-- C?t trái: Form chính -->
+                <div class="col-lg-8">
+                    <!-- Bư?c 1: Ch?n cu?c thi -->
+                    <div class="register-step card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-primary text-white rounded-circle" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">1</span>
+                                <h5 class="mb-0 fw-bold text-dark">Chọn cuộc thi</h5>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="CompetitionId" class="form-label fw-semibold mb-2">Cuộc thi <span class="text-danger">*</span></label>
+                                <select asp-for="CompetitionId" class="form-select rounded-3 form-control-lg" id="competitionSelect">
+                                    <option value="">-- Chọn cuộc thi --</option>
+                                    @if (Model?.Competition != null)
+                                    {
+                                        <option value="@Model.Competition.CompetitionId" selected>@Model.Competition.CompetitionName</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="CompetitionId" class="invalid-feedback d-block"></span>
+                            </div>
+
+                            <!-- Thông tin cu?c thi hi?n th? -->
+                            <div id="competitionInfo" class="competition-info-box p-4 rounded-4 bg-light d-none">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block mb-1">Lĩnh vực</small>
+                                        <span id="competitionCategory" class="fw-semibold text-dark">-</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block mb-1">Loại cuộc thi</small>
+                                        <span id="competitionType" class="fw-semibold text-dark">-</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block mb-1">Hạn đăng ký</small>
+                                        <span id="registrationDeadline" class="fw-semibold text-primary">-</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block mb-1">Hạn nộp bài</small>
+                                        <span id="submissionDeadline" class="fw-semibold text-primary">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bư?c 2: Ch?n lo?i đăng k? -->
+                    <div class="register-step card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-primary text-white rounded-circle" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">2</span>
+                                <h5 class="mb-0 fw-bold text-dark">Lo?i đăng k?</h5>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="registration-type-selector">
+                                <div class="form-check registration-option">
+                                    <input class="form-check-input" type="radio" name="RegistrationType" id="typeIndividual" value="Individual" checked />
+                                    <label class="form-check-label w-100" for="typeIndividual">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <i class="bi bi-person-circle fs-5 text-primary"></i>
+                                            <div>
+                                                <strong class="d-block">Đăng ký cá nhân</strong>
+                                                <small class="text-muted">Tham gia cuộc thi với tư cách cá nhân</small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="form-check registration-option">
+                                    <input class="form-check-input" type="radio" name="RegistrationType" id="typeTeam" value="Team" />
+                                    <label class="form-check-label w-100" for="typeTeam">
+                                        <div class="d-flex align-items-start gap-3">
+                                            <i class="bi bi-people-fill fs-5 text-success"></i>
+                                            <div>
+                                                <strong class="d-block">Đăng ký đội thi</strong>
+                                                <small class="text-muted">Tạo hoặc tham gia đội thi cùng bạn bè</small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bư?c 3: Thông tin cá nhân -->
+                    <div class="register-step card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-primary text-white rounded-circle" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">3</span>
+                                <h5 class="mb-0 fw-bold text-dark">Thông tin cá nhân</h5>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FullName" class="form-label fw-semibold mb-2">Họ và tên <span class="text-danger">*</span></label>
+                                    <input asp-for="FullName" class="form-control rounded-3" placeholder="Nguyễn Văn A" />
+                                    <span asp-validation-for="FullName" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="StudentCode" class="form-label fw-semibold mb-2">Mã sinh viên <span class="text-danger">*</span></label>
+                                    <input asp-for="StudentCode" class="form-control rounded-3" placeholder="SV20240001" />
+                                    <span asp-validation-for="StudentCode" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Email" class="form-label fw-semibold mb-2">Email <span class="text-danger">*</span></label>
+                                    <input asp-for="Email" class="form-control rounded-3" placeholder="email@university.edu.vn" />
+                                    <span asp-validation-for="Email" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="PhoneNumber" class="form-label fw-semibold mb-2">Số điện thoại <span class="text-danger">*</span></label>
+                                    <input asp-for="PhoneNumber" class="form-control rounded-3" placeholder="0912345678" />
+                                    <span asp-validation-for="PhoneNumber" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Class" class="form-label fw-semibold mb-2">Lớp học <span class="text-danger">*</span></label>
+                                    <input asp-for="Class" class="form-control rounded-3" placeholder="CT1-2024" />
+                                    <span asp-validation-for="Class" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Faculty" class="form-label fw-semibold mb-2">Khoa/Ngành <span class="text-danger">*</span></label>
+                                    <input asp-for="Faculty" class="form-control rounded-3" placeholder="Công nghệ Thông tin" />
+                                    <span asp-validation-for="Faculty" class="invalid-feedback d-block"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bư?c 4: Thông tin đ?i thi (hi?n khi ch?n Team) -->
+                    <div id="teamInfoSection" class="register-step card border-0 shadow-sm rounded-4 mb-4 d-none">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-success text-white rounded-circle" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">4</span>
+                                <h5 class="mb-0 fw-bold text-dark">Thông tin đội thi</h5>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label asp-for="TeamName" class="form-label fw-semibold mb-2">Tên đội <span class="text-danger">*</span></label>
+                                    <input asp-for="TeamName" class="form-control rounded-3" placeholder="Tên đội thi của bạn" />
+                                    <span asp-validation-for="TeamName" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="TeamDescription" class="form-label fw-semibold mb-2">Mô tả đội</label>
+                                    <textarea asp-for="TeamDescription" class="form-control rounded-3" rows="3" placeholder="Giới thiệu ngắn về đội thi..."></textarea>
+                                    <span asp-validation-for="TeamDescription" class="invalid-feedback d-block"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="TeamMemberCount" class="form-label fw-semibold mb-2">Số thành viên <span class="text-danger">*</span></label>
+                                    <input asp-for="TeamMemberCount" type="number" class="form-control rounded-3" min="1" max="5" placeholder="2" />
+                                    <span asp-validation-for="TeamMemberCount" class="invalid-feedback d-block"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bư?c 5: H? sơ và tài li?u -->
+                    <div class="register-step card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-primary text-white rounded-circle" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">5</span>
+                                <h5 class="mb-0 fw-bold text-dark">Hồ sơ và tài liệu</h5>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="SubmissionFile" class="form-label fw-semibold mb-3"> Tải lên hồ sơ/tài liệu dự thi</label>
+                                <div class="file-upload-wrapper">
+                                    <input asp-for="SubmissionFile" type="file" class="form-control rounded-3" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" />
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-info-circle"></i> Hỗ trợ: PDF, Word, PowerPoint, Excel (Tối đa 10MB)
+                                    </small>
+                                </div>
+                                <span asp-validation-for="SubmissionFile" class="invalid-feedback d-block"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="Notes" class="form-label fw-semibold mb-2">Ghi chú thêm</label>
+                                <textarea asp-for="Notes" class="form-control rounded-3" rows="3" placeholder="Thêm bất kỳ thông tin hoặc ghi chú nào (tùy chọn)..."></textarea>
+                                <span asp-validation-for="Notes" class="invalid-feedback d-block"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút submit -->
+                    <div class="form-actions d-flex gap-3 mb-5">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-3 px-5 fw-semibold flex-grow-1">
+                            <i class="bi bi-check-circle me-2"></i>Hoàn thành đăng ký
+                        </button>
+                        <a href="/Competitions" class="btn btn-outline-secondary btn-lg rounded-3 px-5 fw-semibold">
+                            <i class="bi bi-x-lg me-2"></i>H?y
+                        </a>
+                    </div>
+                </div>
+
+                <!-- C?t ph?i: Tóm t?t và g?i ? -->
+                <div class="col-lg-4">
+                    <!-- Tóm t?t cu?c thi -->
+                    <div class="register-summary card border-0 shadow-sm rounded-4 sticky-lg-top mb-4" style="top: 100px;">
+                        <div class="card-header bg-primary text-white border-0 rounded-top-4 px-4 py-3">
+                            <h6 class="mb-0 fw-bold">Cuộc thi được chọn</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <div id="summaryContent" class="text-center text-muted">
+                                <i class="bi bi-clipboard-list fs-3 d-block mb-2"></i>
+                                <p class="small">Chọn cuộc thi để xem thông tin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hư?ng d?n -->
+                    <div class="register-guide card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-light border-0 rounded-top-4 px-4 py-3">
+                            <h6 class="mb-0 fw-bold text-dark">Hướng dẫn nhanh</h6>
+                        </div>
+                        <div class="card-body p-4">
+                            <ul class="list-unstyled guide-list">
+                                <li><i class="bi bi-check2"></i> Hoàn thành tất cả trường bắt buộc</li>
+                                <li><i class="bi bi-check2"></i> Kiểm tra lại thông tin trước khi gửi</li>
+                                <li><i class="bi bi-check2"></i> Tải lên hồ sơ đầy đủ theo yêu cầu</li>
+                                <li><i class="bi bi-check2"></i> Ghi nhận email xác nhận đăng ký</li>
+                                <li><i class="bi bi-check2"></i> Theo dõi trạng thái hồ sơ qua dashboard</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/register-topic.js" asp-append-version="true"></script>
+}

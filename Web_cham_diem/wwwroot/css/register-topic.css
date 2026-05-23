@@ -1,0 +1,343 @@
+/* ========================================
+   Register Topic Page - Modern & Professional
+   ======================================== */
+
+:root {
+    --register-primary: #1f4aa8;
+    --register-primary-dark: #0f2f6f;
+    --register-accent: #3f7ae0;
+    --register-success: #10a854;
+    --register-surface: #f5f7fb;
+    --register-card: #ffffff;
+    --register-border: rgba(15, 23, 42, 0.08);
+    --register-text: #1f2937;
+    --register-muted: #6b7280;
+    --register-danger: #dc2626;
+}
+
+.register-topic-page {
+    background: linear-gradient(135deg, var(--register-surface) 0%, #eef2f8 100%);
+    min-height: 100vh;
+}
+
+/* ========== Header ========== */
+.register-topic-header {
+    animation: slideDown 0.5s ease;
+}
+
+.register-topic-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(31, 74, 168, 0.1);
+    color: var(--register-primary);
+    font-size: 1.5rem;
+}
+
+/* ========== Form Steps ========== */
+.register-step {
+    border: 1px solid var(--register-border);
+    transition: all 0.3s ease;
+}
+
+.register-step:hover {
+    box-shadow: 0 12px 28px rgba(31, 74, 168, 0.12) !important;
+    border-color: rgba(63, 122, 224, 0.2);
+}
+
+.register-step .card-header {
+    background: linear-gradient(135deg, rgba(31, 74, 168, 0.05), rgba(63, 122, 224, 0.05)) !important;
+    border-bottom: 1px solid var(--register-border);
+}
+
+.badge {
+    box-shadow: 0 4px 12px rgba(31, 74, 168, 0.15);
+}
+
+/* ========== Form Controls ========== */
+.form-control,
+.form-select {
+    border: 1px solid var(--register-border);
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background-color: #f9fbff;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--register-accent);
+    box-shadow: 0 0 0 0.2rem rgba(63, 122, 224, 0.15);
+    background-color: #fff;
+}
+
+.form-control::placeholder {
+    color: var(--register-muted);
+}
+
+.form-label {
+    color: var(--register-text);
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
+}
+
+.text-danger {
+    color: var(--register-danger);
+}
+
+/* ========== Registration Type Selector ========== */
+.registration-type-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.registration-option {
+    padding: 20px;
+    border: 2px solid var(--register-border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.registration-option input[type="radio"] {
+    margin-top: 2px;
+}
+
+.registration-option:hover {
+    border-color: var(--register-accent);
+    background: rgba(63, 122, 224, 0.03);
+}
+
+.registration-option input[type="radio"]:checked + label {
+    color: var(--register-primary);
+}
+
+.registration-option input[type="radio"]:checked + label strong {
+    color: var(--register-primary);
+}
+
+.registration-option label {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* ========== File Upload ========== */
+.file-upload-wrapper {
+    position: relative;
+}
+
+.file-upload-wrapper .form-control {
+    cursor: pointer;
+    padding: 1.5rem;
+    text-align: center;
+    border: 2px dashed var(--register-border);
+    border-radius: 16px;
+    background: rgba(31, 74, 168, 0.02);
+}
+
+.file-upload-wrapper .form-control:hover {
+    border-color: var(--register-accent);
+    background: rgba(63, 122, 224, 0.05);
+}
+
+/* ========== Competition Info Box ========== */
+.competition-info-box {
+    border: 1px solid rgba(31, 74, 168, 0.1);
+    background: rgba(31, 74, 168, 0.03);
+}
+
+/* ========== Actions ========== */
+.form-actions {
+    margin-top: 32px;
+}
+
+.btn-primary {
+    background: var(--register-primary);
+    border-color: var(--register-primary);
+    border-radius: 16px;
+    padding: 0.9rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: var(--register-primary-dark);
+    border-color: var(--register-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(31, 74, 168, 0.2);
+}
+
+.btn-outline-secondary {
+    border: 2px solid var(--register-border);
+    color: var(--register-text);
+    border-radius: 16px;
+    padding: 0.9rem 2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    border-color: var(--register-primary);
+    color: var(--register-primary);
+    transform: translateY(-2px);
+}
+
+/* ========== Summary Sidebar ========== */
+.register-summary {
+    border: 1px solid var(--register-border);
+}
+
+.register-summary .card-header {
+    background: linear-gradient(135deg, var(--register-primary), var(--register-accent));
+}
+
+/* ========== Guide Sidebar ========== */
+.register-guide {
+    border: 1px solid var(--register-border);
+}
+
+.guide-list li {
+    padding: 12px 0;
+    padding-left: 24px;
+    position: relative;
+    color: var(--register-text);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.guide-list li:before {
+    content: "\f12a";
+    font-family: "bootstrap-icons";
+    position: absolute;
+    left: 0;
+    color: var(--register-success);
+    font-weight: bold;
+}
+
+.guide-list i {
+    margin-right: 8px;
+    color: var(--register-success);
+}
+
+/* ========== Invalid Feedback ========== */
+.invalid-feedback {
+    font-size: 0.85rem;
+    color: var(--register-danger);
+    margin-top: 6px;
+    display: block;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--register-danger);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.15);
+}
+
+/* ========== Animations ========== */
+@@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== Responsive ========== */
+@@media (max-width: 1024px) {
+    .register-summary {
+        position: static !important;
+    }
+}
+
+@@media (max-width: 768px) {
+    .registration-type-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+
+    .guide-list li {
+        font-size: 0.9rem;
+    }
+}
+
+@@media (max-width: 576px) {
+    .register-step .card-header {
+        padding: 16px !important;
+    }
+
+    .register-step .card-body {
+        padding: 16px !important;
+    }
+
+    .badge {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.85rem;
+    }
+
+    .form-actions {
+        gap: 8px;
+    }
+}
+
+/* ========== Dark Mode Support ========== */
+@@media (prefers-color-scheme: dark) {
+    .register-topic-page {
+        background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+    }
+
+    .register-step,
+    .register-summary,
+    .register-guide {
+        background: #111827;
+        border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    .form-control,
+    .form-select {
+        background: rgba(15, 23, 42, 0.6);
+        border-color: rgba(148, 163, 184, 0.2);
+        color: #e2e8f0;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        background: #0b1222;
+    }
+
+    .form-label {
+        color: #e2e8f0;
+    }
+
+    .text-muted {
+        color: #94a3b8 !important;
+    }
+
+    .registration-option {
+        background: #1e293b;
+        border-color: rgba(148, 163, 184, 0.2);
+    }
+
+    .registration-option:hover {
+        background: rgba(63, 122, 224, 0.1);
+    }
+}
