@@ -1,5 +1,6 @@
-﻿using Web_cham_diem.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Web_cham_diem.Models;
+using Web_cham_diem.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+
+// Register Services
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<ICompetitionService, CompetitionService>();
+builder.Services.AddScoped<ITeamService, TeamService>();
 
 var app = builder.Build();
 
