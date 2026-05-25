@@ -1,0 +1,467 @@
+﻿@{
+    ViewData["Title"] = "Danh Sách Đội Thi Đã Đăng Ký - Quản Lý Cuộc Thi Sinh Viên";
+}
+
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center mb-3">
+            <a href="/Competitions" class="btn btn-outline-secondary btn-sm rounded-pill me-3">
+                <i class="bi bi-arrow-left me-1"></i>Quay Lại
+            </a>
+            <div>
+                <h1 class="fw-bold text-dark mb-1">
+                    <i class="bi bi-people-fill text-info me-2"></i>Danh Sách Đội Thi & Đăng Ký
+                </h1>
+                <p class="text-secondary mb-0">Quản lý các đơn đăng ký và đội thi tham gia cuộc thi</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Competition Info Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-light">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-8">
+                    <h4 class="fw-bold mb-2" id="competitionName">Chọn cuộc thi để xem danh sách</h4>
+                    <p class="text-secondary mb-0" id="competitionDescription"></p>
+                </div>
+                <div class="col-12 col-md-4 text-end">
+                    <select id="competitionSelect" class="form-select border-0 rounded-3 shadow-sm">
+                        <option value="">-- Chọn cuộc thi --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4" id="statsRow" style="display: none;">
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <h6 class="text-secondary fw-6 mb-2">Tổng Đội Thi</h6>
+                <h3 class="fw-bold text-primary" id="totalTeams">0</h3>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <h6 class="text-secondary fw-6 mb-2">Tổng Đăng Ký</h6>
+                <h3 class="fw-bold text-success" id="totalRegistrations">0</h3>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <h6 class="text-secondary fw-6 mb-2">Đã Phê Duyệt</h6>
+                <h3 class="fw-bold text-info" id="approvedCount">0</h3>
+            </div>
+        </div>
+        <div class="col-12 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                <h6 class="text-secondary fw-6 mb-2">Chờ Xét Duyệt</h6>
+                <h3 class="fw-bold text-warning" id="pendingCount">0</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="row mb-4 g-3" id="filterRow" style="display: none;">
+        <div class="col-12 col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border">
+                    <i class="bi bi-search text-secondary"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control border" placeholder="Tìm kiếm đội hoặc tên thành viên...">
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <select id="statusFilter" class="form-select border">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="Pending">Chờ Xét Duyệt</option>
+                <option value="Approved">Đã Phê Duyệt</option>
+                <option value="Rejected">Từ Chối</option>
+                <option value="Withdrawn">Rút Lại</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-4">
+            <select id="typeFilter" class="form-select border">
+                <option value="">-- Tất cả loại hình --</option>
+                <option value="Team">Thi Đội</option>
+                <option value="Individual">Thi Cá Nhân</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tabs: Teams vs Registrations -->
+    <ul class="nav nav-tabs mb-4" id="tabNav" role="tablist" style="display: none;">
+        <li class="nav-item">
+            <button class="nav-link active" id="teamsTab" data-bs-toggle="tab" data-bs-target="#teamsContent" type="button">
+                <i class="bi bi-people me-2"></i>Danh Sách Đội Thi
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="registrationsTab" data-bs-toggle="tab" data-bs-target="#registrationsContent" type="button">
+                <i class="bi bi-clipboard-check me-2"></i>Danh Sách Đăng Ký
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="tabContent">
+        <!-- Teams Tab -->
+        <div class="tab-pane fade show active" id="teamsContent" role="tabpanel">
+            <div id="teamsContainer" class="row g-3">
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-inbox text-secondary mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-secondary">Chọn cuộc thi để xem danh sách đội thi</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registrations Tab -->
+        <div class="tab-pane fade" id="registrationsContent" role="tabpanel">
+            <div class="table-responsive rounded-3 border" id="registrationsTableContainer">
+                <div class="p-5 text-center">
+                    <i class="bi bi-inbox text-secondary mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-secondary">Chọn cuộc thi để xem danh sách đăng ký</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResultsMessage" class="alert alert-info text-center rounded-4 p-5" style="display: none;">
+        <i class="bi bi-info-circle-fill fs-1 mb-3"></i>
+        <h5 class="fw-bold">Không có dữ liệu</h5>
+        <p class="text-secondary mb-0">Cuộc thi này chưa có đội thi hoặc đơn đăng ký nào</p>
+    </div>
+</div>
+
+<style>
+    .team-card {
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+        .team-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+    .member-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d6efd, #0a429b);
+        color: white;
+        font-weight: bold;
+        font-size: 0.85rem;
+        margin-right: 0.5rem;
+    }
+
+    .status-badge-small {
+        padding: 0.35rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .registration-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto auto;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    @@media (max-width: 768px) {
+        .registration-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border-bottom: 3px solid transparent;
+    }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+            background: transparent;
+        }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        loadCompetitions();
+        document.getElementById('competitionSelect').addEventListener('change', onCompetitionSelected);
+        document.getElementById('searchInput').addEventListener('keyup', filterData);
+        document.getElementById('statusFilter').addEventListener('change', filterData);
+        document.getElementById('typeFilter').addEventListener('change', filterData);
+    });
+
+    async function loadCompetitions() {
+        try {
+            const response = await fetch('/api/competitions');
+            if (!response.ok) throw new Error('Failed to fetch competitions');
+
+            const competitions = await response.json();
+            const select = document.getElementById('competitionSelect');
+
+            competitions.forEach(comp => {
+                const option = document.createElement('option');
+                option.value = comp.competitionId;
+                option.textContent = comp.competitionName;
+                option.dataset.description = comp.description || '';
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading competitions:', error);
+        }
+    }
+
+    async function onCompetitionSelected() {
+        const select = document.getElementById('competitionSelect');
+        const competitionId = select.value;
+
+        if (!competitionId) {
+            document.getElementById('statsRow').style.display = 'none';
+            document.getElementById('filterRow').style.display = 'none';
+            document.getElementById('tabNav').style.display = 'none';
+            document.getElementById('teamsContainer').innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-inbox text-secondary mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-secondary">Chọn cuộc thi để xem danh sách</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Update header
+        const option = select.options[select.selectedIndex];
+        document.getElementById('competitionName').textContent = option.textContent;
+        document.getElementById('competitionDescription').textContent = option.dataset.description;
+
+        // Show controls
+        document.getElementById('statsRow').style.display = 'grid';
+        document.getElementById('filterRow').style.display = 'grid';
+        document.getElementById('tabNav').style.display = 'flex';
+
+        // Load data
+        await Promise.all([
+            loadTeams(competitionId),
+            loadRegistrations(competitionId)
+        ]);
+    }
+
+    async function loadTeams(competitionId) {
+        try {
+            const response = await fetch(`/api/competitions/${competitionId}/teams`);
+            if (!response.ok) throw new Error('Failed to fetch teams');
+
+            const teams = await response.json();
+            renderTeams(teams);
+            updateStats(teams, 'teams');
+        } catch (error) {
+            console.error('Error loading teams:', error);
+            document.getElementById('teamsContainer').innerHTML =
+                '<div class="alert alert-danger col-12">Lỗi tải dữ liệu đội thi</div>';
+        }
+    }
+
+    async function loadRegistrations(competitionId) {
+        try {
+            const response = await fetch(`/api/competitions/${competitionId}/registrations`);
+            if (!response.ok) throw new Error('Failed to fetch registrations');
+
+            const registrations = await response.json();
+            renderRegistrations(registrations);
+            updateStats(registrations, 'registrations');
+        } catch (error) {
+            console.error('Error loading registrations:', error);
+            document.getElementById('registrationsTableContainer').innerHTML =
+                '<div class="alert alert-danger col-12">Lỗi tải dữ liệu đăng ký</div>';
+        }
+    }
+
+    function renderTeams(teams) {
+        const container = document.getElementById('teamsContainer');
+
+        if (teams.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-inbox text-secondary mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-secondary">Không có đội thi nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = teams.map(team => `
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 team-card h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-1">${team.teamName}</h5>
+                            <p class="text-secondary small mb-0">${team.description || 'Không có mô tả'}</p>
+                        </div>
+                        <span class="badge bg-${team.status === 'Active' ? 'success' : 'secondary'}">
+                            ${team.status === 'Active' ? 'Hoạt động' : 'Đã giải tán'}
+                        </span>
+                    </div>
+
+                    <div class="border-top pt-3">
+                        <small class="text-secondary d-block mb-2"><strong>Trưởng Đội:</strong> ${team.leaderName || 'N/A'}</small>
+                        <small class="text-secondary d-block mb-2"><strong>Thành Viên:</strong> ${team.memberCount || 1}</small>
+                        <small class="text-secondary d-block"><strong>Ngày Tạo:</strong> ${formatDate(team.createdAt)}</small>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-primary mt-3 w-100 rounded-pill" onclick="viewTeamDetails(${team.teamId})">
+                        <i class="bi bi-eye me-1"></i>Xem Chi Tiết
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderRegistrations(registrations) {
+        const container = document.getElementById('registrationsTableContainer');
+
+        if (registrations.length === 0) {
+            container.innerHTML = `
+                <div class="p-5 text-center">
+                    <i class="bi bi-inbox text-secondary mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-secondary">Không có đơn đăng ký nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'table table-hover align-middle mb-0';
+        table.style.minWidth = '1000px';
+        table.innerHTML = `
+            <thead class="table-light">
+                <tr>
+                    <th>STT</th>
+                    <th>Tên Thí Sinh / Đội</th>
+                    <th>Loại Hình</th>
+                    <th>Trạng Thái</th>
+                    <th>Ngày Đăng Ký</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${registrations.map((reg, idx) => `
+                    <tr data-registration-type="${reg.registrationType}" data-registration-status="${reg.status}">
+                        <td class="fw-bold">${idx + 1}</td>
+                        <td>
+                            <strong>${reg.userName}</strong><br>
+                            <small class="text-secondary">${reg.userEmail}</small>
+                        </td>
+                        <td>
+                            <span class="badge ${reg.registrationType === 'Team' ? 'bg-info' : 'bg-success'}">
+                                ${reg.registrationType === 'Team' ? 'Thi Đội' : 'Thi Cá Nhân'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${getStatusColor(reg.status)}">
+                                ${getStatusLabel(reg.status)}
+                            </span>
+                        </td>
+                        <td>${formatDate(reg.registrationDate)}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="viewRegistration(${reg.registrationId})">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="editRegistration(${reg.registrationId})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
+    function updateStats(data, type) {
+        if (type === 'teams') {
+            document.getElementById('totalTeams').textContent = data.length;
+        } else if (type === 'registrations') {
+            const total = data.length;
+            const approved = data.filter(r => r.status === 'Approved').length;
+            const pending = data.filter(r => r.status === 'Pending').length;
+
+            document.getElementById('totalRegistrations').textContent = total;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+    }
+
+    function filterData() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const type = document.getElementById('typeFilter').value;
+
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const registrationType = row.dataset.registrationType;
+            const registrationStatus = row.dataset.registrationStatus;
+            const text = row.textContent.toLowerCase();
+
+            const matchSearch = text.includes(search);
+            const matchStatus = !status || registrationStatus === status;
+            const matchType = !type || registrationType === type;
+
+            row.style.display = (matchSearch && matchStatus && matchType) ? '' : 'none';
+        });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+    }
+
+    function getStatusLabel(status) {
+        const labels = {
+            'Pending': 'Chờ Xét Duyệt',
+            'Approved': 'Đã Phê Duyệt',
+            'Rejected': 'Từ Chối',
+            'Withdrawn': 'Rút Lại'
+        };
+        return labels[status] || status;
+    }
+
+    function getStatusColor(status) {
+        const colors = {
+            'Pending': 'bg-warning',
+            'Approved': 'bg-success',
+            'Rejected': 'bg-danger',
+            'Withdrawn': 'bg-secondary'
+        };
+        return colors[status] || 'bg-light';
+    }
+
+    function viewTeamDetails(teamId) {
+        window.location.href = `/teams/${teamId}`;
+    }
+
+    function viewRegistration(registrationId) {
+        window.location.href = `/registrations/${registrationId}`;
+    }
+
+    function editRegistration(registrationId) {
+        window.location.href = `/registrations/${registrationId}/edit`;
+    }
+</script>

@@ -1,10 +1,18 @@
-using Microsoft.AspNetCore.Mvc;
-using Web_cham_diem.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Web_cham_diem.Services;
+using Web_cham_diem.ViewModels;
 
 namespace Web_cham_diem.Controllers;
 
 public class LoginController : Controller
 {
+    private readonly IAuthenticationService _authService;
+
+    public LoginController(IAuthenticationService authService)
+    {
+        _authService = authService;
+    }
+
     [HttpGet]
     public IActionResult Index()
     {
@@ -13,13 +21,20 @@ public class LoginController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Index(LoginViewModel model)
+    public async Task<IActionResult> Index(LoginViewModel model)
     {
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        return RedirectToAction("Index", "Home");
+        var result = await _authService.LoginAsync(model);
+        if (result)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        ModelState.AddModelError("", "Email hoặc mật khẩu không đúng");
+        return View(model);
     }
 }

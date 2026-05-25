@@ -149,12 +149,40 @@
                     </div>
                 </a>
 
-                <form class="d-flex search-zone position-relative">
-                    <input class="form-control rounded-pill pe-5 shadow-none form-control-sm" type="search" placeholder="Tìm kiếm cuộc thi..." aria-label="Search">
-                    <button class="btn btn-danger rounded-pill position-absolute end-0 top-0 h-100 px-3 border-0 d-flex align-items-center justify-content-center" type="submit">
-                        <i class="bi bi-search" style="font-size: 13px;"></i>
-                    </button>
-                </form>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <form class="d-flex mx-auto my-3 my-lg-0 col-12 col-lg-5 position-relative">
+                        <input class="form-control rounded-pill pe-5 shadow-none" type="search" placeholder="Tìm kiếm cuộc thi, đề tài, kết quả..." aria-label="Search">
+                        <button class="btn btn-danger rounded-pill position-absolute end-0 top-0 h-100 px-3 border-0" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </form>
+
+                    <ul class="navbar-nav mb-2 mb-lg-0 fw-semibold align-items-lg-center gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/Competitions" title="Xem danh sách tất cả cuộc thi">
+                                <i class="bi bi-trophy me-1 text-danger"></i>Cuộc thi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/Teams" title="Xem danh sách đội thi và đăng ký">
+                                <i class="bi bi-people me-1 text-primary"></i>Đội thi
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/Submissions" title="Nộp bài dự thi">
+                                <i class="bi bi-cloud-upload me-1 text-success"></i>Nộp bài
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/Scores" title="Xem bảng điểm xếp hạng">
+                                <i class="bi bi-bar-chart-line me-1 text-warning"></i>Bảng điểm
+                            </a>
+                        </li>
+                    </ul>
 
                 <ul class="menu-zone fw-semibold">
                     <li class="nav-item">
