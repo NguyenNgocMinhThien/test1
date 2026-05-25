@@ -4,8 +4,125 @@
     ViewData["UseFluidContainer"] = true;
 }
 
+@functions {
+    private string GetInvalidClass(string key)
+    {
+        return ViewData.ModelState.TryGetValue(key, out var state) && state.Errors.Count > 0
+            ? "is-invalid"
+            : "";
+    }
+}
+
 @section Styles {
     <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+    <style>
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 5px;
+            transition: color 0.2s ease;
+            z-index: 10;
+        }
+
+            .password-toggle-btn:hover {
+                color: #495057;
+            }
+
+        .password-input-wrapper {
+            position: relative;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+
+        .login-submit {
+            font-weight: 600;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+            .login-submit:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            }
+
+            .login-submit:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
+
+        .success-badge {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        @@keyframes slideDown {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        .error-badge {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            margin-bottom: 0;
+            user-select: none;
+        }
+
+        .form-check-input {
+            cursor: pointer;
+        }
+
+            .form-check-input:focus {
+                border-color: #dc3545;
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            }
+
+        .forgot-password-link {
+            transition: color 0.2s ease;
+        }
+
+            .forgot-password-link:hover {
+                color: #bb2d3b !important;
+            }
+    </style>
 }
 
 <section class="login-page">
@@ -63,34 +180,81 @@
                             </div>
                         </div>
 
-                        <form asp-action="Index" method="post" class="login-form" novalidate>
-                            @Html.AntiForgeryToken()
-                            <div class="form-floating mb-3">
-                                <input asp-for="Email" class="form-control" placeholder="name@university.edu.vn" />
-                                <label asp-for="Email">Email trường</label>
-                                <span asp-validation-for="Email" class="invalid-feedback d-block"></span>
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="success-badge" role="alert">
+                                <i class="bi bi-check-circle me-2"></i>
+                                @TempData["SuccessMessage"]
                             </div>
+                        }
+
+                        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                        {
+                            <div class="error-badge" role="alert">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Lỗi đăng nhập!</strong> Vui lòng kiểm tra thông tin bên dưới.
+                            </div>
+                        }
+
+                        <form asp-action="Index" method="post" class="login-form" novalidate id="loginForm">
+                            @Html.AntiForgeryToken()
+
+                            <!-- Email -->
                             <div class="form-floating mb-3">
-                                <input asp-for="Password" class="form-control" placeholder="••••••••" />
-                                <label asp-for="Password">Mật khẩu</label>
-                                <span asp-validation-for="Password" class="invalid-feedback d-block"></span>
+                                <input asp-for="Email"
+                                       class="form-control @GetInvalidClass("Email")"
+                                       placeholder="name@university.edu.vn"
+                                       autocomplete="email"
+                                       spellcheck="false" />
+                                <label asp-for="Email">
+                                    <i class="bi bi-envelope me-2"></i>Email trường
+                                </label>
+                                <span asp-validation-for="Email" class="invalid-feedback"></span>
                             </div>
 
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">
+                                    <i class="bi bi-key me-2"></i>Mật khẩu
+                                </label>
+                                <div class="password-input-wrapper">
+                                    <input asp-for="Password"
+                                           type="password"
+                                           class="form-control @GetInvalidClass("Password")"
+                                           placeholder="••••••••"
+                                           id="passwordInput"
+                                           autocomplete="current-password" />
+                                    <button type="button" class="password-toggle-btn" id="togglePassword" title="Hiển thị/ẩn mật khẩu">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="invalid-feedback"></span>
+                            </div>
+
+                            <!-- Remember Me & Forgot Password -->
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div class="form-check">
-                                    <input asp-for="RememberMe" class="form-check-input" />
-                                    <label asp-for="RememberMe" class="form-check-label">Ghi nhớ đăng nhập</label>
+                                    <input asp-for="RememberMe" class="form-check-input" id="rememberMeCheckbox" />
+                                    <label asp-for="RememberMe" class="form-check-label" for="rememberMeCheckbox">
+                                        Ghi nhớ đăng nhập
+                                    </label>
                                 </div>
-                                <a href="#" class="link-primary small">Quên mật khẩu ?</a>
+                                <a href="/ForgotPassword" class="link-primary small forgot-password-link">
+                                    <i class="bi bi-question-circle me-1"></i>Quên mật khẩu?
+                                </a>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 login-submit">
-                                Đăng nhập
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
                             </button>
 
-                            <p class="text-center text-muted mt-4 mb-0">
+                            <hr class="my-4">
+
+                            <p class="text-center text-muted mb-0">
                                 Chưa có tài khoản?
-                                <a href="/Register" class="link-primary fw-semibold">Đăng ký ngay</a>
+                                <a href="/Register" class="link-primary fw-semibold">
+                                    <i class="bi bi-person-plus me-1"></i>Đăng ký ngay
+                                </a>
                             </p>
                         </form>
                     </div>
@@ -102,4 +266,46 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordInput = document.getElementById('passwordInput');
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const loginForm = document.getElementById('loginForm');
+
+            // Toggle password visibility
+            if (togglePasswordBtn && passwordInput) {
+                togglePasswordBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    const icon = type === 'password'
+                        ? '<i class="bi bi-eye"></i>'
+                        : '<i class="bi bi-eye-slash"></i>';
+                    this.innerHTML = icon;
+                });
+            }
+
+            // Form validation
+            if (loginForm) {
+                loginForm.addEventListener('submit', function (e) {
+                    if (!loginForm.checkValidity()) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                    loginForm.classList.add('was-validated');
+                });
+            }
+
+            // Focus effects
+            const inputs = document.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function () {
+                    this.parentElement.classList.add('focused');
+                });
+                input.addEventListener('blur', function () {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+        });
+    </script>
 }

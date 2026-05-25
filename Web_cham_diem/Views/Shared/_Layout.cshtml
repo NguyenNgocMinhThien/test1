@@ -19,29 +19,20 @@
             font-family: 'Inter', sans-serif;
         }
 
-        /* --- ÉP TOÀN BỘ NAVBAR TRÊN 1 HÀNG DUY NHẤT --- */
         .custom-header-container {
             display: flex !important;
-            flex-wrap: nowrap !important; /* Tuyệt đối không cho xuống hàng */
+            flex-wrap: nowrap !important;
             align-items: center;
             justify-content: space-between;
             width: 100%;
+            gap: 15px;
         }
 
-        /* Giới hạn kích thước vùng logo để nhường chỗ cho các thành phần khác */
         .brand-zone {
             flex-shrink: 0;
             min-width: 260px;
         }
 
-        /* Ô tìm kiếm co giãn thông minh nhưng không chiếm quá nhiều diện tích */
-        .search-zone {
-            flex-grow: 1;
-            max-width: 320px;
-            margin: 0 15px !important;
-        }
-
-        /* Thanh menu chứa Cuộc thi, Đội thi... */
         .menu-zone {
             display: flex !important;
             flex-direction: row !important;
@@ -51,20 +42,20 @@
             margin: 0 !important;
             padding: 0 !important;
             list-style: none;
+            flex-grow: 1;
         }
 
             .menu-zone .nav-link {
                 display: flex !important;
                 align-items: center;
-                white-space: nowrap !important; /* Khóa chữ không cho tự rớt dòng */
-                padding: 6px 10px !important; /* Thu nhỏ padding để vừa vặn hơn */
-                font-size: 14px;
+                white-space: nowrap !important;
+                padding: 8px 12px !important;
+                font-size: 13px;
                 border-radius: 20px;
                 color: #212529 !important;
                 transition: all 0.2s ease-in-out;
             }
 
-                /* Hiệu ứng Hover đổi màu nền và màu chữ */
                 .menu-zone .nav-link:hover {
                     background-color: #fff5f5;
                     color: #dc3545 !important;
@@ -76,21 +67,181 @@
                     background-color: #fff1f2;
                 }
 
-        /* Cụm nút Đăng nhập / Đăng ký */
+        /* Auth Zone - Phía bên phải */
         .auth-zone {
             display: flex !important;
             flex-wrap: nowrap !important;
-            gap: 8px;
+            gap: 12px;
             flex-shrink: 0;
+            align-items: center;
+            margin-left: auto;
         }
 
             .auth-zone .btn {
                 white-space: nowrap !important;
-                padding: 6px 14px !important;
+                padding: 8px 16px !important;
+                font-size: 13px;
+            }
+
+        /* User Profile Container */
+            .user-profile-wrapper {
+                display: flex !important;
+                align-items: center;
+                gap: 10px;
+                padding: 6px 12px;
+                border-radius: 25px;
+                background-color: #f8f9fa;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                border: none;
+                outline: none;
+                background-clip: padding-box;
+                appearance: none;
+            }
+
+                .user-profile-wrapper:hover {
+                    background-color: #e9ecef;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                }
+
+            .dropdown-menu-user {
+                min-width: 320px !important;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+                margin-top: 8px;
+                z-index: 1050;
+            }
+
+        .user-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dc3545, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+        }
+
+        .user-info-compact {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .user-fullname-compact {
+            font-weight: 600;
+            color: #212529;
+            font-size: 13px;
+        }
+
+        .user-email-compact {
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu-user {
+            min-width: 320px !important;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-top: 8px;
+        }
+
+        .dropdown-header-user {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-user-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar-large {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            border: 2px solid white;
+        }
+
+        .dropdown-user-info {
+            flex: 1;
+        }
+
+        .dropdown-user-name {
+            font-weight: 600;
+            color: white;
+            font-size: 14px;
+        }
+
+        .dropdown-user-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 2px;
+        }
+
+        .dropdown-user-role {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 4px;
+        }
+
+        .dropdown-menu-user .dropdown-divider {
+            margin: 0.5rem 0;
+        }
+
+        .dropdown-item-user {
+            padding: 0.85rem 1.25rem !important;
+            font-size: 13px;
+            color: #212529;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .dropdown-item-user:hover {
+                background-color: #f8f9fa;
+                color: #dc3545;
+                border-left-color: #dc3545;
+                transform: translateX(2px);
+            }
+
+            .dropdown-item-user i {
+                width: 18px;
+                color: #dc3545;
                 font-size: 14px;
             }
 
-        /* Hover hiệu ứng nút bấm */
+        .dropdown-item-logout {
+            color: #dc3545 !important;
+        }
+
+            .dropdown-item-logout:hover {
+                background-color: #ffe5e5 !important;
+            }
+
+        /* Login/Register Buttons */
         .btn-outline-danger.rounded-pill:hover {
             background-color: #dc3545;
             color: #ffffff !important;
@@ -102,7 +253,6 @@
             box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
         }
 
-        /* Topbar links */
         .topbar-links a {
             transition: color 0.2s ease;
         }
@@ -111,7 +261,6 @@
                 color: #ffc107 !important;
             }
 
-        /* Footer links */
         .main-footer a {
             color: #b3b3b3 !important;
             transition: color 0.2s ease;
@@ -120,6 +269,42 @@
             .main-footer a:hover {
                 color: #ffc107 !important;
             }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .user-info-compact
+
+        {
+            display: none !important;
+        }
+
+        .menu-zone {
+            display: none !important;
+        }
+
+        .custom-header-container {
+            gap: 8px;
+        }
+
+        }
+
+        @@media (max-width: 576px) {
+            .brand-zone
+
+        {
+            min-width: auto;
+        }
+
+        .auth-zone {
+            gap: 4px;
+        }
+
+            .auth-zone .btn {
+                padding: 6px 10px !important;
+                font-size: 12px;
+            }
+
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100 bg-light">
@@ -139,73 +324,148 @@
         </div>
 
         <nav class="navbar navbar-expand-lg navbar-light py-2 border-bottom">
-            <div class="container custom-header-container">
+            <div class="container-fluid custom-header-container">
 
                 <a class="navbar-brand d-flex align-items-center brand-zone" href="/">
-                    <img src="~/images/logo-uni.png" alt="Logo" width="42" class="me-2" onerror="this.src='https://via.placeholder.com/42'">
+                    <img src="~/images/logo-uni.png" alt="Logo" width="40" class="me-2" onerror="this.src='https://via.placeholder.com/40'">
                     <div>
-                        <span class="fw-bold text-danger d-block lh-1" style="font-size: 14px; letter-spacing: 0.3px;">HỆ THỐNG QUẢN LÝ CUỘC THI</span>
-                        <small class="text-secondary fw-semibold" style="font-size: 11px;">ĐẠI HỌC CÔNG NGHỆ & KHẢO THÍ</small>
+                        <span class="fw-bold text-danger d-block lh-1" style="font-size: 13px; letter-spacing: 0.3px;">HỆ THỐNG QUẢN LÝ CUỘC THI</span>
+                        <small class="text-secondary fw-semibold d-none d-sm-block" style="font-size: 10px;">ĐẠI HỌC CÔNG NGHỆ & KHẢO THÍ</small>
                     </div>
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarContent">
-                    <form class="d-flex mx-auto my-3 my-lg-0 col-12 col-lg-5 position-relative">
-                        <input class="form-control rounded-pill pe-5 shadow-none" type="search" placeholder="Tìm kiếm cuộc thi, đề tài, kết quả..." aria-label="Search">
-                        <button class="btn btn-danger rounded-pill position-absolute end-0 top-0 h-100 px-3 border-0" type="submit">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </form>
-
-                    <ul class="navbar-nav mb-2 mb-lg-0 fw-semibold align-items-lg-center gap-2">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Competitions" title="Xem danh sách tất cả cuộc thi">
-                                <i class="bi bi-trophy me-1 text-danger"></i>Cuộc thi
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Teams" title="Xem danh sách đội thi và đăng ký">
-                                <i class="bi bi-people me-1 text-primary"></i>Đội thi
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Submissions" title="Nộp bài dự thi">
-                                <i class="bi bi-cloud-upload me-1 text-success"></i>Nộp bài
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/Scores" title="Xem bảng điểm xếp hạng">
-                                <i class="bi bi-bar-chart-line me-1 text-warning"></i>Bảng điểm
-                            </a>
-                        </li>
-                    </ul>
-
                 <ul class="menu-zone fw-semibold">
                     <li class="nav-item">
-                        <a class="nav-link active" href="/Competitions"><i class="bi bi-trophy me-1 text-danger"></i>Cuộc thi</a>
+                        <a class="nav-link" href="/Competitions"><i class="bi bi-trophy me-1 text-danger"></i><span class="d-none d-lg-inline">Cuộc thi</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Teams"><i class="bi bi-people me-1 text-primary"></i>Đội thi</a>
+                        <a class="nav-link" href="/Teams"><i class="bi bi-people me-1 text-primary"></i><span class="d-none d-lg-inline">Đội thi</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Submissions"><i class="bi bi-cloud-upload me-1 text-success"></i>Nộp bài</a>
+                        <a class="nav-link" href="/Submissions"><i class="bi bi-cloud-upload me-1 text-success"></i><span class="d-none d-lg-inline">Nộp bài</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Scores"><i class="bi bi-bar-chart-line me-1 text-warning"></i>Bảng điểm</a>
+                        <a class="nav-link" href="/Scores"><i class="bi bi-bar-chart-line me-1 text-warning"></i><span class="d-none d-lg-inline">Bảng điểm</span></a>
                     </li>
                 </ul>
 
-                <div class="auth-zone fw-semibold">
-                    <a href="/Login" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-1">
-                        <i class="bi bi-box-arrow-in-right"></i>Đăng nhập
-                    </a>
-                    <a href="/Register" class="btn btn-danger btn-sm rounded-pill d-flex align-items-center gap-1">
-                        <i class="bi bi-person-plus"></i>Đăng ký
-                    </a>
+                @{
+                    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+                    var userFullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Người dùng";
+                    var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+                    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Student";
+                    var userInitial = !string.IsNullOrEmpty(userFullName)
+                    ? string.Concat(userFullName.Split(' ').Select(x => x[0])).ToUpper()
+                    : "U";
+                }
+
+                <div class="auth-zone">
+                    @if (isAuthenticated)
+                    {
+                        <!-- User Profile Dropdown - Phía bên phải -->
+                        <div class="dropdown">
+                            <button type="button"
+                                    class="user-profile-wrapper dropdown-toggle"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                    data-bs-auto-close="outside">
+                                <div class="user-avatar-small" title="@userFullName">
+                                    @userInitial
+                                </div>
+                                <div class="user-info-compact d-none d-lg-flex">
+                                    <span class="user-fullname-compact">@userFullName</span>
+                                    <span class="user-email-compact">@userEmail</span>
+                                </div>
+                                <i class="bi bi-chevron-down text-muted" style="font-size: 12px;"></i>
+                            </button>
+
+                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-user">
+                                <li class="dropdown-header-user">
+                                    <div class="dropdown-user-card-header">
+                                        <div class="user-avatar-large">@userInitial</div>
+                                        <div class="dropdown-user-info">
+                                            <div class="dropdown-user-name">@userFullName</div>
+                                            <div class="dropdown-user-email">@userEmail</div>
+                                            <div class="dropdown-user-role">
+                                                <i class="bi bi-shield me-1" style="font-size: 10px;"></i>@userRole
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/Profile">
+                                        <i class="bi bi-person-circle"></i>
+                                        <span>Hồ sơ cá nhân</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/MyCompetitions">
+                                        <i class="bi bi-bookmark-heart"></i>
+                                        <span>Cuộc thi của tôi</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/MySubmissions">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        <span>Bài nộp của tôi</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/MyScores">
+                                        <i class="bi bi-graph-up"></i>
+                                        <span>Kết quả chấm điểm</span>
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/Settings">
+                                        <i class="bi bi-gear"></i>
+                                        <span>Cài đặt tài khoản</span>
+                                    </a>
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item dropdown-item-user" href="/Help">
+                                        <i class="bi bi-question-circle"></i>
+                                        <span>Trợ giúp</span>
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <form asp-controller="Login" asp-action="Logout" method="post" style="margin: 0;">
+                                        <button type="submit"
+                                                class="dropdown-item dropdown-item-user dropdown-item-logout w-100 text-start"
+                                                style="border: none; background: none; cursor: pointer;">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            <span>Đăng xuất</span>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Login & Register Buttons - Phía bên phải khi chưa đăng nhập -->
+                        <a href="/Login" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-2">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <span class="d-none d-sm-inline">Đăng nhập</span>
+                        </a>
+                        <a href="/Register" class="btn btn-danger btn-sm rounded-pill d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus"></i>
+                            <span class="d-none d-sm-inline">Đăng ký</span>
+                        </a>
+                    }
                 </div>
 
             </div>
@@ -213,6 +473,14 @@
     </header>
 
     <main role="main" class="flex-grow-1 @(ViewData["UseFluidContainer"] as bool? == true ? "container-fluid px-0" : "container my-4")">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong>Thành công!</strong> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
         @RenderBody()
     </main>
 
@@ -245,9 +513,9 @@
                     <h5 class="text-white fw-bold mb-3 border-bottom border-danger pb-2 d-inline-block">QUY ĐỊNH & BẢO MẬT</h5>
                     <ul class="list-unstyled small d-grid gap-2">
                         <li><a href="/Terms" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Điều khoản sử dụng</a></li>
-                        <li><a href="/Privacy" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Chính sách bảo mật JWT</a></li>
+                        <li><a href="/Privacy" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Chính sách bảo mật</a></li>
                         <li><a href="/AntiCheat" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Cơ chế chống gian lận</a></li>
-                        <li><a href="/Support" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Giải đáp thắc mắc (Q&A)</a></li>
+                        <li><a href="/Support" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Giải đáp thắc mắc</a></li>
                     </ul>
                 </div>
 
