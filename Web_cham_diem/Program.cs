@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using Web_cham_diem.Models;
 using Web_cham_diem.Services;
 
@@ -17,13 +18,38 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICompetitionService, CompetitionService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 
+// Add Authentication with Cookie
+// Add Authentication with Cookie
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.LoginPath = "/Login";
+        options.LogoutPath = "/Login/Logout";
+        options.AccessDeniedPath = "/Access-Denied";
+        options.Cookie.Name = "AuthCookie";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // allow HTTP in dev
+        options.ExpireTimeSpan = TimeSpan.FromDays(1);
+        options.SlidingExpiration = true;
+    });
+
+// Add Authorization
+builder.Services.AddAuthorization();
+
+// Add logging
+builder.Services.AddLogging(config =>
+{
+    config.AddConsole();
+    config.AddDebug();
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -32,6 +58,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Add authentication and authorization middleware (ORDER MATTERS!)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
