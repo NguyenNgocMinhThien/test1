@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "Dashboard Hệ Thống";
+    // Chỉ định sử dụng Layout Admin vừa tạo thay vì Layout mặc định
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">DASHBOARD</h1>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+    <div class="col">
+        <div class="card bg-primary text-white h-100 shadow-sm">
+            <div class="card-body">
+                <h6>ACTIVE COMPETITIONS</h6>
+                <h2 class="fw-bold m-0">15</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card bg-warning text-dark h-100 shadow-sm">
+            <div class="card-body">
+                <h6>PENDING REGISTRATIONS</h6>
+                <h2 class="fw-bold m-0">125</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card bg-success text-white h-100 shadow-sm">
+            <div class="card-body">
+                <h6>JUDGE REPORTS</h6>
+                <h2 class="fw-bold m-0">42</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card p-4 shadow-sm mb-4">
+    <h5>JUDGING SCORE OVERVIEW</h5>
+    <div class="alert alert-light text-muted border-dashed text-center my-4 py-5">
+        [Khu vực gắn biểu đồ Chart.js hoặc dữ liệu thống kê]
+    </div>
+</div>
