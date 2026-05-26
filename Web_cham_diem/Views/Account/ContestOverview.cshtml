@@ -1,0 +1,471 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Tổng quan Cuộc thi";
+}
+
+@section Styles {
+    <style>
+        .overview-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- OVERVIEW CARDS --- */
+        .summary-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .summary-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            }
+
+        .summary-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .card-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-top: 10px;
+            color: var(--text-dark);
+        }
+
+        /* --- FILTERS --- */
+        .filter-section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        /* --- PANELS & TABLES --- */
+        .content-panel {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            height: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .enterprise-table th {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .enterprise-table td {
+            font-size: 0.9rem;
+            vertical-align: middle;
+            color: var(--text-dark);
+        }
+
+        .enterprise-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .enterprise-table tbody tr:hover {
+                background-color: #f8fafc;
+            }
+
+        /* --- PROGRESS BAR --- */
+        .progress-slim {
+            height: 6px;
+            border-radius: 10px;
+            background-color: #e2e8f0;
+        }
+
+        /* --- QUICK OVERVIEW ITEM --- */
+        .quick-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+            .quick-item:last-child {
+                border-bottom: none;
+            }
+
+        .quick-icon {
+            font-size: 1.2rem;
+        }
+    </style>
+}
+
+<div class="overview-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="page-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Tổng quan Hệ thống Cuộc thi</h3>
+                <p class="text-muted small mb-0">Giám sát trạng thái và dữ liệu tổng hợp của tất cả các cuộc thi</p>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i> Cập nhật dữ liệu</button>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-collection"></i>
+                    </div>
+                    <div class="card-val">124</div>
+                    <div class="text-muted small fw-bold">Tổng cuộc thi</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-play-circle"></i>
+                    </div>
+                    <div class="card-val">15</div>
+                    <div class="text-muted small fw-bold">Đang hoạt động</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="card-val">08</div>
+                    <div class="text-muted small fw-bold">Sắp diễn ra</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-secondary bg-opacity-10 text-secondary">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="card-val">101</div>
+                    <div class="text-muted small fw-bold">Đã kết thúc</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-info bg-opacity-10 text-info">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="card-val">8.2K</div>
+                    <div class="text-muted small fw-bold">Tổng lượt ĐK</div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="summary-card">
+                    <div class="summary-icon bg-purple bg-opacity-10" style="color: #a855f7;">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div class="card-val">5.4K</div>
+                    <div class="text-muted small fw-bold">Tổng bài dự thi</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="filter-section shadow-sm d-flex flex-wrap gap-3 align-items-end">
+            <div style="flex: 1 1 250px;">
+                <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm cuộc thi</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Nhập tên, mã cuộc thi...">
+                </div>
+            </div>
+            <div style="width: 180px;">
+                <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
+                <select class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    <option value="1" selected>Đang hoạt động</option>
+                    <option value="2">Sắp diễn ra</option>
+                    <option value="3">Đã đóng</option>
+                </select>
+            </div>
+            <div style="width: 180px;">
+                <label class="form-label small fw-bold text-muted mb-1">Lĩnh vực</label>
+                <select class="form-select form-select-sm">
+                    <option value="">Tất cả lĩnh vực</option>
+                    <option>Học thuật & NCKH</option>
+                    <option>Công nghệ / IT</option>
+                    <option>Kỹ năng mềm</option>
+                </select>
+            </div>
+            <div style="width: 150px;">
+                <label class="form-label small fw-bold text-muted mb-1">Năm học</label>
+                <select class="form-select form-select-sm">
+                    <option selected>2025 - 2026</option>
+                    <option>2024 - 2025</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="content-panel">
+                    <h5 class="panel-title"><i class="bi bi-bar-chart"></i> Phân bổ số lượng cuộc thi (Thống kê 6 tháng)</h5>
+                    <div style="height: 280px;">
+                        <canvas id="monthlyCompChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="content-panel">
+                    <h5 class="panel-title"><i class="bi bi-pie-chart"></i> Lĩnh vực phổ biến</h5>
+                    <div style="height: 280px; display:flex; justify-content:center;">
+                        <canvas id="fieldChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitoring Table & Quick Overview -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="content-panel">
+                    <h5 class="panel-title d-flex justify-content-between">
+                        <span><i class="bi bi-table"></i> Giám sát Tiến độ Cuộc thi</span>
+                        <a href="#" class="btn btn-link btn-sm text-decoration-none p-0">Xem tất cả</a>
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table enterprise-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th width="35%">Tên cuộc thi / Chủ đề</th>
+                                    <th>Thời gian</th>
+                                    <th class="text-center">Số liệu</th>
+                                    <th width="20%">Tiến độ</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">Hackathon 2026</div>
+                                        <div class="small text-muted">Web & App Development</div>
+                                    </td>
+                                    <td><small class="text-muted"><i class="bi bi-calendar3"></i> 10/10 - 25/11/2026</small></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">450 ĐK</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Nhận bài</span>
+                                            <span>85%</span>
+                                        </div>
+                                        <div class="progress progress-slim">
+                                            <div class="progress-bar bg-primary" style="width: 85%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2">Đang diễn ra</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">Olympic Toán Sinh viên</div>
+                                        <div class="small text-muted">Khoa Khoa học Cơ bản</div>
+                                    </td>
+                                    <td><small class="text-muted"><i class="bi bi-calendar3"></i> 01/12 - 15/12/2026</small></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">210 ĐK</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Mở ĐK</span>
+                                            <span>20%</span>
+                                        </div>
+                                        <div class="progress progress-slim">
+                                            <div class="progress-bar bg-warning" style="width: 20%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-2">Sắp diễn ra</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">Hội thảo NCKH 2025</div>
+                                        <div class="small text-muted">Khối ngành Kinh tế</div>
+                                    </td>
+                                    <td><small class="text-muted"><i class="bi bi-calendar3"></i> 05/01 - 20/05/2025</small></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">150 Bài</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Chấm điểm</span>
+                                            <span>100%</span>
+                                        </div>
+                                        <div class="progress progress-slim">
+                                            <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2">Đã kết thúc</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">Khởi nghiệp Startup Idea</div>
+                                        <div class="small text-muted">Phòng QL Khoa học</div>
+                                    </td>
+                                    <td><small class="text-muted"><i class="bi bi-calendar3"></i> 20/09 - 30/11/2026</small></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">320 ĐK</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Chấm thi</span>
+                                            <span>40%</span>
+                                        </div>
+                                        <div class="progress progress-slim">
+                                            <div class="progress-bar bg-primary" style="width: 40%"></div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2">Đang diễn ra</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Info Panel -->
+            <div class="col-lg-4">
+                <div class="content-panel bg-light border-0">
+                    <h5 class="panel-title"><i class="bi bi-lightning-charge"></i> Cảnh báo & Nổi bật</h5>
+
+                    <div class="mt-3">
+                        <h6 class="fw-bold text-muted small text-uppercase">Nhiều đăng ký nhất</h6>
+                        <div class="quick-item">
+                            <div class="text-success quick-icon"><i class="bi bi-arrow-up-circle-fill"></i></div>
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">Hackathon 2026</div>
+                                <div class="small text-muted">Hiện có 450 sinh viên đăng ký tham gia (Đạt 150% KPI)</div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-muted small text-uppercase mt-4">Sắp đóng đăng ký (Tới hạn)</h6>
+                        <div class="quick-item">
+                            <div class="text-warning quick-icon"><i class="bi bi-hourglass-split"></i></div>
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">Sinh viên Thanh lịch 2026</div>
+                                <div class="small text-muted">Chỉ còn <strong class="text-danger">2 ngày</strong> để chốt danh sách.</div>
+                            </div>
+                        </div>
+
+                        <div class="quick-item">
+                            <div class="text-warning quick-icon"><i class="bi bi-hourglass-split"></i></div>
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">Sáng tạo AI</div>
+                                <div class="small text-muted">Đóng cổng đăng ký lúc 23:59 tối nay.</div>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-muted small text-uppercase mt-4">Tiến độ chấm điểm chậm</h6>
+                        <div class="quick-item">
+                            <div class="text-danger quick-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.95rem;">Nghiên cứu Kinh tế vĩ mô</div>
+                                <div class="small text-muted">Đã nộp bài 5 ngày nhưng <strong class="text-danger">mới chấm 10%</strong>.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        // 1. Chart: Số lượng cuộc thi và đăng ký theo tháng
+        const ctxMonthly = document.getElementById('monthlyCompChart').getContext('2d');
+        new Chart(ctxMonthly, {
+            type: 'bar',
+            data: {
+                labels: ['Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11'],
+                datasets: [
+                    {
+                        label: 'Số cuộc thi mở mới',
+                        data: [2, 1, 4, 8, 12, 5],
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 4,
+                        barPercentage: 0.5
+                    },
+                    {
+                        label: 'Lượt nộp bài / tháng (x100)',
+                        type: 'line',
+                        data: [1, 2, 8, 15, 25, 30],
+                        borderColor: '#f59e0b',
+                        tension: 0.3,
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Chart: Phân bổ lĩnh vực
+        const ctxField = document.getElementById('fieldChart').getContext('2d');
+        new Chart(ctxField, {
+            type: 'doughnut',
+            data: {
+                labels: ['Học thuật & KH', 'Công nghệ', 'Kỹ năng mềm', 'Văn thể mỹ'],
+                datasets: [{
+                    data: [45, 25, 20, 10],
+                    backgroundColor: ['#0d6efd', '#22c55e', '#f59e0b', '#a855f7'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 12, padding: 15 }
+                    }
+                }
+            }
+        });
+    </script>
+}

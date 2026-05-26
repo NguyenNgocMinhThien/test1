@@ -17,5 +17,43 @@ namespace Web_cham_diem.Controllers
         {
             return View();
         }
+
+        // Path: /Account/UserManagement
+        public IActionResult UserManagement()
+        {
+            // Ở giai đoạn này chúng ta trả về View với dữ liệu trống (mock data đã có sẵn trong HTML)
+            return View();
+        }
+
+        // Thêm action cho Cài đặt hệ thống
+        public IActionResult SystemSettings()
+        {
+            return View();
+        }
+
+        // Thêm action cho Báo cáo và thống kê
+        public IActionResult Reports()
+        {
+            return View();
+        }
+
+        // Thêm action cho Tổng quan cuộc thi
+        public IActionResult ContestOverview()
+        {
+            return View();
+        }
+        // Thêm action Thông báo hệ thống
+        public IActionResult SystemNotifications()
+        {
+            return View();
+        }
+
+        // Thêm action Nhật ký hoạt động
+        public IActionResult ActivityLogs()
+        {
+            return View();
+        }
+
+       
     }
 }

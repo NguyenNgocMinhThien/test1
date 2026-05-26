@@ -1,0 +1,318 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Cài đặt hệ thống";
+}
+
+@section Styles {
+    <style>
+        .settings-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- Custom Nav Pills (Sidebar bên trong settings) --- */
+        .settings-sidebar .nav-pills .nav-link {
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+            .settings-sidebar .nav-pills .nav-link:hover {
+                background-color: #f1f5f9;
+                color: var(--text-dark);
+            }
+
+            .settings-sidebar .nav-pills .nav-link.active {
+                background-color: #e0f2fe;
+                color: var(--accent-blue);
+                font-weight: 600;
+            }
+
+        /* --- Thẻ Card hiện đại --- */
+        .setting-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .setting-card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* --- UI Form Control --- */
+        .form-label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+            .form-control:focus, .form-select:focus {
+                border-color: var(--accent-blue);
+                box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+            }
+
+        /* --- Toggle Switch đẹp --- */
+        .form-switch .form-check-input {
+            width: 3em;
+            height: 1.5em;
+            cursor: pointer;
+        }
+
+            .form-switch .form-check-input:checked {
+                background-color: var(--accent-blue);
+                border-color: var(--accent-blue);
+            }
+    </style>
+}
+
+<div class="settings-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header Page -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Cấu hình Hệ thống</h3>
+                <p class="text-muted mb-0 small">Quản lý và thiết lập các thông số nền tảng của hệ thống</p>
+            </div>
+            <button class="btn btn-primary rounded-pill px-4" onclick="saveSettings()">
+                <i class="bi bi-save me-2"></i> Lưu thay đổi
+            </button>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar Cài đặt -->
+            <div class="col-lg-3 settings-sidebar mb-4">
+                <div class="nav flex-column nav-pills" id="settings-pills-tab" role="tablist">
+                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
+                        <i class="bi bi-sliders"></i> General Settings
+                    </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#competition" type="button" role="tab">
+                        <i class="bi bi-trophy"></i> Competition Settings
+                    </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#notification" type="button" role="tab">
+                        <i class="bi bi-bell"></i> Notification Settings
+                    </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab">
+                        <i class="bi bi-shield-lock"></i> Security Settings
+                    </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#academic" type="button" role="tab">
+                        <i class="bi bi-journal-bookmark"></i> Academic Categories
+                    </button>
+                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#backup" type="button" role="tab">
+                        <i class="bi bi-database-check"></i> Backup & Maintenance
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Cài đặt -->
+            <div class="col-lg-9">
+                <div class="tab-content">
+
+                    <!-- 1. GENERAL SETTINGS -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <div class="setting-card">
+                            <h5 class="setting-card-title">General Settings</h5>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Tên hệ thống</label>
+                                    <input type="text" class="form-control" value="University Portal - Quản lý cuộc thi">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email hỗ trợ hệ thống</label>
+                                    <input type="email" class="form-control" value="support@university.edu.vn">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Số điện thoại hỗ trợ</label>
+                                    <input type="text" class="form-control" value="0123.456.789">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Logo trường (Upload)</label>
+                                    <input class="form-control" type="file" id="formFile">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. COMPETITION SETTINGS -->
+                    <div class="tab-pane fade" id="competition" role="tabpanel">
+                        <div class="setting-card">
+                            <h5 class="setting-card-title">Competition Settings</h5>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Trạng thái mặc định khi tạo mới</label>
+                                    <select class="form-select">
+                                        <option value="draft">Bản nháp (Draft)</option>
+                                        <option value="published">Công khai ngay (Published)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Thời gian mở đăng ký mặc định (Ngày)</label>
+                                    <input type="number" class="form-control" value="14">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Kích thước file upload tối đa (MB)</label>
+                                    <input type="number" class="form-control" value="50">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Định dạng file cho phép nộp bài</label>
+                                    <input type="text" class="form-control" value=".pdf, .docx, .zip, .rar" placeholder="VD: .doc, .pdf">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. NOTIFICATION SETTINGS -->
+                    <div class="tab-pane fade" id="notification" role="tabpanel">
+                        <div class="setting-card">
+                            <h5 class="setting-card-title">Notification Settings</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Email Notification</h6>
+                                    <span class="text-muted small">Tự động gửi email khi có thông báo mới (duyệt bài, kết quả,...).</span>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Push Notification (Web)</h6>
+                                    <span class="text-muted small">Cảnh báo notification trực tiếp trên màn hình web.</span>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Deadline Reminder</h6>
+                                    <span class="text-muted small">Cảnh báo sinh viên 24h trước khi hết hạn nộp bài.</span>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. SECURITY SETTINGS -->
+                    <div class="tab-pane fade" id="security" role="tabpanel">
+                        <div class="setting-card">
+                            <h5 class="setting-card-title">Security & Policy</h5>
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Yêu cầu độ khó mật khẩu (Password policy)</label>
+                                    <select class="form-select">
+                                        <option>Mức Trung Bình (Ít nhất 8 ký tự, có số)</option>
+                                        <option selected>Mức Cao (Chữ hoa, chữ thường, số, ký tự đặc biệt)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Thời gian hết hạn phiên rảnh (Session timeout) - Phút</label>
+                                    <input type="number" class="form-control" value="60">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded">
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-danger">Bảo mật xác thực 2 bước (2FA) bắt buộc với Admin</h6>
+                                    <span class="text-muted small">Bật tính năng này để tăng cường an toàn cho tài khoản có quyền cao.</span>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input border-danger" type="checkbox">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. ACADEMIC CATEGORIES -->
+                    <div class="tab-pane fade" id="academic" role="tabpanel">
+                        <div class="setting-card">
+                            <h5 class="setting-card-title">Khoa & Lĩnh vực (Danh mục chuẩn)</h5>
+                            <p class="text-muted small mb-4">Quản lý các danh mục để phân loại dữ liệu khi tạo cuộc thi.</p>
+
+                            <label class="form-label">Danh sách Khoa (Ngăn cách bằng dấu phẩy)</label>
+                            <textarea class="form-control mb-4" rows="3">CNTT, Kinh tế, Ngoại ngữ, Kỹ thuật Điện, Quản trị Kinh doanh</textarea>
+
+                            <label class="form-label">Loại cuộc thi</label>
+                            <ul class="list-group mb-4">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Học thuật, Nghiên cứu khoa học
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Sáng tạo máy nhân tạo, Kỹ năng mềm
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </li>
+                            </ul>
+                            <button class="btn btn-outline-primary btn-sm"><i class="bi bi-plus"></i> Thêm loại hình mới</button>
+                        </div>
+                    </div>
+
+                    <!-- 6. BACKUP & MAINTENANCE -->
+                    <div class="tab-pane fade" id="backup" role="tabpanel">
+                        <div class="setting-card border-warning border-start border-4">
+                            <h5 class="setting-card-title">Backup & System Maintenance</h5>
+
+                            <div class="d-flex gap-3 mb-5">
+                                <button class="btn btn-success"><i class="bi bi-cloud-arrow-down me-2"></i> Backup Database ngay</button>
+                                <button class="btn btn-outline-dark"><i class="bi bi-cloud-arrow-up me-2"></i> Chọn file Restore</button>
+                            </div>
+
+                            <h6 class="text-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> Bảo trì hệ thống</h6>
+                            <p class="text-muted small">Khi bật chế độ bảo trì, chỉ Admin mới truy cập được hệ thống. Sinh viên và Giám khảo sẽ thấy màn hình thông báo bảo trì.</p>
+                            <div class="form-check form-switch mt-3">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                                <label class="form-check-label fw-bold" for="maintenanceMode">Kích hoạt chế độ bảo trì (Maintenance Mode)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Thông báo Save thành công -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="saveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-bold">
+                <i class="bi bi-check-circle me-2"></i> Đã lưu cài đặt hệ thống thành công!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function saveSettings() {
+            // Hiển thị toast Notification đẹp mắt khi bấm lưu
+            const toastEl = document.getElementById('saveToast');
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    </script>
+}

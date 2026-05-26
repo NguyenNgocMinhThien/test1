@@ -1,43 +1,247 @@
 ﻿@{
-    ViewData["Title"] = "Dashboard Hệ Thống";
-    // Chỉ định sử dụng Layout Admin vừa tạo thay vì Layout mặc định
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Hệ thống Quản trị Trung tâm";
 }
 
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">DASHBOARD</h1>
+@section Styles {
+    <style>
+        /* CSS DÀNH RIÊNG CHO DASHBOARD */
+        .stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            }
+
+        .bg-soft-success {
+            background: #dcfce7;
+            color: #22c55e;
+        }
+
+        .bg-soft-warning {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .bg-soft-purple {
+            background: #f3e8ff;
+            color: #a855f7;
+        }
+
+        .analytics-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            height: 100%;
+        }
+
+        .system-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .quick-action-link {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: var(--transition);
+            margin-bottom: 0.75rem;
+        }
+
+            .quick-action-link:hover {
+                background: var(--navy-blue);
+                color: #fff;
+            }
+
+        .badge-status {
+            padding: 0.35rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h2 class="fw-black mb-1">Analytics Dashboard</h2>
+        <p class="text-muted">Chào mừng trở lại! Dưới đây là những gì đang diễn ra trong hệ thống.</p>
+    </div>
+    <button class="btn btn-outline-dark rounded-pill"><i class="bi bi-calendar3 me-2"></i> @DateTime.Now.ToString("dd/MM/yyyy")</button>
 </div>
 
-<div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
-    <div class="col">
-        <div class="card bg-primary text-white h-100 shadow-sm">
-            <div class="card-body">
-                <h6>ACTIVE COMPETITIONS</h6>
-                <h2 class="fw-bold m-0">15</h2>
-            </div>
+<!-- Stats Rows -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-primary mb-3"><i class="bi bi-people"></i></div>
+            <div class="text-muted small fw-bold">Tổng người dùng</div>
+            <h3 class="fw-black mb-0">1,420</h3>
         </div>
     </div>
-    <div class="col">
-        <div class="card bg-warning text-dark h-100 shadow-sm">
-            <div class="card-body">
-                <h6>PENDING REGISTRATIONS</h6>
-                <h2 class="fw-bold m-0">125</h2>
-            </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-success mb-3"><i class="bi bi-mortarboard"></i></div>
+            <div class="text-muted small fw-bold">Tổng sinh viên</div>
+            <h3 class="fw-black mb-0">1,150</h3>
         </div>
     </div>
-    <div class="col">
-        <div class="card bg-success text-white h-100 shadow-sm">
-            <div class="card-body">
-                <h6>JUDGE REPORTS</h6>
-                <h2 class="fw-bold m-0">42</h2>
-            </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-warning mb-3"><i class="bi bi-person-badge"></i></div>
+            <div class="text-muted small fw-bold">Tổng giảng viên</div>
+            <h3 class="fw-black mb-0">180</h3>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-primary mb-3"><i class="bi bi-trophy"></i></div>
+            <div class="text-muted small fw-bold">Tổng cuộc thi</div>
+            <h3 class="fw-black mb-0">32</h3>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-success mb-3"><i class="bi bi-activity"></i></div>
+            <div class="text-muted small fw-bold">Đang hoạt động</div>
+            <h3 class="fw-black mb-0">12</h3>
+        </div>
+    </div>
+    <div class="col-md-4 col-xl-2">
+        <div class="stat-card">
+            <div class="stat-icon bg-soft-purple mb-3"><i class="bi bi-file-earmark-code"></i></div>
+            <div class="text-muted small fw-bold">Tổng bài thi</div>
+            <h3 class="fw-black mb-0">480</h3>
         </div>
     </div>
 </div>
 
-<div class="card p-4 shadow-sm mb-4">
-    <h5>JUDGING SCORE OVERVIEW</h5>
-    <div class="alert alert-light text-muted border-dashed text-center my-4 py-5">
-        [Khu vực gắn biểu đồ Chart.js hoặc dữ liệu thống kê]
+<!-- Analytics Row -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-8">
+        <div class="analytics-box shadow-sm">
+            <div class="d-flex justify-content-between mb-4">
+                <h5 class="fw-bold">Số lượng cuộc thi theo năm</h5>
+                <button class="btn btn-sm btn-light">Xuất Excel</button>
+            </div>
+            <canvas id="compMonthChart" height="300"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="analytics-box shadow-sm">
+            <h5 class="fw-bold mb-4">Tỷ lệ vai trò</h5>
+            <canvas id="roleRatioChart"></canvas>
+        </div>
     </div>
 </div>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-4">
+        <div class="analytics-box">
+            <h5 class="fw-bold mb-4">Trạng thái hồ sơ bài thi</h5>
+            <canvas id="fileStatusChart"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="analytics-box">
+            <h5 class="fw-bold mb-4">Đăng ký mới gần đây</h5>
+            <ul class="list-unstyled">
+                <li class="d-flex align-items-center gap-3 mb-4">
+                    <img src="https://ui-avatars.com/api/?name=SV&background=e0f2fe&color=0ea5e9" class="rounded-circle" width="35">
+                    <div class="flex-grow-1">
+                        <div class="small fw-bold">Nguyễn Văn A</div>
+                        <span class="text-muted small">Vừa đăng ký: Cuộc thi NCKH</span>
+                    </div>
+                    <span class="badge bg-success-subtle text-success badge-status">Mới</span>
+                </li>
+                <!-- Các thẻ khác bỏ bớt để ngắn gọn, bạn copy đầy đủ từ file cũ sang -->
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="analytics-box">
+            <h5 class="fw-bold mb-4">Trạng thái hạ tầng</h5>
+            <div class="system-status-indicator">
+                <div class="status-dot bg-success"></div>
+                <span class="flex-grow-1">Server Cloud Status</span>
+                <span class="fw-bold">99.9%</span>
+            </div>
+            <!-- Các thẻ khác bỏ bớt để ngắn gọn -->
+
+            <h6 class="fw-bold mt-5 mb-3">Quản trị nhanh</h6>
+            <a href="#" class="quick-action-link">
+                <i class="bi bi-person-plus-fill fs-5"></i>
+                <span class="ms-3 small fw-bold">Thêm tài khoản mới</span>
+            </a>
+            <a href="#" class="quick-action-link">
+                <i class="bi bi-plus-lg fs-5"></i>
+                <span class="ms-3 small fw-bold">Tạo cuộc thi nhanh</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Các JS render Chart giữ nguyên ở đây
+        const ctxComp = document.getElementById('compMonthChart').getContext('2d');
+        new Chart(ctxComp, {
+            type: 'bar',
+            data: {
+                labels: ['Th 1', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'Th 8', 'Th 9', 'Th 10', 'Th 11', 'Th 12'],
+                datasets: [{
+                    label: 'Số lượng cuộc thi',
+                    data: [12, 19, 3, 5, 2, 3, 20, 33, 22, 19, 11, 25],
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 5
+                }]
+            },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        const ctxRole = document.getElementById('roleRatioChart').getContext('2d');
+        new Chart(ctxRole, {
+            type: 'doughnut',
+            data: {
+                labels: ['SV', 'GV', 'Judge', 'Admin'],
+                datasets: [{
+                    data: [1150, 180, 80, 10],
+                    backgroundColor: ['#0d6efd', '#22c55e', '#f59e0b', '#1e293b']
+                }]
+            },
+            options: { cutout: '70%' }
+        });
+
+        const ctxFile = document.getElementById('fileStatusChart').getContext('2d');
+        new Chart(ctxFile, {
+            type: 'pie',
+            data: {
+                labels: ['Chờ duyệt', 'Đã duyệt', 'Từ chối'],
+                datasets: [{
+                    data: [150, 300, 30],
+                    backgroundColor: ['#f59e0b', '#22c55e', '#ef4444']
+                }]
+            }
+        });
+    </script>
+}

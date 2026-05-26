@@ -1,0 +1,437 @@
+﻿@model Web_cham_diem.Models.ViewModels.UserManagementViewModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    // Thêm dòng khai báo Layout dưới đây
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="user-management-page py-4">
+    <div class="container-fluid">
+
+        <!-- 1. Header Page -->
+        <div class="d-md-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Quản lý người dùng</h3>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/Account/Admin" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Người dùng</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="d-flex gap-2 mt-3 mt-md-0">
+                <button class="btn btn-outline-primary rounded-pill px-4 shadow-sm" onclick="exportData()">
+                    <i class="bi bi-download me-2"></i> Xuất dữ liệu
+                </button>
+                <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="bi bi-person-plus-fill me-2"></i> Thêm người dùng
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-primary-subtle text-primary rounded-3 p-2">
+                            <i class="bi bi-people-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Tổng tài khoản</div>
+                            <h4 class="fw-bold mb-0">2,450</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-info-subtle text-info rounded-3 p-2">
+                            <i class="bi bi-mortarboard-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Sinh viên</div>
+                            <h4 class="fw-bold mb-0">1,820</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-success-subtle text-success rounded-3 p-2">
+                            <i class="bi bi-person-workspace fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Giảng viên</div>
+                            <h4 class="fw-bold mb-0">125</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-warning-subtle text-warning rounded-3 p-2">
+                            <i class="bi bi-building-fill-check fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Ban tổ chức</div>
+                            <h4 class="fw-bold mb-0">15</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-purple-subtle text-purple rounded-3 p-2" style="background: #f3f0ff; color: #7950f2;">
+                            <i class="bi bi-journal-check fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Giám khảo</div>
+                            <h4 class="fw-bold mb-0">85</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-2">
+                <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon bg-danger-subtle text-danger rounded-3 p-2">
+                            <i class="bi bi-person-lock fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-600">Bị khóa</div>
+                            <h4 class="fw-bold mb-0">12</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Search & Filter -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <form id="filterForm" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Tìm kiếm người dùng</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0" placeholder="Tên, Email hoặc MSSV...">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Vai trò</label>
+                        <select class="form-select bg-light">
+                            <option value="">Tất cả vai trò</option>
+                            <option value="Student">Sinh viên</option>
+                            <option value="Lecturer">Giảng viên</option>
+                            <option value="Organizer">Ban tổ chức</option>
+                            <option value="Judge">Giám khảo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Trạng thái</label>
+                        <select class="form-select bg-light">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Active">Đang hoạt động</option>
+                            <option value="Locked">Đã khóa</option>
+                            <option value="Pending">Chờ duyệt</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Khoa/Phòng ban</label>
+                        <select class="form-select bg-light">
+                            <option value="">Tất cả đơn vị</option>
+                            <option value="CNTT">Công nghệ thông tin</option>
+                            <option value="QTKD">Quản trị kinh doanh</option>
+                            <option value="KT">Kỹ thuật công trình</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100 h-100 py-2"><i class="bi bi-funnel"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 4. Bulk Actions & Table -->
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="fw-bold mb-0">Danh sách người dùng</h5>
+                    <div id="bulkActions" class="d-none animate__animated animate__fadeIn">
+                        <span class="text-muted small me-2"><span id="selectedCount">0</span> mục đã chọn:</span>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-danger"><i class="bi bi-lock"></i> Khóa</button>
+                            <button class="btn btn-outline-primary"><i class="bi bi-key"></i> Reset Pass</button>
+                            <button class="btn btn-outline-dark"><i class="bi bi-trash"></i> Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted">
+                        <tr>
+                            <th class="ps-4" style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Người dùng</th>
+                            <th>Role & MSSV</th>
+                            <th>Khoa/Phòng ban</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Mock Row 1 -->
+                        <tr>
+                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox"></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="user-avatar-initials bg-primary-subtle text-primary fw-bold">NT</div>
+                                    <div>
+                                        <div class="fw-bold mb-0">Nguyễn Thành Trung</div>
+                                        <div class="text-muted small">trung.nt@sv.uef.edu.vn</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info-subtle text-info rounded-pill px-3">Sinh viên</span>
+                                <div class="small text-muted mt-1">MSSV: 20240001</div>
+                            </td>
+                            <td><span class="small fw-semibold">Công nghệ thông tin</span></td>
+                            <td><span class="badge bg-success-subtle text-success badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active</span></td>
+                            <td><span class="small text-muted">26/05/2026</span></td>
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-eye me-2"></i> Chi tiết</a></li>
+                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-pencil me-2 text-primary"></i> Sửa thông tin</a></li>
+                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-shield-check me-2 text-success"></i> Phân quyền</a></li>
+                                        <li><a class="dropdown-item py-2 text-warning" href="#"><i class="bi bi-lock me-2"></i> Khóa tài khoản</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item py-2 text-danger" href="#"><i class="bi bi-trash me-2"></i> Xóa</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        <!-- Mock Row 2 -->
+                        <tr>
+                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox"></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="https://ui-avatars.com/api/?name=Tran+B&background=e7f1ff&color=0056b3" class="rounded-circle" width="40" height="40">
+                                    <div>
+                                        <div class="fw-bold mb-0">Trần Thế Bình</div>
+                                        <div class="text-muted small">binh.tt@uef.edu.vn</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning-subtle text-warning rounded-pill px-3">Giảng viên</span>
+                                <div class="small text-muted mt-1">ID: GV102</div>
+                            </td>
+                            <td><span class="small fw-semibold">Quản trị kinh doanh</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Locked</span></td>
+                            <td><span class="small text-muted">15/05/2026</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-light btn-sm rounded-circle"><i class="bi bi-three-dots-vertical"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 5. Pagination -->
+            <div class="card-footer bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                <div class="text-muted small">Hiển thị 1 - 10 trên 2,450 người dùng</div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled"><a class="page-link rounded-start-pill px-3" href="#"><i class="bi bi-chevron-left"></i></a></li>
+                        <li class="page-item active"><a class="page-link px-3" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link px-3" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link px-3" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link rounded-end-pill px-3" href="#"><i class="bi bi-chevron-right"></i></a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Modals -->
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="fw-bold mb-0">Thêm người dùng mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Họ và tên</label>
+                        <input type="text" class="form-control rounded-3" placeholder="Nhập tên đầy đủ...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Email trường</label>
+                        <input type="email" class="form-control rounded-3" placeholder="abc.sv@uef.edu.vn">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">MSSV / Mã nhân viên</label>
+                        <input type="text" class="form-control rounded-3" placeholder="Số hiệu tài khoản...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Vai trò hệ thống</label>
+                        <select class="form-select rounded-3">
+                            <option>Sinh viên</option>
+                            <option>Giảng viên</option>
+                            <option>Ban tổ chức</option>
+                            <option>Giám khảo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Khoa/Đơn vị</label>
+                        <select class="form-select rounded-3">
+                            <option>Công nghệ thông tin</option>
+                            <option>Lý luận chính trị</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Mật khẩu ban đầu</label>
+                        <input type="text" class="form-control rounded-3" value="UEF@@12345" readonly>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm">Lưu thông tin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --uni-blue: #003d7a;
+        --uni-blue-light: #0056b3;
+        --uni-accent: #e7f1ff;
+    }
+
+    .user-management-page {
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    /* Custom Avatar UI */
+    .user-avatar-initials {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    /* Badge Management */
+    .badge-status {
+        padding: 0.35rem 0.8rem;
+        font-weight: 600;
+        font-size: 0.7rem;
+    }
+
+    /* Table Improvements */
+    .table thead th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        border-bottom: 2px solid #f1f5f9;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .table tbody td {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        cursor: pointer;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Custom Style for Stat Cards */
+    .stat-card {
+        transition: transform 0.3s ease;
+        border: 1px solid #f1f5f9 !important;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+    /* Pagination Styling */
+    .page-link {
+        color: var(--uni-blue);
+        border-color: #f1f5f9;
+    }
+
+    .active > .page-link {
+        background-color: var(--uni-blue);
+        border-color: var(--uni-blue);
+    }
+
+    /* Modal Animation */
+    .modal.fade .modal-dialog {
+        transform: scale(0.95);
+        transition: transform 0.2s ease-out;
+    }
+
+    .modal.show .modal-dialog {
+        transform: scale(1);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('selectAll');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const bulkActions = document.getElementById('bulkActions');
+        const selectedCount = document.getElementById('selectedCount');
+
+        function updateBulkActions() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            selectedCount.textContent = checkedCount;
+            if (checkedCount > 0) {
+                bulkActions.classList.remove('d-none');
+                bulkActions.classList.add('d-inline-block');
+            } else {
+                bulkActions.classList.add('d-none');
+                bulkActions.classList.remove('d-inline-block');
+            }
+        }
+
+        selectAll.addEventListener('change', function() {
+            rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkActions();
+        });
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateBulkActions);
+        });
+    });
+
+    function exportData() {
+        alert('Đang chuẩn bị trích xuất dữ liệu người dùng ra tệp Excel...');
+    }
+</script>
