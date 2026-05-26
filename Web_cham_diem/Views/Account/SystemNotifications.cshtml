@@ -1,0 +1,355 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Quản lý Thông báo Hệ thống";
+}
+
+@section Styles {
+    <style>
+        .notification-page {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- STAT CARDS --- */
+        .stat-card-noti {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+            .stat-card-noti.alert-danger-custom {
+                border-left: 4px solid #ef4444;
+            }
+
+        /* --- TABS --- */
+        .nav-tabs-custom {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+            .nav-tabs-custom .nav-link {
+                border: none;
+                color: var(--text-muted);
+                font-weight: 500;
+                padding: 10px 20px;
+                margin-bottom: -2px;
+                border-bottom: 2px solid transparent;
+            }
+
+                .nav-tabs-custom .nav-link.active {
+                    color: var(--accent-blue);
+                    border-bottom-color: var(--accent-blue);
+                    background: transparent;
+                }
+
+        /* --- NOTIFICATION LIST --- */
+        .noti-item {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .noti-item:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                border-color: #cbd5e1;
+            }
+
+        .priority-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* --- SYSTEM ALERTS PANEL --- */
+        .alerts-panel {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+        }
+
+        .alert-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+            .alert-item:last-child {
+                border-bottom: none;
+            }
+
+        .icon-circle {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+    </style>
+}
+
+<div class="notification-page py-4">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Thông báo & Cảnh báo Hệ thống</h3>
+                <p class="text-muted small mb-0">Quản lý broadcast, nhật ký bảo trì và cảnh báo an ninh toàn hệ thống.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#composeModal">
+                <i class="bi bi-megaphone-fill me-2"></i> Gửi Broadcast
+            </button>
+        </div>
+
+        <!-- 1. Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card-noti">
+                    <div class="icon-circle bg-primary bg-opacity-10 text-primary fs-4"><i class="bi bi-envelope-check"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Broadcast đã gửi</div>
+                        <h4 class="fw-bold mb-0">1,245</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-noti">
+                    <div class="icon-circle bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-tools"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Bảo trì & Cập nhật</div>
+                        <h4 class="fw-bold mb-0">12</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-noti alert-danger-custom">
+                    <div class="icon-circle bg-danger bg-opacity-10 text-danger fs-4"><i class="bi bi-shield-exclamation"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Cảnh báo Bảo mật</div>
+                        <h4 class="fw-bold mb-0 text-danger">3</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card-noti">
+                    <div class="icon-circle bg-success bg-opacity-10 text-success fs-4"><i class="bi bi-eye"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Tỷ lệ đã đọc</div>
+                        <h4 class="fw-bold mb-0">92%</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Notification List & History -->
+            <div class="col-lg-8">
+                <ul class="nav nav-tabs nav-tabs-custom" id="notiTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#history">Lịch sử Broadcast</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance">Lịch Bảo trì</button></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="history">
+                        <!-- Filters -->
+                        <div class="d-flex gap-2 mb-3">
+                            <input type="text" class="form-control form-control-sm w-50" placeholder="Tìm kiếm nội dung thông báo...">
+                            <select class="form-select form-select-sm w-25">
+                                <option>Tất cả đối tượng</option>
+                                <option>Sinh viên</option>
+                                <option>Ban tổ chức</option>
+                            </select>
+                            <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-filter"></i> Lọc</button>
+                        </div>
+
+                        <!-- Danh sách Noti -->
+                        <div class="noti-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="priority-indicator bg-danger"></span>
+                                    <h6 class="mb-0 fw-bold">Yêu cầu cập nhật mật khẩu định kỳ</h6>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">High Priority</span>
+                                </div>
+                                <small class="text-muted">10:15 AM - Hôm nay</small>
+                            </div>
+                            <p class="text-muted small mb-3">Hệ thống yêu cầu toàn bộ tài khoản Admin và Ban tổ chức phải tiến hành thay đổi mật khẩu định kỳ 90 ngày để đảm bảo an ninh mạng. Vui lòng thực hiện trước ngày 30/11/2026.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="small fw-bold text-muted"><i class="bi bi-people"></i> Gửi đến: Admin, Ban tổ chức</div>
+                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 85%</div>
+                            </div>
+                        </div>
+
+                        <div class="noti-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="priority-indicator bg-info"></span>
+                                    <h6 class="mb-0 fw-bold">Bảo trì máy chủ Database định kỳ</h6>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">System</span>
+                                </div>
+                                <small class="text-muted">10/11/2026</small>
+                            </div>
+                            <p class="text-muted small mb-3">Máy chủ sẽ tạm ngưng kết nối từ 01:00 AM đến 03:00 AM Chủ nhật này để tiến hành nâng cấp SQL Server. Trong thời gian này sinh viên không thể nộp bài.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="small fw-bold text-muted"><i class="bi bi-globe"></i> Gửi đến: Toàn hệ thống</div>
+                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 98%</div>
+                            </div>
+                        </div>
+
+                        <div class="noti-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="priority-indicator bg-primary"></span>
+                                    <h6 class="mb-0 fw-bold">Thông báo ra mắt tính năng AI Anti-cheat</h6>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">Release</span>
+                                </div>
+                                <small class="text-muted">05/11/2026</small>
+                            </div>
+                            <p class="text-muted small mb-3">Bắt đầu từ học kỳ 2 (2025-2026), hệ thống sẽ tích hợp module AI tự động quét mã nguồn và văn bản để phát hiện gian lận trong các bài thi nộp trực tuyến.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="small fw-bold text-muted"><i class="bi bi-person-badge"></i> Gửi đến: Ban tổ chức, Giám khảo</div>
+                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 100%</div>
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <ul class="pagination pagination-sm justify-content-end mt-3">
+                            <li class="page-item disabled"><a class="page-link" href="#">Trang trước</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Tiếp</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-pane fade" id="maintenance">
+                        <div class="text-center p-5 text-muted">
+                            <i class="bi bi-inbox fs-1"></i>
+                            <p class="mt-2">Không có kế hoạch bảo trì nào trong vòng 30 ngày tới.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: System Alerts -->
+            <div class="col-lg-4">
+                <div class="alerts-panel shadow-sm">
+                    <h5 class="fw-bold mb-4" style="color: var(--navy-blue); font-size: 1.05rem;">
+                        <i class="bi bi-shield-check text-danger me-2"></i> System Alerts & Logs
+                    </h5>
+
+                    <div class="alert-item">
+                        <div class="icon-circle bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                        <div>
+                            <div class="fw-bold fs-6">Đăng nhập bất thường</div>
+                            <div class="small text-muted mb-1">Cảnh báo: 5 lần đăng nhập sai mật khẩu liên tiếp vào tài khoản "Admin_KhoaIT".</div>
+                            <small class="text-danger">15 phút trước - IP: 192.168.1.45</small>
+                        </div>
+                    </div>
+
+                    <div class="alert-item">
+                        <div class="icon-circle bg-warning bg-opacity-10 text-warning"><i class="bi bi-cpu"></i></div>
+                        <div>
+                            <div class="fw-bold fs-6">Overload CPU Cảnh báo</div>
+                            <div class="small text-muted mb-1">Server IIS đang tiêu thụ 95% CPU, có dấu hiệu request ồ ạt tải file.</div>
+                            <small class="text-muted">1 giờ trước</small>
+                        </div>
+                    </div>
+
+                    <div class="alert-item">
+                        <div class="icon-circle bg-success bg-opacity-10 text-success"><i class="bi bi-database-check"></i></div>
+                        <div>
+                            <div class="fw-bold fs-6">Sao lưu Data tự động</div>
+                            <div class="small text-muted mb-1">Auto-backup DB_University_2026.bak hoàn tất 100%.</div>
+                            <small class="text-muted">03:00 AM - Hôm nay</small>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-light w-100 mt-3 btn-sm fw-bold">Xem tất cả Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Compose System Notification -->
+<div class="modal fade" id="composeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0" style="border-radius: 12px;">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" style="color: var(--navy-blue);"><i class="bi bi-megaphone me-2"></i> Soạn Broadcast Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-bold">Tiêu đề thông báo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="Nhập tiêu đề...">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Mức độ ưu tiên</label>
+                        <select class="form-select">
+                            <option value="normal">Bình thường</option>
+                            <option value="high" class="text-danger fw-bold">Khẩn cấp (High)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Đối tượng nhận thông báo (Gửi đến)</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t1" checked>
+                                <label class="form-check-label" for="t1">Toàn hệ thống (Tất cả)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t2">
+                                <label class="form-check-label" for="t2">Chỉ Admin & Ban tổ chức</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t3">
+                                <label class="form-check-label" for="t3">Chỉ Giám khảo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="t4">
+                                <label class="form-check-label" for="t4">Chỉ Sinh viên</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label small fw-bold">Nội dung <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="5" placeholder="Soạn nội dung chi tiết..."></textarea>
+                    </div>
+
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label small fw-bold">Thời gian gửi</label>
+                        <select class="form-select">
+                            <option>Gửi ngay lập tức</option>
+                            <option>Lên lịch gửi (Hẹn giờ)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mt-3">
+                        <label class="form-label small fw-bold">Đính kèm tài liệu (nếu có)</label>
+                        <input class="form-control" type="file">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 bg-light p-3">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary px-4"><i class="bi bi-send me-2"></i> Phát thông báo</button>
+            </div>
+        </div>
+    </div>
+</div>
