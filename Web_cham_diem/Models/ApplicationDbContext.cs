@@ -18,18 +18,11 @@ namespace Web_cham_diem.Models
         public DbSet<ScoringCriteria> ScoringCriteria { get; set; }
         public DbSet<Scores> Scores { get; set; }
         public DbSet<Notifications> Notifications { get; set; }
+        public DbSet<UserRoles> UserRoles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // Configure Roles
-            modelBuilder.Entity<Roles>()
-                .HasKey(r => r.RoleId);
-            modelBuilder.Entity<Roles>()
-                .Property(r => r.RoleName)
-                .IsRequired()
-                .HasMaxLength(50);
 
             // Configure Users
             modelBuilder.Entity<Users>()
@@ -42,13 +35,32 @@ namespace Web_cham_diem.Models
                 .Property(u => u.PhoneNumber)
                 .HasMaxLength(20);
             modelBuilder.Entity<Users>()
-                .HasOne(u => u.Role)
-                .WithMany(r => r.Users)
-                .HasForeignKey(u => u.RoleId)
-                .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<Users>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            // Configure Roles
+            modelBuilder.Entity<Roles>()
+                .HasKey(r => r.RoleId);
+            modelBuilder.Entity<Roles>()
+                .Property(r => r.RoleName)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            // Configure UserRoles
+            modelBuilder.Entity<UserRoles>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            modelBuilder.Entity<UserRoles>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserRoles>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Configure Competitions
             modelBuilder.Entity<Competitions>()
