@@ -1,0 +1,51 @@
+﻿@model Web_cham_diem.Models.Competitions
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Tạo luật lệ cuộc thi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var competitionOptions = ViewBag.CompetitionOptions as SelectList;
+}
+
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-file-earmark-text me-2"></i>Tạo luật lệ cuộc thi
+            </h4>
+        </div>
+
+        <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <form asp-action="Rules" asp-controller="Competitive" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="CompetitionId" class="form-label">Chọn cuộc thi</label>
+                    <select asp-for="CompetitionId" asp-items="competitionOptions" class="form-select">
+                        <option value="">-- Chọn cuộc thi --</option>
+                    </select>
+                    <span asp-validation-for="CompetitionId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Rules" class="form-label">Luật lệ</label>
+                    <textarea asp-for="Rules" class="form-control" rows="10" placeholder="Nhập luật lệ cuộc thi..."></textarea>
+                    <span asp-validation-for="Rules" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-save me-2"></i>Lưu luật lệ
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

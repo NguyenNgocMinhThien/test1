@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Web_cham_diem.Models;
 using Web_cham_diem.Services;
 
 namespace Web_cham_diem.Controllers;
@@ -6,10 +10,17 @@ namespace Web_cham_diem.Controllers;
 public class CompetitiveController : Controller
 {
     private readonly ICompetitionService _competitionService;
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CompetitiveController> _logger;
 
-    public CompetitiveController(ICompetitionService competitionService)
+    public CompetitiveController(
+        ICompetitionService competitionService,
+        ApplicationDbContext context,
+        ILogger<CompetitiveController> logger)
     {
         _competitionService = competitionService;
+        _context = context;
+        _logger = logger;
     }
 
     // GET: /Competitions
@@ -130,6 +141,75 @@ public class CompetitiveController : Controller
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new { error = "Lỗi khi tải dữ liệu", message = ex.Message });
         }
+    }
+
+
+    [Authorize(Roles = "Organizer")]
+    [HttpGet]
+    public async Task<IActionResult> Rules(int? id = null)
+    {
+        await LoadCompetitionOptionsAsync(id);
+
+        if (id.HasValue)
+        {
+            var competition = await _context.Competitions.FirstOrDefaultAsync(c => c.CompetitionId == id.Value);
+            if (competition == null)
+                return NotFound("Cuộc thi không tồn tại.");
+
+            // Trả về view với đường dẫn đầy đủ
+            return View("~/Views/Pages/Rules.cshtml", competition);
+        }
+
+        // Trả về view với model mới nếu không có id
+        return View("~/Views/Pages/Rules.cshtml", new Competitions());
+    }
+
+    [Authorize(Roles = "Organizer")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Rules(Competitions model)
+    {
+        if (model.CompetitionId <= 0)
+            ModelState.AddModelError(nameof(model.CompetitionId), "Vui lòng chọn cuộc thi.");
+
+        if (string.IsNullOrWhiteSpace(model.Rules))
+            ModelState.AddModelError(nameof(model.Rules), "Vui lòng nhập luật lệ.");
+
+        var competition = await _context.Competitions
+            .FirstOrDefaultAsync(c => c.CompetitionId == model.CompetitionId);
+
+        if (competition == null)
+            ModelState.AddModelError(string.Empty, "Không tìm thấy cuộc thi.");
+
+        if (!ModelState.IsValid)
+        {
+            await LoadCompetitionOptionsAsync(model.CompetitionId);
+            // Trả về cùng view với đường dẫn đầy đủ khi có lỗi
+            return View("~/Views/Pages/Rules.cshtml", model);
+        }
+
+        competition!.Rules = model.Rules?.Trim();
+        competition.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Đã lưu luật lệ cuộc thi thành công.";
+        _logger.LogInformation("Organizer updated rules for competition {CompetitionId}", model.CompetitionId);
+
+        return RedirectToAction(nameof(Rules), new { id = model.CompetitionId });
+    }
+
+    private async Task LoadCompetitionOptionsAsync(int? selectedId = null)
+    {
+        var competitions = await _context.Competitions
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        ViewBag.CompetitionOptions = new SelectList(
+            competitions,
+            "CompetitionId",
+            "CompetitionName",
+            selectedId);
     }
 
     // Route alias cho /Competitions
