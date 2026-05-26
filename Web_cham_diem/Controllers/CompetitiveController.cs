@@ -138,4 +138,11 @@ public class CompetitiveController : Controller
     {
         return await Index();
     }
+
+    // Đường dẫn: /Competitive/Register
+    public IActionResult Register()
+    {
+        // Chúng ta trả về đúng đường dẫn file bạn vừa tạo
+        return View("~/Views/Pages/StudentCompetitionRegistration.cshtml");
+    }
 }
