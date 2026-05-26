@@ -45,14 +45,18 @@ public class LoginController : Controller
         {
             // Tạo claims cho user
             var claims = new List<Claim>
+{
+    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+    new Claim(ClaimTypes.Email, user.Email),
+    new Claim(ClaimTypes.Name, user.FullName),
+    new Claim("StudentId", user.StudentId ?? string.Empty),
+    new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty)
+};
+
+            foreach (var roleName in user.UserRoles.Select(x => x.Role.RoleName).Distinct())
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim("StudentId", user.StudentId ?? string.Empty),
-                new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "Student")
-            };
+                claims.Add(new Claim(ClaimTypes.Role, roleName));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties

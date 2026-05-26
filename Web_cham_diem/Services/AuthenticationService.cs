@@ -55,12 +55,31 @@ public class AuthenticationService : IAuthenticationService
                 StudentId = studentCodeUpper,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 PhoneNumber = string.Empty,
-                RoleId = 2, // Student role
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            // Gán role Student qua bảng trung gian UserRoles
+            var studentRole = await _context.Roles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RoleName == "Student");
+
+            if (studentRole == null)
+            {
+                _logger.LogError("Không tìm thấy role Student trong hệ thống.");
+                return (false, "Không tìm thấy vai trò Student trong hệ thống.");
+            }
+
+            _context.UserRoles.Add(new UserRoles
+            {
+                UserId = newUser.UserId,
+                RoleId = studentRole.RoleId,
+                AssignedAt = DateTime.UtcNow
+            });
+
             await _context.SaveChangesAsync();
 
             _logger.LogInformation($"Người dùng mới đăng ký thành công: {emailLower}");
@@ -88,8 +107,9 @@ public class AuthenticationService : IAuthenticationService
             var emailLower = model.Email.ToLower().Trim();
 
             var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailLower);
+    .Include(u => u.UserRoles)
+        .ThenInclude(ur => ur.Role)
+    .FirstOrDefaultAsync(u => u.Email.ToLower() == emailLower);
 
             if (user == null)
             {
