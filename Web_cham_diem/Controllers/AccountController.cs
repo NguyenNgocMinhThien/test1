@@ -7,12 +7,14 @@ namespace Web_cham_diem.Controllers
     public class AccountController : Controller
     {
         // Đường dẫn truy cập: /Account/User
+        [Authorize(Roles = "Student,Admin")]
         public IActionResult User()
         {
             return View();
         }
 
-        // Đường dẫn truy cập: /Account/Admin
+        // Đường dẫn: /Account/Admin -> KHÓA CHẶT: Chỉ duy nhất tài khoản có quyền Admin mới vào được
+        [Authorize(Roles = "Admin")]
         public IActionResult Admin()
         {
             return View();

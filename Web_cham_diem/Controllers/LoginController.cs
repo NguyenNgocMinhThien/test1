@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq; // <-- BẮT BUỘC: Thêm thư viện này để sửa lỗi xử lý danh sách UserRoles
+using System.Linq;
 using System.Security.Claims;
 using Web_cham_diem.Services;
 using Web_cham_diem.ViewModels;
@@ -25,8 +25,14 @@ public class LoginController : Controller
     [HttpGet]
     public IActionResult Index()
     {
+        // Nếu người dùng đã đăng nhập trước đó rồi thì điều hướng thông minh dựa vào Role của họ
         if (User.Identity?.IsAuthenticated == true)
+        {
+            if (User.IsInRole("Admin"))
+                return RedirectToAction("Admin", "Account");
+
             return RedirectToAction("User", "Account");
+        }
 
         return View(new LoginViewModel());
     }
@@ -66,7 +72,7 @@ public class LoginController : Controller
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim("StudentId", user.StudentId ?? string.Empty),
                 new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty),
-                new Claim(ClaimTypes.Role, userRole)
+                new Claim(ClaimTypes.Role, userRole) // Gán quyền Admin hoặc Student từ database vào Cookie
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -82,10 +88,18 @@ public class LoginController : Controller
                 authProperties
             );
 
-            _logger.LogInformation($"Người dùng {user.Email} đăng nhập thành công.");
+            _logger.LogInformation($"Người dùng {user.Email} đăng nhập thành công với quyền: {userRole}.");
             TempData["SuccessMessage"] = $"Chào mừng {user.FullName}! Đăng nhập thành công.";
 
-            return RedirectToAction("User", "Account");
+            // THAY ĐỔI QUAN TRỌNG: Phân luồng điều hướng khi đăng nhập thành công
+            if (userRole == "Admin")
+            {
+                return RedirectToAction("Admin", "Account"); // Đẩy tài khoản Admin vào trang quản trị
+            }
+            else
+            {
+                return RedirectToAction("User", "Account");  // Đẩy tài khoản sinh viên vào trang cá nhân
+            }
         }
 
         ModelState.AddModelError(string.Empty, message ?? "Email hoặc mật khẩu không đúng.");
