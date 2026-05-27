@@ -1,0 +1,479 @@
+﻿@{
+    Layout = "~/Views/Pages/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Quản lý Cuộc thi";
+}
+
+@section Styles {
+    <style>
+        .org-contest-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- FILTERS & SEARCH --- */
+        .filter-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        /* --- COMPETITION CARD --- */
+        .comp-card {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+            .comp-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+                border-color: var(--organizer-accent);
+            }
+
+        .comp-banner {
+            height: 120px;
+            background-position: center;
+            background-size: cover;
+            position: relative;
+        }
+
+            .comp-banner.default {
+                background-image: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            }
+
+            .comp-banner.tech {
+                background-image: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            }
+
+        .comp-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.9);
+            color: #fff;
+        }
+
+        .status-upcoming {
+            background: rgba(245, 158, 11, 0.9);
+            color: #fff;
+        }
+
+        .status-closed {
+            background: rgba(100, 116, 139, 0.9);
+            color: #fff;
+        }
+
+        .comp-body {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comp-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .comp-field {
+            font-size: 0.8rem;
+            color: var(--organizer-accent);
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .comp-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .stat-num {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+
+        .comp-progress {
+            margin-top: auto;
+        }
+
+        .comp-actions {
+            padding: 15px 20px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+        }
+
+        /* --- STAT CARDS --- */
+        .stat-overview {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+            .stat-overview .val {
+                font-size: 1.8rem;
+                font-weight: 800;
+            }
+
+        /* --- TIMELINE MODAL --- */
+        .timeline-box {
+            position: relative;
+            padding-left: 20px;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .timeline-step {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+            .timeline-step::before {
+                content: '';
+                position: absolute;
+                left: -26px;
+                top: 2px;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #fff;
+                border: 3px solid var(--border-color);
+            }
+
+            .timeline-step.done::before {
+                border-color: #22c55e;
+                background: #22c55e;
+            }
+
+            .timeline-step.active::before {
+                border-color: var(--organizer-accent);
+                border-width: 4px;
+            }
+    </style>
+}
+
+<div class="org-contest-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header Page -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Quản lý Cuộc thi</h3>
+                <p class="text-muted small mb-0">Thiết lập, theo dõi và cấu hình toàn bộ vòng đời các cuộc thi.</p>
+            </div>
+            <button class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
+                <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi
+            </button>
+        </div>
+
+        <!-- 1. Statistics -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-overview text-primary" style="border-bottom: 3px solid #0d6efd;">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Tổng cuộc thi</div>
+                        <div class="val">18</div>
+                    </div>
+                    <i class="bi bi-boxes fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-overview text-success" style="border-bottom: 3px solid #22c55e;">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Đang hoạt động</div>
+                        <div class="val">3</div>
+                    </div>
+                    <i class="bi bi-play-circle fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-overview text-warning" style="border-bottom: 3px solid #f59e0b;">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Sắp diễn ra</div>
+                        <div class="val">2</div>
+                    </div>
+                    <i class="bi bi-calendar-event fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-overview text-secondary" style="border-bottom: 3px solid #64748b;">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Đã kết thúc</div>
+                        <div class="val">13</div>
+                    </div>
+                    <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Search & Filter -->
+        <div class="filter-bar shadow-sm d-flex flex-wrap gap-3 align-items-end">
+            <div style="flex: 1 1 250px;">
+                <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm cuộc thi</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Nhập tên khóa học, mã cuộc thi...">
+                </div>
+            </div>
+            <div style="width: 180px;">
+                <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
+                <select class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="upcoming">Sắp diễn ra</option>
+                    <option value="closed">Đã đóng</option>
+                </select>
+            </div>
+            <div style="width: 200px;">
+                <label class="form-label small fw-bold text-muted mb-1">Lĩnh vực</label>
+                <select class="form-select form-select-sm">
+                    <option value="">Tất cả lĩnh vực</option>
+                    <option>Học thuật / NCKH</option>
+                    <option>Công nghệ Thông tin</option>
+                    <option>Kỹ năng Mềm</option>
+                </select>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-filter"></i> Lọc</button>
+            </div>
+        </div>
+
+        <!-- 3. Competition List (Cards) -->
+        <div class="row g-4">
+            <!-- Card 1 -->
+            <div class="col-md-6 col-xl-4">
+                <div class="comp-card">
+                    <div class="comp-banner tech">
+                        <div class="comp-status status-active">Đang Nhận Bài</div>
+                    </div>
+                    <div class="comp-body">
+                        <div class="comp-title">Hackathon Sinh viên 2026</div>
+                        <div class="comp-field">Công nghệ Thuật toán & Web App</div>
+
+                        <div class="comp-stats mt-2">
+                            <div class="stat-item">
+                                <div class="stat-label">Đăng ký</div>
+                                <div class="stat-num text-primary">450</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Đã nộp bài</div>
+                                <div class="stat-num text-success">120</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Hạn nộp</div>
+                                <div class="stat-num text-danger" style="font-size:0.9rem;">Hôm nay</div>
+                            </div>
+                        </div>
+
+                        <div class="comp-progress">
+                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
+                                <span>Tiến độ chung</span>
+                                <span>65%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar" style="width: 65%; background-color: var(--organizer-accent);"></div>
+                            </div>
+                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Thu bài dự thi</strong></div>
+                        </div>
+                    </div>
+                    <!-- Actions -->
+                    <div class="comp-actions">
+                        <button class="btn btn-sm btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#detailModal">Chi tiết</button>
+                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-warning"><i class="bi bi-pause-circle"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="col-md-6 col-xl-4">
+                <div class="comp-card">
+                    <div class="comp-banner default">
+                        <div class="comp-status status-active">Đang Chấm Điểm</div>
+                    </div>
+                    <div class="comp-body">
+                        <div class="comp-title">Nghiên cứu Khoa học Trẻ Khối Kinh tế</div>
+                        <div class="comp-field">Học thuật / NCKH</div>
+
+                        <div class="comp-stats mt-2">
+                            <div class="stat-item">
+                                <div class="stat-label">Bài hợp lệ</div>
+                                <div class="stat-num text-primary">85</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Đã chấm</div>
+                                <div class="stat-num text-success">40</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Công bố</div>
+                                <div class="stat-num" style="font-size:0.9rem;">20/11</div>
+                            </div>
+                        </div>
+
+                        <div class="comp-progress">
+                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
+                                <span>Tiến độ chung</span>
+                                <span>85%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-warning" style="width: 85%;"></div>
+                            </div>
+                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Giám khảo chấm thi</strong></div>
+                        </div>
+                    </div>
+                    <div class="comp-actions">
+                        <button class="btn btn-sm btn-primary flex-grow-1">Chi tiết</button>
+                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" title="Kết thúc sớm"><i class="bi bi-stop-circle"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="col-md-6 col-xl-4">
+                <div class="comp-card">
+                    <div class="comp-banner" style="background-image: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                        <div class="comp-status status-upcoming">Sắp Diễn Ra</div>
+                    </div>
+                    <div class="comp-body">
+                        <div class="comp-title">Khởi nghiệp Sáng tạo Startup Idea</div>
+                        <div class="comp-field">Kỹ năng / Thực tiễn</div>
+
+                        <div class="comp-stats mt-2">
+                            <div class="stat-item">
+                                <div class="stat-label">Quan tâm</div>
+                                <div class="stat-num text-primary">120</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Chờ duyệt</div>
+                                <div class="stat-num text-warning">45</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Mở cổng</div>
+                                <div class="stat-num text-success" style="font-size:0.9rem;">01/12</div>
+                            </div>
+                        </div>
+
+                        <div class="comp-progress">
+                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
+                                <span>Tiến độ chung</span>
+                                <span>10%</span>
+                            </div>
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar bg-secondary" style="width: 10%;"></div>
+                            </div>
+                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Duyệt hồ sơ mở màn</strong></div>
+                        </div>
+                    </div>
+                    <div class="comp-actions">
+                        <button class="btn btn-sm btn-primary flex-grow-1">Chi tiết</button>
+                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-sm btn-success" title="Mở đăng ký ngay"><i class="bi bi-unlock"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal Chi Tiết & Timeline Quản lý -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:12px; border:none;">
+            <div class="modal-header border-bottom-0 bg-light rounded-top-3">
+                <h5 class="modal-title fw-bold text-dark">Quản lý Timeline & Chi tiết Cuộc thi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <div class="col-md-7">
+                        <h5 class="fw-bold" style="color: var(--organizer-accent);">Hackathon Sinh viên 2026</h5>
+                        <p class="small text-muted">Web & App Development</p>
+
+                        <h6 class="fw-bold text-dark mt-4">Mô tả & Thể lệ</h6>
+                        <div class="p-3 bg-light rounded small text-muted">
+                            Các đội thi (3-5 người) sẽ có 48h để phát triển một ứng dụng Web/App giải quyết các bài toán về môi trường học đường...
+                            <br><a href="#">Tải File PDF Thể lệ chi tiết</a>
+                        </div>
+
+                        <h6 class="fw-bold text-dark mt-4">Cấu hình Đánh giá</h6>
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between px-0">Tính sáng tạo (Weight: 30%) <span>Thang 100</span></li>
+                            <li class="list-group-item d-flex justify-content-between px-0">Tính thực tiễn (Weight: 40%) <span>Thang 100</span></li>
+                            <li class="list-group-item d-flex justify-content-between px-0">UI/UX (Weight: 30%) <span>Thang 100</span></li>
+                        </ul>
+                    </div>
+
+                    <!-- Timeline Management -->
+                    <div class="col-md-5 border-start ps-4">
+                        <h6 class="fw-bold text-dark mb-4"><i class="bi bi-clock-history text-primary"></i> Quản lý Vòng đời (Timeline)</h6>
+
+                        <div class="timeline-box">
+                            <div class="timeline-step done">
+                                <div class="fw-bold small">1. Mở Cổng Đăng ký</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tất (01/10/2026)</div>
+                            </div>
+                            <div class="timeline-step done">
+                                <div class="fw-bold small">2. Xét duyệt Hồ sơ Đội thi</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tất (15/10/2026)</div>
+                            </div>
+                            <div class="timeline-step active">
+                                <div class="fw-bold small text-primary">3. Nhận Bài Dự Thi</div>
+                                <div class="text-danger" style="font-size:0.75rem;"><i class="bi bi-exclamation-triangle"></i> Hạn chót: 23:59 Hôm nay</div>
+                                <button class="btn btn-sm btn-outline-danger mt-2" style="font-size:0.7rem;">Đóng cổng nộp bài sớm</button>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="fw-bold small text-muted">4. Giám khảo Chấm điểm</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Dự kiến: 01/11 - 10/11</div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="fw-bold small text-muted">5. Công bố Kết quả</div>
+                                <div class="text-muted" style="font-size:0.75rem;">Dự kiến: 20/11/2026</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light rounded-bottom-3 p-3">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn text-white fw-bold" style="background-color: var(--organizer-accent);">Cập nhật cấu hình</button>
+            </div>
+        </div>
+    </div>
+</div>
