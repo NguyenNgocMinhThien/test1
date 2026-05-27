@@ -1,0 +1,397 @@
+﻿@{
+    // Thay đổi đường dẫn đến đúng nơi bạn đã lưu Layout
+    Layout = "~/Views/Pages/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Dashboard Ban Tổ Chức";
+}
+
+@section Styles {
+    <style>
+        .org-dashboard-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- STAT CARDS --- */
+        .stat-card-org {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+            .stat-card-org:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.04);
+                border-color: var(--organizer-accent);
+            }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .stat-text {
+            flex-grow: 1;
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1.2;
+        }
+
+        /* --- PANELS --- */
+        .panel-box {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+            height: 100%;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy-blue);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- TIMELINE (DEADLINES) --- */
+        .timeline-vertical {
+            border-left: 2px solid #e2e8f0;
+            margin-left: 10px;
+            padding-left: 20px;
+            list-style: none;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+            }
+
+        .timeline-dot {
+            position: absolute;
+            left: -27px;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .item-head {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        /* --- RECENT ACTIVITIES --- */
+        .activity-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+            .activity-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+        .progress-micro {
+            height: 5px;
+        }
+    </style>
+}
+
+<div class="org-dashboard-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Tổng quan Vận hành Cuộc thi</h3>
+                <p class="text-muted small mb-0">Theo dõi tiến độ, duyệt hồ sơ và đôn đốc chấm điểm.</p>
+            </div>
+            <button class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
+                <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi mới
+            </button>
+        </div>
+
+        <!-- 1. Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary fs-3"><i class="bi bi-play-circle"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Đang diễn ra</div>
+                        <div class="stat-val">3</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3" style="border-left: 3px solid #f59e0b;">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning fs-3"><i class="bi bi-file-earmark-person"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Hồ sơ chờ duyệt</div>
+                        <div class="stat-val text-warning">45</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3">
+                    <div class="stat-icon bg-info bg-opacity-10 text-info fs-3"><i class="bi bi-file-zip"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Bài dự thi nộp</div>
+                        <div class="stat-val">120</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3" style="border-left: 3px solid #22c55e;">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success fs-3"><i class="bi bi-check-all"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Bài đã chấm</div>
+                        <div class="stat-val text-success">85</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3">
+                    <div class="stat-icon bg-primary bg-opacity-10 text-primary fs-3" style="color:#059669;"><i class="bi bi-person-video3"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Giám khảo Active</div>
+                        <div class="stat-val">12</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <div class="stat-card-org p-3 border-danger">
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger fs-3"><i class="bi bi-hourglass-bottom"></i></div>
+                    <div class="stat-text">
+                        <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Sắp kết thúc</div>
+                        <div class="stat-val text-danger">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- 2. Charts: Đăng ký & Bài thi -->
+            <div class="col-lg-8">
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span><i class="bi bi-bar-chart-fill me-2 text-primary"></i> Tiến độ Thu bài & Đăng ký (Hackathon 2026)</span>
+                        <select class="form-select form-select-sm w-25">
+                            <option>Hackathon 2026</option>
+                            <option>Nghiên cứu KH Trẻ</option>
+                        </select>
+                    </div>
+                    <div style="height: 300px;">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tỉ lệ duyệt hồ sơ -->
+            <div class="col-lg-4">
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span><i class="bi bi-pie-chart-fill me-2 text-success"></i> Tỷ lệ Duyệt Hồ sơ</span>
+                        <i class="bi bi-three-dots"></i>
+                    </div>
+                    <div style="height: 250px; display:flex; justify-content:center;">
+                        <canvas id="approvalChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-center small text-muted">
+                        Đã xử lý <strong>450/495</strong> hồ sơ đăng ký.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 3. Upcoming Deadlines -->
+            <div class="col-lg-5">
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span><i class="bi bi-calendar-event me-2 text-warning"></i> Sốc thời gian & Deadlines</span>
+                        <a href="#" class="small text-decoration-none" style="color:var(--organizer-accent)">Lịch đầy đủ</a>
+                    </div>
+
+                    <ul class="timeline-vertical mt-4">
+                        <li class="timeline-item">
+                            <div class="timeline-dot bg-danger"></div>
+                            <div class="item-head d-flex justify-content-between">
+                                <span class="text-danger">Đóng cổng Nhận bài dự thi</span>
+                                <span class="badge bg-danger">Hôm nay</span>
+                            </div>
+                            <p class="small text-muted mb-0">Cuộc thi: <strong>Sáng tạo AI 2026</strong>. Hiện đã nhận 120/150 bài đăng ký.</p>
+                        </li>
+                        <li class="timeline-item">
+                            <div class="timeline-dot bg-warning"></div>
+                            <div class="item-head d-flex justify-content-between">
+                                <span class="text-warning text-dark">Hạn nộp điểm của Giám khảo</span>
+                                <span class="small fw-normal text-muted">Trưa ngày mai, 12:00</span>
+                            </div>
+                            <p class="small text-muted mb-1">Cuộc thi: <strong>Hackathon 2026</strong>.</p>
+                            <div class="progress progress-micro">
+                                <div class="progress-bar bg-warning" style="width: 85%"></div>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Đã chấm 85%</small>
+                        </li>
+                        <li class="timeline-item">
+                            <div class="timeline-dot bg-success"></div>
+                            <div class="item-head d-flex justify-content-between">
+                                <span class="text-success">Công bố Kết quả Vòng Bảng</span>
+                                <span class="small fw-normal text-muted">20/11/2026</span>
+                            </div>
+                            <p class="small text-muted mb-0">Cuộc thi: <strong>Olympic Tiếng Anh</strong>.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 4. Recent Activities -->
+            <div class="col-lg-7">
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span><i class="bi bi-clock-history me-2 text-info"></i> Hoạt động mới nhất</span>
+                        <button class="btn btn-sm btn-light"><i class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+
+                    <ul class="activity-list">
+                        <li class="activity-item">
+                            <div class="text-success fs-4 mt-1"><i class="bi bi-file-earmark-check-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-6">Giám khảo <span class="text-primary">Trần Văn B</span> vừa nộp điểm</div>
+                                <div class="small text-muted">Đã chấm xong bài thi số #1024 - Cuộc thi Hackathon 2026. Sinh viên nộp: Nguyễn A.</div>
+                            </div>
+                            <div class="small text-muted text-end" style="min-width: 80px;">10 phút trước</div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="text-warning fs-4 mt-1"><i class="bi bi-person-lines-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-6">3 Hồ sơ đăng ký mới chờ duyệt</div>
+                                <div class="small text-muted">Cuộc thi: Nghiên cứu Khoa học Trẻ.</div>
+                            </div>
+                            <div class="small text-muted text-end" style="min-width: 80px;">30 phút trước</div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="text-info fs-4 mt-1"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-6">Sinh viên nộp bài: Đồ án Web App</div>
+                                <div class="small text-muted">Sinh viên: Phan Hoàng C (MSSV: 2012345). Dung lượng: 15MB.</div>
+                            </div>
+                            <div class="small text-muted text-end" style="min-width: 80px;">1 giờ trước</div>
+                        </li>
+                        <li class="activity-item">
+                            <div class="text-secondary fs-4 mt-1"><i class="bi bi-chat-left-text-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold fs-6">Sinh viên thắc mắc về Thể lệ</div>
+                                <div class="small text-muted">Ticket #50 - Hỏi về yêu cầu định dạng video nộp kèm.</div>
+                            </div>
+                            <div class="small text-muted text-end" style="min-width: 80px;">Hôm qua</div>
+                        </li>
+                    </ul>
+                    <div class="mt-3 text-center">
+                        <button class="btn btn-link text-decoration-none fw-bold small">Xem tất cả Logs</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        // 1. Chart Tiến độ Đăng ký & Nộp bài
+        const ctxProgress = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctxProgress, {
+            type: 'line',
+            data: {
+                labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4 (Hiện tại)'],
+                datasets: [
+                    {
+                        label: 'Số hồ sơ đăng ký',
+                        data: [50, 150, 300, 450],
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Số bài thi đã nộp',
+                        data: [0, 10, 80, 250],
+                        borderColor: '#059669', // Màu của Organizer
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tensor: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { beginAtZero: true },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Chart Tỷ lệ duyệt hồ sơ
+        const ctxApproval = document.getElementById('approvalChart').getContext('2d');
+        new Chart(ctxApproval, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hợp lệ (Đã duyệt)', 'Đang chờ', 'Từ chối (Sai form)'],
+                datasets: [{
+                    data: [350, 45, 100],
+                    backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+}

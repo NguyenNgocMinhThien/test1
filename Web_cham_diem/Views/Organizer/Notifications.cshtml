@@ -1,0 +1,410 @@
+﻿@{
+    Layout = "~/Views/Pages/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Thông báo Cuộc thi";
+}
+
+@section Styles {
+    <style>
+        .org-noti-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- STAT CARDS --- */
+        .noti-stat-card {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .noti-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .noti-stat-val {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1;
+            margin-top: 5px;
+        }
+
+        /* --- NOTIFICATION ITMES --- */
+        .noti-list-container {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .noti-item {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .noti-item:hover {
+                background-color: #f8fafc;
+            }
+
+            .noti-item:last-child {
+                border-bottom: none;
+            }
+
+        .noti-priority {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* --- BADGES --- */
+        .n-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 50px;
+        }
+
+        .n-cat-deadline {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .n-cat-result {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .n-cat-grading {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .n-cat-general {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+
+        /* --- COMPOSE MODAL --- */
+        .compose-modal .modal-header {
+            background-color: var(--organizer-accent);
+            color: #fff;
+        }
+
+        .compose-modal .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        /* --- TIMELINE HISTORY --- */
+        .tracking-box {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            height: 100%;
+        }
+
+        .history-timeline {
+            position: relative;
+            padding-left: 20px;
+            list-style: none;
+            margin-top: 20px;
+            border-left: 2px solid #e2e8f0;
+        }
+
+        .ht-item {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .ht-dot {
+            position: absolute;
+            left: -27px;
+            top: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            border: 2px solid #fff;
+        }
+
+            .ht-dot.success {
+                background: #22c55e;
+            }
+
+            .ht-dot.warning {
+                background: #eab308;
+            }
+    </style>
+}
+
+<div class="org-noti-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Quản lý Thông báo Cuộc thi</h3>
+                <p class="text-muted small mb-0">Đôn đốc timeline, gửi thông báo thay đổi và công bố tới Sinh viên / Giám khảo.</p>
+            </div>
+            <button class="btn text-white fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#composeModal" style="background-color: var(--organizer-accent);">
+                <i class="bi bi-pencil-square me-1"></i> Soạn Thông báo
+            </button>
+        </div>
+
+        <!-- 1. Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="noti-stat-card">
+                    <div class="noti-stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-envelope"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Cả cuộc thi đã gửi</div>
+                        <div class="noti-stat-val">342</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="noti-stat-card border-warning">
+                    <div class="noti-stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-envelope-x"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Tỷ lệ chưa đọc (Unread)</div>
+                        <div class="noti-stat-val text-warning">15%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="noti-stat-card border-danger">
+                    <div class="noti-stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Nhắc nhở Deadline</div>
+                        <div class="noti-stat-val text-danger">45</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="noti-stat-card border-success">
+                    <div class="noti-stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check-all"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Lịch trình tự động</div>
+                        <div class="noti-stat-val text-success">Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 2 & 3. Filter & Notification List -->
+            <div class="col-lg-8">
+                <!-- Filters -->
+                <div class="d-flex flex-wrap gap-2 mb-3 bg-white p-3 rounded-3 border">
+                    <select class="form-select form-select-sm w-auto">
+                        <option>Tất cả Cuộc thi</option>
+                        <option selected>Hackathon Sinh viên 2026</option>
+                    </select>
+                    <select class="form-select form-select-sm w-auto">
+                        <option>Tất cả Thể loại</option>
+                        <option>Deadline</option>
+                        <option>Duyệt & Xét Loại</option>
+                        <option>Chấm & Kết quả</option>
+                    </select>
+                    <input type="text" class="form-control form-control-sm flex-grow-1" placeholder="Tìm kiếm nội dung...">
+                </div>
+
+                <!-- Noti List -->
+                <div class="noti-list-container shadow-sm">
+                    <!-- Item 1 -->
+                    <div class="noti-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="noti-priority bg-danger"></span>
+                                <h6 class="d-inline-block fw-bold mb-0 text-dark">CẢNH BÁO: Hạn chót nộp bài chỉ còn 12 giờ</h6>
+                            </div>
+                            <span class="small text-muted"><i class="bi bi-clock"></i> 2 giờ trước</span>
+                        </div>
+                        <p class="text-muted small mb-3">Thông báo tự động: Hệ thống ghi nhận còn 165 nhóm chưa nộp bài. Vui lòng hoàn thiện và nộp mã nguồn trước 23:59 tối nay qua cổng kết nối Github.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                <span class="n-badge n-cat-deadline">Báo cáo Deadline</span>
+                                <span class="n-badge n-cat-general text-muted"><i class="bi bi-people"></i> Nhóm: Sinh viên chưa nộp bài</span>
+                            </div>
+                            <div class="small fw-bold text-success"><i class="bi bi-check-all"></i> Đã xem: 80%</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="noti-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="noti-priority" style="background-color: #0ea5e9;"></span>
+                                <h6 class="d-inline-block fw-bold mb-0 text-dark">Lịch phân công chấm thi Vòng loại</h6>
+                            </div>
+                            <span class="small text-muted"><i class="bi bi-clock"></i> 1 ngày trước</span>
+                        </div>
+                        <p class="text-muted small mb-3">Kính gửi Quý Thầy/Cô thành viên Ban Giám khảo. Danh sách phân công chấm điểm 380 bài thi đã được cập nhật. Kính mong Thầy/Cô kiểm tra hòm thư và hoàn thành trước 20/11/2026.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                <span class="n-badge n-cat-grading">Hội đồng Chấm thi</span>
+                                <span class="n-badge n-cat-general text-muted"><i class="bi bi-person-fill"></i> Nhóm: Giám khảo</span>
+                            </div>
+                            <div class="small fw-bold text-success"><i class="bi bi-check-all"></i> Đã xem: 100%</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="noti-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="noti-priority bg-success"></span>
+                                <h6 class="d-inline-block fw-bold mb-0 text-dark">Xét duyệt Hồ sơ Đội thi Innovators</h6>
+                            </div>
+                            <span class="small text-muted"><i class="bi bi-clock"></i> 3 ngày trước</span>
+                        </div>
+                        <p class="text-muted small mb-3">Chúc mừng Đội thi Innovators. Hồ sơ Đăng ký dự thi đề tài "Ứng dụng AI điểm danh" đã được kiểm duyệt HỢP LỆ.</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                <span class="n-badge n-cat-result">Duyệt hồ sơ</span>
+                                <span class="n-badge n-cat-general text-muted"><i class="bi bi-person-square"></i> Sinh viên: Nguyễn Văn A</span>
+                            </div>
+                            <div class="small fw-bold text-success"><i class="bi bi-check-all"></i> Đã xem: 100%</div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 text-center bg-light border-top">
+                        <button class="btn btn-sm btn-outline-secondary fw-bold">Tải thêm dữ liệu <i class="bi bi-chevron-down"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Lịch sử Gửi (Tracking) -->
+            <div class="col-lg-4">
+                <div class="tracking-box shadow-sm">
+                    <h6 class="fw-bold mb-4" style="color: var(--organizer-accent);"><i class="bi bi-activity"></i> Tracking Giao nhận (Delivery)</h6>
+
+                    <div class="bg-light p-3 rounded mb-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Tỷ lệ Giao nhận thành công (Email)</span>
+                            <span class="small fw-bold text-success">98.5%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 98.5%"></div>
+                        </div>
+                    </div>
+
+                    <h6 class="small fw-bold text-muted text-uppercase mb-3">Lịch trình tự động sắp chạy</h6>
+
+                    <ul class="history-timeline">
+                        <li class="ht-item">
+                            <div class="ht-dot warning"></div>
+                            <div class="fw-bold text-dark small">Gửi Email thu bài tự động vòng 2</div>
+                            <p class="text-muted" style="font-size:0.75rem; margin-bottom:2px;">Kích hoạt nếu Sinh viên chưa nộp bài</p>
+                            <span class="small fw-bold text-warning"><i class="bi bi-clock-history"></i> Mai, lúc 18:00 (H-6)</span>
+                        </li>
+                        <li class="ht-item">
+                            <div class="ht-dot"></div>
+                            <div class="fw-bold text-dark small">Thông báo Công bố kết quả thi</div>
+                            <p class="text-muted" style="font-size:0.75rem; margin-bottom:2px;">Broadcase toàn bộ thí sinh tham gia</p>
+                            <span class="small fw-bold text-muted"><i class="bi bi-calendar"></i> Lên lịch: 20/11/2026</span>
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Soạn Thông Báo (Create Notification) -->
+<div class="modal fade compose-modal" id="composeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header border-bottom-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-megaphone me-2"></i> Soạn Gửi Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-white">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-bold">Cuộc thi áp dụng <span class="text-danger">*</span></label>
+                        <select class="form-select">
+                            <option>Hackathon Sinh viên 2026</option>
+                            <option>Tất cả Cuộc thi đang diễn ra</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Phân loại & Mức độ</label>
+                        <select class="form-select">
+                            <option>Nhắc nhở Deadline</option>
+                            <option>Chỉnh sửa Thể lệ</option>
+                            <option class="text-danger fw-bold">Thông báo KHẨN</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label small fw-bold">Đối tượng nhận thông báo (Gửi đến)</label>
+                        <div class="d-flex flex-wrap gap-3 p-3 bg-light border rounded">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="toAll" checked>
+                                <label class="form-check-label fw-bold text-primary" for="toAll">Tất cả Người tham gia (SV & GK)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="toSV">
+                                <label class="form-check-label" for="toSV">Chỉ Thí sinh (Sinh viên)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="toLate">
+                                <label class="form-check-label text-danger" for="toLate">Sinh viên chưa nộp bài</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="toGK">
+                                <label class="form-check-label" for="toGK">Chỉ Giám khảo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <label class="form-label small fw-bold">Tiêu đề Thông báo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" placeholder="Nhập tiêu đề...">
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label small fw-bold">Nội dung chi tiết <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="5" placeholder="Soạn nội dung chi tiết... (Gửi đồng thời định dạng Web Noti và Email)"></textarea>
+                    </div>
+
+                    <div class="col-md-12 mt-3">
+                        <div class="d-flex gap-4">
+                            <div class="flex-grow-1">
+                                <label class="form-label small fw-bold"><i class="bi bi-clock"></i> Lịch gửi</label>
+                                <select class="form-select">
+                                    <option>Gửi ngay lập tức</option>
+                                    <option>Lên lịch gửi (Hẹn giờ)</option>
+                                </select>
+                            </div>
+                            <div class="flex-grow-1">
+                                <label class="form-label small fw-bold"><i class="bi bi-paperclip"></i> Đính kèm File</label>
+                                <input class="form-control" type="file">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top-0 p-3">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn text-white fw-bold px-4" style="background-color: var(--organizer-accent);"><i class="bi bi-send-fill me-2"></i> Phát hành Thông báo</button>
+            </div>
+        </div>
+    </div>
+</div>

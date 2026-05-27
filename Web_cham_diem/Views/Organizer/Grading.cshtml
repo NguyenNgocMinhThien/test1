@@ -1,0 +1,422 @@
+﻿@{
+    Layout = "~/Views/Pages/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Quản lý & Theo dõi Chấm điểm";
+}
+
+@section Styles {
+    <style>
+        .org-grading-wrapper {
+            background-color: var(--primary-bg);
+            min-height: calc(100vh - 70px);
+        }
+
+        /* --- STAT CARDS --- */
+        .grade-stat-card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grade-stat-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .grade-stat-val {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-top: 5px;
+        }
+
+        /* --- TABS NAVIGATION --- */
+        .grading-tabs {
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+            .grading-tabs .nav-link {
+                border: none;
+                color: var(--text-muted);
+                font-weight: 600;
+                padding: 12px 20px;
+                border-bottom: 3px solid transparent;
+                margin-bottom: -2px;
+            }
+
+                .grading-tabs .nav-link:hover {
+                    color: var(--organizer-accent);
+                }
+
+                .grading-tabs .nav-link.active {
+                    background: none;
+                    color: var(--organizer-accent);
+                    border-bottom-color: var(--organizer-accent);
+                }
+
+        /* --- TABLE STYLE --- */
+        .grade-table-container {
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .grade-table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            background: #f8fafc;
+            padding: 15px;
+        }
+
+        .grade-table td {
+            padding: 15px;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        /* --- PROGRESS UI --- */
+        .workload-bar {
+            height: 8px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            margin-top: 5px;
+        }
+
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* --- RUBRIC BOX --- */
+        .rubric-box {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--organizer-accent);
+            cursor: grab;
+        }
+
+            .rubric-box:active {
+                cursor: grabbing;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+    </style>
+}
+
+<div class="org-grading-wrapper py-4">
+    <div class="container-fluid">
+        <!-- Header -->
+        <h3 class="fw-bold mb-1 text-dark">Quản lý Chấm điểm & Phân công</h3>
+        <p class="text-muted small mb-4">Điều phối giám khảo, quản lý rubric đánh giá và theo dõi tiến độ chấm thi.</p>
+
+        <!-- 1. Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="grade-stat-card border-bottom border-3 border-primary">
+                    <div class="grade-stat-title">Giám khảo hoạt động</div>
+                    <div class="grade-stat-val text-primary">12</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="grade-stat-card border-bottom border-3 border-warning">
+                    <div class="grade-stat-title">Bài đã phân công</div>
+                    <div class="grade-stat-val text-warning">205</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="grade-stat-card border-bottom border-3" style="border-color: var(--organizer-accent) !important;">
+                    <div class="grade-stat-title">Bài đã chấm</div>
+                    <div class="grade-stat-val" style="color: var(--organizer-accent);">85</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="grade-stat-card border-bottom border-3 border-success">
+                    <div class="grade-stat-title">Tỷ lệ hoàn thành toàn khóa</div>
+                    <div class="grade-stat-val text-success">41.5%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. WORKFLOW TABS -->
+        <ul class="nav nav-tabs grading-tabs" id="gradingTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#judges" type="button">
+                    <i class="bi bi-person-badge me-2"></i> Giám khảo <span class="badge bg-light text-dark border ms-1">12</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#assignment" type="button">
+                    <i class="bi bi-signpost-split me-2"></i> Phân công Chấm
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rubric" type="button">
+                    <i class="bi bi-sliders me-2"></i> Tiêu chí chấm (Rubric)
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#monitoring" type="button">
+                    <i class="bi bi-activity me-2"></i> Theo dõi & Cảnh báo
+                </button>
+            </li>
+        </ul>
+
+        <!-- TABS CONTENT -->
+        <div class="tab-content">
+
+            <!-- TAB 1: DANH SÁCH GIÁM KHẢO -->
+            <div class="tab-pane fade show active" id="judges">
+                <div class="d-flex justify-content-between mb-3">
+                    <div class="input-group input-group-sm w-25">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Tìm tên giám khảo...">
+                    </div>
+                    <button class="btn btn-sm btn-primary"><i class="bi bi-person-plus me-1"></i> Thêm Giám khảo</button>
+                </div>
+
+                <div class="grade-table-container">
+                    <div class="table-responsive">
+                        <table class="table grade-table mb-0 align-middle">
+                            <thead>
+                                <tr>
+                                    <th width="25%">Họ Tên / Email</th>
+                                    <th>Chuyên môn (Lĩnh vực)</th>
+                                    <th width="20%">Số bài đang giao (Workload)</th>
+                                    <th width="20%">Tiến độ chấm</th>
+                                    <th class="text-center">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img src="https://ui-avatars.com/api/?name=TV&background=0d6efd&color=fff" class="avatar-sm">
+                                            <div>
+                                                <div class="fw-bold text-dark">ThS. Trần Văn B</div>
+                                                <div class="small text-muted">tranvanb@uni.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">CNTT / AI</span></td>
+                                    <td>
+                                        <div class="fw-bold text-dark">45 Bài</div>
+                                        <div class="small text-muted">Cuộc thi: Hackathon 2026</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Đã chấm 40 bài</span>
+                                            <span class="fw-bold text-success">88%</span>
+                                        </div>
+                                        <div class="progress workload-bar">
+                                            <div class="progress-bar bg-success" style="width: 88%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success">Active</span></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img src="https://ui-avatars.com/api/?name=L&background=f59e0b&color=fff" class="avatar-sm">
+                                            <div>
+                                                <div class="fw-bold text-dark">TS. Lê Thị C</div>
+                                                <div class="small text-muted">lethic@uni.edu</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">Quản trị Kinh doanh</span></td>
+                                    <td>
+                                        <div class="fw-bold text-dark">30 Bài</div>
+                                        <div class="small text-muted">Cuộc thi: Startup Idea</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Đã chấm 3 bài</span>
+                                            <span class="fw-bold text-danger">10%</span>
+                                        </div>
+                                        <div class="progress workload-bar">
+                                            <div class="progress-bar bg-danger" style="width: 10%"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success">Active</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PHÂN CÔNG CHẤM ĐIỂM -->
+            <div class="tab-pane fade" id="assignment">
+                <div class="row g-4">
+                    <div class="col-lg-5">
+                        <div class="bg-white p-4 rounded-3 border h-100">
+                            <h6 class="fw-bold mb-4">1. Chọn Cuộc thi & Lọc bài thi</h6>
+                            <select class="form-select mb-3">
+                                <option>Hackathon Sinh viên 2026</option>
+                                <option>Nghiên cứu Khoa học</option>
+                            </select>
+
+                            <div class="border rounded p-3 bg-light mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="c1" checked>
+                                    <label class="form-check-label fw-bold small" for="c1">Bài #1024 - Ứng dụng AI điểm danh</label>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="c2" checked>
+                                    <label class="form-check-label fw-bold small" for="c2">Bài #1025 - Chatbot tư vấn tuyển sinh</label>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="c3">
+                                    <label class="form-check-label fw-bold small" for="c3">Bài #1026 - Web TMĐT B2B</label>
+                                </div>
+                            </div>
+                            <div class="small text-muted fw-bold">Đã chọn: <span class="text-primary">02</span> bài thi</div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="bg-white p-4 rounded-3 border h-100 text-center d-flex flex-column justify-content-center">
+                            <h6 class="fw-bold mb-3">2. Phân công cho Giám khảo</h6>
+                            <i class="bi bi-arrow-down fs-3 text-muted mb-3"></i>
+
+                            <select class="form-select form-select-lg mb-4 mx-auto w-75">
+                                <option>-- Chọn Giám khảo --</option>
+                                <option>ThS. Trần Văn B (CNTT)</option>
+                                <option>TS. Lê Thị C (Kinh tế)</option>
+                            </select>
+
+                            <button class="btn btn-primary px-5 py-2 mx-auto fw-bold" style="background-color: var(--organizer-accent); border-color: var(--organizer-accent);">
+                                Xác nhận Phân công
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: TIÊU CHÍ (RUBRIC) -->
+            <div class="tab-pane fade" id="rubric">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h6 class="fw-bold mb-0">Bộ tiêu chí: <span class="text-primary">Công nghệ phần mềm</span> (Tổng 100đ)</h6>
+                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Thêm tiêu chí</button>
+                        </div>
+
+                        <!-- Drag & Drop Rubric Boxes -->
+                        <div class="rubric-box d-flex align-items-center gap-3">
+                            <i class="bi bi-grip-vertical text-muted fs-4"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">1. Tính Sáng tạo và Độc đáo (Weight: 30%)</div>
+                                <div class="small text-muted mt-1">Sản phẩm có tính mới, giải quyết được vấn đề thực tế bằng giải pháp thông minh.</div>
+                            </div>
+                            <div class="text-end" style="width: 100px;">
+                                <div class="fw-bold text-dark fs-5">30<span style="font-size:0.8rem">đ</span></div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-light text-muted"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="rubric-box d-flex align-items-center gap-3">
+                            <i class="bi bi-grip-vertical text-muted fs-4"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">2. Tính Thực tiễn (Weight: 40%)</div>
+                                <div class="small text-muted mt-1">Khả năng áp dụng vào thực tế, hiệu năng hệ thống ổn định.</div>
+                            </div>
+                            <div class="text-end" style="width: 100px;">
+                                <div class="fw-bold text-dark fs-5">40<span style="font-size:0.8rem">đ</span></div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-light text-muted"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="rubric-box d-flex align-items-center gap-3">
+                            <i class="bi bi-grip-vertical text-muted fs-4"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">3. Giao diện (UI/UX) (Weight: 30%)</div>
+                                <div class="small text-muted mt-1">Thiết kế thân thiện, dễ sử dụng, trải nghiệm người dùng tốt.</div>
+                            </div>
+                            <div class="text-end" style="width: 100px;">
+                                <div class="fw-bold text-dark fs-5">30<span style="font-size:0.8rem">đ</span></div>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-light text-muted"><i class="bi bi-pencil"></i></button>
+                                <button class="btn btn-sm btn-light text-danger"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: THEO DÕI VÀ CẢNH BÁO -->
+            <div class="tab-pane fade" id="monitoring">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="bg-white p-4 rounded-3 border h-100">
+                            <h6 class="fw-bold mb-4">Trạng thái Bài đã chấm</h6>
+                            <div style="height: 250px; display:flex; justify-content:center;">
+                                <canvas id="gradingStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="bg-white p-4 rounded-3 border h-100 border-danger border-start border-4">
+                            <h6 class="fw-bold text-danger mb-4"><i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo chậm tiến độ</h6>
+
+                            <div class="alert alert-light border">
+                                <div class="fw-bold text-dark">TS. Lê Thị C</div>
+                                <p class="small text-muted mb-2">Đã được giao 30 bài thuộc cuộc thi Startup Idea nhưng sau 5 ngày mới chấm xong 3 bài (10%).</p>
+                                <div class="small text-danger fw-bold"><i class="bi bi-clock"></i> Deadline nộp điểm: Còn 1 ngày 12 giờ</div>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-warning fw-bold">Gửi nhắc nhở khẩn</button>
+                                    <button class="btn btn-sm btn-outline-danger">Thu hồi phân công</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tab 4 Chart
+        const ctxGrading = document.getElementById('gradingStatusChart').getContext('2d');
+        new Chart(ctxGrading, {
+            type: 'pie',
+            data: {
+                labels: ['Đã chấm xong', 'Chờ chấm', 'Phân công lại'],
+                datasets: [{
+                    data: [85, 115, 5],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+}
