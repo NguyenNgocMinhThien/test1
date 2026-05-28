@@ -51,29 +51,31 @@ public class LoginController : Controller
 
         if (success && user != null)
         {
-            // Trích xuất tên quyền đầu tiên từ bảng dữ liệu trung gian UserRoles
-            string userRole = "Student";
-            if (user.UserRoles != null && user.UserRoles.Any())
-            {
-                var firstRole = user.UserRoles
-                    .Select(ur => ur.Role?.RoleName)
-                    .FirstOrDefault(name => !string.IsNullOrEmpty(name));
-
-                if (!string.IsNullOrEmpty(firstRole))
-                {
-                    userRole = firstRole;
-                }
-            }
 
             var claims = new List<Claim>
+{
+    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+    new Claim(ClaimTypes.Email, user.Email),
+    new Claim(ClaimTypes.Name, user.FullName),
+    new Claim("StudentId", user.StudentId ?? string.Empty),
+    new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty)
+};
+
+            var roleNames = user.UserRoles?
+                .Select(ur => ur.Role?.RoleName)
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Distinct()
+                .ToList() ?? new List<string>();
+
+            if (!roleNames.Any())
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim("StudentId", user.StudentId ?? string.Empty),
-                new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty),
-                new Claim(ClaimTypes.Role, userRole) // Gán quyền Admin hoặc Student từ database vào Cookie
-            };
+                roleNames.Add("Student");
+            }
+
+            foreach (var role in roleNames)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role!));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
@@ -88,11 +90,11 @@ public class LoginController : Controller
                 authProperties
             );
 
-            _logger.LogInformation($"Người dùng {user.Email} đăng nhập thành công với quyền: {userRole}.");
+            _logger.LogInformation($"Người dùng {user.Email} đăng nhập thành công với quyền: {string.Join(", ", roleNames)}.");
             TempData["SuccessMessage"] = $"Chào mừng {user.FullName}! Đăng nhập thành công.";
 
             // THAY ĐỔI QUAN TRỌNG: Phân luồng điều hướng khi đăng nhập thành công
-            if (userRole == "Admin")
+            if (roleNames.Contains("Admin"))
             {
                 return RedirectToAction("Admin", "Account"); // Đẩy tài khoản Admin vào trang quản trị
             }
