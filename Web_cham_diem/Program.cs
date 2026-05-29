@@ -17,6 +17,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICompetitionService, CompetitionService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+
+
 
 // Add Authentication with Cookie
 // Add Authentication with Cookie

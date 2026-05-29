@@ -7,11 +7,16 @@ namespace Web_cham_diem.Controllers
     public class OrganizerController : Controller
     {
         private readonly ICompetitionService _competitionService;
+        private readonly ISubmissionService _submissionService;
         private readonly ILogger<OrganizerController> _logger;
 
-        public OrganizerController(ICompetitionService competitionService, ILogger<OrganizerController> logger)
+        public OrganizerController(
+            ICompetitionService competitionService,
+            ISubmissionService submissionService,
+            ILogger<OrganizerController> logger)
         {
             _competitionService = competitionService;
+            _submissionService = submissionService;
             _logger = logger;
         }
 
@@ -33,7 +38,7 @@ namespace Web_cham_diem.Controllers
             return View(viewModel);
         }
 
-        // === TẠOMỚI CUỘC THI ===
+        // === TẠO MỚI CUỘC THI ===
         [HttpGet]
         public IActionResult Create()
         {
@@ -179,10 +184,84 @@ namespace Web_cham_diem.Controllers
             return Json(detail);
         }
 
+        // ============== SUBMISSIONS - HỒSƠ VÀ BÀI NỘP ==============
+
         // 3. Quản lý đăng ký & Bài dự thi (Duyệt hồ sơ, thu bài)
-        public IActionResult Submissions()
+        public async Task<IActionResult> Submissions(
+            int? competitionId = null,
+            string? search = null,
+            string? status = null,
+            string? department = null)
         {
-            return View();
+            try
+            {
+                var viewModel = await _submissionService.GetSubmissionsViewAsync(
+                    competitionId, search, status, department);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading submissions page");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang.";
+                return View(new OrganizerSubmissionsViewModel());
+            }
+        }
+
+        // API: Duyệt hồ sơ
+        [HttpPost]
+        public async Task<IActionResult> ApproveRegistration(int registrationId, string? feedback)
+        {
+            try
+            {
+                var result = await _submissionService.ApproveRegistrationAsync(registrationId, feedback);
+                if (!result)
+                    return Json(new { success = false, message = "Hồ sơ không tìm thấy" });
+
+                return Json(new { success = true, message = "Duyệt hồ sơ thành công!" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving registration");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Từ chối hồ sơ
+        [HttpPost]
+        public async Task<IActionResult> RejectRegistration(int registrationId, string reason)
+        {
+            try
+            {
+                var result = await _submissionService.RejectRegistrationAsync(registrationId, reason);
+                if (!result)
+                    return Json(new { success = false, message = "Hồ sơ không tìm thấy" });
+
+                return Json(new { success = true, message = "Từ chối hồ sơ thành công!" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting registration");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // API: Yêu cầu bổ sung
+        [HttpPost]
+        public async Task<IActionResult> RequestSupplement(int registrationId, string feedback)
+        {
+            try
+            {
+                var result = await _submissionService.RequestSupplementAsync(registrationId, feedback);
+                if (!result)
+                    return Json(new { success = false, message = "Hồ sơ không tìm thấy" });
+
+                return Json(new { success = true, message = "Yêu cầu bổ sung đã gửi!" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting supplement");
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // 4. Quản lý chấm điểm (Phân công giám khảo, theo dõi điểm)
