@@ -28,6 +28,11 @@ public class LoginController : Controller
         // Nếu người dùng đã đăng nhập trước đó rồi thì điều hướng thông minh dựa vào Role của họ
         if (User.Identity?.IsAuthenticated == true)
         {
+            // LƯU Ý: Nếu muốn kỹ hơn, bạn có thể kiểm tra xem cookie cũ còn hiệu lực 
+            // nhưng tài khoản vừa bị Admin khóa ở DB hay không. 
+            // Tuy nhiên, việc check liên tục trong HttpGet Index sẽ làm chậm hệ thống.
+            // Đoạn check chính nằm ở HttpPost xử lý Submit form bên dưới.
+
             if (User.IsInRole("Admin"))
                 return RedirectToAction("Admin", "Account");
 
@@ -51,15 +56,24 @@ public class LoginController : Controller
 
         if (success && user != null)
         {
+            // ================================================================
+            // 🛡️ ĐOẠN KIỂM TRA QUAN TRỌNG: NGĂN CHẶN TÀI KHOẢN BỊ KHÓA ĐĂNG NHẬP
+            // ================================================================
+            if (user.IsActive == false)
+            {
+                _logger.LogWarning($"Tài khoản bị khóa {user.Email} đã cố gắng đăng nhập.");
+                ModelState.AddModelError(string.Empty, "Tài khoản của bạn đã bị quản trị viên khóa. Vui lòng liên hệ bộ phận hỗ trợ.");
+                return View(model);
+            }
 
             var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-    new Claim(ClaimTypes.Email, user.Email),
-    new Claim(ClaimTypes.Name, user.FullName),
-    new Claim("StudentId", user.StudentId ?? string.Empty),
-    new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty)
-};
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim("StudentId", user.StudentId ?? string.Empty),
+                new Claim("PhoneNumber", user.PhoneNumber ?? string.Empty)
+            };
 
             var roleNames = user.UserRoles?
                 .Select(ur => ur.Role?.RoleName)
@@ -93,7 +107,7 @@ public class LoginController : Controller
             _logger.LogInformation($"Người dùng {user.Email} đăng nhập thành công với quyền: {string.Join(", ", roleNames)}.");
             TempData["SuccessMessage"] = $"Chào mừng {user.FullName}! Đăng nhập thành công.";
 
-            // THAY ĐỔI QUAN TRỌNG: Phân luồng điều hướng khi đăng nhập thành công
+            // Phân luồng điều hướng khi đăng nhập thành công
             if (roleNames.Contains("Admin"))
             {
                 return RedirectToAction("Admin", "Account"); // Đẩy tài khoản Admin vào trang quản trị

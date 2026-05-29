@@ -1,14 +1,12 @@
 ﻿@model Web_cham_diem.Models.ViewModels.UserManagementViewModel
 @{
     ViewData["Title"] = "Quản lý người dùng";
-    // Thêm dòng khai báo Layout dưới đây
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="user-management-page py-4">
     <div class="container-fluid">
 
-        <!-- 1. Header Page -->
         <div class="d-md-flex align-items-center justify-content-between mb-4">
             <div>
                 <h3 class="fw-bold mb-1 text-dark">Quản lý người dùng</h3>
@@ -29,7 +27,6 @@
             </div>
         </div>
 
-        <!-- 2. Statistics Cards -->
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-xl-2">
                 <div class="stat-card p-3 shadow-sm border-0 rounded-4 bg-white h-100">
@@ -39,7 +36,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Tổng tài khoản</div>
-                            <h4 class="fw-bold mb-0">2,450</h4>
+                            <h4 class="fw-bold mb-0" id="statTotalUsers">...</h4>
                         </div>
                     </div>
                 </div>
@@ -52,7 +49,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Sinh viên</div>
-                            <h4 class="fw-bold mb-0">1,820</h4>
+                            <h4 class="fw-bold mb-0" id="statStudents">...</h4>
                         </div>
                     </div>
                 </div>
@@ -65,7 +62,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Giảng viên</div>
-                            <h4 class="fw-bold mb-0">125</h4>
+                            <h4 class="fw-bold mb-0" id="statLecturers">...</h4>
                         </div>
                     </div>
                 </div>
@@ -78,7 +75,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Ban tổ chức</div>
-                            <h4 class="fw-bold mb-0">15</h4>
+                            <h4 class="fw-bold mb-0" id="statOrganizers">...</h4>
                         </div>
                     </div>
                 </div>
@@ -91,7 +88,7 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Giám khảo</div>
-                            <h4 class="fw-bold mb-0">85</h4>
+                            <h4 class="fw-bold mb-0" id="statJudges">...</h4>
                         </div>
                     </div>
                 </div>
@@ -104,60 +101,61 @@
                         </div>
                         <div>
                             <div class="text-muted small fw-600">Bị khóa</div>
-                            <h4 class="fw-bold mb-0">12</h4>
+                            <h4 class="fw-bold mb-0" id="statLocked">...</h4>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 3. Search & Filter -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-4">
-                <form id="filterForm" class="row g-3 align-items-end">
+                <form id="filterForm" class="row g-3 align-items-end" onsubmit="event.preventDefault();">
                     <div class="col-md-4">
                         <label class="form-label small fw-bold">Tìm kiếm người dùng</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" class="form-control bg-light border-start-0" placeholder="Tên, Email hoặc MSSV...">
+                            <input type="text" id="filterSearch" class="form-control bg-light border-start-0" placeholder="Tên, Email hoặc MSSV...">
                         </div>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-bold">Vai trò</label>
-                        <select class="form-select bg-light">
+                        <select id="filterRole" class="form-select bg-light">
                             <option value="">Tất cả vai trò</option>
                             <option value="Student">Sinh viên</option>
                             <option value="Lecturer">Giảng viên</option>
                             <option value="Organizer">Ban tổ chức</option>
                             <option value="Judge">Giám khảo</option>
+                            <option value="Admin">Admin</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small fw-bold">Trạng thái</label>
-                        <select class="form-select bg-light">
+                        <select id="filterStatus" class="form-select bg-light">
                             <option value="">Tất cả trạng thái</option>
                             <option value="Active">Đang hoạt động</option>
                             <option value="Locked">Đã khóa</option>
-                            <option value="Pending">Chờ duyệt</option>
                         </select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Khoa/Phòng ban</label>
-                        <select class="form-select bg-light">
+                        <select id="filterDepartment" class="form-select bg-light">
                             <option value="">Tất cả đơn vị</option>
-                            <option value="CNTT">Công nghệ thông tin</option>
-                            <option value="QTKD">Quản trị kinh doanh</option>
-                            <option value="KT">Kỹ thuật công trình</option>
+                            <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                            <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
+                            <option value="Kỹ thuật công trình">Kỹ thuật công trình</option>
+                            <option value="Lý luận chính trị">Lý luận chính trị</option>
                         </select>
                     </div>
                     <div class="col-md-1">
-                        <button type="submit" class="btn btn-primary w-100 h-100 py-2"><i class="bi bi-funnel"></i></button>
+                        <button type="button" id="btnSubmitFilter" class="btn btn-primary w-100 h-100 py-2">
+                            <i class="bi bi-funnel"></i>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- 4. Bulk Actions & Table -->
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-3">
@@ -181,83 +179,29 @@
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
                             <th>Người dùng</th>
-                            <th>Role & MSSV</th>
-                            <th>Khoa/Phòng ban</th>
+                            <th>Role & MSSV/Mã NV</th>
                             <th>Trạng thái</th>
                             <th>Ngày tạo</th>
                             <th class="text-end pe-4">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Mock Row 1 -->
+                    <tbody id="userTableBody">
                         <tr>
-                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox"></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="user-avatar-initials bg-primary-subtle text-primary fw-bold">NT</div>
-                                    <div>
-                                        <div class="fw-bold mb-0">Nguyễn Thành Trung</div>
-                                        <div class="text-muted small">trung.nt@sv.uef.edu.vn</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-info-subtle text-info rounded-pill px-3">Sinh viên</span>
-                                <div class="small text-muted mt-1">MSSV: 20240001</div>
-                            </td>
-                            <td><span class="small fw-semibold">Công nghệ thông tin</span></td>
-                            <td><span class="badge bg-success-subtle text-success badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active</span></td>
-                            <td><span class="small text-muted">26/05/2026</span></td>
-                            <td class="text-end pe-4">
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-eye me-2"></i> Chi tiết</a></li>
-                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-pencil me-2 text-primary"></i> Sửa thông tin</a></li>
-                                        <li><a class="dropdown-item py-2" href="#"><i class="bi bi-shield-check me-2 text-success"></i> Phân quyền</a></li>
-                                        <li><a class="dropdown-item py-2 text-warning" href="#"><i class="bi bi-lock me-2"></i> Khóa tài khoản</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item py-2 text-danger" href="#"><i class="bi bi-trash me-2"></i> Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Mock Row 2 -->
-                        <tr>
-                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox"></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <img src="https://ui-avatars.com/api/?name=Tran+B&background=e7f1ff&color=0056b3" class="rounded-circle" width="40" height="40">
-                                    <div>
-                                        <div class="fw-bold mb-0">Trần Thế Bình</div>
-                                        <div class="text-muted small">binh.tt@uef.edu.vn</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-warning-subtle text-warning rounded-pill px-3">Giảng viên</span>
-                                <div class="small text-muted mt-1">ID: GV102</div>
-                            </td>
-                            <td><span class="small fw-semibold">Quản trị kinh doanh</span></td>
-                            <td><span class="badge bg-danger-subtle text-danger badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Locked</span></td>
-                            <td><span class="small text-muted">15/05/2026</span></td>
-                            <td class="text-end pe-4">
-                                <button class="btn btn-light btn-sm rounded-circle"><i class="bi bi-three-dots-vertical"></i></button>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                Đang tải danh sách người dùng...
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- 5. Pagination -->
             <div class="card-footer bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                <div class="text-muted small">Hiển thị 1 - 10 trên 2,450 người dùng</div>
+                <div class="text-muted small" id="tableSummary">Đang tính toán số lượng...</div>
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item disabled"><a class="page-link rounded-start-pill px-3" href="#"><i class="bi bi-chevron-left"></i></a></li>
                         <li class="page-item active"><a class="page-link px-3" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link px-3" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link px-3" href="#">3</a></li>
                         <li class="page-item"><a class="page-link rounded-end-pill px-3" href="#"><i class="bi bi-chevron-right"></i></a></li>
                     </ul>
                 </nav>
@@ -266,8 +210,6 @@
     </div>
 </div>
 
-<!-- 6. Modals -->
-<!-- Add User Modal -->
 <div class="modal fade" id="addUserModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -275,45 +217,126 @@
                 <h5 class="fw-bold mb-0">Thêm người dùng mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            <form id="addUserForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Họ và tên</label>
+                            <input type="text" name="FullName" class="form-control rounded-3" placeholder="Nhập tên đầy đủ..." required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email trường</label>
+                            <input type="email" name="Email" class="form-control rounded-3" placeholder="abc.sv@uef.edu.vn" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">MSSV / Mã nhân viên</label>
+                            <input type="text" name="StudentId" class="form-control rounded-3" placeholder="Số hiệu tài khoản..." required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Vai trò hệ thống</label>
+                            <select name="RoleName" class="form-select rounded-3">
+                                <option value="Student">Sinh viên</option>
+                                <option value="Lecturer">Giảng viên</option>
+                                <option value="Organizer">Ban tổ chức</option>
+                                <option value="Judge">Giám khảo</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Khoa/Đơn vị</label>
+                            <select name="Department" class="form-select rounded-3">
+                                <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                                <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
+                                <option value="Kỹ thuật công trình">Kỹ thuật công trình</option>
+                                <option value="Lý luận chính trị">Lý luận chính trị</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mật khẩu ban đầu</label>
+                            <input type="text" name="Password" class="form-control rounded-3" value="UEF@12345" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Lưu thông tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="fw-bold mb-0" id="modalTitle">Chi tiết người dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <div class="modal-body p-4">
-                <form class="row g-3">
+                <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">Họ và tên</label>
-                        <input type="text" class="form-control rounded-3" placeholder="Nhập tên đầy đủ...">
+                        <input type="text" id="modalFullName" class="form-control rounded-3" placeholder="Nhập tên đầy đủ...">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">Email trường</label>
-                        <input type="email" class="form-control rounded-3" placeholder="abc.sv@uef.edu.vn">
+                        <input type="email" id="modalEmail" class="form-control rounded-3" placeholder="abc.sv@uef.edu.vn">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">MSSV / Mã nhân viên</label>
-                        <input type="text" class="form-control rounded-3" placeholder="Số hiệu tài khoản...">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Vai trò hệ thống</label>
-                        <select class="form-select rounded-3">
-                            <option>Sinh viên</option>
-                            <option>Giảng viên</option>
-                            <option>Ban tổ chức</option>
-                            <option>Giám khảo</option>
-                        </select>
+                        <input type="text" id="modalStudentId" class="form-control rounded-3" placeholder="Số hiệu tài khoản...">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label small fw-bold">Khoa/Đơn vị</label>
-                        <select class="form-select rounded-3">
-                            <option>Công nghệ thông tin</option>
-                            <option>Lý luận chính trị</option>
+                        <select id="modalDepartment" class="form-select rounded-3">
+                            <option value="Công nghệ thông tin">Công nghệ thông tin</option>
+                            <option value="Quản trị kinh doanh">Quản trị kinh doanh</option>
+                            <option value="Kỹ thuật công trình">Kỹ thuật công trình</option>
+                            <option value="Lý luận chính trị">Lý luận chính trị</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label small fw-bold">Mật khẩu ban đầu</label>
-                        <input type="text" class="form-control rounded-3" value="UEF@@12345" readonly>
+                    <div class="col-md-6" id="modalRoleWrapper">
+                        <label class="form-label small fw-bold">Vai trò hệ thống</label>
+                        <input type="text" id="modalRoleName" class="form-control rounded-3" disabled />
                     </div>
-                </form>
+                    <div class="col-md-6" id="passwordWrapper">
+                        <label class="form-label small fw-bold">Mật khẩu</label>
+                        <input type="text" id="modalPassword" class="form-control rounded-3" value="********" disabled>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer border-0 p-4 pt-0">
                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm">Lưu thông tin</button>
+                <button type="button" id="btnSubmitModal" onclick="saveUserChanges()" class="btn btn-primary rounded-pill px-4 shadow-sm">Lưu thông tin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-shield-lock me-2 text-success"></i> Thay đổi vai trò hệ thống</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold mb-2">Chọn vai trò hệ thống mới:</label>
+                    <select id="roleSelectHUD" class="form-select form-select-lg rounded-3">
+                        <option value="Student">Sinh viên</option>
+                        <option value="Lecturer">Giảng viên</option>
+                        <option value="Organizer">Ban tổ chức</option>
+                        <option value="Judge">Giám khảo</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" onclick="saveNewRole()" class="btn btn-success rounded-pill px-4 shadow-sm">Xác nhận phân quyền</button>
             </div>
         </div>
     </div>
@@ -331,7 +354,6 @@
         min-height: 100vh;
     }
 
-    /* Custom Avatar UI */
     .user-avatar-initials {
         width: 40px;
         height: 40px;
@@ -342,14 +364,12 @@
         font-size: 0.9rem;
     }
 
-    /* Badge Management */
     .badge-status {
         padding: 0.35rem 0.8rem;
         font-weight: 600;
         font-size: 0.7rem;
     }
 
-    /* Table Improvements */
     .table thead th {
         font-size: 0.75rem;
         text-transform: uppercase;
@@ -363,14 +383,12 @@
     .table tbody td {
         padding-top: 1rem;
         padding-bottom: 1rem;
-        cursor: pointer;
     }
 
     .table tbody tr:hover {
         background-color: #f8fafc;
     }
 
-    /* Custom Style for Stat Cards */
     .stat-card {
         transition: transform 0.3s ease;
         border: 1px solid #f1f5f9 !important;
@@ -380,7 +398,6 @@
             transform: translateY(-3px);
         }
 
-    /* Pagination Styling */
     .page-link {
         color: var(--uni-blue);
         border-color: #f1f5f9;
@@ -391,7 +408,6 @@
         border-color: var(--uni-blue);
     }
 
-    /* Modal Animation */
     .modal.fade .modal-dialog {
         transform: scale(0.95);
         transition: transform 0.2s ease-out;
@@ -405,13 +421,13 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const selectAll = document.getElementById('selectAll');
-        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
         const bulkActions = document.getElementById('bulkActions');
         const selectedCount = document.getElementById('selectedCount');
 
         function updateBulkActions() {
             const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-            selectedCount.textContent = checkedCount;
+            if(selectedCount) selectedCount.textContent = checkedCount;
+
             if (checkedCount > 0) {
                 bulkActions.classList.remove('d-none');
                 bulkActions.classList.add('d-inline-block');
@@ -421,17 +437,339 @@
             }
         }
 
-        selectAll.addEventListener('change', function() {
-            rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
-            updateBulkActions();
+        if(selectAll) {
+            selectAll.addEventListener('change', function() {
+                const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+                rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+                updateBulkActions();
+            });
+        }
+
+        document.getElementById('userTableBody').addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('row-checkbox')) {
+                updateBulkActions();
+            }
         });
 
-        rowCheckboxes.forEach(cb => {
-            cb.addEventListener('change', updateBulkActions);
-        });
+        const btnSubmitFilter = document.getElementById('btnSubmitFilter');
+        if (btnSubmitFilter) {
+            btnSubmitFilter.addEventListener('click', function() {
+                loadUserTable();
+            });
+        }
+
+        const filterSearchInput = document.getElementById('filterSearch');
+        if (filterSearchInput) {
+            filterSearchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadUserTable();
+                }
+            });
+        }
+
+        function loadUserTable() {
+            const tableBody = document.getElementById('userTableBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                        Đang lọc danh sách người dùng...
+                    </td>
+                </tr>`;
+
+            const searchVal = document.getElementById('filterSearch').value.trim();
+            const roleVal = document.getElementById('filterRole').value;
+            const statusVal = document.getElementById('filterStatus').value;
+            const deptVal = document.getElementById('filterDepartment').value;
+
+            const queryParams = new URLSearchParams({
+                search: searchVal,
+                role: roleVal,
+                status: statusVal,
+                department: deptVal
+            });
+
+            fetch(`/Account/GetUserList?${queryParams.toString()}`, { method: 'GET' })
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-warning fw-600">Không tìm thấy người dùng nào khớp với bộ lọc.</td></tr>';
+                    updateStatCards(0, 0, 0, 0, 0, 0);
+                    return;
+                }
+
+                let total = data.length;
+                let students = 0, lecturers = 0, organizers = 0, judges = 0, locked = 0;
+
+                data.forEach(user => {
+                    if (!user.isActive) locked++;
+                    if (user.roleName === 'Student') students++;
+                    else if (user.roleName === 'Lecturer') lecturers++;
+                    else if (user.roleName === 'Organizer') organizers++;
+                    else if (user.roleName === 'Judge') judges++;
+
+                    let roleBadgeClass = 'bg-secondary';
+                    if (user.roleName === 'Student') roleBadgeClass = 'bg-info-subtle text-info';
+                    else if (user.roleName === 'Lecturer') roleBadgeClass = 'bg-warning-subtle text-warning';
+                    else if (user.roleName === 'Admin') roleBadgeClass = 'bg-danger-subtle text-danger';
+
+                    let statusBadge = user.isActive ?
+                        '<span class="badge bg-success-subtle text-success badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active</span>' :
+                        '<span class="badge bg-danger-subtle text-danger badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Locked</span>';
+
+                    let initials = user.fullName ? user.fullName.substring(0, 2).toUpperCase() : 'US';
+
+                    // ================================================================
+                    // 🔥 THAY ĐỔI QUAN TRỌNG: Sửa href="#" sang hàm javascript:void(0)
+                    // ================================================================
+                    let row = `
+                        <tr>
+                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox" value="${user.userId}"></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="user-avatar-initials bg-primary-subtle text-primary fw-bold">${initials}</div>
+                                    <div>
+                                        <div class="fw-bold mb-0">${user.fullName}</div>
+                                        <div class="text-muted small">${user.email}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge ${roleBadgeClass} rounded-pill px-3">${user.roleName}</span>
+                                <div class="small text-muted mt-1">Mã: ${user.studentId || 'N/A'}</div>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td><span class="small text-muted">${user.createdAt}</span></td>
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'VIEW')"><i class="bi bi-eye me-2"></i> Chi tiết</a></li>
+                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'EDIT')"><i class="bi bi-pencil me-2 text-primary"></i> Sửa thông tin</a></li>
+                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openRoleModal(${user.userId}, '${user.roleName}')"><i class="bi bi-shield-check me-2 text-success"></i> Phân quyền</a></li>
+                                        <li><a class="dropdown-item py-2 text-warning" href="javascript:void(0);" onclick="toggleLockUser(${user.userId}, ${user.isActive})"><i class="bi bi-lock me-2"></i> ${user.isActive ? 'Khóa tài khoản' : 'Mở khóa'}</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0);" onclick="deleteUser(${user.userId})"><i class="bi bi-trash me-2"></i> Xóa</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                updateStatCards(total, students, lecturers, organizers, judges, locked);
+            })
+            .catch(error => {
+                console.error('Lỗi khi tải danh sách người dùng:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Không thể nạp dữ liệu từ máy chủ.</td></tr>';
+            });
+        }
+
+        function updateStatCards(total, students, lecturers, organizers, judges, locked) {
+            document.getElementById('statTotalUsers').textContent = total.toLocaleString();
+            document.getElementById('statStudents').textContent = students.toLocaleString();
+            document.getElementById('statLecturers').textContent = lecturers.toLocaleString();
+            document.getElementById('statOrganizers').textContent = organizers.toLocaleString();
+            document.getElementById('statJudges').textContent = judges.toLocaleString();
+            document.getElementById('statLocked').textContent = locked.toLocaleString();
+            document.getElementById('tableSummary').textContent = `Hiển thị 1 - ${total} trên ${total} người dùng phù hợp`;
+        }
+
+        loadUserTable();
+
+        const addUserForm = document.getElementById('addUserForm');
+        if(addUserForm) {
+            addUserForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                fetch('/Account/CreateUser', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        const modalElement = document.getElementById('addUserModal');
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) modal.hide();
+
+                        addUserForm.reset();
+                        loadUserTable();
+
+                        if(selectAll) selectAll.checked = false;
+                        updateBulkActions();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi hệ thống xảy ra khi thực hiện thêm tài khoản.');
+                });
+            });
+        }
     });
 
     function exportData() {
         alert('Đang chuẩn bị trích xuất dữ liệu người dùng ra tệp Excel...');
+    }
+
+    let currentTargetUserId = null;
+    let currentMode = "";
+
+    // ==========================================
+    // CHỨC NĂNG 1 & 2: XEM CHI TIẾT & SỬA THÔNG TIN (Đã đổi cú pháp hiển thị Modal)
+    // ==========================================
+    function openUserModal(userId, mode) {
+        currentTargetUserId = userId;
+        currentMode = mode;
+
+        fetch(`/Account/GetUserDetail?id=${userId}`)
+            .then(res => res.json())
+            .then(response => {
+                if (response.success) {
+                    const user = response.data;
+
+                    document.getElementById("modalFullName").value = user.fullName;
+                    document.getElementById("modalEmail").value = user.email;
+                    document.getElementById("modalStudentId").value = user.studentId;
+                    document.getElementById("modalDepartment").value = user.department;
+                    document.getElementById("modalRoleName").value = user.roleName;
+
+                    document.getElementById("passwordWrapper").style.display = "none";
+
+                    if (mode === "VIEW") {
+                        document.getElementById("modalTitle").innerText = "Chi tiết người dùng";
+                        document.getElementById("modalFullName").disabled = true;
+                        document.getElementById("modalEmail").disabled = true;
+                        document.getElementById("modalStudentId").disabled = true;
+                        document.getElementById("modalDepartment").disabled = true;
+                        document.getElementById("modalRoleName").disabled = true;
+                        document.getElementById("btnSubmitModal").style.display = "none";
+                    }
+                    else if (mode === "EDIT") {
+                        document.getElementById("modalTitle").innerText = "Chỉnh sửa thông tin";
+                        document.getElementById("modalFullName").disabled = false;
+                        document.getElementById("modalStudentId").disabled = false;
+                        document.getElementById("modalDepartment").disabled = false;
+                        document.getElementById("modalEmail").disabled = true;
+                        document.getElementById("modalRoleName").disabled = true;
+                        document.getElementById("btnSubmitModal").style.display = "block";
+                    }
+
+                    // 👉 SỬA ĐỔI: Sử dụng thuần Bootstrap 5 Modal thay vì JQuery
+                    var myModal = new bootstrap.Modal(document.getElementById('userModal'));
+                    myModal.show();
+                } else {
+                    alert(response.message);
+                }
+            });
+    }
+
+    function saveUserChanges() {
+        if (currentMode !== "EDIT") return;
+
+        const fullName = document.getElementById("modalFullName").value;
+        const studentId = document.getElementById("modalStudentId").value;
+        const department = document.getElementById("modalDepartment").value;
+
+        const formData = new FormData();
+        formData.append("userId", currentTargetUserId);
+        formData.append("fullName", fullName);
+        formData.append("studentId", studentId);
+        formData.append("department", department);
+        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        fetch('/Account/UpdateUser', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Cập nhật thông tin thành công!");
+
+                // Đóng Modal chuẩn Bootstrap 5
+                var modalEl = document.getElementById('userModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+
+                location.reload(); // Reload nhẹ để tải lại dữ liệu tổng quan
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        });
+    }
+
+    // ==========================================
+    // CHỨC NĂNG 3: BẬT MODAL PHÂN QUYỀN
+    // ==========================================
+    function openRoleModal(userId, currentRole) {
+        currentTargetUserId = userId;
+        document.getElementById("roleSelectHUD").value = currentRole;
+
+        var rModal = new bootstrap.Modal(document.getElementById('roleModal'));
+        rModal.show();
+    }
+
+    function saveNewRole() {
+        const newRole = document.getElementById("roleSelectHUD").value;
+        const formData = new FormData();
+        formData.append("userId", currentTargetUserId);
+        formData.append("roleName", newRole);
+        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        fetch('/Account/UpdateUserRole', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Phân quyền thành công!");
+                var modalEl = document.getElementById('roleModal');
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+                location.reload();
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        });
+    }
+
+    // ==========================================
+    // CHỨC NĂNG 4: KHÓA / MỞ KHÓA TÀI KHOẢN
+    // ==========================================
+    function toggleLockUser(userId, currentStatus) {
+        const msg = currentStatus ? "Bạn chắc chắn muốn KHÓA tài khoản này?" : "Bạn muốn MỞ KHÓA cho tài khoản này?";
+        if (!confirm(msg)) return;
+
+        const formData = new FormData();
+        formData.append("userId", userId);
+        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        fetch('/Account/ToggleLockUser', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Thao tác thất bại: " + data.message);
+            }
+        });
+    }
+
+    function deleteUser(userId) {
+        if (!confirm("Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này?")) return;
+        // Thực hiện fetch API xóa nếu backend có viết hàm DeleteUser...
+        alert("Tính năng xóa ID " + userId + " đang được phát triển.");
     }
 </script>
