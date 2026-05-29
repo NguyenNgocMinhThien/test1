@@ -1,544 +1,204 @@
 ﻿@model Web_cham_diem.Models.ViewModels.CompetitionRegistrationViewModel
+
 @{
     ViewData["Title"] = "Đăng ký tham gia cuộc thi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="registration-layout py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-xl-11">
+@section Styles {
+    <style>
+        :root {
+            --academic-blue: #0A4A91;
+            --light-blue: #F0F7FA;
+            --soft-gray: #F8F9FA;
+        }
 
-                <!-- Page Branding -->
-                <div class="mb-5 text-center">
-                    <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3 fw-bold">PORTAL SINH VIÊN</span>
-                    <h2 class="fw-black text-dark display-6 mb-2">Đăng ký tham gia cuộc thi</h2>
-                    <p class="text-secondary fs-5">Hoàn tất hồ sơ dự thi qua 5 bước tiêu chuẩn</p>
+        body {
+            background-color: var(--soft-gray);
+        }
+
+        .card-academic {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .upload-box {
+            border: 2px dashed #cfd8e3;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            background: #fff;
+            transition: 0.2s;
+        }
+
+            .upload-box:hover {
+                border-color: var(--academic-blue);
+                background: #f8fbff;
+            }
+    </style>
+}
+
+<div class="container py-5">
+    <div class="row g-4">
+        <!-- SECTION 1: INFO -->
+        <div class="col-lg-4">
+            <div class="card card-academic p-4">
+                <h5 class="fw-bold text-primary mb-3">@Model.CompetitionName</h5>
+                <p class="text-muted">@Model.Description</p>
+                <div class="small text-secondary">
+                    <div><strong>Lĩnh vực:</strong> @Model.Category</div>
+                    <div><strong>Hạn đăng ký:</strong> @Model.RegistrationDeadline.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div><strong>Hạn nộp bài:</strong> @Model.SubmissionDeadline.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div><strong>Hình thức:</strong> @(Model.IsTeamBased ? "Đội nhóm" : "Cá nhân")</div>
+                    <div><strong>Max team size:</strong> @Model.MaxTeamSize</div>
                 </div>
+            </div>
+        </div>
 
-                <div class="row g-4">
-                    <!-- Left: Navigation Stepper -->
-                    <div class="col-lg-3">
-                        <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 30px;">
-                            <div class="card-body p-4">
-                                <div class="stepper">
-                                    <div class="step-item active" data-step="1">
-                                        <div class="step-icon"><i class="bi bi-person-fill"></i></div>
-                                        <div class="step-content">
-                                            <div class="step-title">Bước 1</div>
-                                            <div class="step-name">Sinh viên</div>
-                                        </div>
-                                    </div>
-                                    <div class="step-item" data-step="2">
-                                        <div class="step-icon"><i class="bi bi-lightbulb-fill"></i></div>
-                                        <div class="step-content">
-                                            <div class="step-title">Bước 2</div>
-                                            <div class="step-name">Bài dự thi</div>
-                                        </div>
-                                    </div>
-                                    <div class="step-item" data-step="3" id="navStepTeam">
-                                        <div class="step-icon"><i class="bi bi-people-fill"></i></div>
-                                        <div class="step-content">
-                                            <div class="step-title">Bước 3</div>
-                                            <div class="step-name">Thành viên</div>
-                                        </div>
-                                    </div>
-                                    <div class="step-item" data-step="4">
-                                        <div class="step-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
-                                        <div class="step-content">
-                                            <div class="step-title">Bước 4</div>
-                                            <div class="step-name">Hồ sơ</div>
-                                        </div>
-                                    </div>
-                                    <div class="step-item" data-step="5">
-                                        <div class="step-icon"><i class="bi bi-send-check-fill"></i></div>
-                                        <div class="step-content">
-                                            <div class="step-title">Bước 5</div>
-                                            <div class="step-name">Xác nhận</div>
-                                        </div>
-                                    </div>
+        <!-- SECTION 2: FORM -->
+        <div class="col-lg-8">
+            <div class="card card-academic p-4">
+                <h4 class="fw-bold mb-4">Form đăng ký tham gia</h4>
+
+                <form asp-action="Register" asp-controller="Competitive" asp-route-id="@Model.CompetitionId" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Họ tên</label>
+                            <input class="form-control" asp-for="FullName" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">MSSV</label>
+                            <input class="form-control" asp-for="StudentId" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input class="form-control" asp-for="Email" readonly />
+                        </div>
+                       
+                    </div>
+
+                    @if (Model.IsTeamBased)
+                    {
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Hình thức đăng ký</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" asp-for="RegistrationType" type="radio" value="Individual" id="typeIndividual" checked>
+                                    <label class="form-check-label" for="typeIndividual">Cá nhân</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" asp-for="RegistrationType" type="radio" value="Team" id="typeTeam">
+                                    <label class="form-check-label" for="typeTeam">Đội nhóm</label>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Right: Form Content -->
-                    <div class="col-lg-9">
-                        <div class="card border-0 shadow-lg rounded-4 overflow-hidden shadow-hover">
-                            <!-- Progress Bar -->
-                            <div class="progress rounded-0" style="height: 6px;">
-                                <div id="formProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 20%"></div>
+                        <div id="teamSection" style="display:none;">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tên nhóm</label>
+                                <input class="form-control" asp-for="TeamName" placeholder="Nhập tên nhóm" />
+                                <span asp-validation-for="TeamName" class="text-danger small"></span>
                             </div>
-
-                            <div class="card-body p-4 p-md-5">
-                                <form id="registrationForm">
-
-                                    <!-- STEP 1: Personal Info -->
-                                    <div class="form-step active" id="step1">
-                                        <div class="section-title mb-4">
-                                            <h4 class="fw-bold"><i class="bi bi-person-vcard text-primary me-2"></i>Thông tin sinh viên</h4>
-                                            <hr class="opacity-10">
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="form-label fw-bold mb-3">Bạn tham gia với tư cách nào?</label>
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <input type="radio" class="btn-check" name="RegistrationType" id="typeIndividual" value="Individual" checked>
-                                                    <label class="btn btn-outline-primary p-4 w-100 rounded-4 text-start shadow-sm h-100" for="typeIndividual">
-                                                        <i class="bi bi-person fs-1 d-block mb-2"></i>
-                                                        <span class="d-block fw-bold fs-5">Cá nhân</span>
-                                                        <span class="small opacity-75">Tự mình thực hiện đề tài và nộp bài</span>
-                                                    </label>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <input type="radio" class="btn-check" name="RegistrationType" id="typeTeam" value="Team">
-                                                    <label class="btn btn-outline-primary p-4 w-100 rounded-4 text-start shadow-sm h-100" for="typeTeam">
-                                                        <i class="bi bi-people fs-1 d-block mb-2"></i>
-                                                        <span class="d-block fw-bold fs-5">Đội nhóm</span>
-                                                        <span class="small opacity-75">Phối hợp cùng các thành viên khác</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Họ và tên</label>
-                                                <input type="text" class="form-control rounded-3 py-2" placeholder="Nhập họ tên...">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Mã số sinh viên (MSSV)</label>
-                                                <input type="text" class="form-control rounded-3 py-2" placeholder="Ví dụ: 20240001">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Email sinh viên</label>
-                                                <input type="email" class="form-control rounded-3 py-2" placeholder="email@uni.edu.vn">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Số điện thoại</label>
-                                                <input type="tel" class="form-control rounded-3 py-2" placeholder="09xxxxxxx">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Khoa quản lý</label>
-                                                <select class="form-select rounded-3 py-2">
-                                                    <option selected>Chọn khoa...</option>
-                                                    <option>Công nghệ thông tin</option>
-                                                    <option>Quản trị kinh doanh</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Lớp sinh hoạt</label>
-                                                <input type="text" class="form-control rounded-3 py-2" placeholder="Ví dụ: 24CNTT1">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- STEP 2: Competition Info -->
-                                    <div class="form-step" id="step2">
-                                        <div class="section-title mb-4">
-                                            <h4 class="fw-bold"><i class="bi bi-lightbulb text-primary me-2"></i>Chi tiết bài dự thi</h4>
-                                            <hr class="opacity-10">
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="form-label fw-semibold">Tên đề tài dự thi <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control form-control-lg border-2" placeholder="Nhập tên đề tài/dự án của bạn...">
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="form-label fw-semibold">Mô tả tóm tắt nội dung</label>
-                                            <textarea class="form-control rounded-3" rows="6" placeholder="Giới thiệu ngắn gọn về ý tưởng, mục tiêu và giải pháp của đề tài (tối đa 500 ký tự)..."></textarea>
-                                        </div>
-
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Lĩnh vực chuyên môn</label>
-                                                <select class="form-select rounded-3 py-2">
-                                                    <option>Phần mềm & Ứng dụng</option>
-                                                    <option>Kinh tế & Khởi nghiệp</option>
-                                                    <option>IoT & Tự động hóa</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Loại hình cuộc thi</label>
-                                                <input type="text" class="form-control py-2 bg-light" value="Thi học thuật cấp trường" readonly>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- STEP 3: Team Members (Visible only for Team) -->
-                                    <div class="form-step" id="step3">
-                                        <div class="section-title mb-4 d-flex justify-content-between align-items-center">
-                                            <h4 class="fw-bold"><i class="bi bi-people text-primary me-2"></i>Đội ngũ thành viên</h4>
-                                            <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" id="addMemberBtn">
-                                                <i class="bi bi-person-plus-fill me-1"></i> Thêm bạn đồng hành
-                                            </button>
-                                        </div>
-                                        <hr class="opacity-10">
-
-                                        <div class="table-responsive">
-                                            <table class="table table-hover align-middle shadow-sm rounded-4">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th class="ps-4">Họ tên thành viên</th>
-                                                        <th>MSSV</th>
-                                                        <th>Vai trò</th>
-                                                        <th class="text-end pe-4">Thao tác</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="memberListTable">
-                                                    <tr>
-                                                        <td class="ps-4 fw-bold">Nguyễn Văn A (Bạn)</td>
-                                                        <td class="text-secondary">20240001</td>
-                                                        <td><span class="badge bg-primary rounded-pill px-3">Trưởng nhóm</span></td>
-                                                        <td class="text-end pe-4"><i class="bi bi-lock-fill text-muted"></i></td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    <!-- STEP 4: Portfolio Upload -->
-                                    <div class="form-step" id="step4">
-                                        <div class="section-title mb-4">
-                                            <h4 class="fw-bold"><i class="bi bi-files text-primary me-2"></i>Hồ sơ chuyên môn</h4>
-                                            <hr class="opacity-10">
-                                        </div>
-
-                                        <div class="row g-4">
-                                            <div class="col-md-6">
-                                                <div class="upload-card p-4 border rounded-4 text-center cursor-pointer transition-all">
-                                                    <div class="icon-circle bg-danger-subtle text-danger mx-auto mb-3">
-                                                        <i class="bi bi-file-earmark-pdf fs-4"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold">Báo cáo (PDF)</h6>
-                                                    <p class="text-muted small mb-0">Tài liệu chi tiết dự án</p>
-                                                    <input type="file" class="hidden-input" id="filePdf" hidden>
-                                                    <button type="button" class="btn btn-link mt-2 text-decoration-none p-0" onclick="document.getElementById('filePdf').click()">Chọn file</button>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="upload-card p-4 border rounded-4 text-center cursor-pointer transition-all">
-                                                    <div class="icon-circle bg-warning-subtle text-warning mx-auto mb-3">
-                                                        <i class="bi bi-file-earmark-ppt fs-4"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold">Slide (PPTX/PDF)</h6>
-                                                    <p class="text-muted small mb-0">Bài thuyết trình minh họa</p>
-                                                    <input type="file" class="hidden-input" id="filePpt" hidden>
-                                                    <button type="button" class="btn btn-link mt-2 text-decoration-none p-0" onclick="document.getElementById('filePpt').click()">Chọn file</button>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="upload-card p-4 border rounded-4 text-center cursor-pointer transition-all">
-                                                    <div class="icon-circle bg-info-subtle text-info mx-auto mb-3">
-                                                        <i class="bi bi-image fs-4"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold">Hình ảnh/Sơ đồ</h6>
-                                                    <p class="text-muted small mb-0">Minh họa thực tế dự án</p>
-                                                    <input type="file" class="hidden-input" id="fileImg" hidden>
-                                                    <button type="button" class="btn btn-link mt-2 text-decoration-none p-0" onclick="document.getElementById('fileImg').click()">Chọn file</button>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="upload-card p-4 border rounded-4 text-center cursor-pointer transition-all">
-                                                    <div class="icon-circle bg-success-subtle text-success mx-auto mb-3">
-                                                        <i class="bi bi-play-circle fs-4"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold">Video Clip / Demo</h6>
-                                                    <p class="text-muted small mb-0">Link clip hoặc demo dự án</p>
-                                                    <input type="text" class="form-control form-control-sm mt-2 rounded-pill" placeholder="https://youtube.com/...">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- STEP 5: Final Review -->
-                                    <div class="form-step" id="step5">
-                                        <div class="section-title text-center mb-5">
-                                            <div class="display-5 text-success mb-2"><i class="bi bi-shield-lock"></i></div>
-                                            <h4 class="fw-bold">Rà soát thông tin cuối</h4>
-                                            <p class="text-secondary">Đảm bảo mọi dữ liệu đã nhập là chính xác</p>
-                                        </div>
-
-                                        <div class="bg-light p-4 rounded-4 mb-4 border border-info">
-                                            <div class="row g-3">
-                                                <div class="col-5 text-secondary small">Trưởng nhóm:</div>
-                                                <div class="col-7 fw-bold">Nguyễn Văn A - 20240001</div>
-                                                <div class="col-5 text-secondary small">Tên đề tài:</div>
-                                                <div class="col-7 fw-bold" id="summaryTopicName">Dự án chuyển đổi số cộng đồng</div>
-                                                <div class="col-5 text-secondary small">Phân loại:</div>
-                                                <div class="col-7" id="summaryTypeBadge"><span class="badge bg-primary">Thi lẻ</span></div>
-                                            </div>
-                                        </div>
-
-                                        <div class="p-3 border rounded-3 bg-white">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="agreeRules">
-                                                <label class="form-check-label small" for="agreeRules">
-                                                    Tôi xác nhận thông tin trên là chính xác và cam kết tuân thủ mọi quy định của cuộc thi đã đề ra.
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Footer Buttons -->
-                                    <div class="form-footer d-flex justify-content-between mt-5 border-top pt-4">
-                                        <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm" id="prevBtn" disabled>
-                                            <i class="bi bi-arrow-left"></i> Quay lại
-                                        </button>
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
-                                                <i class="bi bi-save"></i> Lưu bản nháp
-                                            </button>
-                                            <button type="button" class="btn btn-primary rounded-pill px-5 shadow-sm" id="nextBtn">
-                                                Tiếp tục <i class="bi bi-arrow-right"></i>
-                                            </button>
-                                            <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm" id="submitBtn" style="display: none;">
-                                                Gửi đăng ký <i class="bi bi-send-fill ms-1"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                </form>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Danh sách thành viên (mỗi dòng 1 người)</label>
+                                <textarea class="form-control" asp-for="TeamMembers" rows="4" placeholder="Họ tên - MSSV - Vai trò"></textarea>
+                                <span asp-validation-for="TeamMembers" class="text-danger small"></span>
+                                <div class="small text-muted">Tối đa @Model.MaxTeamSize thành viên (bao gồm trưởng nhóm).</div>
                             </div>
                         </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" asp-for="RegistrationType" value="Individual" />
+                    }
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Ghi chú</label>
+                        <textarea class="form-control" asp-for="Notes" rows="3" placeholder="Ghi chú thêm (nếu có)"></textarea>
                     </div>
-                </div>
+
+                    <!-- SECTION 3: FILES -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Hồ sơ đăng ký</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">CV</label>
+                                <div class="upload-box">
+                                    <input type="file" class="form-control" asp-for="CvFile" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Proposal</label>
+                                <div class="upload-box">
+                                    <input type="file" class="form-control" asp-for="ProposalFile" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">File mô tả</label>
+                                <div class="upload-box">
+                                    <input type="file" class="form-control" asp-for="ProjectFile" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="small text-muted mt-2">Hỗ trợ PDF/DOC/DOCX/ZIP/RAR</div>
+                    </div>
+
+                    <!-- SECTION 4: CONFIRM -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" asp-for="AcceptRules" />
+                            <label class="form-check-label">Tôi đồng ý với thể lệ cuộc thi</label>
+                            <span asp-validation-for="AcceptRules" class="text-danger small d-block"></span>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" asp-for="ConfirmInformation" />
+                            <label class="form-check-label">Tôi xác nhận thông tin là chính xác</label>
+                            <span asp-validation-for="ConfirmInformation" class="text-danger small d-block"></span>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: ACTION -->
+                    <div class="d-flex flex-wrap gap-3">
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill">
+                            Gửi đăng ký
+                        </button>
+                        <button type="submit"
+                                formnovalidate
+                                formaction="/Competitions/Register/@Model.CompetitionId/cancel"
+                                class="btn btn-outline-secondary px-4 rounded-pill">
+                            Hủy đăng ký
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    :root {
-        --primary-main: #0d6efd;
-        --bg-gray: #f4f7fa;
-    }
-
-    body {
-        background-color: var(--bg-gray);
-    }
-
-    /* Stepper Vertical UI */
-    .stepper {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        position: relative;
-    }
-
-        .stepper::before {
-            content: "";
-            position: absolute;
-            left: 18px;
-            top: 10px;
-            bottom: 10px;
-            width: 2px;
-            background: #e0e6ed;
-            z-index: 0;
-        }
-
-    .step-item {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        position: relative;
-        z-index: 1;
-        opacity: 0.5;
-        transition: 0.3s;
-    }
-
-        .step-item.active {
-            opacity: 1;
-        }
-
-        .step-item.complete {
-            opacity: 1;
-        }
-
-    .step-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2px solid #e0e6ed;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #adb5bd;
-        transition: 0.3s;
-        font-size: 1.1rem;
-    }
-
-    .step-item.active .step-icon {
-        border-color: var(--primary-main);
-        background: var(--primary-main);
-        color: #fff;
-        box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
-    }
-
-    .step-item.complete .step-icon {
-        border-color: #198754;
-        background: #198754;
-        color: #fff;
-    }
-
-    .step-title {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: #6c757d;
-        font-weight: 700;
-    }
-
-    .step-name {
-        font-size: 0.95rem;
-        font-weight: 700;
-        color: #343a40;
-    }
-
-    /* Form Content UI */
-    .form-step {
-        display: none;
-        animation: fadeIn 0.4s ease;
-    }
-
-        .form-step.active {
-            display: block;
-        }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .shadow-hover {
-        transition: 0.3s;
-    }
-
-        .shadow-hover:hover {
-            box-shadow: 0 1rem 3rem rgba(0,0,0,.08) !important;
-        }
-
-    .icon-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .upload-card {
-        border-style: dashed !important;
-        border-width: 2px !important;
-    }
-
-        .upload-card:hover {
-            border-color: var(--primary-main) !important;
-            background-color: #f8fbff;
-            transform: scale(1.02);
-        }
-
-    .cursor-pointer {
-        cursor: pointer;
-    }
-
-    .transition-all {
-        transition: 0.3s all;
-    }
-
-    /* Custom Radio Buttons */
-    .btn-check:checked + .btn-outline-primary {
-        background-color: #f0f7ff !important;
-        border-width: 2px !important;
-    }
-</style>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const form = document.getElementById("registrationForm");
-        const steps = document.querySelectorAll(".form-step");
-        const navSteps = document.querySelectorAll(".step-item");
-        const btnNext = document.getElementById("nextBtn");
-        const btnPrev = document.getElementById("prevBtn");
-        const btnSubmit = document.getElementById("submitBtn");
-        const progressBar = document.getElementById("formProgressBar");
-        const navStepTeam = document.getElementById("navStepTeam");
-
-        let currentStepNum = 1;
-        let isTeam = false;
-
-        // Logic check registration type
-        document.querySelectorAll('input[name="RegistrationType"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                isTeam = e.target.value === "Team";
-                if (isTeam) {
-                    navStepTeam.style.display = "flex";
-                } else {
-                    navStepTeam.style.display = "none";
-                }
+@section Scripts {
+    <script>
+        const cancelBtn = document.getElementById("cancelBtn");
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", () => {
+                window.location.href = "/Competitions";
             });
-        });
-
-        function updateStepUI() {
-            // Hide all
-            steps.forEach(s => s.classList.remove("active"));
-            navSteps.forEach(n => n.classList.remove("active", "complete"));
-
-            // Show current
-            document.getElementById(`step${currentStepNum}`).classList.add("active");
-
-            // Sidebar update
-            navSteps.forEach((n, idx) => {
-                const sNum = idx + 1;
-                if (sNum === currentStepNum) n.classList.add("active");
-                if (sNum < currentStepNum) n.classList.add("complete");
-            });
-
-            // Progress bar
-            progressBar.style.width = `${(currentStepNum / 5) * 100}%`;
-
-            // Navigation Buttons
-            btnPrev.disabled = currentStepNum === 1;
-
-            if (currentStepNum === 5) {
-                btnNext.style.display = "none";
-                btnSubmit.style.display = "block";
-            } else {
-                btnNext.style.display = "block";
-                btnSubmit.style.display = "none";
-            }
-
-            window.scrollTo({ top: 30, behavior: 'smooth' });
         }
 
-        btnNext.addEventListener("click", () => {
-            if (currentStepNum === 2 && !isTeam) {
-                currentStepNum = 4; // Bỏ qua bước 3 nếu là cá nhân
-            } else {
-                currentStepNum++;
-            }
-            updateStepUI();
-        });
+        const teamSection = document.getElementById("teamSection");
+        const typeIndividual = document.getElementById("typeIndividual");
+        const typeTeam = document.getElementById("typeTeam");
 
-        btnPrev.addEventListener("click", () => {
-            if (currentStepNum === 4 && !isTeam) {
-                currentStepNum = 2; // Quay lại bước 2 nế là cá nhân
-            } else {
-                currentStepNum--;
-            }
-            updateStepUI();
-        });
-
-        // Initialize display
-        navStepTeam.style.display = "none"; // Mặc định cá nhân thì ẩn bước 3 sidebar
-    });
-</script>
+        if (typeIndividual && typeTeam) {
+            const toggleTeam = () => {
+                teamSection.style.display = typeTeam.checked ? "block" : "none";
+            };
+            typeIndividual.addEventListener("change", toggleTeam);
+            typeTeam.addEventListener("change", toggleTeam);
+            toggleTeam();
+        }
+    </script>
+}

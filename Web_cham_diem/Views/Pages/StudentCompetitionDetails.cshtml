@@ -1,0 +1,381 @@
+﻿@model Web_cham_diem.Models.Competitions
+
+@{
+    ViewData["Title"] = Model.CompetitionName;
+    ViewData["ActivePage"] = "Competitions"; // Đánh dấu menu tương ứng trong Layout
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Kế thừa header/footer từ layout
+
+    var isRegistrationOpen = Model.Status == "Active" && DateTime.UtcNow <= Model.RegistrationDeadline;
+    var statusBadgeClass = Model.Status switch
+    {
+        "Active" => "bg-success",
+        "Draft" => "bg-secondary",
+        "Closed" => "bg-danger",
+        "Completed" => "bg-dark",
+        _ => "bg-primary"
+    };
+
+    var statusText = Model.Status switch
+    {
+        "Active" => "Đang diễn ra",
+        "Draft" => "Bản nháp",
+        "Closed" => "Đã đóng",
+        "Completed" => "Đã kết thúc",
+        _ => Model.Status
+    };
+
+    var isAlreadyRegistered = ViewBag.IsAlreadyRegistered as bool? ?? false;
+    var registrationStatus = ViewBag.RegistrationStatus as string;
+    var canRegister = isRegistrationOpen && !isAlreadyRegistered;
+}
+
+
+@section Styles {
+    <style>
+        :root {
+            --academic-blue: #0A4A91;
+            --light-blue: #F0F7FA;
+            --soft-gray: #F8F9FA;
+        }
+
+        body {
+            background-color: var(--soft-gray);
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--academic-blue) 0%, #1771D6 100%);
+            color: white;
+            border-radius: 1rem;
+        }
+
+        .card-academic {
+            background: #ffffff;
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .card-academic:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            }
+
+        .text-academic {
+            color: var(--academic-blue);
+        }
+
+        /* Timeline Styling */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            border-left: 3px solid #e9ecef;
+            margin-top: 1rem;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+            .timeline-item:last-child {
+                margin-bottom: 0;
+            }
+
+        .timeline-icon {
+            position: absolute;
+            width: 1.25rem;
+            height: 1.25rem;
+            background: var(--academic-blue);
+            border: 4px solid #F8F9FA;
+            border-radius: 50%;
+            left: -2.65rem;
+            top: 0.15rem;
+        }
+
+        .rubric-table th {
+            background-color: var(--light-blue);
+            color: var(--academic-blue);
+            font-weight: 600;
+            border-bottom: 2px solid var(--academic-blue);
+        }
+
+        .stat-card {
+            background-color: var(--light-blue);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid rgba(10, 74, 145, 0.1);
+        }
+    </style>
+}
+
+<!-- Nội dung trang Main Content -->
+<div class="container py-4 my-3">
+    <!-- 1. HERO SECTION -->
+    <div class="hero-section p-4 p-md-5 mb-4 position-relative overflow-hidden shadow-sm">
+        <div class="row align-items-center position-relative z-1">
+            <div class="col-lg-8">
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge @statusBadgeClass fs-6 px-3 py-2 rounded-pill shadow-sm">@statusText</span>
+                    <span class="badge bg-white text-academic border fs-6 px-3 py-2 rounded-pill shadow-sm">
+                        <i class="bi bi-tag-fill me-1"></i> @Model.Category
+                    </span>
+                </div>
+                <h1 class="display-5 fw-bold mb-3">@Model.CompetitionName</h1>
+                <p class="lead mb-4 text-white-50">
+                    @(string.IsNullOrEmpty(Model.Description) ? "Cuộc thi học thuật dành cho sinh viên." : Model.Description.Length > 150 ? Model.Description.Substring(0, 150) + "..." : Model.Description)
+                </p>
+
+                <div class="d-flex flex-wrap gap-3">
+                    @if (canRegister)
+                    {
+                        <a href="/Competitions/Register/@Model.CompetitionId" class="btn btn-light text-academic fw-bold px-4 py-2 rounded-pill shadow-sm">
+                            <i class="bi bi-pencil-square me-2"></i>Đăng ký ngay
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-secondary px-4 py-2 rounded-pill" disabled>
+                            Đăng ký đã đóng / đã đăng ký
+                        </button>
+                    }
+                    <a href="#rules-section" class="btn btn-outline-light px-4 py-2 rounded-pill fw-medium">
+                        <i class="bi bi-book me-2"></i>Xem thể lệ
+                    </a>
+                    <a href="#criteria-section" class="btn btn-outline-light px-4 py-2 rounded-pill fw-medium">
+                        <i class="bi bi-list-check me-2"></i>Tiêu chí chấm điểm
+                    </a>
+                </div>
+                @if (isAlreadyRegistered)
+                {
+                    <div class="alert alert-info mt-3">
+                        Trạng thái hồ sơ: <strong>@registrationStatus</strong>
+                    </div>
+                }
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-end">
+                <i class="bi bi-mortarboard" style="font-size: 10rem; opacity: 0.15;"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN -->
+        <div class="col-lg-8">
+            <!-- 2. THÔNG TIN CUỘC THI -->
+            <div class="card-academic card p-4 mb-4 border border-light">
+                <h4 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-info-circle-fill me-2"></i>Thông tin cuộc thi</h4>
+                <div class="text-secondary lh-lg mb-4">
+                    @(Model.Description ?? "Chưa có thông tin mô tả chi tiết.")
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center p-3 rounded-3 h-100" style="background-color: var(--light-blue)">
+                            <div class="fs-1 text-academic me-3"><i class="bi bi-people-fill"></i></div>
+                            <div>
+                                <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 12px;">Hình thức</small>
+                                <span class="fw-semibold text-dark fs-6">@(Model.IsTeamBased ? $"Theo đội (Tối đa {Model.MaxTeamSize} TV)" : "Cá nhân")</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-center p-3 rounded-3 h-100" style="background-color: var(--light-blue)">
+                            <div class="fs-1 text-academic me-3"><i class="bi bi-person-lines-fill"></i></div>
+                            <div>
+                                <small class="text-muted d-block fw-bold text-uppercase" style="font-size: 12px;">Giới hạn</small>
+                                <span class="fw-semibold text-dark fs-6">@Model.MaxParticipants Thí sinh / Đội</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. THỂ LỆ & YÊU CẦU -->
+            <div id="rules-section" class="card-academic card p-4 mb-4 border border-light">
+                <h4 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-file-earmark-text-fill me-2"></i>Thể lệ & Yêu cầu</h4>
+                <div class="alert align-items-center border-0 lh-lg mb-0 rounded-3 text-secondary" style="background-color: var(--soft-gray)">
+                    @if (!string.IsNullOrEmpty(Model.Rules))
+                    {
+                        @Html.Raw(Model.Rules.Replace("\n", "<br/>"))
+                    }
+                    else
+                    {
+                        <span class="fst-italic"><i class="bi bi-clock-history me-1"></i>Đang cập nhật thể lệ và yêu cầu nộp bài. Vui lòng quay lại sau.</span>
+                    }
+                </div>
+            </div>
+
+            <!-- 4. TIÊU CHÍ CHẤM ĐIỂM -->
+            <div id="criteria-section" class="card-academic card p-4 mb-4 border border-light">
+                <h4 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-ui-checks-grid me-2"></i>Tiêu chí chấm điểm</h4>
+                @if (Model.ScoringCriteria != null && Model.ScoringCriteria.Any())
+                {
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table rubric-table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3 px-4">Tiêu chí đánh giá</th>
+                                    <th class="py-3 text-center">Trọng số</th>
+                                    <th class="py-3 text-center">Thang điểm</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var criteria in Model.ScoringCriteria.OrderBy(c => c.Order))
+                                {
+                                    <tr>
+                                        <td class="py-3 px-4">
+                                            <div class="fw-bold text-dark">@criteria.CriteriaName</div>
+                                            <small class="text-muted">@criteria.Description</small>
+                                        </td>
+                                        <td class="py-3 text-center fw-semibold text-secondary">@(criteria.Weight * 100)%</td>
+                                        <td class="py-3 text-center fw-bold text-academic">@criteria.MaxScore đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic mb-0 bg-light p-3 rounded text-center">
+                        <i class="bi bi-cone-striped text-warning me-2"></i>Ban giám khảo đang bổ sung bộ tiêu chí.
+                    </p>
+                }
+            </div>
+
+            <!-- 8. ACTION SECTION -->
+            <div id="register-action" class="card-academic card p-4 mb-4 shadow" style="border: 2px solid var(--academic-blue) !important; background-color: var(--light-blue);">
+                <div class="text-center py-3">
+                    <h5 class="fw-bold mb-3 text-dark">Sẵn sàng thể hiện bản lĩnh học thuật của bạn?</h5>
+                    <p class="text-secondary mb-4">Hãy chắc chắn bạn đã đọc kỹ Thể lệ và sẵn sàng chuẩn bị hồ sơ/sản phẩm theo yêu cầu quy định.</p>
+
+                    <div class="d-flex justify-content-center flex-wrap gap-3">
+                        @if (canRegister)
+                        {
+                            <a href="/Competitions/Register/@Model.CompetitionId" class="btn btn-light text-academic fw-bold px-4 py-2 rounded-pill shadow-sm">
+                                <i class="bi bi-pencil-square me-2"></i>Đăng ký ngay
+                            </a>
+                        }
+                        else if (isAlreadyRegistered)
+                        {
+                            <a href="/Competitions/Registration/@Model.CompetitionId" class="btn btn-outline-light px-4 py-2 rounded-pill fw-medium">
+                                <i class="bi bi-folder2-open me-2"></i>Xem hồ sơ đăng ký
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-secondary px-4 py-2 rounded-pill" disabled>
+                                Đăng ký đã đóng
+                            </button>
+                        }
+
+                        <button class="btn bg-white border px-4 py-2 rounded-pill text-academic fw-medium shadow-sm hover-shadow">
+                            <i class="bi bi-journals me-2"></i>Bài dự thi mẫu
+                        </button>
+                        <button class="btn bg-white border px-4 py-2 rounded-pill text-dark fw-medium shadow-sm hover-shadow">
+                            <i class="bi bi-chat-dots me-2"></i>Liên hệ BTC
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Sidebar -->
+        <div class="col-lg-4">
+            <!-- 3. TIMELINE -->
+            <div class="card-academic card p-4 mb-4 border border-light">
+                <h5 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-calendar-event me-2"></i>Lộ trình thời gian</h5>
+                <div class="timeline mt-3">
+                    <!-- Start Date -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon shadow-sm d-flex justify-content-center align-items-center"></div>
+                        <div class="timeline-date">@Model.StartDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-bold text-dark mt-1">Mở cuộc thi</div>
+                        <small class="text-muted">Chính thức khởi động</small>
+                    </div>
+                    <!-- Registration Deadline -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon @(DateTime.UtcNow > Model.RegistrationDeadline ? "bg-danger" : "bg-warning") shadow-sm"></div>
+                        <div class="timeline-date">@Model.RegistrationDeadline.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-bold text-dark mt-1">Hạn chót đăng ký</div>
+                        <small class="text-muted">Đóng cổng tiếp nhận đăng ký</small>
+                    </div>
+                    <!-- Submission Deadline -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon shadow-sm"></div>
+                        <div class="timeline-date">@Model.SubmissionDeadline.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-bold text-dark mt-1">Hạn chót nộp bài</div>
+                        <small class="text-muted">Hệ thống khóa chức năng nộp bài</small>
+                    </div>
+                    <!-- End Date -->
+                    <div class="timeline-item">
+                        <div class="timeline-icon bg-secondary shadow-sm"></div>
+                        <div class="timeline-date">@Model.EndDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        <div class="fw-bold text-dark mt-1">Kết thúc & Công bố</div>
+                        <small class="text-muted">Trao giải và tổng kết</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. THỐNG KÊ CUỘC THI -->
+            <div class="card-academic card p-4 mb-4 border border-light">
+                <h5 class="text-academic fw-bold mb-3 border-bottom pb-2"><i class="bi bi-bar-chart-line-fill me-2"></i>Thống kê tổng quan</h5>
+                <div class="row g-2 mt-2">
+                    <div class="col-6">
+                        <div class="stat-card shadow-sm">
+                            <h3 class="fw-bold text-academic mb-1">@(Model.Registrations?.Count ?? 0)</h3>
+                            <small class="text-muted fw-bold d-block text-uppercase" style="font-size: 0.75rem;">SV Đăng Ký</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card shadow-sm bg-white border border-light">
+                            <h3 class="fw-bold text-success mb-1">@(Model.Submissions?.Count ?? 0)</h3>
+                            <small class="text-muted fw-bold d-block text-uppercase" style="font-size: 0.75rem;">Bài Dự Thi</small>
+                        </div>
+                    </div>
+                    @if (Model.IsTeamBased)
+                    {
+                        <div class="col-12 mt-2">
+                            <div class="stat-card shadow-sm py-2 d-flex justify-content-center align-items-center gap-2">
+                                <i class="bi bi-diagram-3 text-academic fs-5"></i>
+                                <span class="fw-bold text-dark fs-5">@(Model.Teams?.Count ?? 0)</span>
+                                <span class="text-muted fw-medium text-uppercase" style="font-size: 0.8rem;">Đội thi tham gia</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 6. QUYỀN LỢI & GIẢI THƯỞNG -->
+            <div class="card-academic card p-4 mb-4 border border-light">
+                <h5 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-award-fill me-2"></i>Quyền lợi & Giải thưởng</h5>
+                <div class="d-flex align-items-start mb-3 bg-light p-3 rounded-3 shadow-sm border border-light">
+                    <div class="text-warning fs-1 me-3 lh-1"><i class="bi bi-trophy-fill"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1 text-dark">Giải thưởng nổi bật</h6>
+                        <p class="text-secondary small mb-0 fw-medium">@(string.IsNullOrEmpty(Model.Prize) ? "Ban tổ chức sẽ công bố sau." : Model.Prize)</p>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mt-4 mb-3 fs-6">Quyền lợi học thuật:</h6>
+                <ul class="list-unstyled mb-0 text-secondary small lh-lg d-flex flex-column gap-2">
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <span>Giấy chứng nhận (Digital & Bản cứng) phục vụ hồ sơ sinh viên</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <span>Cộng điểm rèn luyện sinh viên theo quy định học kỳ</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                        <span>Cơ hội tham gia các dự án NCKH của Cán bộ / Giảng viên</span>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
