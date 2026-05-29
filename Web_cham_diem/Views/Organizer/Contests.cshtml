@@ -1,4 +1,5 @@
-﻿@{
+﻿@model Web_cham_diem.Models.ViewModels.OrganizerContestsViewModel
+@{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Quản lý Cuộc thi";
 }
@@ -134,7 +135,13 @@
             border-top: 1px solid var(--border-color);
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
+
+            .comp-actions .btn {
+                flex: 1 1 auto;
+                min-width: 80px;
+            }
 
         /* --- STAT CARDS --- */
         .stat-overview {
@@ -185,20 +192,83 @@
                 border-color: var(--organizer-accent);
                 border-width: 4px;
             }
+
+        /* --- ACTION DROPDOWN --- */
+        .dropdown-menu {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-item {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+
+            .dropdown-item:last-child {
+                border-bottom: none;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+                color: var(--organizer-accent);
+            }
+
+            .dropdown-item.delete-action:hover {
+                background-color: #fee;
+                color: #e53e3e;
+            }
+
+        /* --- ALERTS --- */
+        .alert-dismissible {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 }
 
 <div class="org-contest-wrapper py-4">
     <div class="container-fluid">
+        <!-- Thông báo thành công/lỗi -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong>Thành công!</strong> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Lỗi!</strong> @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
         <!-- Header Page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h3 class="fw-bold mb-1 text-dark">Quản lý Cuộc thi</h3>
                 <p class="text-muted small mb-0">Thiết lập, theo dõi và cấu hình toàn bộ vòng đời các cuộc thi.</p>
             </div>
-            <button class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
+            <a href="/Organizer/Create" class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
                 <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi
-            </button>
+            </a>
         </div>
 
         <!-- 1. Statistics -->
@@ -207,7 +277,7 @@
                 <div class="stat-overview text-primary" style="border-bottom: 3px solid #0d6efd;">
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Tổng cuộc thi</div>
-                        <div class="val">18</div>
+                        <div class="val">@Model.TotalCompetitions</div>
                     </div>
                     <i class="bi bi-boxes fs-1 opacity-50"></i>
                 </div>
@@ -216,7 +286,7 @@
                 <div class="stat-overview text-success" style="border-bottom: 3px solid #22c55e;">
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Đang hoạt động</div>
-                        <div class="val">3</div>
+                        <div class="val">@Model.ActiveCompetitions</div>
                     </div>
                     <i class="bi bi-play-circle fs-1 opacity-50"></i>
                 </div>
@@ -225,7 +295,7 @@
                 <div class="stat-overview text-warning" style="border-bottom: 3px solid #f59e0b;">
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Sắp diễn ra</div>
-                        <div class="val">2</div>
+                        <div class="val">@Model.UpcomingCompetitions</div>
                     </div>
                     <i class="bi bi-calendar-event fs-1 opacity-50"></i>
                 </div>
@@ -234,7 +304,7 @@
                 <div class="stat-overview text-secondary" style="border-bottom: 3px solid #64748b;">
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Đã kết thúc</div>
-                        <div class="val">13</div>
+                        <div class="val">@Model.ClosedCompetitions</div>
                     </div>
                     <i class="bi bi-check-circle fs-1 opacity-50"></i>
                 </div>
@@ -242,172 +312,142 @@
         </div>
 
         <!-- 2. Search & Filter -->
-        <div class="filter-bar shadow-sm d-flex flex-wrap gap-3 align-items-end">
+        <form method="get" class="filter-bar shadow-sm d-flex flex-wrap gap-3 align-items-end">
             <div style="flex: 1 1 250px;">
                 <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm cuộc thi</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" placeholder="Nhập tên khóa học, mã cuộc thi...">
+                    <input type="text" class="form-control" name="search" placeholder="Nhập tên khóa học, mã cuộc thi..." value="@Model.SearchQuery">
                 </div>
             </div>
             <div style="width: 180px;">
                 <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
-                <select class="form-select form-select-sm">
+                <select class="form-select form-select-sm" name="status">
                     <option value="">Tất cả</option>
-                    <option value="active">Đang hoạt động</option>
-                    <option value="upcoming">Sắp diễn ra</option>
-                    <option value="closed">Đã đóng</option>
+                    <option value="Draft" selected="@(Model.StatusFilter == "Draft")">Nháp</option>
+                    <option value="Active" selected="@(Model.StatusFilter == "Active")">Đang hoạt động</option>
+                    <option value="Closed" selected="@(Model.StatusFilter == "Closed")">Đã đóng</option>
+                    <option value="Completed" selected="@(Model.StatusFilter == "Completed")">Đã kết thúc</option>
                 </select>
             </div>
             <div style="width: 200px;">
                 <label class="form-label small fw-bold text-muted mb-1">Lĩnh vực</label>
-                <select class="form-select form-select-sm">
+                <select class="form-select form-select-sm" name="category">
                     <option value="">Tất cả lĩnh vực</option>
-                    <option>Học thuật / NCKH</option>
-                    <option>Công nghệ Thông tin</option>
-                    <option>Kỹ năng Mềm</option>
+                    <option value="Học thuật / NCKH" selected="@(Model.CategoryFilter == "Học thuật / NCKH")">Học thuật / NCKH</option>
+                    <option value="Công nghệ Thông tin" selected="@(Model.CategoryFilter == "Công nghệ Thông tin")">Công nghệ Thông tin</option>
+                    <option value="Kỹ năng Mềm" selected="@(Model.CategoryFilter == "Kỹ năng Mềm")">Kỹ năng Mềm</option>
                 </select>
             </div>
             <div>
-                <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-filter"></i> Lọc</button>
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-filter"></i> Lọc</button>
             </div>
-        </div>
+        </form>
 
         <!-- 3. Competition List (Cards) -->
-        <div class="row g-4">
-            <!-- Card 1 -->
-            <div class="col-md-6 col-xl-4">
-                <div class="comp-card">
-                    <div class="comp-banner tech">
-                        <div class="comp-status status-active">Đang Nhận Bài</div>
-                    </div>
-                    <div class="comp-body">
-                        <div class="comp-title">Hackathon Sinh viên 2026</div>
-                        <div class="comp-field">Công nghệ Thuật toán & Web App</div>
+        @if (Model.Competitions.Count > 0)
+        {
+            <div class="row g-4">
+                @foreach (var comp in Model.Competitions)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="comp-card">
+                            <div class="comp-banner @(comp.Category == "Công nghệ Thông tin" ? "tech" : "default")">
+                                <div class="comp-status @GetStatusClass(comp.StatusDisplay)">@comp.StatusDisplay</div>
+                            </div>
+                            <div class="comp-body">
+                                <div class="comp-title">@comp.CompetitionName</div>
+                                <div class="comp-field">@(comp.Category ?? "Không xác định")</div>
 
-                        <div class="comp-stats mt-2">
-                            <div class="stat-item">
-                                <div class="stat-label">Đăng ký</div>
-                                <div class="stat-num text-primary">450</div>
+                                <div class="comp-stats mt-2">
+                                    <div class="stat-item">
+                                        <div class="stat-label">Đăng ký</div>
+                                        <div class="stat-num text-primary">@comp.TotalRegistrations</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Đã nộp bài</div>
+                                        <div class="stat-num text-success">@comp.TotalSubmissions</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Hạn nộp</div>
+                                        <div class="stat-num" style="font-size:0.9rem;">@comp.SubmissionDeadline.ToString("dd/MM")</div>
+                                    </div>
+                                </div>
+
+                                <div class="comp-progress">
+                                    <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
+                                        <span>Tiến độ chung</span>
+                                        <span>@comp.ProgressPercentage%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar" style="width: @comp.ProgressPercentage%; background-color: var(--organizer-accent);"></div>
+                                    </div>
+                                    <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>@comp.CurrentPhase</strong></div>
+                                </div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Đã nộp bài</div>
-                                <div class="stat-num text-success">120</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Hạn nộp</div>
-                                <div class="stat-num text-danger" style="font-size:0.9rem;">Hôm nay</div>
+                            <!-- Actions -->
+                            <div class="comp-actions">
+                                <button type="button" class="btn btn-sm btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#detailModal" data-competition-id="@comp.CompetitionId" onclick="loadCompetitionDetail(@comp.CompetitionId)">
+                                    <i class="bi bi-eye me-1"></i>Chi tiết
+                                </button>
+                                <div class="btn-group" role="group">
+                                    <a href="/Organizer/Edit/@comp.CompetitionId" class="btn btn-sm btn-outline-secondary" title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Thêm tùy chọn">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        @if (comp.Status == "Draft")
+                                        {
+                                            <li>
+                                                <button type="button" class="dropdown-item" onclick="changeStatus(@comp.CompetitionId, 'Active')">
+                                                    <i class="bi bi-play-circle me-2 text-success"></i>Kích hoạt cuộc thi
+                                                </button>
+                                            </li>
+                                        }
+                                        @if (comp.Status == "Active")
+                                        {
+                                            <li>
+                                                <button type="button" class="dropdown-item" onclick="changeStatus(@comp.CompetitionId, 'Closed')">
+                                                    <i class="bi bi-pause-circle me-2 text-warning"></i>Tạm dừng cuộc thi
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button type="button" class="dropdown-item" onclick="changeStatus(@comp.CompetitionId, 'Completed')">
+                                                    <i class="bi bi-check-circle me-2 text-info"></i>Kết thúc cuộc thi
+                                                </button>
+                                            </li>
+                                        }
+                                        @if (comp.Status == "Closed" || comp.Status == "Completed")
+                                        {
+                                            <li>
+                                                <button type="button" class="dropdown-item" onclick="changeStatus(@comp.CompetitionId, 'Active')">
+                                                    <i class="bi bi-arrow-counterclockwise me-2 text-info"></i>Mở lại cuộc thi
+                                                </button>
+                                            </li>
+                                        }
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button type="button" class="dropdown-item delete-action" onclick="deleteCompetition(@comp.CompetitionId, '@comp.CompetitionName')">
+                                                <i class="bi bi-trash me-2"></i>Xóa cuộc thi
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="comp-progress">
-                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
-                                <span>Tiến độ chung</span>
-                                <span>65%</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar" style="width: 65%; background-color: var(--organizer-accent);"></div>
-                            </div>
-                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Thu bài dự thi</strong></div>
-                        </div>
                     </div>
-                    <!-- Actions -->
-                    <div class="comp-actions">
-                        <button class="btn btn-sm btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#detailModal">Chi tiết</button>
-                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
-                        <button class="btn btn-sm btn-outline-warning"><i class="bi bi-pause-circle"></i></button>
-                    </div>
-                </div>
+                }
             </div>
-
-            <!-- Card 2 -->
-            <div class="col-md-6 col-xl-4">
-                <div class="comp-card">
-                    <div class="comp-banner default">
-                        <div class="comp-status status-active">Đang Chấm Điểm</div>
-                    </div>
-                    <div class="comp-body">
-                        <div class="comp-title">Nghiên cứu Khoa học Trẻ Khối Kinh tế</div>
-                        <div class="comp-field">Học thuật / NCKH</div>
-
-                        <div class="comp-stats mt-2">
-                            <div class="stat-item">
-                                <div class="stat-label">Bài hợp lệ</div>
-                                <div class="stat-num text-primary">85</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Đã chấm</div>
-                                <div class="stat-num text-success">40</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Công bố</div>
-                                <div class="stat-num" style="font-size:0.9rem;">20/11</div>
-                            </div>
-                        </div>
-
-                        <div class="comp-progress">
-                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
-                                <span>Tiến độ chung</span>
-                                <span>85%</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-warning" style="width: 85%;"></div>
-                            </div>
-                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Giám khảo chấm thi</strong></div>
-                        </div>
-                    </div>
-                    <div class="comp-actions">
-                        <button class="btn btn-sm btn-primary flex-grow-1">Chi tiết</button>
-                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" title="Kết thúc sớm"><i class="bi bi-stop-circle"></i></button>
-                    </div>
-                </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center py-5" role="alert">
+                <i class="bi bi-inbox fs-1"></i>
+                <p class="mt-3 mb-0">Chưa có cuộc thi nào. <a href="/Organizer/Create" class="alert-link">Tạo cuộc thi mới</a></p>
             </div>
-
-            <!-- Card 3 -->
-            <div class="col-md-6 col-xl-4">
-                <div class="comp-card">
-                    <div class="comp-banner" style="background-image: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-                        <div class="comp-status status-upcoming">Sắp Diễn Ra</div>
-                    </div>
-                    <div class="comp-body">
-                        <div class="comp-title">Khởi nghiệp Sáng tạo Startup Idea</div>
-                        <div class="comp-field">Kỹ năng / Thực tiễn</div>
-
-                        <div class="comp-stats mt-2">
-                            <div class="stat-item">
-                                <div class="stat-label">Quan tâm</div>
-                                <div class="stat-num text-primary">120</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Chờ duyệt</div>
-                                <div class="stat-num text-warning">45</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Mở cổng</div>
-                                <div class="stat-num text-success" style="font-size:0.9rem;">01/12</div>
-                            </div>
-                        </div>
-
-                        <div class="comp-progress">
-                            <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
-                                <span>Tiến độ chung</span>
-                                <span>10%</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-secondary" style="width: 10%;"></div>
-                            </div>
-                            <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>Duyệt hồ sơ mở màn</strong></div>
-                        </div>
-                    </div>
-                    <div class="comp-actions">
-                        <button class="btn btn-sm btn-primary flex-grow-1">Chi tiết</button>
-                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></button>
-                        <button class="btn btn-sm btn-success" title="Mở đăng ký ngay"><i class="bi bi-unlock"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        }
 
     </div>
 </div>
@@ -417,63 +457,180 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border-radius:12px; border:none;">
             <div class="modal-header border-bottom-0 bg-light rounded-top-3">
-                <h5 class="modal-title fw-bold text-dark">Quản lý Timeline & Chi tiết Cuộc thi</h5>
+                <h5 class="modal-title fw-bold text-dark" id="modalTitle">Chi tiết Cuộc thi</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="row">
-                    <div class="col-md-7">
-                        <h5 class="fw-bold" style="color: var(--organizer-accent);">Hackathon Sinh viên 2026</h5>
-                        <p class="small text-muted">Web & App Development</p>
-
-                        <h6 class="fw-bold text-dark mt-4">Mô tả & Thể lệ</h6>
-                        <div class="p-3 bg-light rounded small text-muted">
-                            Các đội thi (3-5 người) sẽ có 48h để phát triển một ứng dụng Web/App giải quyết các bài toán về môi trường học đường...
-                            <br><a href="#">Tải File PDF Thể lệ chi tiết</a>
-                        </div>
-
-                        <h6 class="fw-bold text-dark mt-4">Cấu hình Đánh giá</h6>
-                        <ul class="list-group list-group-flush small">
-                            <li class="list-group-item d-flex justify-content-between px-0">Tính sáng tạo (Weight: 30%) <span>Thang 100</span></li>
-                            <li class="list-group-item d-flex justify-content-between px-0">Tính thực tiễn (Weight: 40%) <span>Thang 100</span></li>
-                            <li class="list-group-item d-flex justify-content-between px-0">UI/UX (Weight: 30%) <span>Thang 100</span></li>
-                        </ul>
-                    </div>
-
-                    <!-- Timeline Management -->
-                    <div class="col-md-5 border-start ps-4">
-                        <h6 class="fw-bold text-dark mb-4"><i class="bi bi-clock-history text-primary"></i> Quản lý Vòng đời (Timeline)</h6>
-
-                        <div class="timeline-box">
-                            <div class="timeline-step done">
-                                <div class="fw-bold small">1. Mở Cổng Đăng ký</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tất (01/10/2026)</div>
-                            </div>
-                            <div class="timeline-step done">
-                                <div class="fw-bold small">2. Xét duyệt Hồ sơ Đội thi</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tất (15/10/2026)</div>
-                            </div>
-                            <div class="timeline-step active">
-                                <div class="fw-bold small text-primary">3. Nhận Bài Dự Thi</div>
-                                <div class="text-danger" style="font-size:0.75rem;"><i class="bi bi-exclamation-triangle"></i> Hạn chót: 23:59 Hôm nay</div>
-                                <button class="btn btn-sm btn-outline-danger mt-2" style="font-size:0.7rem;">Đóng cổng nộp bài sớm</button>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="fw-bold small text-muted">4. Giám khảo Chấm điểm</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Dự kiến: 01/11 - 10/11</div>
-                            </div>
-                            <div class="timeline-step">
-                                <div class="fw-bold small text-muted">5. Công bố Kết quả</div>
-                                <div class="text-muted" style="font-size:0.75rem;">Dự kiến: 20/11/2026</div>
-                            </div>
-                        </div>
+            <div class="modal-body p-4" id="modalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
                     </div>
                 </div>
             </div>
             <div class="modal-footer bg-light rounded-bottom-3 p-3">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn text-white fw-bold" style="background-color: var(--organizer-accent);">Cập nhật cấu hình</button>
+                <a href="#" id="editLink" class="btn text-white fw-bold" style="background-color: var(--organizer-accent);">
+                    <i class="bi bi-pencil me-1"></i>Chỉnh sửa
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Form ẩn để xóa -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function loadCompetitionDetail(competitionId) {
+            fetch(`/Organizer/GetCompetitionDetail?id=${competitionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalTitle').textContent = data.competitionName;
+                    document.getElementById('editLink').href = `/Organizer/Edit/${data.competitionId}`;
+
+                    let html = `
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h5 class="fw-bold" style="color: var(--organizer-accent);">${data.competitionName}</h5>
+                                <p class="small text-muted">${data.category || 'Không xác định'}</p>
+
+                                <h6 class="fw-bold text-dark mt-4">Mô tả & Thể lệ</h6>
+                                <div class="p-3 bg-light rounded small text-muted">
+                                    ${data.description || 'Không có mô tả'}
+                                </div>
+
+                                <h6 class="fw-bold text-dark mt-4">Cấu hình Đánh giá</h6>
+                                <ul class="list-group list-group-flush small">
+                    `;
+
+                    data.scoringCriteria.forEach(criteria => {
+                        html += `
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                ${criteria.criteriaName} (${(criteria.weight * 100).toFixed(1)}%) <span>Thang ${criteria.maxScore}</span>
+                            </li>
+                        `;
+                    });
+
+                    html += `
+                                </ul>
+                            </div>
+
+                            <div class="col-md-5 border-start ps-4">
+                                <h6 class="fw-bold text-dark mb-4"><i class="bi bi-clock-history text-primary"></i> Quản lý Vòng đời</h6>
+                                <div class="timeline-box">
+                                    <div class="timeline-step done">
+                                        <div class="fw-bold small">1. Mở Cổng Đăng ký</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tát (${new Date(data.startDate).toLocaleDateString('vi-VN')})</div>
+                                    </div>
+                                    <div class="timeline-step ${new Date() < new Date(data.registrationDeadline) ? 'active' : 'done'}">
+                                        <div class="fw-bold small">2. Xét duyệt Hồ sơ</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">${new Date(data.registrationDeadline).toLocaleDateString('vi-VN')}</div>
+                                    </div>
+                                    <div class="timeline-step ${new Date() < new Date(data.submissionDeadline) ? 'active' : 'done'}">
+                                        <div class="fw-bold small">3. Nhận Bài Dự Thi</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">${new Date(data.submissionDeadline).toLocaleDateString('vi-VN')}</div>
+                                    </div>
+                                    <div class="timeline-step">
+                                        <div class="fw-bold small text-muted">4. Giám khảo Chấm điểm</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Dự kiến: ${new Date(data.endDate).toLocaleDateString('vi-VN')}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('modalBody').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi khi tải dữ liệu</div>';
+                });
+        }
+
+        function changeStatus(competitionId, newStatus) {
+            const statusText = {
+                'Active': 'kích hoạt',
+                'Closed': 'tạm dừng',
+                'Completed': 'kết thúc',
+                'Draft': 'nháp'
+            };
+
+            if (!confirm(`Bạn có chắc muốn ${statusText[newStatus]} cuộc thi này?`)) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('id', competitionId);
+            formData.append('status', newStatus);
+
+            fetch('/Organizer/ChangeStatus', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('success', data.message);
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('danger', data.message || 'Có lỗi xảy ra');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('danger', 'Lỗi khi thay đổi trạng thái');
+            });
+        }
+
+        function deleteCompetition(competitionId, competitionName) {
+            if (!confirm(`Bạn có chắc muốn xóa cuộc thi "${competitionName}"? Hành động này không thể hoàn tác!`)) {
+                return;
+            }
+
+            const form = document.getElementById('deleteForm');
+            form.action = `/Organizer/Delete/${competitionId}`;
+            form.submit();
+        }
+
+        function showNotification(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show mb-4`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                <strong>${type === 'success' ? 'Thành công!' : 'Lỗi!'}</strong> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            const container = document.querySelector('.org-contest-wrapper .container-fluid');
+            container.insertBefore(alertDiv, container.firstChild);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+}
+
+@functions {
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Đang Nhận Bài" => "status-active",
+            "Đang Chấm Điểm" => "status-active",
+            "Sắp Diễn Ra" => "status-upcoming",
+            "Đã Đóng" => "status-closed",
+            "Đã Kết Thúc" => "status-closed",
+            _ => "status-upcoming"
+        };
+    }
+}
