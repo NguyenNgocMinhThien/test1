@@ -1,0 +1,74 @@
+﻿@model Web_cham_diem.Models.Registrations
+
+@{
+    ViewData["Title"] = "Hồ sơ đăng ký cuộc thi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var statusClass = Model.Status switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "Approved" => "bg-success",
+        "Rejected" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    var statusLabel = Model.Status switch
+    {
+        "Pending" => "Chờ duyệt",
+        "Approved" => "Đã duyệt",
+        "Rejected" => "Từ chối",
+        _ => Model.Status
+    };
+
+
+    var files = (Model.SubmissionDocument ?? string.Empty)
+        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+        .Select(f => f.Trim())
+        .ToList();
+}
+
+<div class="container py-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm rounded-4 border-0 p-4">
+                <h4 class="fw-bold text-primary mb-3">Hồ sơ đăng ký</h4>
+
+                <div class="mb-3">
+                    <span class="badge @statusClass rounded-pill px-3 py-2">
+                        @statusLabel
+                    </span>
+                </div>
+
+                <h6 class="fw-bold mt-4">Thông tin cuộc thi</h6>
+                <p class="mb-1"><strong>Tên cuộc thi:</strong> @Model.Competition.CompetitionName</p>
+                <p class="mb-1"><strong>Lĩnh vực:</strong> @Model.Competition.Category</p>
+                <p class="mb-3"><strong>Trạng thái:</strong> @Model.Competition.Status</p>
+
+                <h6 class="fw-bold mt-4">Thông tin đăng ký</h6>
+                <p class="mb-1"><strong>Họ tên:</strong> @Model.User.FullName</p>
+                <p class="mb-1"><strong>MSSV:</strong> @Model.User.StudentId</p>
+                <p class="mb-1"><strong>Email:</strong> @Model.User.Email</p>
+                <p class="mb-1"><strong>Team:</strong> @(Model.Team?.TeamName ?? "Cá nhân")</p>
+                <p class="mb-3"><strong>Thời gian đăng ký:</strong> @Model.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</p>
+
+                <h6 class="fw-bold mt-4">File đã upload</h6>
+                @if (files.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var file in files)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@System.IO.Path.GetFileName(file)</span>
+                                <a href="@file" class="btn btn-sm btn-outline-primary" target="_blank">Xem</a>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">Chưa có file đính kèm.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

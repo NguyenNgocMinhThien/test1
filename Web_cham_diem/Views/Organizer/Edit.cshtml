@@ -1,0 +1,346 @@
+﻿@model Web_cham_diem.Models.ViewModels.EditCompetitionViewModel
+@{
+    Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Chỉnh sửa Cuộc Thi";
+}
+
+@section Styles {
+    <style>
+        .edit-wrapper {
+            background: var(--primary-bg);
+            min-height: 100vh;
+            padding: 30px 0;
+        }
+
+        .form-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+            padding: 30px;
+        }
+
+        .form-label {
+            font-weight: 600;
+        }
+
+        .criteria-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .criteria-item {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .remove-criteria-btn {
+            background: #fee;
+            color: #e53e3e;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .add-criteria-btn {
+            background: #e8f5e9;
+            color: #22c55e;
+            border: 2px dashed #22c55e;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        .weight-indicator {
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+        }
+
+        .weight-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .weight-fill {
+            height: 100%;
+            background: var(--organizer-accent);
+            transition: width 0.3s;
+        }
+    </style>
+}
+
+<div class="edit-wrapper">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold text-dark">Chỉnh sửa Cuộc Thi</h3>
+                <p class="text-muted small">Cập nhật thông tin cho cuộc thi: <strong>@Model.CompetitionName</strong></p>
+            </div>
+            <a href="/Organizer/Contests" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại
+            </a>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <strong>⚠️ Vui lòng kiểm tra các lỗi sau:</strong>
+                <ul class="mb-0">
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <form method="post" asp-action="Edit" asp-route-id="@Model.CompetitionId" class="form-card" id="editForm">
+            <input type="hidden" asp-for="CompetitionId" />
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label">Tên cuộc thi *</label>
+                    <input asp-for="CompetitionName" class="form-control" required />
+                    <span asp-validation-for="CompetitionName" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Lĩnh vực *</label>
+                    <select asp-for="Category" class="form-select" required>
+                        <option value="">-- Chọn lĩnh vực --</option>
+                        <option value="Học thuật / NCKH">Học thuật / NCKH</option>
+                        <option value="Công nghệ Thông tin">Công nghệ Thông tin</option>
+                        <option value="Kỹ năng Mềm">Kỹ năng Mềm</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Hình thức thi</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsTeamBased" id="isTeamBased">
+                        <label class="form-check-label" for="isTeamBased">Thi theo đội</label>
+                    </div>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Mô tả cuộc thi</label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Thể lệ / Quy định</label>
+                    <textarea asp-for="Rules" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Giải thưởng</label>
+                    <textarea asp-for="Prize" class="form-control" rows="2"></textarea>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Ngày bắt đầu *</label>
+                    <input type="datetime-local" asp-for="StartDate" class="form-control" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Ngày kết thúc *</label>
+                    <input type="datetime-local" asp-for="EndDate" class="form-control" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Hạn đăng ký *</label>
+                    <input type="datetime-local" asp-for="RegistrationDeadline" class="form-control" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Hạn nộp bài *</label>
+                    <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Tối đa số lượng tham gia *</label>
+                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Tối đa người/đội *</label>
+                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="1" required />
+                </div>
+
+                <div class="col-12">
+                    <hr />
+                    <h5 class="fw-bold">Tiêu chí chấm điểm (Tổng trọng số = 100%)</h5>
+
+                    <div class="criteria-list" id="criteriaContainer">
+                        @for (int i = 0; i < Model.ScoringCriteria.Count; i++)
+                        {
+                            <div class="criteria-item" data-index="@i">
+                                <div>
+                                    <input type="hidden" name="ScoringCriteria[@i].Order" value="@Model.ScoringCriteria[i].Order">
+                                    <input type="text" name="ScoringCriteria[@i].CriteriaName" class="form-control criteria-name"
+                                           value="@Model.ScoringCriteria[i].CriteriaName" required>
+                                </div>
+                                <div>
+                                    <input type="number" name="ScoringCriteria[@i].MaxScore" class="form-control criteria-score"
+                                           value="@Model.ScoringCriteria[i].MaxScore" min="1" step="0.1" required>
+                                </div>
+                                <div>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control criteria-weight-input"
+                                               value="@((Model.ScoringCriteria[i].Weight * 100).ToString(System.Globalization.CultureInfo.InvariantCulture))"
+                                               min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                        <input type="hidden" name="ScoringCriteria[@i].Weight" class="criteria-weight-value"
+                                               value="@Model.ScoringCriteria[i].Weight.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
+                                        <i class="bi bi-trash"></i> Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <button type="button" class="add-criteria-btn mt-3" onclick="addCriteria()">
+                        <i class="bi bi-plus-circle me-2"></i>Thêm tiêu chí
+                    </button>
+
+                    <div class="mt-3">
+                        <div class="weight-indicator">
+                            Tổng trọng số: <strong id="totalWeight">100</strong>%
+                            <span id="weightStatus" style="margin-left: 10px; font-weight: bold;"></span>
+                        </div>
+                        <div class="weight-bar">
+                            <div class="weight-fill" id="weightFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+                    <a href="/Organizer/Contests" class="btn btn-outline-secondary">Hủy</a>
+                    <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateHiddenWeightValues() {
+            document.querySelectorAll('.criteria-item').forEach((item) => {
+                const inputDisplay = item.querySelector('.criteria-weight-input');
+                const inputHidden = item.querySelector('.criteria-weight-value');
+
+                const percentValue = parseFloat(inputDisplay.value) || 0;
+                inputHidden.value = (percentValue / 100).toFixed(4);
+            });
+        }
+
+        function updateTotalWeight() {
+            const weights = Array.from(document.querySelectorAll('.criteria-weight-input'))
+                .map(el => parseFloat(el.value) || 0)
+                .reduce((a, b) => a + b, 0);
+
+            document.getElementById('totalWeight').textContent = weights.toFixed(1);
+
+            const percentage = Math.min(100, Math.max(0, weights));
+            document.getElementById('weightFill').style.width = percentage + '%';
+
+            const fillElement = document.getElementById('weightFill');
+            const statusElement = document.getElementById('weightStatus');
+
+            if (Math.abs(weights - 100) > 0.1) {
+                fillElement.style.background = '#ef4444';
+                statusElement.textContent = '❌ Sai';
+                statusElement.style.color = '#ef4444';
+            } else {
+                fillElement.style.background = 'var(--organizer-accent)';
+                statusElement.textContent = '✓ Đúng';
+                statusElement.style.color = '#22c55e';
+            }
+        }
+
+        function reindexCriteria() {
+            document.querySelectorAll('.criteria-item').forEach((item, index) => {
+                item.dataset.index = index;
+                item.querySelector('[name$=".Order"]').name = `ScoringCriteria[${index}].Order`;
+                item.querySelector('[name$=".CriteriaName"]').name = `ScoringCriteria[${index}].CriteriaName`;
+                item.querySelector('[name$=".MaxScore"]').name = `ScoringCriteria[${index}].MaxScore`;
+                item.querySelector('[name$=".Weight"]').name = `ScoringCriteria[${index}].Weight`;
+            });
+        }
+
+        function addCriteria() {
+            const container = document.getElementById('criteriaContainer');
+            const index = container.children.length;
+
+            const html = `
+                <div class="criteria-item" data-index="${index}">
+                    <div>
+                        <input type="hidden" name="ScoringCriteria[${index}].Order" value="${index + 1}">
+                        <input type="text" name="ScoringCriteria[${index}].CriteriaName" class="form-control criteria-name"
+                               placeholder="Tên tiêu chí" required>
+                    </div>
+                    <div>
+                        <input type="number" name="ScoringCriteria[${index}].MaxScore" class="form-control criteria-score"
+                               placeholder="Điểm" value="100" min="1" step="0.1" required>
+                    </div>
+                    <div>
+                        <div class="input-group">
+                            <input type="number" class="form-control criteria-weight-input"
+                                   placeholder="%" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                            <input type="hidden" name="ScoringCriteria[${index}].Weight" class="criteria-weight-value" value="0">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
+                            <i class="bi bi-trash"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+            updateTotalWeight();
+            updateHiddenWeightValues();
+        }
+
+        function removeCriteria(btn) {
+            btn.closest('.criteria-item').remove();
+            reindexCriteria();
+            updateTotalWeight();
+            updateHiddenWeightValues();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTotalWeight();
+            updateHiddenWeightValues();
+        });
+
+        document.getElementById('editForm').addEventListener('submit', () => {
+            updateHiddenWeightValues();
+        });
+    </script>
+}

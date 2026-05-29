@@ -17,6 +17,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICompetitionService, CompetitionService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+
+
 
 // Add Authentication with Cookie
 // Add Authentication with Cookie
@@ -61,6 +64,18 @@ app.UseRouting();
 // Add authentication and authorization middleware (ORDER MATTERS!)
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
+
+app.MapControllerRoute(
+    name: "competition-details",
+    pattern: "Competitions/{id:int}",
+    defaults: new { controller = "Competitive", action = "Details" });
+
+app.MapControllerRoute(
+    name: "competitions",
+    pattern: "Competitions/{action=Index}/{id?}",
+    defaults: new { controller = "Competitive" });
 
 app.MapControllerRoute(
     name: "default",
