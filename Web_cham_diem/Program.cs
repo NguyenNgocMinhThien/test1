@@ -65,6 +65,18 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
+
+app.MapControllerRoute(
+    name: "competition-details",
+    pattern: "Competitions/{id:int}",
+    defaults: new { controller = "Competitive", action = "Details" });
+
+app.MapControllerRoute(
+    name: "competitions",
+    pattern: "Competitions/{action=Index}/{id?}",
+    defaults: new { controller = "Competitive" });
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
