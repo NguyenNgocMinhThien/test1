@@ -26,9 +26,19 @@ namespace Web_cham_diem.Controllers
         }
 
         // 1. Dashboard - Tổng quan chung
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            return View();
+            try
+            {
+                var dashboardData = await _competitionService.GetOrganizerDashboardDataAsync();
+                return View(dashboardData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading dashboard");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải dashboard.";
+                return View(new OrganizerDashboardViewModel());
+            }
         }
 
         // 2. Quản lý cuộc thi (Tạo mới, sửa, xóa cuộc thi)
