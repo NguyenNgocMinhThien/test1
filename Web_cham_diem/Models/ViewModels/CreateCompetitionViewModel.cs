@@ -43,7 +43,25 @@ namespace Web_cham_diem.Models.ViewModels
             new ScoringCriteriaCreateDto { CriteriaName = "Thuyết trình", MaxScore = 100, Weight = 0.30m, Order = 3 }
         };
 
-        // Step 4: Xác nhận
+        // Step 4: Ảnh & Tài liệu (Không bắt buộc)
+        /// <summary>
+        /// Danh sách ảnh được chọn (base64 hoặc URL từ form upload)
+        /// Sẽ được xử lý để tải lên storage sau khi cuộc thi được tạo
+        /// </summary>
+        public List<string>? SelectedImageData { get; set; } = new();
+
+        /// <summary>
+        /// Danh sách tài liệu được chọn (base64 hoặc URL từ form upload)
+        /// Sẽ được xử lý để tải lên storage sau khi cuộc thi được tạo
+        /// </summary>
+        public List<string>? SelectedDocumentData { get; set; } = new();
+
+        /// <summary>
+        /// Tên file tài liệu tương ứng (để sử dụng khi upload)
+        /// </summary>
+        public List<string>? DocumentFileNames { get; set; } = new();
+
+        // Step 5: Xác nhận
         public bool Confirmed { get; set; } = false;
     }
 

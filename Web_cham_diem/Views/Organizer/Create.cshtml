@@ -300,6 +300,162 @@
         .text-danger {
             color: #e53e3e;
         }
+
+        /* Upload File Styles */
+        .file-upload-area {
+            border: 2px dashed #d0d0d0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9f9f9;
+        }
+
+            .file-upload-area:hover {
+                border-color: var(--organizer-accent);
+                background: rgba(var(--organizer-accent-rgb), 0.05);
+            }
+
+            .file-upload-area.dragover {
+                border-color: var(--organizer-accent);
+                background: rgba(var(--organizer-accent-rgb), 0.1);
+            }
+
+        .file-upload-icon {
+            font-size: 2.5rem;
+            color: var(--organizer-accent);
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+            .file-item .file-info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .file-item .file-icon {
+                font-size: 1.5rem;
+            }
+
+            .file-item .file-remove {
+                background: #fee;
+                color: #e53e3e;
+                border: none;
+                border-radius: 4px;
+                padding: 5px 10px;
+                cursor: pointer;
+                font-size: 0.85rem;
+            }
+
+        /* Alert Styles */
+        .alert-warning-custom {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 12px;
+            color: #92400e;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+            .alert-warning-custom.show {
+                display: block;
+            }
+
+        .alert-danger-custom {
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            padding: 12px;
+            color: #c33;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+            .alert-danger-custom.show {
+                display: block;
+            }
+
+        /* Team Size Section */
+        .team-size-section {
+            display: none;
+            background: #f8f9fa;
+            border-left: 4px solid var(--organizer-accent);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+            .team-size-section.show {
+                display: block;
+            }
+
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .image-preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+            .image-preview-item img {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+            }
+
+            .image-preview-item .preview-actions {
+                position: absolute;
+                top: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.7);
+                padding: 5px 8px;
+                border-radius: 0 0 0 8px;
+            }
+
+            .image-preview-item .preview-actions button {
+                background: #e53e3e;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 4px 8px;
+                cursor: pointer;
+                font-size: 0.8rem;
+            }
+
+            .image-preview-item .thumbnail-badge {
+                position: absolute;
+                bottom: 8px;
+                left: 8px;
+                background: var(--organizer-accent);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: bold;
+            }
     </style>
 }
 
@@ -324,6 +480,10 @@
                         </div>
                         <div class="step-item" id="step4-indicator">
                             <div class="step-circle">4</div>
+                            <div class="step-text">Ảnh & Tài liệu</div>
+                        </div>
+                        <div class="step-item" id="step5-indicator">
+                            <div class="step-circle">5</div>
                             <div class="step-text">Xác nhận</div>
                         </div>
                     </div>
@@ -413,19 +573,24 @@
                         </div>
                         <p class="section-description">Cấu hình các mốc thời gian quan trọng</p>
 
+                        <!-- Cảnh báo Validation -->
+                        <div class="alert-danger-custom" id="step2-error"></div>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Ngày bắt đầu <span class="required">*</span></label>
-                                    <input type="datetime-local" asp-for="StartDate" class="form-control" required>
+                                    <input type="datetime-local" asp-for="StartDate" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="StartDate" class="text-danger"></span>
+                                    <small class="form-text">Ngày cuộc thi chính thức bắt đầu</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Ngày kết thúc <span class="required">*</span></label>
-                                    <input type="datetime-local" asp-for="EndDate" class="form-control" required>
+                                    <input type="datetime-local" asp-for="EndDate" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="EndDate" class="text-danger"></span>
+                                    <small class="form-text">Ngày cuộc thi kết thúc và công bố kết quả</small>
                                 </div>
                             </div>
                         </div>
@@ -434,7 +599,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Hạn đăng ký <span class="required">*</span></label>
-                                    <input type="datetime-local" asp-for="RegistrationDeadline" class="form-control" required>
+                                    <input type="datetime-local" asp-for="RegistrationDeadline" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="RegistrationDeadline" class="text-danger"></span>
                                     <small class="form-text">Hạn cuối cùng để đăng ký tham gia</small>
                                 </div>
@@ -442,26 +607,38 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Hạn nộp bài <span class="required">*</span></label>
-                                    <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required>
+                                    <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="SubmissionDeadline" class="text-danger"></span>
                                     <small class="form-text">Hạn cuối cùng để nộp bài dự thi</small>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Timeline Timeline Visualization -->
+                        <div class="alert alert-info mt-3">
+                            <strong>📅 Thứ tự thời gian phải là:</strong>
+                            <div class="mt-2">Hạn đăng ký ≤ Hạn nộp bài ≤ Ngày kết thúc</div>
+                            <small class="mt-2 d-block">Khi có thể, Hạn đăng ký trước Ngày bắt đầu để cho phép đăng ký trước</small>
+                        </div>
+
+                        <hr class="my-4">
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Tối đa số lượng tham gia <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required>
+                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required onchange="validateDateRange()">
                                     <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+                                    <small class="form-text">Tối đa bao nhiêu người/đội được phép tham gia</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="form-label">Tối đa người/đội <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="1" value="5" required>
-                                    <small class="form-text">Tối đa mấy người trong 1 đội/nhóm</small>
+                                <!-- Phần này sẽ hiển thị/ẩn động dựa trên IsTeamBased -->
+                                <div id="maxTeamSizeGroup" class="form-group" style="display: none;">
+                                    <label class="form-label">Tối đa thành viên trong đội <span class="required">*</span></label>
+                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" value="5" required>
+                                    <span asp-validation-for="MaxTeamSize" class="text-danger"></span>
+                                    <small class="form-text">Tối đa mấy người trong 1 đội</small>
                                 </div>
                             </div>
                         </div>
@@ -525,8 +702,62 @@
                         </div>
                     </div>
 
-                    <!-- STEP 4: Xác nhận -->
+                    <!-- STEP 4: Ảnh & Tài liệu -->
                     <div class="form-section" id="step4">
+                        <div class="section-title">
+                            <i class="bi bi-images me-2"></i>Ảnh & Tài liệu cuộc thi
+                        </div>
+                        <p class="section-description">Thêm banner, ảnh, và tài liệu (Không bắt buộc - có thể thêm sau)</p>
+
+                        <!-- PHẦN 1: ẢNH CUỘC THI -->
+                        <div class="mt-4">
+                            <h5 class="fw-bold mb-3">📸 Ảnh Cuộc Thi</h5>
+                            <div class="file-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                                <div class="file-upload-icon">📷</div>
+                                <p><strong>Kéo thả ảnh hoặc nhấp để chọn</strong></p>
+                                <small style="color: #999;">Hỗ trợ: JPG, PNG, GIF (Max 5MB)</small>
+                                <input type="file" id="imageInput" accept="image/*" style="display:none" multiple onchange="handleImageSelect()">
+                            </div>
+                            <small class="form-text d-block mt-2">
+                                💡 Mẹo: Hình ảnh đầu tiên sẽ được đặt làm ảnh đại diện (thumbnail)
+                            </small>
+
+                            <!-- Xem trước ảnh -->
+                            <div class="image-preview-grid" id="imagePreviewGrid" style="display:none;">
+                            </div>
+
+                            <!-- Danh sách ảnh đã chọn -->
+                            <div class="file-list" id="imageFileList"></div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- PHẦN 2: TÀI LIỆU LUẬT LỆ & THỂ LỆ -->
+                        <div class="mt-4">
+                            <h5 class="fw-bold mb-3">📄 Tài Liệu Luật Lệ (Không bắt buộc)</h5>
+                            <p style="color: #666; font-size: 0.9rem;">
+                                Cho phép ban tổ chức tải lên file PDF hoặc tài liệu khác để chia sẻ thể lệ, quy định với thí sinh
+                            </p>
+
+                            <div class="file-upload-area" id="documentUploadArea" onclick="document.getElementById('documentInput').click()">
+                                <div class="file-upload-icon">📋</div>
+                                <p><strong>Kéo thả file hoặc nhấp để chọn</strong></p>
+                                <small style="color: #999;">Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 10MB)</small>
+                                <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none" multiple onchange="handleDocumentSelect()">
+                            </div>
+
+                            <!-- Danh sách tài liệu đã chọn -->
+                            <div class="file-list" id="documentFileList" style="margin-top: 20px;"></div>
+                        </div>
+
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Ảnh và tài liệu được thêm ở đây sẽ được tải lên sau khi cuộc thi được tạo. Bạn cũng có thể thêm chúng sau đó bằng chế độ chỉnh sửa.
+                        </div>
+                    </div>
+
+                    <!-- STEP 5: Xác nhận -->
+                    <div class="form-section" id="step5">
                         <div class="section-title">
                             <i class="bi bi-check-circle me-2"></i>Xác nhận thông tin
                         </div>
@@ -603,7 +834,9 @@
 @section Scripts {
     <script>
         let currentStep = 1;
-        const totalSteps = 4;
+        const totalSteps = 5;
+        let selectedImages = [];
+        let selectedDocuments = [];
 
         function changeStep(direction) {
             // Validate current step before moving
@@ -652,36 +885,59 @@
                 const name = document.querySelector('[name="CompetitionName"]').value;
                 const category = document.querySelector('[name="Category"]').value;
                 if (!name || !category) {
-                    alert('Vui lòng điền tên cuộc thi và chọn lĩnh vực');
+                    alert('❌ Vui lòng điền tên cuộc thi và chọn lĩnh vực');
                     return false;
                 }
             }
             if (step === 2) {
-                const start = document.querySelector('[name="StartDate"]').valueAsNumber;
-                const end = document.querySelector('[name="EndDate"]').valueAsNumber;
-                const regDeadline = document.querySelector('[name="RegistrationDeadline"]').valueAsNumber;
-                const subDeadline = document.querySelector('[name="SubmissionDeadline"]').valueAsNumber;
-
-                if (end <= start) {
-                    alert('Ngày kết thúc phải sau ngày bắt đầu');
-                    return false;
-                }
-                if (regDeadline >= subDeadline) {
-                    alert('Hạn đăng ký phải trước hạn nộp bài');
-                    return false;
-                }
-                if (subDeadline >= end) {
-                    alert('Hạn nộp bài phải trước ngày kết thúc');
-                    return false;
-                }
+                return validateDateRange();
             }
             if (step === 3) {
                 const totalWeight = parseFloat(document.getElementById('totalWeight').textContent);
                 if (Math.abs(totalWeight - 100) > 0.1) {
-                    alert('Tổng trọng số phải bằng 100%');
+                    alert('❌ Tổng trọng số phải bằng 100%');
                     return false;
                 }
             }
+            return true;
+        }
+
+        function validateDateRange() {
+            const errorDiv = document.getElementById('step2-error');
+            errorDiv.classList.remove('show');
+            errorDiv.innerHTML = '';
+
+            const start = new Date(document.querySelector('[name="StartDate"]').value);
+            const end = new Date(document.querySelector('[name="EndDate"]').value);
+            const regDeadline = new Date(document.querySelector('[name="RegistrationDeadline"]').value);
+            const subDeadline = new Date(document.querySelector('[name="SubmissionDeadline"]').value);
+
+            const errors = [];
+
+            if (!document.querySelector('[name="StartDate"]').value || !document.querySelector('[name="EndDate"]').value ||
+                !document.querySelector('[name="RegistrationDeadline"]').value || !document.querySelector('[name="SubmissionDeadline"]').value) {
+                errors.push('Vui lòng điền đầy đủ tất cả các ngày');
+            }
+
+            if (end <= start) {
+                errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
+            }
+
+            if (regDeadline >= subDeadline) {
+                errors.push('❌ Hạn đăng ký phải trước hạn nộp bài');
+            }
+
+            if (subDeadline >= end) {
+                errors.push('❌ Hạn nộp bài phải trước ngày kết thúc');
+            }
+
+            if (errors.length > 0) {
+                errorDiv.innerHTML = '<strong>⚠️ Lỗi thời gian:</strong><ul>' + 
+                    errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                errorDiv.classList.add('show');
+                return false;
+            }
+
             return true;
         }
 
@@ -739,7 +995,7 @@
                     <div>
                         <div class="input-group">
                             <input type="number" class="form-control criteria-weight-input"
-                                   placeholder="%" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()">
+                                   placeholder="%" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
                             <input type="hidden" name="ScoringCriteria[${index}].Weight" class="criteria-weight-value">
                             <span class="input-group-text">%</span>
                         </div>
@@ -758,6 +1014,7 @@
 
         function removeCriteria(btn) {
             btn.closest('.criteria-item').remove();
+            reindexCriteria();
             updateTotalWeight();
         }
 
@@ -789,7 +1046,6 @@
             }
         }
 
-        // ⭐ HÀM MỚI: Cập nhật giá trị hidden fields (%) → decimal (0.0-1.0)0
         function updateHiddenWeightValues() {
             document.querySelectorAll('.criteria-item').forEach((item) => {
                 const inputDisplay = item.querySelector('.criteria-weight-input');
@@ -811,21 +1067,197 @@
             });
         }
 
-        function removeCriteria(btn) {
-            btn.closest('.criteria-item').remove();
-            reindexCriteria();
-            updateTotalWeight();
-            updateHiddenWeightValues();
+        // 🖼️ XỬ LÝ UPLOAD ẢNH
+        function handleImageSelect() {
+            const input = document.getElementById('imageInput');
+            const files = input.files;
+
+            for (let file of files) {
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(`❌ File ${file.name} vượt quá 5MB`);
+                    continue;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert(`❌ ${file.name} không phải là file ảnh`);
+                    continue;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedImages.push({
+                        name: file.name,
+                        data: e.target.result,
+                        file: file
+                    });
+                    updateImagePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateImagePreview() {
+            const fileList = document.getElementById('imageFileList');
+            fileList.innerHTML = '';
+
+            if (selectedImages.length > 0) {
+                document.getElementById('imagePreviewGrid').style.display = 'grid';
+
+                selectedImages.forEach((img, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    item.innerHTML = `
+                        <div class="file-info">
+                            <span class="file-icon">🖼️</span>
+                            <span>${img.name}</span>
+                        </div>
+                        <button type="button" class="file-remove" onclick="removeImage(${idx})">Xóa</button>
+                    `;
+                    fileList.appendChild(item);
+                });
+            } else {
+                document.getElementById('imagePreviewGrid').style.display = 'none';
+            }
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreview();
+        }
+
+        // 📄 XỬ LÝ UPLOAD TÀI LIỆU
+        function handleDocumentSelect() {
+            const input = document.getElementById('documentInput');
+            const files = input.files;
+
+            for (let file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`❌ File ${file.name} vượt quá 10MB`);
+                    continue;
+                }
+
+                selectedDocuments.push({
+                    name: file.name,
+                    file: file,
+                    type: file.name.split('.').pop().toLowerCase()
+                });
+            }
+
+            updateDocumentList();
+        }
+
+        function updateDocumentList() {
+            const fileList = document.getElementById('documentFileList');
+            fileList.innerHTML = '';
+
+            selectedDocuments.forEach((doc, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+
+                let icon = '📄';
+                if (doc.type === 'pdf') icon = '📕';
+                else if (['doc', 'docx'].includes(doc.type)) icon = '📗';
+                else if (['xls', 'xlsx'].includes(doc.type)) icon = '📊';
+                else if (['ppt', 'pptx'].includes(doc.type)) icon = '📊';
+
+                item.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">${icon}</span>
+                        <span>${doc.name}</span>
+                    </div>
+                    <button type="button" class="file-remove" onclick="removeDocument(${idx})">Xóa</button>
+                `;
+                fileList.appendChild(item);
+            });
+        }
+
+        function removeDocument(index) {
+            selectedDocuments.splice(index, 1);
+            updateDocumentList();
+        }
+
+        // 🎫 HIỂN/ẨN PHẦN TEAM SIZE ĐỘNG
+        function toggleTeamSizeField() {
+            const isTeamBased = document.querySelector('[name="IsTeamBased"]').checked;
+            const groupTeam = document.getElementById('maxTeamSizeGroup');
+
+            if (isTeamBased) {
+                groupTeam.style.display = 'block';
+                groupTeam.querySelector('[name="MaxTeamSize"]').focus();
+            } else {
+                groupTeam.style.display = 'none';
+            }
+        }
+
+        // Drag and drop cho ảnh
+        const imageUploadArea = document.getElementById('imageUploadArea');
+        if (imageUploadArea) {
+            imageUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                imageUploadArea.classList.add('dragover');
+            });
+            imageUploadArea.addEventListener('dragleave', () => {
+                imageUploadArea.classList.remove('dragover');
+            });
+            imageUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageUploadArea.classList.remove('dragover');
+                document.getElementById('imageInput').files = e.dataTransfer.files;
+                handleImageSelect();
+            });
+        }
+
+        // Drag and drop cho tài liệu
+        const documentUploadArea = document.getElementById('documentUploadArea');
+        if (documentUploadArea) {
+            documentUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                documentUploadArea.classList.add('dragover');
+            });
+            documentUploadArea.addEventListener('dragleave', () => {
+                documentUploadArea.classList.remove('dragover');
+            });
+            documentUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                documentUploadArea.classList.remove('dragover');
+                document.getElementById('documentInput').files = e.dataTransfer.files;
+                handleDocumentSelect();
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             updateStepDisplay();
             updateTotalWeight();
             updateHiddenWeightValues();
+            toggleTeamSizeField();
+
+            // Gắn event listener cho checkbox IsTeamBased
+            document.querySelector('[name="IsTeamBased"]').addEventListener('change', toggleTeamSizeField);
         });
 
-        document.getElementById('createForm').addEventListener('submit', () => {
+        document.getElementById('createForm').addEventListener('submit', (e) => {
             updateHiddenWeightValues();
+
+            // Lưu dữ liệu ảnh vào form (JSON stringify)
+            const imageDataInput = document.createElement('input');
+            imageDataInput.type = 'hidden';
+            imageDataInput.name = 'SelectedImageData';
+            imageDataInput.value = JSON.stringify(selectedImages.map(img => img.data));
+            document.getElementById('createForm').appendChild(imageDataInput);
+
+            // Lưu dữ liệu tài liệu vào form (JSON stringify)
+            const documentDataInput = document.createElement('input');
+            documentDataInput.type = 'hidden';
+            documentDataInput.name = 'SelectedDocumentData';
+            documentDataInput.value = JSON.stringify(selectedDocuments.map(doc => doc.type));
+            document.getElementById('createForm').appendChild(documentDataInput);
+
+            // Lưu tên tài liệu
+            const documentNamesInput = document.createElement('input');
+            documentNamesInput.type = 'hidden';
+            documentNamesInput.name = 'DocumentFileNames';
+            documentNamesInput.value = JSON.stringify(selectedDocuments.map(doc => doc.name));
+            document.getElementById('createForm').appendChild(documentNamesInput);
         });
     </script>
 }

@@ -71,6 +71,7 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.ScoringCriteria)
+            .Include(c => c.CompetitionImages)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
@@ -93,7 +94,13 @@ public class CompetitionService : ICompetitionService
             ProgressPercentage = CalculateProgress(c),
             CurrentPhase = DetermineCurrentPhase(c),
             StatusDisplay = GetStatusDisplay(c),
-            IsTeamBased = c.IsTeamBased
+            IsTeamBased = c.IsTeamBased,
+            // Lấy ảnh thumbnail hoặc ảnh đầu tiên
+            BannerImageUrl = c.CompetitionImages?
+                .FirstOrDefault(img => img.IsThumbnail)?
+                .ImageUrl ?? c.CompetitionImages?
+                .FirstOrDefault()?
+                .ImageUrl
         }).ToList();
 
         // Tính toán thống kê

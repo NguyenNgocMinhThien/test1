@@ -39,10 +39,11 @@
             }
 
         .comp-banner {
-            height: 120px;
+            height: 140px;
             background-position: center;
             background-size: cover;
             position: relative;
+            background-color: #f0f0f0;
         }
 
             .comp-banner.default {
@@ -52,6 +53,24 @@
             .comp-banner.tech {
                 background-image: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             }
+
+            .comp-banner.image {
+                background-image: linear-gradient(to right, rgba(0,0,0,0.3), rgba(0,0,0,0.3));
+                background-attachment: fixed;
+            }
+
+        .comp-type-badge {
+            position: absolute;
+            bottom: 10px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--organizer-accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
 
         .comp-status {
             position: absolute;
@@ -106,23 +125,71 @@
             margin-bottom: 15px;
             padding-bottom: 15px;
             border-bottom: 1px dashed var(--border-color);
+            gap: 5px;
         }
 
         .stat-item {
             text-align: center;
+            flex: 1;
         }
 
         .stat-label {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-muted);
             text-transform: uppercase;
             font-weight: 700;
+            margin-bottom: 3px;
         }
 
         .stat-num {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 800;
             color: var(--text-dark);
+        }
+
+        /* Date Range Display */
+        .comp-date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .date-badge {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .comp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .meta-tag {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #666;
+            border-left: 3px solid var(--organizer-accent);
+        }
+
+        .meta-tag.team {
+            border-left-color: #3b82f6;
+        }
+
+        .meta-tag.individual {
+            border-left-color: #10b981;
+        }
+
+        .meta-tag.max-participants {
+            border-left-color: #f59e0b;
         }
 
         .comp-progress {
@@ -352,28 +419,74 @@
                 {
                     <div class="col-md-6 col-xl-4">
                         <div class="comp-card">
-                            <div class="comp-banner @(comp.Category == "Công nghệ Thông tin" ? "tech" : "default")">
+                            <!-- Banner với loại cuộc thi -->
+                            <div class="comp-banner @(string.IsNullOrEmpty(comp.BannerImageUrl) ? (comp.Category == "Công nghệ Thông tin" ? "tech" : "default") : "image")" 
+                                 @if (!string.IsNullOrEmpty(comp.BannerImageUrl)) { <text>style="background-image: url('@comp.BannerImageUrl');"</text> }>
                                 <div class="comp-status @GetStatusClass(comp.StatusDisplay)">@comp.StatusDisplay</div>
+                                <div class="comp-type-badge">
+                                    <i class="bi bi-@(comp.IsTeamBased ? "people-fill" : "person-fill") me-1"></i>
+                                    @(comp.IsTeamBased ? "Thi Theo Đội" : "Cá Nhân")
+                                </div>
                             </div>
+
                             <div class="comp-body">
+                                <!-- Tên cuộc thi -->
                                 <div class="comp-title">@comp.CompetitionName</div>
                                 <div class="comp-field">@(comp.Category ?? "Không xác định")</div>
 
+                                <!-- Date Range -->
+                                <div class="comp-date-range">
+                                    <i class="bi bi-calendar2-check text-muted"></i>
+                                    <span>
+                                        <span class="date-badge">@comp.StartDate.ToString("dd/MM/yyyy")</span>
+                                        <i class="bi bi-arrow-right text-muted" style="font-size: 0.7rem;"></i>
+                                        <span class="date-badge">@comp.EndDate.ToString("dd/MM/yyyy")</span>
+                                    </span>
+                                </div>
+
+                                <!-- Meta Tags -->
+                                <div class="comp-meta">
+                                    @if (comp.IsTeamBased)
+                                    {
+                                        <span class="meta-tag team">
+                                            <i class="bi bi-people-fill me-1"></i>Tối đa @comp.MaxParticipants đội
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="meta-tag individual">
+                                            <i class="bi bi-person-fill me-1"></i>Tối đa @comp.MaxParticipants người
+                                        </span>
+                                    }
+                                </div>
+
+                                <!-- Statistics -->
                                 <div class="comp-stats mt-2">
                                     <div class="stat-item">
                                         <div class="stat-label">Đăng ký</div>
                                         <div class="stat-num text-primary">@comp.TotalRegistrations</div>
                                     </div>
                                     <div class="stat-item">
-                                        <div class="stat-label">Đã nộp bài</div>
-                                        <div class="stat-num text-success">@comp.TotalSubmissions</div>
+                                        <div class="stat-label">Được duyệt</div>
+                                        <div class="stat-num text-success">@comp.ApprovedRegistrations</div>
                                     </div>
                                     <div class="stat-item">
-                                        <div class="stat-label">Hạn nộp</div>
-                                        <div class="stat-num" style="font-size:0.9rem;">@comp.SubmissionDeadline.ToString("dd/MM")</div>
+                                        <div class="stat-label">Đã nộp</div>
+                                        <div class="stat-num text-info">@comp.TotalSubmissions</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Đã chấm</div>
+                                        <div class="stat-num text-warning">@comp.EvaluatedSubmissions</div>
                                     </div>
                                 </div>
 
+                                <!-- Hạn cuối -->
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-clock-history"></i>
+                                    <strong>Hạn nộp:</strong> @comp.SubmissionDeadline.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+
+                                <!-- Progress Bar -->
                                 <div class="comp-progress">
                                     <div class="d-flex justify-content-between small text-muted fw-bold mb-1">
                                         <span>Tiến độ chung</span>
@@ -382,7 +495,10 @@
                                     <div class="progress" style="height: 6px;">
                                         <div class="progress-bar" style="width: @comp.ProgressPercentage%; background-color: var(--organizer-accent);"></div>
                                     </div>
-                                    <div class="small text-muted mt-2 text-center"><i class="bi bi-info-circle"></i> Đang ở giai đoạn: <strong>@comp.CurrentPhase</strong></div>
+                                    <div class="small text-muted mt-2 text-center">
+                                        <i class="bi bi-info-circle"></i> 
+                                        <strong>@comp.CurrentPhase</strong>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Actions -->
@@ -495,35 +611,71 @@
                         <div class="row">
                             <div class="col-md-7">
                                 <h5 class="fw-bold" style="color: var(--organizer-accent);">${data.competitionName}</h5>
-                                <p class="small text-muted">${data.category || 'Không xác định'}</p>
+                                <p class="small text-muted mb-3">${data.category || 'Không xác định'}</p>
 
-                                <h6 class="fw-bold text-dark mt-4">Mô tả & Thể lệ</h6>
-                                <div class="p-3 bg-light rounded small text-muted">
+                                <!-- Loại cuộc thi -->
+                                <div class="alert alert-info small mb-3" style="border-left: 4px solid var(--organizer-accent);">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Loại cuộc thi:</strong> ${data.isTeamBased ? '👥 Thi Theo Đội' : '👤 Cá Nhân'}
+                                </div>
+
+                                <!-- Ngày tháng năm -->
+                                <h6 class="fw-bold text-dark mt-3 mb-2"><i class="bi bi-calendar2-check me-2 text-primary"></i>Lịch trình</h6>
+                                <div class="p-2 bg-light rounded small text-muted">
+                                    <div class="mb-2"><strong>Ngày bắt đầu:</strong> ${new Date(data.startDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                    <div class="mb-2"><strong>Ngày kết thúc:</strong> ${new Date(data.endDate).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                    <div class="mb-2"><strong>Hạn đăng ký:</strong> ${new Date(data.registrationDeadline).toLocaleDateString('vi-VN')}</div>
+                                    <div><strong>Hạn nộp bài:</strong> ${new Date(data.submissionDeadline).toLocaleDateString('vi-VN')}</div>
+                                </div>
+
+                                <!-- Mô tả & Thể lệ -->
+                                <h6 class="fw-bold text-dark mt-4 mb-2"><i class="bi bi-file-text me-2 text-success"></i>Mô tả & Thể lệ</h6>
+                                <div class="p-3 bg-light rounded small text-muted" style="max-height: 120px; overflow-y: auto;">
                                     ${data.description || 'Không có mô tả'}
                                 </div>
 
-                                <h6 class="fw-bold text-dark mt-4">Cấu hình Đánh giá</h6>
-                                <ul class="list-group list-group-flush small">
+                                <!-- Luật lệ & Giải thưởng -->
+                                <h6 class="fw-bold text-dark mt-4 mb-2"><i class="bi bi-award me-2 text-warning"></i>Luật lệ & Giải Thưởng</h6>
+                                ${data.rules ? `<div class="p-2 bg-light rounded small text-muted mb-2"><strong>Luật lệ:</strong><br/>${data.rules}</div>` : ''}
+                                ${data.prize ? `<div class="p-2 bg-light rounded small text-muted"><strong>Giải thưởng:</strong><br/>${data.prize}</div>` : ''}
+
+                                <!-- Cấu hình Đánh giá -->
+                                <h6 class="fw-bold text-dark mt-4 mb-2"><i class="bi bi-star me-2 text-warning"></i>Tiêu chí Chấm điểm</h6>
+                                <div class="small">
+                                    <table class="table table-sm table-borderless">
+                                        <thead>
+                                            <tr class="text-muted border-bottom">
+                                                <th style="width: 50%">Tiêu chí</th>
+                                                <th style="width: 20%">Thang điểm</th>
+                                                <th style="width: 30%" class="text-end">Trọng số</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                     `;
 
                     data.scoringCriteria.forEach(criteria => {
                         html += `
-                            <li class="list-group-item d-flex justify-content-between px-0">
-                                ${criteria.criteriaName} (${(criteria.weight * 100).toFixed(1)}%) <span>Thang ${criteria.maxScore}</span>
-                            </li>
+                            <tr class="border-bottom">
+                                <td>${criteria.criteriaName}</td>
+                                <td>${criteria.maxScore}</td>
+                                <td class="text-end"><span class="badge bg-primary">${(criteria.weight * 100).toFixed(1)}%</span></td>
+                            </tr>
                         `;
                     });
 
                     html += `
-                                </ul>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <div class="col-md-5 border-start ps-4">
-                                <h6 class="fw-bold text-dark mb-4"><i class="bi bi-clock-history text-primary"></i> Quản lý Vòng đời</h6>
+                                <!-- Quản lý Vòng đời -->
+                                <h6 class="fw-bold text-dark mb-4"><i class="bi bi-clock-history text-primary me-2"></i>Quản lý Vòng đời</h6>
                                 <div class="timeline-box">
                                     <div class="timeline-step done">
                                         <div class="fw-bold small">1. Mở Cổng Đăng ký</div>
-                                        <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tát (${new Date(data.startDate).toLocaleDateString('vi-VN')})</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Đã hoàn tất (${new Date(data.startDate).toLocaleDateString('vi-VN')})</div>
                                     </div>
                                     <div class="timeline-step ${new Date() < new Date(data.registrationDeadline) ? 'active' : 'done'}">
                                         <div class="fw-bold small">2. Xét duyệt Hồ sơ</div>
@@ -536,6 +688,23 @@
                                     <div class="timeline-step">
                                         <div class="fw-bold small text-muted">4. Giám khảo Chấm điểm</div>
                                         <div class="text-muted" style="font-size:0.75rem;">Dự kiến: ${new Date(data.endDate).toLocaleDateString('vi-VN')}</div>
+                                    </div>
+                                </div>
+
+                                <!-- Thống kê nhanh -->
+                                <h6 class="fw-bold text-dark mt-4 mb-3"><i class="bi bi-graph-up me-2 text-success"></i>Thống kê</h6>
+                                <div class="card-group" style="gap: 8px;">
+                                    <div class="text-center p-3 bg-light rounded" style="border-left: 3px solid #0d6efd;">
+                                        <div class="small text-muted fw-bold">Đăng ký</div>
+                                        <div class="h5 fw-bold text-primary">0</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-light rounded" style="border-left: 3px solid #22c55e;">
+                                        <div class="small text-muted fw-bold">Duyệt</div>
+                                        <div class="h5 fw-bold text-success">0</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-light rounded" style="border-left: 3px solid #3b82f6;">
+                                        <div class="small text-muted fw-bold">Nộp bài</div>
+                                        <div class="h5 fw-bold text-info">0</div>
                                     </div>
                                 </div>
                             </div>
