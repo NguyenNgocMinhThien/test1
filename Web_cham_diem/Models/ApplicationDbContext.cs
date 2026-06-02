@@ -22,6 +22,8 @@ namespace Web_cham_diem.Models
         public DbSet<CompetitionImages> CompetitionImages { get; set; }
         public DbSet<CompetitionDocuments> CompetitionDocuments { get; set; }
         public DbSet<RegistrationRounds> RegistrationRounds { get; set; }
+        public DbSet<Sponsors> Sponsors { get; set; }
+        public DbSet<CompetitionSponsors> CompetitionSponsors { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -78,6 +80,49 @@ namespace Web_cham_diem.Models
             modelBuilder.Entity<Competitions>()
                 .Property(c => c.MaxScore)
                 .HasPrecision(18, 2);
+
+            // Configure Sponsors
+            modelBuilder.Entity<Sponsors>()
+                .HasKey(s => s.SponsorId);
+            modelBuilder.Entity<Sponsors>()
+                .Property(s => s.SponsorName)
+                .IsRequired()
+                .HasMaxLength(200);
+            modelBuilder.Entity<Sponsors>()
+                .Property(s => s.Email)
+                .HasMaxLength(100);
+            modelBuilder.Entity<Sponsors>()
+                .Property(s => s.PhoneNumber)
+                .HasMaxLength(20);
+            modelBuilder.Entity<Sponsors>()
+                .HasIndex(s => s.Email)
+                .IsUnique();
+
+            // Configure CompetitionSponsors
+            modelBuilder.Entity<CompetitionSponsors>()
+                .HasKey(cs => cs.CompetitionSponsorId);
+            modelBuilder.Entity<CompetitionSponsors>()
+                .Property(cs => cs.SponsorshipLevel)
+                .IsRequired()
+                .HasMaxLength(50);
+            modelBuilder.Entity<CompetitionSponsors>()
+                .Property(cs => cs.Currency)
+                .HasMaxLength(10);
+            modelBuilder.Entity<CompetitionSponsors>()
+                .Property(cs => cs.ContributionAmount)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<CompetitionSponsors>()
+                .HasOne(cs => cs.Competition)
+                .WithMany(c => c.CompetitionSponsors)
+                .HasForeignKey(cs => cs.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CompetitionSponsors>()
+                .HasOne(cs => cs.Sponsor)
+                .WithMany(s => s.CompetitionSponsors)
+                .HasForeignKey(cs => cs.SponsorId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Configure Registrations
             modelBuilder.Entity<Registrations>()

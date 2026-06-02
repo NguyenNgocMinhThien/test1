@@ -28,6 +28,7 @@
         public ICollection<CompetitionImages> CompetitionImages { get; set; } = new List<CompetitionImages>();
         public ICollection<CompetitionDocuments> CompetitionDocuments { get; set; } = new List<CompetitionDocuments>();
         public ICollection<RegistrationRounds> RegistrationRounds { get; set; } = new List<RegistrationRounds>();
+        public ICollection<CompetitionSponsors> CompetitionSponsors { get; set; } = new List<CompetitionSponsors>();
     }
 }
 
