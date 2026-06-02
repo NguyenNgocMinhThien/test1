@@ -454,4 +454,209 @@ public class CompetitionService : ICompetitionService
             _ => competition.Status
         };
     }
+
+    // ===== DASHBOARD DATA =====
+    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync()
+    {
+        var now = DateTime.UtcNow;
+
+        // Lấy tất cả cuộc thi với dữ liệu liên quan
+        var competitions = await _context.Competitions
+            .Include(c => c.Registrations)
+            .Include(c => c.Submissions)
+            .Include(c => c.ScoringCriteria)
+            .ToListAsync();
+
+        // Lấy tất cả giám khảo (Judges)
+        var judges = await _context.Judges
+            .ToListAsync();
+
+        // 1. STATISTICS
+        var activeCompetitions = competitions.Count(c => c.Status == "Active");
+        var pendingRegistrations = await _context.Registrations
+            .CountAsync(r => r.Status == "Pending");
+        var totalSubmissions = competitions.Sum(c => c.Submissions.Count);
+        var evaluatedSubmissions = await _context.Submissions
+            .CountAsync(s => s.Status == "Evaluated");
+        var activeJudges = judges.Count;
+        var urgentCompetitions = competitions.Count(c => 
+            c.Status == "Active" && (c.EndDate - now).TotalDays < 7 && (c.EndDate - now).TotalDays >= 0);
+
+        // 2. PROGRESS DATA (cho biểu đồ)
+        var progressData = new List<CompetitionProgressData>();
+        var activeCompetition = competitions.FirstOrDefault(c => c.Status == "Active");
+        if (activeCompetition != null)
+        {
+            // Tạo dữ liệu cho 4 tuần gần đây
+            for (int i = 3; i >= 0; i--)
+            {
+                var weekStart = now.AddDays(-7 * i);
+                var weekEnd = weekStart.AddDays(7);
+
+                var registrationsInWeek = await _context.Registrations
+                    .CountAsync(r => r.CompetitionId == activeCompetition.CompetitionId 
+                        && r.RegistrationDate >= weekStart && r.RegistrationDate < weekEnd);
+
+                var submissionsInWeek = await _context.Submissions
+                    .CountAsync(s => s.CompetitionId == activeCompetition.CompetitionId 
+                        && s.SubmissionDate >= weekStart && s.SubmissionDate < weekEnd);
+
+                progressData.Add(new CompetitionProgressData
+                {
+                    Week = $"Tuần {i + 1}",
+                    Registrations = registrationsInWeek,
+                    Submissions = submissionsInWeek
+                });
+            }
+        }
+
+        // 3. APPROVAL RATIO DATA
+        var allRegistrations = await _context.Registrations.ToListAsync();
+        var approvalRatio = new ApprovalRatioData
+        {
+            ApprovedCount = allRegistrations.Count(r => r.Status == "Approved"),
+            PendingCount = allRegistrations.Count(r => r.Status == "Pending"),
+            RejectedCount = allRegistrations.Count(r => r.Status == "Rejected")
+        };
+
+        // 4. DEADLINES
+        var deadlines = new List<DeadlineItem>();
+        foreach (var comp in competitions.Where(c => c.Status == "Active" || c.Status == "Draft"))
+        {
+            // Deadline đóng cổng đăng ký
+            if (comp.RegistrationDeadline > now)
+            {
+                var daysUntil = (comp.RegistrationDeadline - now).TotalDays;
+                var status = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal";
+
+                deadlines.Add(new DeadlineItem
+                {
+                    CompetitionId = comp.CompetitionId,
+                    CompetitionName = comp.CompetitionName,
+                    Title = "Đóng cổng Nhận hồ sơ",
+                    DeadlineDate = comp.RegistrationDeadline,
+                    Status = status,
+                    Description = $"Cuộc thi: {comp.CompetitionName}. Đã nhận {comp.Registrations.Count} hồ sơ."
+                });
+            }
+
+            // Deadline nộp bài
+            if (comp.SubmissionDeadline > now)
+            {
+                var daysUntil = (comp.SubmissionDeadline - now).TotalDays;
+                var status = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal";
+
+                deadlines.Add(new DeadlineItem
+                {
+                    CompetitionId = comp.CompetitionId,
+                    CompetitionName = comp.CompetitionName,
+                    Title = "Đóng cổng Nhận bài dự thi",
+                    DeadlineDate = comp.SubmissionDeadline,
+                    Status = status,
+                    Description = $"Cuộc thi: {comp.CompetitionName}. Hiện đã nhận {comp.Submissions.Count} bài thi."
+                });
+            }
+
+            // Deadline chấm điểm (giả sử là ngày cuối cùng của cuộc thi)
+            if (comp.EndDate > now && comp.Submissions.Count > 0)
+            {
+                var evaluatedCount = comp.Submissions.Count(s => s.Status == "Evaluated");
+                var progressPercent = comp.Submissions.Count > 0 
+                    ? (decimal)evaluatedCount / comp.Submissions.Count * 100 
+                    : 0;
+
+                var daysUntil = (comp.EndDate - now).TotalDays;
+                var status = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal";
+
+                deadlines.Add(new DeadlineItem
+                {
+                    CompetitionId = comp.CompetitionId,
+                    CompetitionName = comp.CompetitionName,
+                    Title = "Hạn nộp điểm của Giám khảo",
+                    DeadlineDate = comp.EndDate,
+                    Status = status,
+                    ProgressPercentage = progressPercent,
+                    Description = $"Cuộc thi: {comp.CompetitionName}."
+                });
+            }
+        }
+
+        // Sắp xếp deadlines theo thời gian
+        deadlines = deadlines.OrderBy(d => d.DeadlineDate).ToList();
+
+        // 5. RECENT ACTIVITIES (mô phỏng - cập nhật nếu có bảng ActivityLog thực tế)
+        var recentActivities = new List<ActivityLog>();
+
+        // Lấy các điểm được chấm gần đây
+        var recentScores = await _context.Scores
+            .Include(s => s.Submission)
+            .OrderByDescending(s => s.ScoredDate)
+            .Take(20)
+            .ToListAsync();
+
+        foreach (var score in recentScores.Take(5))
+        {
+            recentActivities.Add(new ActivityLog
+            {
+                Type = "score",
+                Title = "Giám khảo chấm bài hoàn tất",
+                Description = $"Bài thi #{score.SubmissionId} đã được chấm.",
+                CreatedAt = score.ScoredDate,
+                UserName = "Giám khảo"
+            });
+        }
+
+        // Lấy các hồ sơ mới gần đây
+        var recentRegistrations = await _context.Registrations
+            .Include(r => r.User)
+            .OrderByDescending(r => r.RegistrationDate)
+            .Take(20)
+            .ToListAsync();
+
+        foreach (var reg in recentRegistrations.Where(r => r.Status == "Pending").Take(3))
+        {
+            recentActivities.Add(new ActivityLog
+            {
+                Type = "registration",
+                Title = "Hồ sơ đăng ký mới chờ duyệt",
+                Description = $"Sinh viên {reg.User?.FullName ?? "Unknown"} đã nộp hồ sơ.",
+                CreatedAt = reg.RegistrationDate,
+                UserName = reg.User?.FullName
+            });
+        }
+
+        // Lấy các bài nộp gần đây
+        var recentSubmissions = await _context.Submissions
+            .OrderByDescending(s => s.SubmissionDate)
+            .Take(20)
+            .ToListAsync();
+
+        foreach (var sub in recentSubmissions.Take(2))
+        {
+            recentActivities.Add(new ActivityLog
+            {
+                Type = "submission",
+                Title = "Bài dự thi mới được nộp",
+                Description = $"Bài thi #{sub.SubmissionId} đã được nộp.",
+                CreatedAt = sub.SubmissionDate
+            });
+        }
+
+        recentActivities = recentActivities.OrderByDescending(a => a.CreatedAt).ToList();
+
+        // Xây dựng ViewModel
+        return new OrganizerDashboardViewModel
+        {
+            ActiveCompetitions = activeCompetitions,
+            PendingRegistrations = pendingRegistrations,
+            TotalSubmissions = totalSubmissions,
+            EvaluatedSubmissions = evaluatedSubmissions,
+            ActiveJudges = activeJudges,
+            UrgentCompetitions = urgentCompetitions,
+            ProgressData = progressData,
+            ApprovalRatio = approvalRatio,
+            UpcomingDeadlines = deadlines,
+            RecentActivities = recentActivities
+        };
+    }
 }

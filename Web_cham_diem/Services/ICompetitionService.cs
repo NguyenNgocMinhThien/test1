@@ -16,4 +16,5 @@ public interface ICompetitionService
     Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model);
     Task<bool> DeleteCompetitionAsync(int competitionId);
     Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus);
+    Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync();
 }

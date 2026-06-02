@@ -1,4 +1,6 @@
-﻿@{
+﻿@model OrganizerDashboardViewModel
+
+@{
     // Thay đổi đường dẫn đến đúng nơi bạn đã lưu Layout
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Dashboard Ban Tổ Chức";
@@ -153,7 +155,7 @@
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary fs-3"><i class="bi bi-play-circle"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Đang diễn ra</div>
-                        <div class="stat-val">3</div>
+                        <div class="stat-val">@Model.ActiveCompetitions</div>
                     </div>
                 </div>
             </div>
@@ -162,7 +164,7 @@
                     <div class="stat-icon bg-warning bg-opacity-10 text-warning fs-3"><i class="bi bi-file-earmark-person"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Hồ sơ chờ duyệt</div>
-                        <div class="stat-val text-warning">45</div>
+                        <div class="stat-val text-warning">@Model.PendingRegistrations</div>
                     </div>
                 </div>
             </div>
@@ -171,7 +173,7 @@
                     <div class="stat-icon bg-info bg-opacity-10 text-info fs-3"><i class="bi bi-file-zip"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Bài dự thi nộp</div>
-                        <div class="stat-val">120</div>
+                        <div class="stat-val">@Model.TotalSubmissions</div>
                     </div>
                 </div>
             </div>
@@ -180,7 +182,7 @@
                     <div class="stat-icon bg-success bg-opacity-10 text-success fs-3"><i class="bi bi-check-all"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Bài đã chấm</div>
-                        <div class="stat-val text-success">85</div>
+                        <div class="stat-val text-success">@Model.EvaluatedSubmissions</div>
                     </div>
                 </div>
             </div>
@@ -189,7 +191,7 @@
                     <div class="stat-icon bg-primary bg-opacity-10 text-primary fs-3" style="color:#059669;"><i class="bi bi-person-video3"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Giám khảo Active</div>
-                        <div class="stat-val">12</div>
+                        <div class="stat-val">@Model.ActiveJudges</div>
                     </div>
                 </div>
             </div>
@@ -198,7 +200,7 @@
                     <div class="stat-icon bg-danger bg-opacity-10 text-danger fs-3"><i class="bi bi-hourglass-bottom"></i></div>
                     <div class="stat-text">
                         <div class="text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">Sắp kết thúc</div>
-                        <div class="stat-val text-danger">1</div>
+                        <div class="stat-val text-danger">@Model.UrgentCompetitions</div>
                     </div>
                 </div>
             </div>
@@ -232,7 +234,7 @@
                         <canvas id="approvalChart"></canvas>
                     </div>
                     <div class="mt-3 text-center small text-muted">
-                        Đã xử lý <strong>450/495</strong> hồ sơ đăng ký.
+                        Đã xử lý <strong>@(Model.ApprovalRatio.ApprovedCount + Model.ApprovalRatio.PendingCount + Model.ApprovalRatio.RejectedCount)/@(Model.ApprovalRatio.TotalProcessed + Model.PendingRegistrations)</strong> hồ sơ đăng ký.
                     </div>
                 </div>
             </div>
@@ -248,34 +250,45 @@
                     </div>
 
                     <ul class="timeline-vertical mt-4">
-                        <li class="timeline-item">
-                            <div class="timeline-dot bg-danger"></div>
-                            <div class="item-head d-flex justify-content-between">
-                                <span class="text-danger">Đóng cổng Nhận bài dự thi</span>
-                                <span class="badge bg-danger">Hôm nay</span>
-                            </div>
-                            <p class="small text-muted mb-0">Cuộc thi: <strong>Sáng tạo AI 2026</strong>. Hiện đã nhận 120/150 bài đăng ký.</p>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-dot bg-warning"></div>
-                            <div class="item-head d-flex justify-content-between">
-                                <span class="text-warning text-dark">Hạn nộp điểm của Giám khảo</span>
-                                <span class="small fw-normal text-muted">Trưa ngày mai, 12:00</span>
-                            </div>
-                            <p class="small text-muted mb-1">Cuộc thi: <strong>Hackathon 2026</strong>.</p>
-                            <div class="progress progress-micro">
-                                <div class="progress-bar bg-warning" style="width: 85%"></div>
-                            </div>
-                            <small class="text-muted" style="font-size: 0.7rem;">Đã chấm 85%</small>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-dot bg-success"></div>
-                            <div class="item-head d-flex justify-content-between">
-                                <span class="text-success">Công bố Kết quả Vòng Bảng</span>
-                                <span class="small fw-normal text-muted">20/11/2026</span>
-                            </div>
-                            <p class="small text-muted mb-0">Cuộc thi: <strong>Olympic Tiếng Anh</strong>.</p>
-                        </li>
+                        @if (Model.UpcomingDeadlines.Any())
+                        {
+                            @foreach (var deadline in Model.UpcomingDeadlines.Take(5))
+                            {
+                                var badgeClass = deadline.Status switch
+                                {
+                                    "urgent" => "badge bg-danger",
+                                    "warning" => "badge bg-warning text-dark",
+                                    _ => "badge bg-success"
+                                };
+
+                                var dotClass = deadline.Status switch
+                                {
+                                    "urgent" => "bg-danger",
+                                    "warning" => "bg-warning",
+                                    _ => "bg-success"
+                                };
+
+                                <li class="timeline-item">
+                                    <div class="timeline-dot @dotClass"></div>
+                                    <div class="item-head d-flex justify-content-between">
+                                        <span class="@(deadline.Status == "urgent" ? "text-danger" : deadline.Status == "warning" ? "text-warning" : "text-success") @(deadline.Status == "warning" ? "text-dark" : "")">@deadline.Title</span>
+                                        <span class="@badgeClass">@deadline.DeadlineDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <p class="small text-muted mb-1">@deadline.Description</p>
+                                    @if (deadline.ProgressPercentage.HasValue)
+                                    {
+                                        <div class="progress progress-micro">
+                                            <div class="progress-bar @(deadline.ProgressPercentage >= 80 ? "bg-success" : deadline.ProgressPercentage >= 50 ? "bg-warning" : "bg-danger")" style="width: @deadline.ProgressPercentage%"></div>
+                                        </div>
+                                        <small class="text-muted" style="font-size: 0.7rem;">Đã chấm @Math.Round(deadline.ProgressPercentage.Value)%</small>
+                                    }
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="text-muted small">Không có deadline sắp tới</li>
+                        }
                     </ul>
                 </div>
             </div>
@@ -289,38 +302,39 @@
                     </div>
 
                     <ul class="activity-list">
-                        <li class="activity-item">
-                            <div class="text-success fs-4 mt-1"><i class="bi bi-file-earmark-check-fill"></i></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold fs-6">Giám khảo <span class="text-primary">Trần Văn B</span> vừa nộp điểm</div>
-                                <div class="small text-muted">Đã chấm xong bài thi số #1024 - Cuộc thi Hackathon 2026. Sinh viên nộp: Nguyễn A.</div>
-                            </div>
-                            <div class="small text-muted text-end" style="min-width: 80px;">10 phút trước</div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="text-warning fs-4 mt-1"><i class="bi bi-person-lines-fill"></i></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold fs-6">3 Hồ sơ đăng ký mới chờ duyệt</div>
-                                <div class="small text-muted">Cuộc thi: Nghiên cứu Khoa học Trẻ.</div>
-                            </div>
-                            <div class="small text-muted text-end" style="min-width: 80px;">30 phút trước</div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="text-info fs-4 mt-1"><i class="bi bi-cloud-arrow-up-fill"></i></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold fs-6">Sinh viên nộp bài: Đồ án Web App</div>
-                                <div class="small text-muted">Sinh viên: Phan Hoàng C (MSSV: 2012345). Dung lượng: 15MB.</div>
-                            </div>
-                            <div class="small text-muted text-end" style="min-width: 80px;">1 giờ trước</div>
-                        </li>
-                        <li class="activity-item">
-                            <div class="text-secondary fs-4 mt-1"><i class="bi bi-chat-left-text-fill"></i></div>
-                            <div class="flex-grow-1">
-                                <div class="fw-bold fs-6">Sinh viên thắc mắc về Thể lệ</div>
-                                <div class="small text-muted">Ticket #50 - Hỏi về yêu cầu định dạng video nộp kèm.</div>
-                            </div>
-                            <div class="small text-muted text-end" style="min-width: 80px;">Hôm qua</div>
-                        </li>
+                        @if (Model.RecentActivities.Any())
+                        {
+                            @foreach (var activity in Model.RecentActivities.Take(4))
+                            {
+                                var iconClass = activity.Type switch
+                                {
+                                    "score" => "bi bi-file-earmark-check-fill text-success",
+                                    "registration" => "bi bi-person-lines-fill text-warning",
+                                    "submission" => "bi bi-cloud-arrow-up-fill text-info",
+                                    "message" => "bi bi-chat-left-text-fill text-secondary",
+                                    _ => "bi bi-info-circle text-secondary"
+                                };
+
+                                var timespan = (DateTime.UtcNow - activity.CreatedAt);
+                                var timeText = timespan.TotalMinutes < 1 ? "vừa xong"
+                                    : timespan.TotalMinutes < 60 ? $"{(int)timespan.TotalMinutes} phút trước"
+                                    : timespan.TotalHours < 24 ? $"{(int)timespan.TotalHours} giờ trước"
+                                    : "Hôm qua";
+
+                                <li class="activity-item">
+                                    <div class="fs-4 mt-1"><i class="bi @iconClass"></i></div>
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold fs-6">@activity.Title</div>
+                                        <div class="small text-muted">@activity.Description</div>
+                                    </div>
+                                    <div class="small text-muted text-end" style="min-width: 80px;">@timeText</div>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="text-muted small">Chưa có hoạt động nào</li>
+                        }
                     </ul>
                     <div class="mt-3 text-center">
                         <button class="btn btn-link text-decoration-none fw-bold small">Xem tất cả Logs</button>
@@ -336,15 +350,21 @@
         Chart.defaults.font.family = "'Inter', sans-serif";
 
         // 1. Chart Tiến độ Đăng ký & Nộp bài
+        const progressData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProgressData));
         const ctxProgress = document.getElementById('progressChart').getContext('2d');
+
+        const progressLabels = progressData.length > 0 ? progressData.map(d => d.week) : ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'];
+        const registrationData = progressData.length > 0 ? progressData.map(d => d.registrations) : [0, 0, 0, 0];
+        const submissionData = progressData.length > 0 ? progressData.map(d => d.submissions) : [0, 0, 0, 0];
+
         new Chart(ctxProgress, {
             type: 'line',
             data: {
-                labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4 (Hiện tại)'],
+                labels: progressLabels,
                 datasets: [
                     {
                         label: 'Số hồ sơ đăng ký',
-                        data: [50, 150, 300, 450],
+                        data: registrationData,
                         borderColor: '#0d6efd',
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         borderWidth: 2,
@@ -353,11 +373,11 @@
                     },
                     {
                         label: 'Số bài thi đã nộp',
-                        data: [0, 10, 80, 250],
+                        data: submissionData,
                         borderColor: '#059669', // Màu của Organizer
                         borderWidth: 2,
                         borderDash: [5, 5],
-                        tensor: 0.3
+                        tension: 0.3
                     }
                 ]
             },
@@ -373,13 +393,18 @@
         });
 
         // 2. Chart Tỷ lệ duyệt hồ sơ
+        const approvalRatio = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApprovalRatio));
         const ctxApproval = document.getElementById('approvalChart').getContext('2d');
         new Chart(ctxApproval, {
             type: 'doughnut',
             data: {
                 labels: ['Hợp lệ (Đã duyệt)', 'Đang chờ', 'Từ chối (Sai form)'],
                 datasets: [{
-                    data: [350, 45, 100],
+                    data: [
+                        approvalRatio.approvedCount,
+                        approvalRatio.pendingCount,
+                        approvalRatio.rejectedCount
+                    ],
                     backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
                     borderWidth: 0
                 }]
