@@ -304,7 +304,12 @@ public class CompetitiveController : Controller
             .Include(c => c.ScoringCriteria)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
+            .Include(c => c.CompetitionImages)
+            .Include(c => c.CompetitionDocuments)
             .Include(c => c.Teams)
+                .ThenInclude(t => t.Registrations)
+            .Include(c => c.Teams)
+                .ThenInclude(t => t.Leader)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.CompetitionId == id);
 
@@ -324,4 +329,6 @@ public class CompetitiveController : Controller
 
         return View("~/Views/Pages/StudentCompetitionDetails.cshtml", competition);
     }
+
+
 }
