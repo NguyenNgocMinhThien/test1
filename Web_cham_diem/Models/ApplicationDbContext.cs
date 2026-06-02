@@ -19,6 +19,9 @@ namespace Web_cham_diem.Models
         public DbSet<Scores> Scores { get; set; }
         public DbSet<Notifications> Notifications { get; set; }
         public DbSet<UserRoles> UserRoles { get; set; }
+        public DbSet<CompetitionImages> CompetitionImages { get; set; }
+        public DbSet<CompetitionDocuments> CompetitionDocuments { get; set; }
+        public DbSet<RegistrationRounds> RegistrationRounds { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -93,6 +96,11 @@ namespace Web_cham_diem.Models
                 .HasOne(r => r.Team)
                 .WithMany(t => t.Registrations)
                 .HasForeignKey(r => r.TeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Registrations>()
+                .HasOne(r => r.RegistrationRound)
+                .WithMany(rr => rr.Registrations)
+                .HasForeignKey(r => r.RoundId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Teams
@@ -198,6 +206,51 @@ namespace Web_cham_diem.Models
                 .HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
                 .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure CompetitionImages
+            modelBuilder.Entity<CompetitionImages>()
+                .HasKey(ci => ci.ImageId);
+            modelBuilder.Entity<CompetitionImages>()
+                .Property(ci => ci.ImageUrl)
+                .IsRequired();
+            modelBuilder.Entity<CompetitionImages>()
+                .HasOne(ci => ci.Competition)
+                .WithMany(c => c.CompetitionImages)
+                .HasForeignKey(ci => ci.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure CompetitionDocuments
+            modelBuilder.Entity<CompetitionDocuments>()
+                .HasKey(cd => cd.DocumentId);
+            modelBuilder.Entity<CompetitionDocuments>()
+                .Property(cd => cd.FileName)
+                .IsRequired()
+                .HasMaxLength(255);
+            modelBuilder.Entity<CompetitionDocuments>()
+                .Property(cd => cd.FileUrl)
+                .IsRequired();
+            modelBuilder.Entity<CompetitionDocuments>()
+                .Property(cd => cd.FileType)
+                .IsRequired()
+                .HasMaxLength(50);
+            modelBuilder.Entity<CompetitionDocuments>()
+                .HasOne(cd => cd.Competition)
+                .WithMany(c => c.CompetitionDocuments)
+                .HasForeignKey(cd => cd.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure RegistrationRounds
+            modelBuilder.Entity<RegistrationRounds>()
+                .HasKey(rr => rr.RoundId);
+            modelBuilder.Entity<RegistrationRounds>()
+                .Property(rr => rr.RoundName)
+                .IsRequired()
+                .HasMaxLength(200);
+            modelBuilder.Entity<RegistrationRounds>()
+                .HasOne(rr => rr.Competition)
+                .WithMany(c => c.RegistrationRounds)
+                .HasForeignKey(rr => rr.CompetitionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Seed initial roles

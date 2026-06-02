@@ -25,5 +25,9 @@
         public ICollection<Teams> Teams { get; set; } = new List<Teams>();
         public ICollection<Submissions> Submissions { get; set; } = new List<Submissions>();
         public ICollection<ScoringCriteria> ScoringCriteria { get; set; } = new List<ScoringCriteria>();
+        public ICollection<CompetitionImages> CompetitionImages { get; set; } = new List<CompetitionImages>();
+        public ICollection<CompetitionDocuments> CompetitionDocuments { get; set; } = new List<CompetitionDocuments>();
+        public ICollection<RegistrationRounds> RegistrationRounds { get; set; } = new List<RegistrationRounds>();
     }
 }
+
