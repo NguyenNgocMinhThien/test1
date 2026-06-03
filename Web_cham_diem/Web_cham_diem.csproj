@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="Database\" />
+    <Folder Include="wwwroot\pdf_excel\" />
   </ItemGroup>
 
   <ItemGroup>

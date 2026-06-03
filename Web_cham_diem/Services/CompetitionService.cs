@@ -1,16 +1,19 @@
 ﻿using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Web_cham_diem.Services;
 
 public class CompetitionService : ICompetitionService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public CompetitionService(ApplicationDbContext context)
+    public CompetitionService(ApplicationDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     public async Task<List<Competitions>> GetAllCompetitionsAsync()
@@ -91,6 +94,7 @@ public class CompetitionService : ICompetitionService
             TotalSubmissions = c.Submissions.Count,
             EvaluatedSubmissions = c.Submissions.Count(s => s.Status == "Evaluated"),
             MaxParticipants = c.MaxParticipants,
+            MaxTeamSize = c.MaxTeamSize,
             ProgressPercentage = CalculateProgress(c),
             CurrentPhase = DetermineCurrentPhase(c),
             StatusDisplay = GetStatusDisplay(c),
@@ -124,6 +128,8 @@ public class CompetitionService : ICompetitionService
     {
         var competition = await _context.Competitions
             .Include(c => c.ScoringCriteria)
+            .Include(c => c.Registrations)
+            .Include(c => c.Submissions)
             .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
 
         if (competition == null)
@@ -150,6 +156,12 @@ public class CompetitionService : ICompetitionService
             RegistrationDeadline = competition.RegistrationDeadline,
             SubmissionDeadline = competition.SubmissionDeadline,
             Status = competition.Status,
+            IsTeamBased = competition.IsTeamBased,
+            MaxParticipants = competition.MaxParticipants,
+            MaxTeamSize = competition.MaxTeamSize,
+            TotalRegistrations = competition.Registrations.Count,
+            ApprovedRegistrations = competition.Registrations.Count(r => r.Status == "Approved"),
+            TotalSubmissions = competition.Submissions.Count,
             ScoringCriteria = scoringCriteria
         };
     }
@@ -235,7 +247,130 @@ public class CompetitionService : ICompetitionService
         }
 
         await _context.SaveChangesAsync();
+
+        // Tạo nhà tài trợ (nếu có)
+        if (model.Sponsors != null && model.Sponsors.Any())
+        {
+            foreach (var sponsorDto in model.Sponsors.Where(s => !string.IsNullOrWhiteSpace(s.SponsorName)))
+            {
+                var sponsor = new Sponsors
+                {
+                    SponsorName = sponsorDto.SponsorName,
+                    Email = sponsorDto.Email,
+                    PhoneNumber = sponsorDto.PhoneNumber,
+                    Website = sponsorDto.Website,
+                    LogoUrl = sponsorDto.LogoUrl,
+                    Description = sponsorDto.Description,
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Sponsors.Add(sponsor);
+                await _context.SaveChangesAsync();
+
+                _context.CompetitionSponsors.Add(new CompetitionSponsors
+                {
+                    CompetitionId = competition.CompetitionId,
+                    SponsorId = sponsor.SponsorId,
+                    SponsorshipLevel = sponsorDto.SponsorshipLevel,
+                    ContributionAmount = sponsorDto.ContributionAmount,
+                    Currency = sponsorDto.Currency,
+                    Notes = sponsorDto.Notes,
+                    IsDisplayed = sponsorDto.IsDisplayed,
+                    DisplayOrder = sponsorDto.DisplayOrder,
+                    SponsoredAt = DateTime.UtcNow
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        await SaveCompetitionFilesAsync(competition.CompetitionId, model);
+
         return competition.CompetitionId;
+    }
+
+    private async Task SaveCompetitionFilesAsync(int competitionId, CreateCompetitionViewModel model)
+    {
+        // === LƯU ẢNH ===
+        if (model.SelectedImageData != null && model.SelectedImageData.Any())
+        {
+            var imageDir = Path.Combine(_env.WebRootPath, "images", "competitions", competitionId.ToString());
+            Directory.CreateDirectory(imageDir);
+            bool isFirst = true;
+
+            foreach (var dataUrl in model.SelectedImageData.Where(d => !string.IsNullOrWhiteSpace(d)))
+            {
+                try
+                {
+                    var commaIdx = dataUrl.IndexOf(',');
+                    if (commaIdx < 0) continue;
+
+                    var header = dataUrl[..commaIdx]; // "data:image/png;base64"
+                    var base64 = dataUrl[(commaIdx + 1)..];
+
+                    var ext = "jpg";
+                    if (header.Contains('/'))
+                    {
+                        var mime = header.Split('/')[1].Split(';')[0].ToLower();
+                        ext = mime == "jpeg" ? "jpg" : (mime.Length <= 5 ? mime : "jpg");
+                    }
+
+                    var fileName = $"{Guid.NewGuid()}.{ext}";
+                    var filePath = Path.Combine(imageDir, fileName);
+                    await File.WriteAllBytesAsync(filePath, Convert.FromBase64String(base64));
+
+                    _context.CompetitionImages.Add(new CompetitionImages
+                    {
+                        CompetitionId = competitionId,
+                        ImageUrl = $"/images/competitions/{competitionId}/{fileName}",
+                        IsThumbnail = isFirst,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    isFirst = false;
+                }
+                catch { /* bỏ qua file bị lỗi */ }
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        // === LƯU TÀI LIỆU ===
+        if (model.SelectedDocumentData != null && model.SelectedDocumentData.Any())
+        {
+            var docDir = Path.Combine(_env.WebRootPath, "pdf_excel", "competitions", competitionId.ToString());
+            Directory.CreateDirectory(docDir);
+            var fileNames = model.DocumentFileNames ?? new List<string>();
+
+            for (int i = 0; i < model.SelectedDocumentData.Count; i++)
+            {
+                var dataUrl = model.SelectedDocumentData[i];
+                if (string.IsNullOrWhiteSpace(dataUrl)) continue;
+
+                try
+                {
+                    var commaIdx = dataUrl.IndexOf(',');
+                    if (commaIdx < 0) continue;
+
+                    var base64 = dataUrl[(commaIdx + 1)..];
+                    var originalName = i < fileNames.Count ? fileNames[i] : $"document_{i + 1}";
+                    var ext = Path.GetExtension(originalName).TrimStart('.');
+                    if (string.IsNullOrEmpty(ext)) ext = "pdf";
+
+                    var fileName = $"{Guid.NewGuid()}.{ext}";
+                    var filePath = Path.Combine(docDir, fileName);
+                    await File.WriteAllBytesAsync(filePath, Convert.FromBase64String(base64));
+
+                    _context.CompetitionDocuments.Add(new CompetitionDocuments
+                    {
+                        CompetitionId = competitionId,
+                        FileName = originalName,
+                        FileUrl = $"/pdf_excel/competitions/{competitionId}/{fileName}",
+                        FileType = ext.ToLower(),
+                        UploadedAt = DateTime.UtcNow
+                    });
+                }
+                catch { /* bỏ qua file bị lỗi */ }
+            }
+            await _context.SaveChangesAsync();
+        }
     }
 
     // ===== MỚI - GET FOR EDIT =====
@@ -452,11 +587,11 @@ public class CompetitionService : ICompetitionService
 
         return competition.Status switch
         {
-            "Active" when now < competition.RegistrationDeadline => "Đang Nhận Bài",
-            "Active" when now < competition.SubmissionDeadline => "Đang Nhận Bài",
-            "Active" => "Đang Chấm Điểm",
-            "Draft" => "Sắp Diễn Ra",
-            "Closed" => "Đã Đóng",
+            "Active" when now < competition.RegistrationDeadline => "Đang Nhận Hồ Sơ",
+            "Active" when now < competition.SubmissionDeadline   => "Đang Thu Bài Thi",
+            "Active"                                             => "Đang Chấm Điểm",
+            "Draft"     => "Sắp Diễn Ra",
+            "Closed"    => "Đã Đóng",
             "Completed" => "Đã Kết Thúc",
             _ => competition.Status
         };

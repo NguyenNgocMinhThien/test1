@@ -43,6 +43,9 @@ namespace Web_cham_diem.Models.ViewModels
             new ScoringCriteriaCreateDto { CriteriaName = "Thuyết trình", MaxScore = 100, Weight = 0.30m, Order = 3 }
         };
 
+        // Step 5: Nhà tài trợ (Không bắt buộc)
+        public List<SponsorCreateDto> Sponsors { get; set; } = new();
+
         // Step 4: Ảnh & Tài liệu (Không bắt buộc)
         /// <summary>
         /// Danh sách ảnh được chọn (base64 hoặc URL từ form upload)
@@ -72,6 +75,23 @@ namespace Web_cham_diem.Models.ViewModels
         public decimal MaxScore { get; set; } = 100;
         public decimal Weight { get; set; } = 1.0m;
         public int Order { get; set; } = 0;
+    }
+
+    public class SponsorCreateDto
+    {
+        [Required(ErrorMessage = "Tên nhà tài trợ là bắt buộc.")]
+        public string SponsorName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Website { get; set; }
+        public string? LogoUrl { get; set; }
+        public string? Description { get; set; }
+        public string SponsorshipLevel { get; set; } = "General"; // Gold, Silver, Bronze, General
+        public decimal ContributionAmount { get; set; } = 0;
+        public string Currency { get; set; } = "VND";
+        public string? Notes { get; set; }
+        public bool IsDisplayed { get; set; } = true;
+        public int DisplayOrder { get; set; } = 0;
     }
 
     public class EditCompetitionViewModel : CreateCompetitionViewModel
