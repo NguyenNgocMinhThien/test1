@@ -37,6 +37,7 @@
         public int TotalSubmissions { get; set; }
         public int EvaluatedSubmissions { get; set; }
         public int MaxParticipants { get; set; }
+        public int MaxTeamSize { get; set; }
 
         // Progress
         public int ProgressPercentage { get; set; }
@@ -58,6 +59,12 @@
         public DateTime RegistrationDeadline { get; set; }
         public DateTime SubmissionDeadline { get; set; }
         public string Status { get; set; } = string.Empty;
+        public bool IsTeamBased { get; set; }
+        public int MaxParticipants { get; set; }
+        public int MaxTeamSize { get; set; }
+        public int TotalRegistrations { get; set; }
+        public int ApprovedRegistrations { get; set; }
+        public int TotalSubmissions { get; set; }
         public List<ScoringCriteriaDto> ScoringCriteria { get; set; } = new();
     }
 

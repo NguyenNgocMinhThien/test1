@@ -456,6 +456,91 @@
                 font-size: 0.75rem;
                 font-weight: bold;
             }
+
+        /* Sponsor Styles */
+        .sponsor-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .sponsor-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sponsor-card-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .sponsor-level-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .level-gold { background: #fef3c7; color: #92400e; }
+        .level-silver { background: #f1f5f9; color: #475569; }
+        .level-bronze { background: #fdf4e8; color: #92480f; }
+        .level-general { background: #ede9fe; color: #5b21b6; }
+
+        .remove-sponsor-btn {
+            background: #fee;
+            color: #e53e3e;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+            .remove-sponsor-btn:hover {
+                background: #fdd;
+            }
+
+        .add-sponsor-btn {
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 2px dashed #4f46e5;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+            .add-sponsor-btn:hover {
+                background: #e0e7ff;
+            }
+
+        .sponsor-empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #e0e0e0;
+            color: #999;
+            margin-bottom: 20px;
+        }
+
+        .sponsor-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
     </style>
 }
 
@@ -484,6 +569,10 @@
                         </div>
                         <div class="step-item" id="step5-indicator">
                             <div class="step-circle">5</div>
+                            <div class="step-text">Nhà tài trợ</div>
+                        </div>
+                        <div class="step-item" id="step6-indicator">
+                            <div class="step-circle">6</div>
                             <div class="step-text">Xác nhận</div>
                         </div>
                     </div>
@@ -756,8 +845,131 @@
                         </div>
                     </div>
 
-                    <!-- STEP 5: Xác nhận -->
+                    <!-- STEP 5: Nhà tài trợ -->
                     <div class="form-section" id="step5">
+                        <div class="section-title">
+                            <i class="bi bi-building me-2"></i>Nhà tài trợ
+                        </div>
+                        <p class="section-description">Thêm thông tin nhà tài trợ cho cuộc thi (Không bắt buộc)</p>
+
+                        <div id="sponsorContainer">
+                            @if (Model.Sponsors == null || !Model.Sponsors.Any())
+                            {
+                                <div class="sponsor-empty-state" id="sponsorEmptyState">
+                                    <div class="sponsor-empty-icon">🏢</div>
+                                    <p class="mb-0">Chưa có nhà tài trợ. Nhấn nút bên dưới để thêm.</p>
+                                </div>
+                            }
+                            @for (int i = 0; i < (Model.Sponsors?.Count ?? 0); i++)
+                            {
+                                <div class="sponsor-item" data-index="@i">
+                                    <div class="sponsor-card-header">
+                                        <h6 class="sponsor-card-title">🏢 Nhà tài trợ #@(i + 1)</h6>
+                                        <button type="button" class="remove-sponsor-btn" onclick="removeSponsor(this)">
+                                            <i class="bi bi-trash"></i> Xóa
+                                        </button>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Tên nhà tài trợ <span class="required">*</span></label>
+                                                <input type="text" name="Sponsors[@i].SponsorName" class="form-control sponsor-name"
+                                                       placeholder="VD: Công ty ABC" value="@Model.Sponsors[i].SponsorName" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Mức tài trợ</label>
+                                                <select name="Sponsors[@i].SponsorshipLevel" class="form-select sponsor-level"
+                                                        data-value="@(Model.Sponsors[i].SponsorshipLevel ?? "General")"
+                                                        onchange="updateSponsorBadge(this)">
+                                                    <option value="Gold">Vàng (Gold)</option>
+                                                    <option value="Silver">Bạc (Silver)</option>
+                                                    <option value="Bronze">Đồng (Bronze)</option>
+                                                    <option value="General">Đồng hành (General)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Email liên hệ</label>
+                                                <input type="email" name="Sponsors[@i].Email" class="form-control"
+                                                       placeholder="contact@sponsor.com" value="@Model.Sponsors[i].Email">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="form-label">Website</label>
+                                                <input type="text" name="Sponsors[@i].Website" class="form-control"
+                                                       placeholder="https://sponsor.com" value="@Model.Sponsors[i].Website">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label">Số tiền tài trợ</label>
+                                                <input type="number" name="Sponsors[@i].ContributionAmount" class="form-control"
+                                                       value="@Model.Sponsors[i].ContributionAmount" min="0" step="1000">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label">Đơn vị tiền tệ</label>
+                                                <select name="Sponsors[@i].Currency" class="form-select"
+                                                        data-value="@(Model.Sponsors[i].Currency ?? "VND")">
+                                                    <option value="VND">VND</option>
+                                                    <option value="USD">USD</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label class="form-label">Thứ tự hiển thị</label>
+                                                <input type="number" name="Sponsors[@i].DisplayOrder" class="form-control"
+                                                       value="@Model.Sponsors[i].DisplayOrder" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-9">
+                                            <div class="form-group">
+                                                <label class="form-label">Ghi chú</label>
+                                                <input type="text" name="Sponsors[@i].Notes" class="form-control"
+                                                       placeholder="Ghi chú về nhà tài trợ..." value="@Model.Sponsors[i].Notes">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label class="form-label d-block">&nbsp;</label>
+                                                <div class="form-check mt-2">
+                                                    <input type="hidden" name="Sponsors[@i].IsDisplayed" value="false">
+                                                    <input type="checkbox" name="Sponsors[@i].IsDisplayed" class="form-check-input"
+                                                           value="true" @(Model.Sponsors[i].IsDisplayed ? "checked" : "")>
+                                                    <label class="form-check-label">Hiển thị công khai</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <button type="button" class="add-sponsor-btn mt-2" onclick="addSponsor()">
+                            <i class="bi bi-plus-circle me-2"></i>Thêm nhà tài trợ
+                        </button>
+
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Nhà tài trợ được thêm ở đây sẽ được liên kết với cuộc thi ngay khi tạo.
+                            Bạn cũng có thể thêm hoặc sửa sau trong chế độ chỉnh sửa.
+                        </div>
+                    </div>
+
+                    <!-- STEP 6: Xác nhận -->
+                    <div class="form-section" id="step6">
                         <div class="section-title">
                             <i class="bi bi-check-circle me-2"></i>Xác nhận thông tin
                         </div>
@@ -806,6 +1018,13 @@
                             </div>
                         </div>
 
+                        <div class="summary-section">
+                            <h6 class="fw-bold mb-3">Nhà tài trợ</h6>
+                            <div id="summary-sponsors">
+                                <!-- Sẽ được điền bởi JavaScript -->
+                            </div>
+                        </div>
+
                         <div class="alert alert-info mt-3">
                             <i class="bi bi-info-circle me-2"></i>
                             Cuộc thi sẽ được tạo ở trạng thái <strong>Nháp (Draft)</strong>.
@@ -834,9 +1053,10 @@
 @section Scripts {
     <script>
         let currentStep = 1;
-        const totalSteps = 5;
+        const totalSteps = 6;
         let selectedImages = [];
         let selectedDocuments = [];
+        let sponsorCount = 0;
 
         function changeStep(direction) {
             // Validate current step before moving
@@ -944,7 +1164,6 @@
         function updateSummary() {
             if (currentStep !== totalSteps) return;
 
-            // Cập nhật lại giá trị hidden trước khi hiển thị summary
             updateHiddenWeightValues();
 
             document.getElementById('summary-name').textContent = document.querySelector('[name="CompetitionName"]').value;
@@ -975,6 +1194,24 @@
             }).join('');
 
             document.getElementById('summary-criteria').innerHTML = criteriaHtml;
+
+            // Nhà tài trợ
+            const sponsorItems = document.querySelectorAll('#sponsorContainer .sponsor-item');
+            const levelLabels = { Gold: 'Vàng', Silver: 'Bạc', Bronze: 'Đồng', General: 'Đồng hành' };
+            if (sponsorItems.length > 0) {
+                const sponsorHtml = Array.from(sponsorItems).map((item, idx) => {
+                    const name = item.querySelector('.sponsor-name').value || '(Chưa có tên)';
+                    const level = item.querySelector('.sponsor-level').value;
+                    return `<div class="summary-item">
+                        <span class="label">Nhà tài trợ ${idx + 1}:</span>
+                        <span class="value">${name} &mdash; <em>${levelLabels[level] || level}</em></span>
+                    </div>`;
+                }).join('');
+                document.getElementById('summary-sponsors').innerHTML = sponsorHtml;
+            } else {
+                document.getElementById('summary-sponsors').innerHTML =
+                    '<p class="text-muted mb-0" style="font-size:0.9rem;">Không có nhà tài trợ</p>';
+            }
         }
 
         function addCriteria() {
@@ -1136,14 +1373,17 @@
                     continue;
                 }
 
-                selectedDocuments.push({
-                    name: file.name,
-                    file: file,
-                    type: file.name.split('.').pop().toLowerCase()
-                });
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedDocuments.push({
+                        name: file.name,
+                        data: e.target.result,
+                        type: file.name.split('.').pop().toLowerCase()
+                    });
+                    updateDocumentList();
+                };
+                reader.readAsDataURL(file);
             }
-
-            updateDocumentList();
         }
 
         function updateDocumentList() {
@@ -1174,6 +1414,135 @@
         function removeDocument(index) {
             selectedDocuments.splice(index, 1);
             updateDocumentList();
+        }
+
+        // 🏢 QUẢN LÝ NHÀ TÀI TRỢ
+        function addSponsor() {
+            const container = document.getElementById('sponsorContainer');
+            const emptyState = document.getElementById('sponsorEmptyState');
+            if (emptyState) emptyState.style.display = 'none';
+
+            const index = container.querySelectorAll('.sponsor-item').length;
+
+            const html = `
+                <div class="sponsor-item" data-index="${index}">
+                    <div class="sponsor-card-header">
+                        <h6 class="sponsor-card-title">🏢 Nhà tài trợ #${index + 1}</h6>
+                        <button type="button" class="remove-sponsor-btn" onclick="removeSponsor(this)">
+                            <i class="bi bi-trash"></i> Xóa
+                        </button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Tên nhà tài trợ <span class="required">*</span></label>
+                                <input type="text" name="Sponsors[${index}].SponsorName" class="form-control sponsor-name"
+                                       placeholder="VD: Công ty ABC">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Mức tài trợ</label>
+                                <select name="Sponsors[${index}].SponsorshipLevel" class="form-select sponsor-level" onchange="updateSponsorBadge(this)">
+                                    <option value="Gold">Vàng (Gold)</option>
+                                    <option value="Silver">Bạc (Silver)</option>
+                                    <option value="Bronze">Đồng (Bronze)</option>
+                                    <option value="General" selected>Đồng hành (General)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Email liên hệ</label>
+                                <input type="email" name="Sponsors[${index}].Email" class="form-control"
+                                       placeholder="contact@sponsor.com">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Website</label>
+                                <input type="text" name="Sponsors[${index}].Website" class="form-control"
+                                       placeholder="https://sponsor.com">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Số tiền tài trợ</label>
+                                <input type="number" name="Sponsors[${index}].ContributionAmount" class="form-control"
+                                       value="0" min="0" step="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Đơn vị tiền tệ</label>
+                                <select name="Sponsors[${index}].Currency" class="form-select">
+                                    <option value="VND" selected>VND</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Thứ tự hiển thị</label>
+                                <input type="number" name="Sponsors[${index}].DisplayOrder" class="form-control"
+                                       value="${index}" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-9">
+                            <div class="form-group">
+                                <label class="form-label">Ghi chú</label>
+                                <input type="text" name="Sponsors[${index}].Notes" class="form-control"
+                                       placeholder="Ghi chú về nhà tài trợ...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label d-block">&nbsp;</label>
+                                <div class="form-check mt-2">
+                                    <input type="hidden" name="Sponsors[${index}].IsDisplayed" value="false">
+                                    <input type="checkbox" name="Sponsors[${index}].IsDisplayed" class="form-check-input"
+                                           value="true" checked>
+                                    <label class="form-check-label">Hiển thị công khai</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeSponsor(btn) {
+            btn.closest('.sponsor-item').remove();
+            reindexSponsors();
+            const container = document.getElementById('sponsorContainer');
+            if (container.querySelectorAll('.sponsor-item').length === 0) {
+                const emptyState = document.getElementById('sponsorEmptyState');
+                if (emptyState) emptyState.style.display = '';
+            }
+        }
+
+        function reindexSponsors() {
+            document.querySelectorAll('#sponsorContainer .sponsor-item').forEach((item, index) => {
+                item.dataset.index = index;
+                item.querySelector('.sponsor-card-title').textContent = `🏢 Nhà tài trợ #${index + 1}`;
+                item.querySelectorAll('input, select').forEach(el => {
+                    if (el.name) {
+                        el.name = el.name.replace(/Sponsors\[\d+\]/, `Sponsors[${index}]`);
+                    }
+                });
+            });
+        }
+
+        function updateSponsorBadge(select) {
+            // Có thể mở rộng sau để cập nhật badge màu theo level
         }
 
         // 🎫 HIỂN/ẨN PHẦN TEAM SIZE ĐỘNG
@@ -1233,31 +1602,45 @@
 
             // Gắn event listener cho checkbox IsTeamBased
             document.querySelector('[name="IsTeamBased"]').addEventListener('change', toggleTeamSizeField);
+
+            // Khôi phục giá trị select cho sponsor (server-side re-render khi validation lỗi)
+            document.querySelectorAll('#sponsorContainer select[data-value]').forEach(function (select) {
+                const val = select.dataset.value;
+                if (val) select.value = val;
+            });
+
+            // Đếm số sponsor server-side đã render
+            sponsorCount = document.querySelectorAll('#sponsorContainer .sponsor-item').length;
         });
 
         document.getElementById('createForm').addEventListener('submit', (e) => {
             updateHiddenWeightValues();
 
-            // Lưu dữ liệu ảnh vào form (JSON stringify)
-            const imageDataInput = document.createElement('input');
-            imageDataInput.type = 'hidden';
-            imageDataInput.name = 'SelectedImageData';
-            imageDataInput.value = JSON.stringify(selectedImages.map(img => img.data));
-            document.getElementById('createForm').appendChild(imageDataInput);
+            const form = document.getElementById('createForm');
 
-            // Lưu dữ liệu tài liệu vào form (JSON stringify)
-            const documentDataInput = document.createElement('input');
-            documentDataInput.type = 'hidden';
-            documentDataInput.name = 'SelectedDocumentData';
-            documentDataInput.value = JSON.stringify(selectedDocuments.map(doc => doc.type));
-            document.getElementById('createForm').appendChild(documentDataInput);
+            // Gửi từng ảnh dưới dạng input riêng lẻ để ASP.NET bind thành List<string>
+            selectedImages.forEach(img => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'SelectedImageData';
+                input.value = img.data;
+                form.appendChild(input);
+            });
 
-            // Lưu tên tài liệu
-            const documentNamesInput = document.createElement('input');
-            documentNamesInput.type = 'hidden';
-            documentNamesInput.name = 'DocumentFileNames';
-            documentNamesInput.value = JSON.stringify(selectedDocuments.map(doc => doc.name));
-            document.getElementById('createForm').appendChild(documentNamesInput);
+            // Gửi từng tài liệu (base64) dưới dạng input riêng lẻ
+            selectedDocuments.forEach(doc => {
+                const dataInput = document.createElement('input');
+                dataInput.type = 'hidden';
+                dataInput.name = 'SelectedDocumentData';
+                dataInput.value = doc.data;
+                form.appendChild(dataInput);
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'hidden';
+                nameInput.name = 'DocumentFileNames';
+                nameInput.value = doc.name;
+                form.appendChild(nameInput);
+            });
         });
     </script>
 }
