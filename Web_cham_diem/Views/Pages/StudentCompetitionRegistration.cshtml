@@ -48,7 +48,7 @@
                 <p class="text-muted">@Model.Description</p>
                 <div class="small text-secondary">
                     <div><strong>Lĩnh vực:</strong> @Model.Category</div>
-                    <div><strong>Hạn đăng ký:</strong> @Model.RegistrationDeadline.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div><strong>Hạn đăng ký:</strong> @(Model.LatestRegistrationDeadline.HasValue ? Model.LatestRegistrationDeadline.Value.ToString("dd/MM/yyyy HH:mm") : "—")</div>
                     <div><strong>Hạn nộp bài:</strong> @Model.SubmissionDeadline.ToString("dd/MM/yyyy HH:mm")</div>
                     <div><strong>Hình thức:</strong> @(Model.IsTeamBased ? "Đội nhóm" : "Cá nhân")</div>
                     <div><strong>Max team size:</strong> @Model.MaxTeamSize</div>

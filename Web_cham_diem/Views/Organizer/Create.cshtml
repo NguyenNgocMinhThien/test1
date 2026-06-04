@@ -687,47 +687,86 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label">Hạn đăng ký <span class="required">*</span></label>
-                                    <input type="datetime-local" asp-for="RegistrationDeadline" class="form-control" required onchange="validateDateRange()">
-                                    <span asp-validation-for="RegistrationDeadline" class="text-danger"></span>
-                                    <small class="form-text">Hạn cuối cùng để đăng ký tham gia</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
                                     <label class="form-label">Hạn nộp bài <span class="required">*</span></label>
                                     <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="SubmissionDeadline" class="text-danger"></span>
-                                    <small class="form-text">Hạn cuối cùng để nộp bài dự thi</small>
+                                    <small class="form-text">Hạn cuối cùng để nộp bài dự thi (phải ≤ ngày kết thúc)</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Timeline Timeline Visualization -->
                         <div class="alert alert-info mt-3">
-                            <strong>📅 Thứ tự thời gian phải là:</strong>
-                            <div class="mt-2">Hạn đăng ký ≤ Hạn nộp bài ≤ Ngày kết thúc</div>
-                            <small class="mt-2 d-block">Khi có thể, Hạn đăng ký trước Ngày bắt đầu để cho phép đăng ký trước</small>
+                            <strong>📅 Quy tắc thời gian:</strong>
+                            <div class="mt-2">Hạn đăng ký (EndDate của round) ≤ Ngày bắt đầu cuộc thi ≤ Hạn nộp bài ≤ Ngày kết thúc</div>
                         </div>
 
                         <hr class="my-4">
 
+                        <!-- ĐỢT ĐĂNG KÝ -->
+                        <div class="section-title" style="font-size:1.1rem; border-bottom-width:2px;">
+                            <i class="bi bi-calendar-plus me-2"></i>Đợt đăng ký <span class="required">*</span>
+                        </div>
+                        <p class="section-description">Mỗi đợt đăng ký phải kết thúc trước ngày bắt đầu cuộc thi. Các đợt không được chồng chéo nhau.</p>
+
+                        <div id="roundsContainer">
+                            @for (int i = 0; i < Model.RegistrationRounds.Count; i++)
+                            {
+                                <div class="criteria-item" data-index="@i" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Tên đợt</label>
+                                        <input type="text" name="RegistrationRounds[@i].RoundName"
+                                               class="form-control" placeholder="VD: Đợt 1"
+                                               value="@Model.RegistrationRounds[i].RoundName" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu đợt</label>
+                                        <input type="datetime-local" name="RegistrationRounds[@i].StartDate"
+                                               class="form-control round-start"
+                                               value="@Model.RegistrationRounds[i].StartDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc đợt</label>
+                                        <input type="datetime-local" name="RegistrationRounds[@i].EndDate"
+                                               class="form-control round-end"
+                                               value="@Model.RegistrationRounds[i].EndDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                    </div>
+                                    <div style="display:flex; align-items:flex-end;">
+                                        <button type="button" class="remove-criteria-btn" onclick="removeRound(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <button type="button" class="add-criteria-btn mt-2" onclick="addRound()">
+                            <i class="bi bi-plus-circle me-2"></i>Thêm đợt đăng ký
+                        </button>
+
+                        <hr class="my-4">
+
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="form-label">Tối đa số lượng tham gia <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required onchange="validateDateRange()">
-                                    <span asp-validation-for="MaxParticipants" class="text-danger"></span>
-                                    <small class="form-text">Tối đa bao nhiêu người/đội được phép tham gia</small>
+                                    <label class="form-label">Tối thiểu thí sinh</label>
+                                    <input type="number" asp-for="MinParticipants" class="form-control" min="0" value="0">
+                                    <span asp-validation-for="MinParticipants" class="text-danger"></span>
+                                    <small class="form-text">Nếu chưa đủ, BTC có thể gia hạn hoặc huỷ</small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Tối đa số lượng tham gia <span class="required">*</span></label>
+                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required>
+                                    <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <!-- Phần này sẽ hiển thị/ẩn động dựa trên IsTeamBased -->
                                 <div id="maxTeamSizeGroup" class="form-group" style="display: none;">
                                     <label class="form-label">Tối đa thành viên trong đội <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" value="5" required>
+                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" value="5">
                                     <span asp-validation-for="MaxTeamSize" class="text-danger"></span>
-                                    <small class="form-text">Tối đa mấy người trong 1 đội</small>
                                 </div>
                             </div>
                         </div>
@@ -1127,32 +1166,65 @@
             errorDiv.classList.remove('show');
             errorDiv.innerHTML = '';
 
-            const start = new Date(document.querySelector('[name="StartDate"]').value);
-            const end = new Date(document.querySelector('[name="EndDate"]').value);
-            const regDeadline = new Date(document.querySelector('[name="RegistrationDeadline"]').value);
-            const subDeadline = new Date(document.querySelector('[name="SubmissionDeadline"]').value);
+            const startVal = document.querySelector('[name="StartDate"]').value;
+            const endVal   = document.querySelector('[name="EndDate"]').value;
+            const subVal   = document.querySelector('[name="SubmissionDeadline"]').value;
 
             const errors = [];
 
-            if (!document.querySelector('[name="StartDate"]').value || !document.querySelector('[name="EndDate"]').value ||
-                !document.querySelector('[name="RegistrationDeadline"]').value || !document.querySelector('[name="SubmissionDeadline"]').value) {
-                errors.push('Vui lòng điền đầy đủ tất cả các ngày');
+            if (!startVal || !endVal || !subVal) {
+                errors.push('Vui lòng điền đầy đủ: Ngày bắt đầu, Ngày kết thúc, Hạn nộp bài');
+            } else {
+                const start = new Date(startVal);
+                const end   = new Date(endVal);
+                const sub   = new Date(subVal);
+
+                if (end <= start)
+                    errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
+
+                if (sub > end)
+                    errors.push('❌ Hạn nộp bài phải trước hoặc bằng ngày kết thúc');
             }
 
-            if (end <= start) {
-                errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
-            }
+            // Validate từng round
+            const roundRows = document.querySelectorAll('#roundsContainer .criteria-item');
+            if (roundRows.length === 0) {
+                errors.push('❌ Phải có ít nhất một đợt đăng ký');
+            } else {
+                const startVal2 = document.querySelector('[name="StartDate"]').value;
+                const compStart = startVal2 ? new Date(startVal2) : null;
 
-            if (regDeadline >= subDeadline) {
-                errors.push('❌ Hạn đăng ký phải trước hạn nộp bài');
-            }
+                roundRows.forEach((row, i) => {
+                    const rStart = row.querySelector('.round-start').value;
+                    const rEnd   = row.querySelector('.round-end').value;
+                    const rName  = row.querySelector('[name$=".RoundName"]').value || `Đợt ${i+1}`;
+                    if (!rStart || !rEnd) {
+                        errors.push(`❌ ${rName}: Vui lòng điền đầy đủ ngày`);
+                    } else {
+                        const rs = new Date(rStart);
+                        const re = new Date(rEnd);
+                        if (re <= rs)
+                            errors.push(`❌ ${rName}: Ngày kết thúc phải sau ngày bắt đầu`);
+                        if (compStart && re > compStart)
+                            errors.push(`❌ ${rName}: Hạn đăng ký phải trước ngày bắt đầu cuộc thi`);
+                    }
+                });
 
-            if (subDeadline >= end) {
-                errors.push('❌ Hạn nộp bài phải trước ngày kết thúc');
+                // Kiểm tra chồng chéo giữa các rounds
+                const roundTimes = Array.from(roundRows).map(row => ({
+                    name: row.querySelector('[name$=".RoundName"]').value,
+                    start: new Date(row.querySelector('.round-start').value),
+                    end:   new Date(row.querySelector('.round-end').value)
+                })).filter(r => r.start && r.end).sort((a, b) => a.start - b.start);
+
+                for (let i = 1; i < roundTimes.length; i++) {
+                    if (roundTimes[i].start <= roundTimes[i-1].end)
+                        errors.push(`❌ "${roundTimes[i].name}" chồng chéo với "${roundTimes[i-1].name}"`);
+                }
             }
 
             if (errors.length > 0) {
-                errorDiv.innerHTML = '<strong>⚠️ Lỗi thời gian:</strong><ul>' + 
+                errorDiv.innerHTML = '<strong>⚠️ Lỗi thời gian:</strong><ul>' +
                     errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
                 errorDiv.classList.add('show');
                 return false;
@@ -1170,27 +1242,33 @@
             document.getElementById('summary-category').textContent = document.querySelector('[name="Category"]').value;
             document.getElementById('summary-type').textContent = document.querySelector('[name="IsTeamBased"]').checked ? 'Theo đội' : 'Cá nhân';
 
-            const startDate = new Date(document.querySelector('[name="StartDate"]').value);
-            const endDate = new Date(document.querySelector('[name="EndDate"]').value);
-            const regDeadline = new Date(document.querySelector('[name="RegistrationDeadline"]').value);
+            const startDate   = new Date(document.querySelector('[name="StartDate"]').value);
+            const endDate     = new Date(document.querySelector('[name="EndDate"]').value);
             const subDeadline = new Date(document.querySelector('[name="SubmissionDeadline"]').value);
 
             document.getElementById('summary-start').textContent = startDate.toLocaleString('vi-VN');
             document.getElementById('summary-end').textContent = endDate.toLocaleString('vi-VN');
-            document.getElementById('summary-reg-deadline').textContent = regDeadline.toLocaleString('vi-VN');
             document.getElementById('summary-sub-deadline').textContent = subDeadline.toLocaleString('vi-VN');
 
+            // Đợt đăng ký
+            const roundRows = document.querySelectorAll('#roundsContainer .criteria-item');
+            let regDeadlineText = '—';
+            if (roundRows.length > 0) {
+                const roundDates = Array.from(roundRows).map(r => new Date(r.querySelector('.round-end').value)).filter(d => !isNaN(d));
+                if (roundDates.length > 0)
+                    regDeadlineText = new Date(Math.max(...roundDates)).toLocaleString('vi-VN') + ` (${roundRows.length} đợt)`;
+            }
+            document.getElementById('summary-reg-deadline').textContent = regDeadlineText;
+
             // Tiêu chí chấm điểm
-            const criteriaHtml = Array.from(document.querySelectorAll('.criteria-item')).map((item, idx) => {
-                const name = item.querySelector('.criteria-name').value;
-                const maxScore = item.querySelector('.criteria-score').value;
-                const weight = item.querySelector('.criteria-weight-input').value;
-                return `
-                    <div class="summary-item">
-                        <span class="label">${name}:</span>
-                        <span class="value">${maxScore} điểm (${weight}%)</span>
-                    </div>
-                `;
+            const criteriaHtml = Array.from(document.querySelectorAll('#criteriaContainer .criteria-item')).map((item) => {
+                const name     = item.querySelector('.criteria-name')?.value || '';
+                const maxScore = item.querySelector('.criteria-score')?.value || '';
+                const weight   = item.querySelector('.criteria-weight-input')?.value || '';
+                return `<div class="summary-item">
+                    <span class="label">${name}:</span>
+                    <span class="value">${maxScore} điểm (${weight}%)</span>
+                </div>`;
             }).join('');
 
             document.getElementById('summary-criteria').innerHTML = criteriaHtml;
@@ -1284,23 +1362,73 @@
         }
 
         function updateHiddenWeightValues() {
-            document.querySelectorAll('.criteria-item').forEach((item) => {
+            document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item) => {
                 const inputDisplay = item.querySelector('.criteria-weight-input');
-                const inputHidden = item.querySelector('.criteria-weight-value');
-
-                const percentValue = parseFloat(inputDisplay.value) || 0;
-                inputHidden.value = (percentValue / 100).toFixed(4);
+                const inputHidden  = item.querySelector('.criteria-weight-value');
+                if (!inputDisplay || !inputHidden) return;
+                inputHidden.value = (parseFloat(inputDisplay.value) / 100 || 0).toFixed(4);
             });
         }
 
         function reindexCriteria() {
-            document.querySelectorAll('.criteria-item').forEach((item, index) => {
+            document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item, index) => {
                 item.dataset.index = index;
-
-                item.querySelector('[name$=".Order"]').name = `ScoringCriteria[${index}].Order`;
+                item.querySelector('[name$=".Order"]').name       = `ScoringCriteria[${index}].Order`;
                 item.querySelector('[name$=".CriteriaName"]').name = `ScoringCriteria[${index}].CriteriaName`;
-                item.querySelector('[name$=".MaxScore"]').name = `ScoringCriteria[${index}].MaxScore`;
-                item.querySelector('[name$=".Weight"]').name = `ScoringCriteria[${index}].Weight`;
+                item.querySelector('[name$=".MaxScore"]').name    = `ScoringCriteria[${index}].MaxScore`;
+                item.querySelector('[name$=".Weight"]').name      = `ScoringCriteria[${index}].Weight`;
+            });
+        }
+
+        // ===== QUẢN LÝ ĐỢT ĐĂNG KÝ =====
+        function addRound() {
+            const container = document.getElementById('roundsContainer');
+            const index = container.querySelectorAll('.criteria-item').length;
+            const now = new Date();
+            const defaultStart = new Date(now.getTime() + (index + 1) * 5 * 24 * 60 * 60 * 1000);
+            const defaultEnd   = new Date(defaultStart.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+            const fmt = d => d.toISOString().slice(0, 16);
+            const html = `
+                <div class="criteria-item" data-index="${index}" style="grid-template-columns: 1fr 1fr 1fr auto;">
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Tên đợt</label>
+                        <input type="text" name="RegistrationRounds[${index}].RoundName"
+                               class="form-control" placeholder="VD: Đợt ${index + 1}"
+                               value="Đợt ${index + 1}" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu đợt</label>
+                        <input type="datetime-local" name="RegistrationRounds[${index}].StartDate"
+                               class="form-control round-start" value="${fmt(defaultStart)}" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc đợt</label>
+                        <input type="datetime-local" name="RegistrationRounds[${index}].EndDate"
+                               class="form-control round-end" value="${fmt(defaultEnd)}" required>
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                        <button type="button" class="remove-criteria-btn" onclick="removeRound(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeRound(btn) {
+            const container = document.getElementById('roundsContainer');
+            if (container.querySelectorAll('.criteria-item').length <= 1) {
+                alert('❌ Phải có ít nhất một đợt đăng ký');
+                return;
+            }
+            btn.closest('.criteria-item').remove();
+            // Reindex rounds
+            container.querySelectorAll('.criteria-item').forEach((item, i) => {
+                item.dataset.index = i;
+                item.querySelectorAll('input').forEach(el => {
+                    if (el.name) el.name = el.name.replace(/RegistrationRounds\[\d+\]/, `RegistrationRounds[${i}]`);
+                });
             });
         }
 

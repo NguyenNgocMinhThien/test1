@@ -7,7 +7,6 @@ namespace Web_cham_diem.Models
         public string RoundName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public bool IsActive { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Foreign Keys

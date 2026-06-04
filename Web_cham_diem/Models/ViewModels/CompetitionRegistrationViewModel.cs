@@ -10,7 +10,7 @@ namespace Web_cham_diem.Models.ViewModels
         public string CompetitionName { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public DateTime RegistrationDeadline { get; set; }
+        public DateTime? LatestRegistrationDeadline { get; set; } // EndDate của round cuối cùng
         public DateTime SubmissionDeadline { get; set; }
         public bool IsTeamBased { get; set; }
         public int MaxTeamSize { get; set; }

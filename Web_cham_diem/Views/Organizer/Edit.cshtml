@@ -2,192 +2,325 @@
 @{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Chỉnh sửa Cuộc Thi";
+
+    var cid = Model.CompetitionId;
+
+    // ─── Quyền chỉnh sửa theo trạng thái ───────────────────────────────────
+    bool noReg       = Model.RegistrationCount == 0;
+    bool hasSub      = Model.HasSubmissions;
+    bool started     = Model.HasStarted;
+
+    bool canEditStructure = noReg;
+    bool canEditDates     = !started;
+    bool canEditRounds    = !started;
+    bool canEditCriteria  = !hasSub;
+    bool canChangeTeam    = noReg;
+    bool canDecreaseMax   = noReg;
+
+    // Chuyển UTC → giờ địa phương để hiển thị trong datetime-local inputs
+    var tz       = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+    var startLoc = TimeZoneInfo.ConvertTimeFromUtc(Model.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
+    var endLoc   = TimeZoneInfo.ConvertTimeFromUtc(Model.EndDate, tz).ToString("yyyy-MM-ddTHH:mm");
+    var subLoc   = TimeZoneInfo.ConvertTimeFromUtc(Model.SubmissionDeadline, tz).ToString("yyyy-MM-ddTHH:mm");
 }
 
 @section Styles {
-    <style>
-        .edit-wrapper {
-            background: var(--primary-bg);
-            min-height: 100vh;
-            padding: 30px 0;
-        }
-
-        .form-card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-            padding: 30px;
-        }
-
-        .form-label {
-            font-weight: 600;
-        }
-
-        .criteria-list {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .criteria-item {
-            background: #fff;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 15px;
-            align-items: end;
-        }
-
-        .remove-criteria-btn {
-            background: #fee;
-            color: #e53e3e;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .add-criteria-btn {
-            background: #e8f5e9;
-            color: #22c55e;
-            border: 2px dashed #22c55e;
-            border-radius: 8px;
-            padding: 12px 20px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-        }
-
-        .weight-indicator {
-            font-size: 0.85rem;
-            color: #666;
-            text-align: center;
-        }
-
-        .weight-bar {
-            width: 100%;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-
-        .weight-fill {
-            height: 100%;
-            background: var(--organizer-accent);
-            transition: width 0.3s;
-        }
-    </style>
+<style>
+    .edit-wrapper { background: var(--primary-bg); min-height: 100vh; padding: 30px 0; }
+    .card-tab { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.07); margin-bottom: 20px; }
+    .nav-tabs .nav-link { font-weight: 600; color: #555; border-radius: 8px 8px 0 0; }
+    .nav-tabs .nav-link.active { color: var(--organizer-accent); border-bottom-color: #fff; }
+    .tab-pane { padding: 28px; }
+    .section-title { font-size: 1.05rem; font-weight: 700; color: #333; margin-bottom: 18px;
+        border-left: 4px solid var(--organizer-accent); padding-left: 10px; }
+    .criteria-item { background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:14px;
+        margin-bottom:12px; display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:14px; align-items:end; }
+    .round-item { background:#f8f9fa; border:1px solid #dde; border-radius:8px; padding:14px;
+        margin-bottom:10px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; }
+    .remove-btn { background:#fee; color:#e53e3e; border:none; border-radius:6px;
+        padding:8px 12px; cursor:pointer; font-size:.9rem; }
+    .add-btn { background:#e8f5e9; color:#22c55e; border:2px dashed #22c55e;
+        border-radius:8px; padding:10px 18px; cursor:pointer; font-weight:600; width:100%; }
+    .weight-bar { width:100%; height:4px; background:#e0e0e0; border-radius:2px; margin-top:6px; overflow:hidden; }
+    .weight-fill { height:100%; background:var(--organizer-accent); transition:width .3s; }
+    /* Media */
+    .media-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:14px; margin-top:14px; }
+    .media-card { border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.1); position:relative; }
+    .media-card img { width:100%; height:110px; object-fit:cover; display:block; }
+    .media-card .media-actions { position:absolute; top:0; right:0; display:flex; gap:4px; padding:5px; }
+    .media-card .badge-thumb { position:absolute; bottom:6px; left:6px;
+        background:var(--organizer-accent); color:#fff; font-size:.7rem; padding:3px 7px; border-radius:4px; }
+    .doc-item { display:flex; justify-content:space-between; align-items:center;
+        background:#f8f9fa; border:1px solid #e0e0e0; border-radius:6px;
+        padding:10px 14px; margin-bottom:8px; }
+    .doc-icon { font-size:1.4rem; margin-right:10px; }
+    /* Sponsors */
+    .sponsor-card { border:1px solid #e0e0e0; border-radius:10px; padding:16px; margin-bottom:14px;
+        background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+    .sponsor-level-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.78rem; font-weight:600; }
+    .lv-Gold { background:#fef3c7; color:#92400e; }
+    .lv-Silver { background:#f1f5f9; color:#475569; }
+    .lv-Bronze { background:#fdf4e8; color:#92480f; }
+    .lv-General { background:#ede9fe; color:#5b21b6; }
+    /* State banner */
+    .state-banner { border-radius:8px; padding:12px 18px; margin-bottom:18px;
+        display:flex; align-items:center; gap:10px; font-size:.9rem; }
+    .state-locked { color:#666; font-size:.8rem; background:#fff3cd; border:1px solid #ffc107;
+        border-radius:4px; padding:2px 7px; margin-left:6px; }
+    .upload-area { border:2px dashed #d0d0d0; border-radius:8px; padding:24px;
+        text-align:center; cursor:pointer; transition:all .25s; background:#fafafa; }
+    .upload-area:hover { border-color:var(--organizer-accent); }
+    .modal-lg { max-width: 700px; }
+</style>
 }
 
 <div class="edit-wrapper">
-    <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h3 class="fw-bold text-dark">Chỉnh sửa Cuộc Thi</h3>
-                <p class="text-muted small">Cập nhật thông tin cho cuộc thi: <strong>@Model.CompetitionName</strong></p>
-            </div>
-            <a href="/Organizer/Contests" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Quay lại
-            </a>
+<div class="container-fluid" style="max-width:1100px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="fw-bold mb-0">Chỉnh sửa Cuộc Thi</h4>
+            <p class="text-muted small mb-0">@Model.CompetitionName</p>
         </div>
+        <a href="/Organizer/Contests" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại
+        </a>
+    </div>
 
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-danger">
-                <strong>⚠️ Vui lòng kiểm tra các lỗi sau:</strong>
-                <ul class="mb-0">
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <li>@error.ErrorMessage</li>
-                    }
-                </ul>
-            </div>
+    <!-- State banner -->
+    @{
+        string bannerClass, bannerIcon, bannerMsg;
+        if (hasSub) {
+            bannerClass = "alert alert-danger state-banner";
+            bannerIcon  = "bi-lock-fill";
+            bannerMsg   = $"Đã có {Model.SubmissionCount} bài nộp — Tiêu chí chấm điểm đã bị khóa. Chỉ chỉnh sửa được mô tả, thể lệ, giải thưởng, ảnh, tài liệu và nhà tài trợ.";
+        } else if (started) {
+            bannerClass = "alert alert-warning state-banner";
+            bannerIcon  = "bi-exclamation-triangle-fill";
+            bannerMsg   = "Cuộc thi đã bắt đầu — Các mốc thời gian và đợt đăng ký đã bị khóa.";
+        } else if (!noReg) {
+            bannerClass = "alert alert-info state-banner";
+            bannerIcon  = "bi-info-circle-fill";
+            bannerMsg   = $"Đã có {Model.RegistrationCount} người đăng ký — Không thể đổi hình thức thi hoặc giảm số lượng tối đa.";
+        } else {
+            bannerClass = "alert alert-success state-banner";
+            bannerIcon  = "bi-check-circle-fill";
+            bannerMsg   = "Chưa có đăng ký — Cho phép chỉnh sửa toàn bộ.";
         }
+    }
+    <div class="@bannerClass">
+        <i class="bi @bannerIcon fs-5"></i>
+        <span>@bannerMsg</span>
+    </div>
 
-        <form method="post" asp-action="Edit" asp-route-id="@Model.CompetitionId" class="form-card" id="editForm">
-            <input type="hidden" asp-for="CompetitionId" />
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <strong>⚠️ Lỗi:</strong>
+            <ul class="mb-0">@foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors)) { <li>@e.ErrorMessage</li> }</ul>
+        </div>
+    }
 
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <label class="form-label">Tên cuộc thi *</label>
-                    <input asp-for="CompetitionName" class="form-control" required />
-                    <span asp-validation-for="CompetitionName" class="text-danger"></span>
-                </div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
 
-                <div class="col-md-6">
-                    <label class="form-label">Lĩnh vực *</label>
-                    <select asp-for="Category" class="form-select" required>
-                        <option value="">-- Chọn lĩnh vực --</option>
-                        <option value="Học thuật / NCKH">Học thuật / NCKH</option>
-                        <option value="Công nghệ Thông tin">Công nghệ Thông tin</option>
-                        <option value="Kỹ năng Mềm">Kỹ năng Mềm</option>
-                        <option value="Khác">Khác</option>
-                    </select>
-                    <span asp-validation-for="Category" class="text-danger"></span>
-                </div>
+    <!-- Main form -->
+    <form method="post" asp-action="Edit" asp-route-id="@cid" id="editForm">
+        <input type="hidden" asp-for="CompetitionId" />
+        <input type="hidden" asp-for="RegistrationCount" />
+        <input type="hidden" asp-for="SubmissionCount" />
+        <input type="hidden" asp-for="HasStarted" />
+        <input type="hidden" asp-for="HasSubmissions" />
 
-                <div class="col-md-12">
-                    <label class="form-label">Hình thức thi</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" asp-for="IsTeamBased" id="isTeamBased">
-                        <label class="form-check-label" for="isTeamBased">Thi theo đội</label>
+        <div class="card-tab">
+            <ul class="nav nav-tabs px-3 pt-2" id="editTabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-info"><i class="bi bi-info-circle me-1"></i>Cơ bản</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-schedule"><i class="bi bi-calendar3 me-1"></i>Lịch trình</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-criteria"><i class="bi bi-bar-chart me-1"></i>Tiêu chí @(!canEditCriteria ? "<span class=\"state-locked\">🔒</span>" : "")</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-media"><i class="bi bi-images me-1"></i>Ảnh & Tài liệu</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sponsors"><i class="bi bi-building me-1"></i>Nhà tài trợ</a></li>
+            </ul>
+
+            <div class="tab-content">
+
+                <!-- ── TAB 1: Thông tin cơ bản ── -->
+                <div class="tab-pane fade show active" id="tab-info">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Tên cuộc thi *</label>
+                            <input type="text" id="CompetitionName" name="CompetitionName"
+                                   value="@Model.CompetitionName" class="form-control"
+                                   @(canEditStructure ? "" : "readonly") required />
+                            <span asp-validation-for="CompetitionName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Lĩnh vực *</label>
+                            @if (canEditStructure)
+                            {
+                                <select id="Category" name="Category" class="form-select">
+                                    <option value="">-- Chọn --</option>
+                                    @foreach (var catOpt in new[] { "Học thuật / NCKH", "Công nghệ Thông tin", "Kỹ năng Mềm", "Khác" })
+                                    {
+                                        if (catOpt == Model.Category)
+                                        { <option value="@catOpt" selected>@catOpt</option> }
+                                        else
+                                        { <option value="@catOpt">@catOpt</option> }
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control" value="@Model.Category" readonly />
+                                <input type="hidden" name="Category" value="@Model.Category" />
+                            }
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                @if (canChangeTeam)
+                                {
+                                    <input class="form-check-input" type="checkbox" asp-for="IsTeamBased" id="chkTeam">
+                                }
+                                else
+                                {
+                                    <input type="hidden" name="IsTeamBased" value="false" />
+                                    <input type="hidden" name="IsTeamBased" value="@Model.IsTeamBased.ToString().ToLower()" />
+                                    <input class="form-check-input" type="checkbox" id="chkTeam" @(Model.IsTeamBased ? "checked" : "") disabled>
+                                }
+                                <label class="form-check-label" for="chkTeam">
+                                    Thi theo đội
+                                    @if (!canChangeTeam) { <span class="state-locked">🔒 Đã có đăng ký</span> }
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Mô tả cuộc thi</label>
+                            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Thể lệ / Quy định</label>
+                            <textarea asp-for="Rules" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giải thưởng</label>
+                            <textarea asp-for="Prize" class="form-control" rows="3"></textarea>
+                        </div>
                     </div>
                 </div>
 
-                <div class="col-md-12">
-                    <label class="form-label">Mô tả cuộc thi</label>
-                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <!-- ── TAB 2: Lịch trình ── -->
+                <div class="tab-pane fade" id="tab-schedule">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày bắt đầu *
+                                @if (!canEditDates) { <span class="state-locked">🔒</span> }
+                            </label>
+                            <input type="datetime-local" id="StartDate" name="StartDate" value="@startLoc"
+                                   class="form-control" @(canEditDates ? "" : "readonly") />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày kết thúc *
+                                @if (!canEditDates) { <span class="state-locked">🔒</span> }
+                            </label>
+                            <input type="datetime-local" id="EndDate" name="EndDate" value="@endLoc"
+                                   class="form-control" @(canEditDates ? "" : "readonly") />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Hạn nộp bài *
+                                @if (!canEditDates) { <span class="state-locked">🔒</span> }
+                            </label>
+                            <input type="datetime-local" id="SubmissionDeadline" name="SubmissionDeadline" value="@subLoc"
+                                   class="form-control" @(canEditDates ? "" : "readonly") />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tối thiểu đội/thí sinh</label>
+                            <input type="number" id="MinParticipants" name="MinParticipants" value="@Model.MinParticipants"
+                                   class="form-control" min="0" @(canEditDates ? "" : "readonly") />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tối đa tham gia *
+                                @if (!canDecreaseMax) { <span class="state-locked">Chỉ tăng</span> }
+                            </label>
+                            <input type="number" asp-for="MaxParticipants" class="form-control" min="@Model.RegistrationCount" />
+                        </div>
+                        <div class="col-md-3" id="maxTeamSizeGroup" style="@(Model.IsTeamBased ? "" : "display:none")">
+                            <label class="form-label">Tối đa thành viên/đội</label>
+                            <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" />
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Đợt đăng ký -->
+                    <div class="section-title">
+                        Đợt đăng ký
+                        @if (!canEditRounds) { <span class="state-locked">🔒 Cuộc thi đã bắt đầu</span> }
+                    </div>
+
+                    <!-- Rounds hiện có -->
+                    @foreach (var r in Model.ExistingRounds)
+                    {
+                        <div class="round-item" style="@(canEditRounds ? "" : "opacity:.7")">
+                            <div>
+                                <label class="form-label" style="font-size:.82rem;">Tên đợt</label>
+                                <div class="fw-semibold">@r.RoundName</div>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size:.82rem;">Bắt đầu</label>
+                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size:.82rem;">Kết thúc</label>
+                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                            <div class="d-flex align-items-end">
+                                @if (r.RegistrationCount > 0)
+                                {
+                                    <span class="badge bg-success">@r.RegistrationCount đăng ký</span>
+                                }
+                                else if (r.IsPast && canEditRounds)
+                                {
+                                    <span class="badge bg-secondary">Đã qua</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (canEditRounds)
+                    {
+                        <!-- Thêm round mới qua AJAX -->
+                        <div class="mt-2 p-3 border border-dashed rounded" style="border-style:dashed!important">
+                            <div class="fw-semibold mb-2 text-success"><i class="bi bi-plus-circle me-1"></i>Thêm đợt đăng ký mới</div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input type="text" id="newRoundName" class="form-control form-control-sm" placeholder="Tên đợt (VD: Đợt 2)">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="datetime-local" id="newRoundStart" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="datetime-local" id="newRoundEnd" class="form-control form-control-sm">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-success btn-sm w-100" onclick="addRoundAjax()">
+                                        <i class="bi bi-plus"></i> Thêm
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="roundMsg" class="small mt-1"></div>
+                        </div>
+                    }
                 </div>
 
-                <div class="col-md-12">
-                    <label class="form-label">Thể lệ / Quy định</label>
-                    <textarea asp-for="Rules" class="form-control" rows="3"></textarea>
-                </div>
-
-                <div class="col-md-12">
-                    <label class="form-label">Giải thưởng</label>
-                    <textarea asp-for="Prize" class="form-control" rows="2"></textarea>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Ngày bắt đầu *</label>
-                    <input type="datetime-local" asp-for="StartDate" class="form-control" required />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Ngày kết thúc *</label>
-                    <input type="datetime-local" asp-for="EndDate" class="form-control" required />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Hạn đăng ký *</label>
-                    <input type="datetime-local" asp-for="RegistrationDeadline" class="form-control" required />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Hạn nộp bài *</label>
-                    <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Tối đa số lượng tham gia *</label>
-                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" required />
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Tối đa người/đội *</label>
-                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="1" required />
-                </div>
-
-                <div class="col-12">
-                    <hr />
-                    <h5 class="fw-bold">Tiêu chí chấm điểm (Tổng trọng số = 100%)</h5>
+                <!-- ── TAB 3: Tiêu chí ── -->
+                <div class="tab-pane fade" id="tab-criteria">
+                    @if (!canEditCriteria)
+                    {
+                        <div class="alert alert-warning py-2">
+                            <i class="bi bi-lock-fill me-1"></i> Đã có bài nộp — Tiêu chí chấm điểm bị khóa để đảm bảo tính công bằng.
+                        </div>
+                    }
 
                     <div class="criteria-list" id="criteriaContainer">
                         @for (int i = 0; i < Model.ScoringCriteria.Count; i++)
@@ -195,152 +328,696 @@
                             <div class="criteria-item" data-index="@i">
                                 <div>
                                     <input type="hidden" name="ScoringCriteria[@i].Order" value="@Model.ScoringCriteria[i].Order">
-                                    <input type="text" name="ScoringCriteria[@i].CriteriaName" class="form-control criteria-name"
-                                           value="@Model.ScoringCriteria[i].CriteriaName" required>
+                                    <input type="text" name="ScoringCriteria[@i].CriteriaName"
+                                           class="form-control criteria-name"
+                                           value="@Model.ScoringCriteria[i].CriteriaName"
+                                           @(canEditCriteria ? "" : "readonly") required>
                                 </div>
                                 <div>
-                                    <input type="number" name="ScoringCriteria[@i].MaxScore" class="form-control criteria-score"
-                                           value="@Model.ScoringCriteria[i].MaxScore" min="1" step="0.1" required>
+                                    <input type="number" name="ScoringCriteria[@i].MaxScore"
+                                           class="form-control criteria-score"
+                                           value="@Model.ScoringCriteria[i].MaxScore"
+                                           min="1" step="0.1"
+                                           @(canEditCriteria ? "" : "readonly") required>
                                 </div>
                                 <div>
                                     <div class="input-group">
                                         <input type="number" class="form-control criteria-weight-input"
                                                value="@((Model.ScoringCriteria[i].Weight * 100).ToString(System.Globalization.CultureInfo.InvariantCulture))"
-                                               min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                        <input type="hidden" name="ScoringCriteria[@i].Weight" class="criteria-weight-value"
+                                               min="0" max="100" step="0.1"
+                                               @(canEditCriteria ? "" : "readonly")
+                                               onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                                        <input type="hidden" name="ScoringCriteria[@i].Weight"
+                                               class="criteria-weight-value"
                                                value="@Model.ScoringCriteria[i].Weight.ToString(System.Globalization.CultureInfo.InvariantCulture)">
                                         <span class="input-group-text">%</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
-                                        <i class="bi bi-trash"></i> Xóa
+                                    @if (canEditCriteria)
+                                    {
+                                        <button type="button" class="remove-btn" onclick="removeCriteria(this)"><i class="bi bi-trash"></i></button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (canEditCriteria)
+                    {
+                        <button type="button" class="add-btn mt-3" onclick="addCriteria()">
+                            <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí
+                        </button>
+                    }
+
+                    <div class="mt-3">
+                        <div style="font-size:.85rem; color:#666;">
+                            Tổng trọng số: <strong id="totalWeight">0</strong>%
+                            <span id="weightStatus" class="fw-bold ms-2"></span>
+                        </div>
+                        <div class="weight-bar"><div class="weight-fill" id="weightFill"></div></div>
+                    </div>
+                </div>
+
+                <!-- ── TAB 4: Ảnh & Tài liệu ── -->
+                <div class="tab-pane fade" id="tab-media">
+                    <!-- Ảnh -->
+                    <div class="section-title"><i class="bi bi-images me-1"></i>Ảnh cuộc thi</div>
+
+                    <div class="media-grid" id="imageGrid">
+                        @foreach (var img in Model.Images)
+                        {
+                            <div class="media-card" id="img-@img.ImageId">
+                                <img src="@img.ImageUrl" alt="ảnh">
+                                @if (img.IsThumbnail)
+                                {
+                                    <span class="badge-thumb">Thumbnail</span>
+                                }
+                                <div class="media-actions">
+                                    @if (!img.IsThumbnail)
+                                    {
+                                        <button type="button" class="btn btn-xs btn-light" style="font-size:.7rem;padding:3px 6px;"
+                                                onclick="setThumbnail(@img.ImageId)" title="Đặt làm thumbnail">⭐</button>
+                                    }
+                                    <button type="button" class="btn btn-xs btn-danger" style="font-size:.7rem;padding:3px 6px;"
+                                            onclick="deleteImage(@img.ImageId)" title="Xóa">✕</button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="upload-area mt-3" onclick="document.getElementById('imgInput').click()">
+                        <i class="bi bi-cloud-arrow-up fs-3 text-muted"></i>
+                        <p class="mb-0 mt-1 text-muted">Nhấp hoặc kéo thả ảnh vào đây (JPG / PNG / GIF, max 5MB)</p>
+                        <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImgSelect()">
+                    </div>
+                    <div id="imgPending" class="mt-2"></div>
+                    <button type="button" class="btn btn-primary btn-sm mt-2" id="btnUploadImg" onclick="uploadImages()" style="display:none">
+                        <i class="bi bi-upload me-1"></i>Upload ảnh đã chọn
+                    </button>
+
+                    <hr class="my-4">
+
+                    <!-- Tài liệu -->
+                    <div class="section-title"><i class="bi bi-file-earmark-text me-1"></i>Tài liệu</div>
+
+                    <div id="docList">
+                        @foreach (var doc in Model.Documents)
+                        {
+                            <div class="doc-item" id="doc-@doc.DocumentId">
+                                <div class="d-flex align-items-center">
+                                    <span class="doc-icon">@(doc.FileType == "pdf" ? "📕" : doc.FileType is "doc" or "docx" ? "📗" : doc.FileType is "xls" or "xlsx" ? "📊" : "📄")</span>
+                                    <div>
+                                        <div class="fw-semibold" style="font-size:.9rem;">@doc.FileName</div>
+                                        <div class="text-muted" style="font-size:.78rem;">@doc.FileType.ToUpper() — @doc.UploadedAt.ToString("dd/MM/yyyy")</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="/Organizer/DownloadDocument?documentId=@doc.DocumentId&competitionId=@cid"
+                                       class="btn btn-outline-primary btn-sm" target="_blank">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteDocument(@doc.DocumentId)">
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                             </div>
                         }
                     </div>
 
-                    <button type="button" class="add-criteria-btn mt-3" onclick="addCriteria()">
-                        <i class="bi bi-plus-circle me-2"></i>Thêm tiêu chí
+                    <div class="upload-area mt-2" onclick="document.getElementById('docInput').click()">
+                        <i class="bi bi-file-earmark-arrow-up fs-3 text-muted"></i>
+                        <p class="mb-0 mt-1 text-muted">Nhấp hoặc kéo thả tài liệu (PDF / DOCX / XLSX / PPTX, max 10MB)</p>
+                        <input type="file" id="docInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple style="display:none" onchange="handleDocSelect()">
+                    </div>
+                    <div id="docPending" class="mt-2"></div>
+                    <button type="button" class="btn btn-primary btn-sm mt-2" id="btnUploadDoc" onclick="uploadDocuments()" style="display:none">
+                        <i class="bi bi-upload me-1"></i>Upload tài liệu đã chọn
                     </button>
+                </div>
 
-                    <div class="mt-3">
-                        <div class="weight-indicator">
-                            Tổng trọng số: <strong id="totalWeight">100</strong>%
-                            <span id="weightStatus" style="margin-left: 10px; font-weight: bold;"></span>
-                        </div>
-                        <div class="weight-bar">
-                            <div class="weight-fill" id="weightFill"></div>
+                <!-- ── TAB 5: Nhà tài trợ ── -->
+                <div class="tab-pane fade" id="tab-sponsors">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="section-title mb-0">Nhà tài trợ hiện tại</div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="openAddSponsorModal()">
+                                <i class="bi bi-search me-1"></i>Chọn từ danh sách
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" onclick="openCreateSponsorModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Tạo mới
+                            </button>
                         </div>
                     </div>
+
+                    <div id="sponsorList">
+                        @foreach (var cs in Model.ExistingCompetitionSponsors)
+                        {
+                            <div class="sponsor-card" id="cs-@cs.CompetitionSponsorId">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex align-items-center gap-3">
+                                        @if (!string.IsNullOrEmpty(cs.LogoUrl))
+                                        {
+                                            <img src="@cs.LogoUrl" alt="logo" style="width:40px;height:40px;object-fit:contain;border-radius:4px;">
+                                        }
+                                        <div>
+                                            <div class="fw-bold">@cs.SponsorName</div>
+                                            <span class="sponsor-level-badge lv-@cs.SponsorshipLevel">@cs.SponsorshipLevel</span>
+                                            @if (cs.ContributionAmount > 0)
+                                            {
+                                                <span class="text-muted ms-2" style="font-size:.82rem;">@cs.ContributionAmount.ToString("N0") @cs.Currency</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                onclick="editSponsorLink(@cs.CompetitionSponsorId, '@cs.SponsorshipLevel', @cs.ContributionAmount, '@cs.Currency', @(cs.IsDisplayed ? "true" : "false"), @cs.DisplayOrder, '@(cs.Notes ?? "")')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSponsor(@cs.CompetitionSponsorId)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(cs.Notes))
+                                {
+                                    <div class="text-muted mt-2" style="font-size:.82rem;">@cs.Notes</div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (!Model.ExistingCompetitionSponsors.Any())
+                    {
+                        <div class="text-center py-4 text-muted" id="sponsorEmpty">
+                            <i class="bi bi-building fs-2 d-block mb-2"></i>
+                            Chưa có nhà tài trợ. Nhấn nút bên trên để thêm.
+                        </div>
+                    }
                 </div>
 
-                <div class="col-12 d-flex justify-content-end gap-2 mt-3">
-                    <a href="/Organizer/Contests" class="btn btn-outline-secondary">Hủy</a>
-                    <button type="submit" class="btn btn-success">Lưu thay đổi</button>
+            </div><!-- end tab-content -->
+        </div><!-- end card-tab -->
+
+        <!-- Save button -->
+        <div class="d-flex justify-content-end gap-2 mt-2 mb-4">
+            <a href="/Organizer/Contests" class="btn btn-outline-secondary">Hủy</a>
+            <button type="submit" class="btn btn-success px-4">
+                <i class="bi bi-check2 me-1"></i>Lưu thay đổi
+            </button>
+        </div>
+    </form>
+
+</div>
+</div>
+
+<!-- ── Modal: Chọn sponsor từ danh sách ── -->
+<div class="modal fade" id="addSponsorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chọn nhà tài trợ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="sponsorSearch" class="form-control mb-3" placeholder="Tìm theo tên..." oninput="filterSponsors()">
+                <div id="sponsorPickList" style="max-height:260px; overflow-y:auto; border:1px solid #eee; border-radius:6px; padding:8px;"></div>
+                <hr>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-3">
+                        <label class="form-label small">Mức tài trợ</label>
+                        <select id="asl-level" class="form-select form-select-sm">
+                            <option value="Gold">Gold</option><option value="Silver">Silver</option>
+                            <option value="Bronze">Bronze</option><option value="General" selected>General</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Số tiền</label>
+                        <input type="number" id="asl-amount" class="form-control form-control-sm" value="0" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Tiền tệ</label>
+                        <select id="asl-currency" class="form-select form-select-sm">
+                            <option value="VND" selected>VND</option><option value="USD">USD</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Thứ tự</label>
+                        <input type="number" id="asl-order" class="form-control form-control-sm" value="0" min="0">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <div class="form-check">
+                            <input type="checkbox" id="asl-display" class="form-check-input" checked>
+                            <label class="form-check-label small">Hiển thị</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small">Ghi chú</label>
+                        <input type="text" id="asl-notes" class="form-control form-control-sm" placeholder="Ghi chú...">
+                    </div>
                 </div>
             </div>
-        </form>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary btn-sm" onclick="confirmAddSponsor()">Thêm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal: Tạo sponsor mới ── -->
+<div class="modal fade" id="createSponsorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tạo nhà tài trợ mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2">
+                    <div class="col-md-6"><label class="form-label small">Tên *</label><input type="text" id="cs-name" class="form-control form-control-sm" placeholder="Tên nhà tài trợ"></div>
+                    <div class="col-md-6"><label class="form-label small">Email</label><input type="email" id="cs-email" class="form-control form-control-sm"></div>
+                    <div class="col-md-4"><label class="form-label small">Mức tài trợ</label>
+                        <select id="cs-level" class="form-select form-select-sm">
+                            <option value="Gold">Gold</option><option value="Silver">Silver</option>
+                            <option value="Bronze">Bronze</option><option value="General" selected>General</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4"><label class="form-label small">Số tiền</label><input type="number" id="cs-amount" class="form-control form-control-sm" value="0" min="0"></div>
+                    <div class="col-md-4"><label class="form-label small">Tiền tệ</label>
+                        <select id="cs-currency" class="form-select form-select-sm">
+                            <option value="VND" selected>VND</option><option value="USD">USD</option>
+                        </select>
+                    </div>
+                    <div class="col-12"><label class="form-label small">Ghi chú</label><input type="text" id="cs-notes" class="form-control form-control-sm"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-success btn-sm" onclick="confirmCreateSponsor()">Tạo & Liên kết</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal: Sửa sponsor link ── -->
+<div class="modal fade" id="editSponsorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Cập nhật nhà tài trợ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-csid">
+                <div class="row g-2">
+                    <div class="col-md-4"><label class="form-label small">Mức</label>
+                        <select id="edit-level" class="form-select form-select-sm">
+                            <option value="Gold">Gold</option><option value="Silver">Silver</option>
+                            <option value="Bronze">Bronze</option><option value="General">General</option>
+                        </select></div>
+                    <div class="col-md-4"><label class="form-label small">Số tiền</label><input type="number" id="edit-amount" class="form-control form-control-sm" min="0"></div>
+                    <div class="col-md-4"><label class="form-label small">Tiền tệ</label>
+                        <select id="edit-currency" class="form-select form-select-sm">
+                            <option value="VND">VND</option><option value="USD">USD</option>
+                        </select></div>
+                    <div class="col-md-6"><label class="form-label small">Thứ tự</label><input type="number" id="edit-order" class="form-control form-control-sm" min="0"></div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check"><input type="checkbox" id="edit-display" class="form-check-input"><label class="form-check-label small">Hiển thị</label></div>
+                    </div>
+                    <div class="col-12"><label class="form-label small">Ghi chú</label><input type="text" id="edit-notes" class="form-control form-control-sm"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary btn-sm" onclick="confirmEditSponsor()">Lưu</button>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        function updateHiddenWeightValues() {
-            document.querySelectorAll('.criteria-item').forEach((item) => {
-                const inputDisplay = item.querySelector('.criteria-weight-input');
-                const inputHidden = item.querySelector('.criteria-weight-value');
+<script>
+    const CID = @cid;
 
-                const percentValue = parseFloat(inputDisplay.value) || 0;
-                inputHidden.value = (percentValue / 100).toFixed(4);
+    // ═══════════════════════════════════ CRITERIA ════════════════════════════
+
+    function updateHiddenWeightValues() {
+        document.querySelectorAll('#criteriaContainer .criteria-item').forEach(item => {
+            const inp = item.querySelector('.criteria-weight-input');
+            const hid = item.querySelector('.criteria-weight-value');
+            if (!inp || !hid) return;
+            hid.value = (parseFloat(inp.value) / 100 || 0).toFixed(4);
+        });
+    }
+
+    function updateTotalWeight() {
+        const total = Array.from(document.querySelectorAll('.criteria-weight-input'))
+            .reduce((s, el) => s + (parseFloat(el.value) || 0), 0);
+        document.getElementById('totalWeight').textContent = total.toFixed(1);
+        document.getElementById('weightFill').style.width = Math.min(total, 100) + '%';
+        const ok = Math.abs(total - 100) <= 0.1;
+        document.getElementById('weightFill').style.background = ok ? 'var(--organizer-accent)' : '#ef4444';
+        const st = document.getElementById('weightStatus');
+        st.textContent = ok ? '✓ Đúng' : '❌ Sai';
+        st.style.color  = ok ? '#22c55e' : '#ef4444';
+    }
+
+    function reindexCriteria() {
+        document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item, i) => {
+            item.dataset.index = i;
+            ['Order','CriteriaName','MaxScore','Weight'].forEach(field => {
+                const el = item.querySelector(`[name$=".${field}"]`);
+                if (el) el.name = `ScoringCriteria[${i}].${field}`;
             });
-        }
+        });
+    }
 
-        function updateTotalWeight() {
-            const weights = Array.from(document.querySelectorAll('.criteria-weight-input'))
-                .map(el => parseFloat(el.value) || 0)
-                .reduce((a, b) => a + b, 0);
-
-            document.getElementById('totalWeight').textContent = weights.toFixed(1);
-
-            const percentage = Math.min(100, Math.max(0, weights));
-            document.getElementById('weightFill').style.width = percentage + '%';
-
-            const fillElement = document.getElementById('weightFill');
-            const statusElement = document.getElementById('weightStatus');
-
-            if (Math.abs(weights - 100) > 0.1) {
-                fillElement.style.background = '#ef4444';
-                statusElement.textContent = '❌ Sai';
-                statusElement.style.color = '#ef4444';
-            } else {
-                fillElement.style.background = 'var(--organizer-accent)';
-                statusElement.textContent = '✓ Đúng';
-                statusElement.style.color = '#22c55e';
-            }
-        }
-
-        function reindexCriteria() {
-            document.querySelectorAll('.criteria-item').forEach((item, index) => {
-                item.dataset.index = index;
-                item.querySelector('[name$=".Order"]').name = `ScoringCriteria[${index}].Order`;
-                item.querySelector('[name$=".CriteriaName"]').name = `ScoringCriteria[${index}].CriteriaName`;
-                item.querySelector('[name$=".MaxScore"]').name = `ScoringCriteria[${index}].MaxScore`;
-                item.querySelector('[name$=".Weight"]').name = `ScoringCriteria[${index}].Weight`;
-            });
-        }
-
-        function addCriteria() {
-            const container = document.getElementById('criteriaContainer');
-            const index = container.children.length;
-
-            const html = `
-                <div class="criteria-item" data-index="${index}">
-                    <div>
-                        <input type="hidden" name="ScoringCriteria[${index}].Order" value="${index + 1}">
-                        <input type="text" name="ScoringCriteria[${index}].CriteriaName" class="form-control criteria-name"
-                               placeholder="Tên tiêu chí" required>
-                    </div>
-                    <div>
-                        <input type="number" name="ScoringCriteria[${index}].MaxScore" class="form-control criteria-score"
-                               placeholder="Điểm" value="100" min="1" step="0.1" required>
-                    </div>
-                    <div>
-                        <div class="input-group">
-                            <input type="number" class="form-control criteria-weight-input"
-                                   placeholder="%" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                            <input type="hidden" name="ScoringCriteria[${index}].Weight" class="criteria-weight-value" value="0">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
-                            <i class="bi bi-trash"></i> Xóa
-                        </button>
-                    </div>
+    function addCriteria() {
+        const container = document.getElementById('criteriaContainer');
+        const i = container.children.length;
+        container.insertAdjacentHTML('beforeend', `
+            <div class="criteria-item" data-index="${i}">
+                <div>
+                    <input type="hidden" name="ScoringCriteria[${i}].Order" value="${i+1}">
+                    <input type="text" name="ScoringCriteria[${i}].CriteriaName" class="form-control criteria-name" placeholder="Tên tiêu chí" required>
                 </div>
-            `;
+                <div><input type="number" name="ScoringCriteria[${i}].MaxScore" class="form-control criteria-score" value="100" min="1" step="0.1" required></div>
+                <div><div class="input-group">
+                    <input type="number" class="form-control criteria-weight-input" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
+                    <input type="hidden" name="ScoringCriteria[${i}].Weight" class="criteria-weight-value" value="0">
+                    <span class="input-group-text">%</span>
+                </div></div>
+                <div><button type="button" class="remove-btn" onclick="removeCriteria(this)"><i class="bi bi-trash"></i></button></div>
+            </div>`);
+        updateTotalWeight();
+    }
 
-            container.insertAdjacentHTML('beforeend', html);
-            updateTotalWeight();
-            updateHiddenWeightValues();
-        }
+    function removeCriteria(btn) {
+        btn.closest('.criteria-item').remove();
+        reindexCriteria();
+        updateTotalWeight();
+    }
 
-        function removeCriteria(btn) {
-            btn.closest('.criteria-item').remove();
-            reindexCriteria();
-            updateTotalWeight();
-            updateHiddenWeightValues();
-        }
+    // ═══════════════════════════════════ ROUNDS ══════════════════════════════
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTotalWeight();
-            updateHiddenWeightValues();
+    async function addRoundAjax() {
+        const name  = document.getElementById('newRoundName').value.trim();
+        const start = document.getElementById('newRoundStart').value;
+        const end   = document.getElementById('newRoundEnd').value;
+        const msg   = document.getElementById('roundMsg');
+
+        if (!name || !start || !end) { msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ.</span>'; return; }
+
+        const res = await fetch(`/Organizer/AddRegistrationRound?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify({ roundName: name, startDate: start, endDate: end })
         });
+        const data = await res.json();
+        if (data.success) {
+            msg.innerHTML = '<span class="text-success">✓ Thêm đợt thành công! Đang tải lại...</span>';
+            setTimeout(() => location.reload(), 800);
+        } else {
+            msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+        }
+    }
 
-        document.getElementById('editForm').addEventListener('submit', () => {
-            updateHiddenWeightValues();
+    // ═══════════════════════════════════ IMAGES ══════════════════════════════
+
+    let pendingImages = [];
+
+    function handleImgSelect() {
+        const files = document.getElementById('imgInput').files;
+        for (const f of files) {
+            if (f.size > 5*1024*1024) { alert(`${f.name} vượt quá 5MB`); continue; }
+            const reader = new FileReader();
+            reader.onload = e => { pendingImages.push({ name: f.name, data: e.target.result }); renderPendingImgs(); };
+            reader.readAsDataURL(f);
+        }
+    }
+
+    function renderPendingImgs() {
+        const el = document.getElementById('imgPending');
+        el.innerHTML = pendingImages.map((img, i) => `
+            <div class="d-flex align-items-center gap-2 mb-1 p-2 bg-light rounded">
+                <img src="${img.data}" style="width:50px;height:40px;object-fit:cover;border-radius:4px;">
+                <span style="font-size:.85rem;">${img.name}</span>
+                <button type="button" class="btn btn-xs btn-outline-danger btn-sm ms-auto" onclick="removePendingImg(${i})">✕</button>
+            </div>`).join('');
+        document.getElementById('btnUploadImg').style.display = pendingImages.length ? 'inline-block' : 'none';
+    }
+
+    function removePendingImg(i) { pendingImages.splice(i, 1); renderPendingImgs(); }
+
+    async function uploadImages() {
+        if (!pendingImages.length) return;
+        const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(pendingImages.map(i => i.data))
         });
-    </script>
+        const data = await res.json();
+        if (data.success) { showToast('Upload ảnh thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    async function deleteImage(imageId) {
+        if (!confirm('Xóa ảnh này?')) return;
+        const res = await fetch(`/Organizer/DeleteImage?imageId=${imageId}&competitionId=${CID}`, {
+            method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById(`img-${imageId}`)?.remove();
+            showToast('Đã xóa ảnh.', 'success');
+        } else showToast(data.message, 'danger');
+    }
+
+    async function setThumbnail(imageId) {
+        const res = await fetch(`/Organizer/SetThumbnail?imageId=${imageId}&competitionId=${CID}`, {
+            method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Đã đặt thumbnail!', 'success'); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    // ═══════════════════════════════════ DOCUMENTS ═══════════════════════════
+
+    let pendingDocs = [];
+
+    function handleDocSelect() {
+        const files = document.getElementById('docInput').files;
+        for (const f of files) {
+            if (f.size > 10*1024*1024) { alert(`${f.name} vượt quá 10MB`); continue; }
+            const reader = new FileReader();
+            reader.onload = e => { pendingDocs.push({ name: f.name, data: e.target.result }); renderPendingDocs(); };
+            reader.readAsDataURL(f);
+        }
+    }
+
+    const docIcons = { pdf:'📕', doc:'📗', docx:'📗', xls:'📊', xlsx:'📊', ppt:'📊', pptx:'📊' };
+
+    function renderPendingDocs() {
+        const el = document.getElementById('docPending');
+        el.innerHTML = pendingDocs.map((d, i) => {
+            const ext = d.name.split('.').pop().toLowerCase();
+            return `<div class="d-flex align-items-center gap-2 mb-1 p-2 bg-light rounded">
+                <span style="font-size:1.3rem;">${docIcons[ext]||'📄'}</span>
+                <span style="font-size:.85rem;">${d.name}</span>
+                <button type="button" class="btn btn-xs btn-outline-danger btn-sm ms-auto" onclick="removePendingDoc(${i})">✕</button>
+            </div>`;
+        }).join('');
+        document.getElementById('btnUploadDoc').style.display = pendingDocs.length ? 'inline-block' : 'none';
+    }
+
+    function removePendingDoc(i) { pendingDocs.splice(i, 1); renderPendingDocs(); }
+
+    async function uploadDocuments() {
+        if (!pendingDocs.length) return;
+        const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Upload tài liệu thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    async function deleteDocument(docId) {
+        if (!confirm('Xóa tài liệu này?')) return;
+        const res = await fetch(`/Organizer/DeleteDocument?documentId=${docId}&competitionId=${CID}`, {
+            method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+        });
+        const data = await res.json();
+        if (data.success) { document.getElementById(`doc-${docId}`)?.remove(); showToast('Đã xóa tài liệu.', 'success'); }
+        else showToast(data.message, 'danger');
+    }
+
+    // ═══════════════════════════════════ SPONSORS ════════════════════════════
+
+    let allSponsors = [];
+    let selectedSponsorId = null;
+
+    async function openAddSponsorModal() {
+        if (!allSponsors.length) {
+            const res = await fetch('/Organizer/GetAllSponsors');
+            allSponsors = await res.json();
+        }
+        renderSponsorList(allSponsors);
+        new bootstrap.Modal(document.getElementById('addSponsorModal')).show();
+    }
+
+    function renderSponsorList(list) {
+        document.getElementById('sponsorPickList').innerHTML = list.length
+            ? list.map(s => `
+                <div class="d-flex align-items-center gap-2 p-2 rounded sponsor-pick-item"
+                     style="cursor:pointer; border-bottom:1px solid #f0f0f0;"
+                     onclick="selectSponsor(${s.sponsorId}, this)"
+                     data-id="${s.sponsorId}">
+                    ${s.logoUrl ? `<img src="${s.logoUrl}" style="width:32px;height:32px;object-fit:contain;">` : '<span style="width:32px;text-align:center;">🏢</span>'}
+                    <div>
+                        <div class="fw-semibold" style="font-size:.9rem;">${s.sponsorName}</div>
+                        ${s.email ? `<div class="text-muted" style="font-size:.78rem;">${s.email}</div>` : ''}
+                    </div>
+                </div>`).join('')
+            : '<div class="text-muted text-center py-3">Không có nhà tài trợ nào.</div>';
+    }
+
+    function filterSponsors() {
+        const q = document.getElementById('sponsorSearch').value.toLowerCase();
+        renderSponsorList(allSponsors.filter(s => s.sponsorName.toLowerCase().includes(q)));
+    }
+
+    function selectSponsor(id, el) {
+        selectedSponsorId = id;
+        document.querySelectorAll('.sponsor-pick-item').forEach(e => e.style.background = '');
+        el.style.background = '#e8f5e9';
+    }
+
+    async function confirmAddSponsor() {
+        if (!selectedSponsorId) { alert('Vui lòng chọn một nhà tài trợ.'); return; }
+        const dto = {
+            sponsorId: selectedSponsorId,
+            sponsorshipLevel:   document.getElementById('asl-level').value,
+            contributionAmount: parseFloat(document.getElementById('asl-amount').value) || 0,
+            currency:           document.getElementById('asl-currency').value,
+            notes:              document.getElementById('asl-notes').value,
+            isDisplayed:        document.getElementById('asl-display').checked,
+            displayOrder:       parseInt(document.getElementById('asl-order').value) || 0
+        };
+        const res = await fetch(`/Organizer/AddSponsor?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(dto)
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'success'); bootstrap.Modal.getInstance(document.getElementById('addSponsorModal')).hide(); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    async function confirmCreateSponsor() {
+        const name = document.getElementById('cs-name').value.trim();
+        if (!name) { alert('Vui lòng nhập tên nhà tài trợ.'); return; }
+        const dto = {
+            sponsorName: name, email: document.getElementById('cs-email').value,
+            sponsorshipLevel: document.getElementById('cs-level').value,
+            contributionAmount: parseFloat(document.getElementById('cs-amount').value) || 0,
+            currency: document.getElementById('cs-currency').value,
+            notes: document.getElementById('cs-notes').value,
+            isDisplayed: true, displayOrder: 0
+        };
+        const res = await fetch(`/Organizer/CreateSponsor?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(dto)
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'success'); bootstrap.Modal.getInstance(document.getElementById('createSponsorModal')).hide(); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    function openCreateSponsorModal() { new bootstrap.Modal(document.getElementById('createSponsorModal')).show(); }
+
+    function editSponsorLink(csId, level, amount, currency, isDisplayed, order, notes) {
+        document.getElementById('edit-csid').value = csId;
+        document.getElementById('edit-level').value = level;
+        document.getElementById('edit-amount').value = amount;
+        document.getElementById('edit-currency').value = currency;
+        document.getElementById('edit-display').checked = isDisplayed;
+        document.getElementById('edit-order').value = order;
+        document.getElementById('edit-notes').value = notes;
+        new bootstrap.Modal(document.getElementById('editSponsorModal')).show();
+    }
+
+    async function confirmEditSponsor() {
+        const csId = document.getElementById('edit-csid').value;
+        const dto = {
+            sponsorId: 0,
+            sponsorshipLevel:   document.getElementById('edit-level').value,
+            contributionAmount: parseFloat(document.getElementById('edit-amount').value) || 0,
+            currency:           document.getElementById('edit-currency').value,
+            notes:              document.getElementById('edit-notes').value,
+            isDisplayed:        document.getElementById('edit-display').checked,
+            displayOrder:       parseInt(document.getElementById('edit-order').value) || 0
+        };
+        const res = await fetch(`/Organizer/UpdateSponsorLink?competitionSponsorId=${csId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+            body: JSON.stringify(dto)
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'success'); bootstrap.Modal.getInstance(document.getElementById('editSponsorModal')).hide(); setTimeout(() => location.reload(), 600); }
+        else showToast(data.message, 'danger');
+    }
+
+    async function removeSponsor(csId) {
+        if (!confirm('Xóa nhà tài trợ này khỏi cuộc thi?')) return;
+        const res = await fetch(`/Organizer/RemoveSponsor?competitionSponsorId=${csId}&competitionId=${CID}`, {
+            method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+        });
+        const data = await res.json();
+        if (data.success) { document.getElementById(`cs-${csId}`)?.remove(); showToast('Đã xóa nhà tài trợ.', 'success'); }
+        else showToast(data.message, 'danger');
+    }
+
+    // ═══════════════════════════════════ UTILITIES ═══════════════════════════
+
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    }
+
+    function showToast(msg, type = 'success') {
+        const t = document.createElement('div');
+        t.className = `alert alert-${type} shadow position-fixed bottom-0 end-0 m-3`;
+        t.style.cssText = 'z-index:9999;min-width:260px;';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    // Drag & drop ảnh
+    const imgArea = document.querySelector('.upload-area');
+    if (imgArea) {
+        imgArea.addEventListener('dragover', e => { e.preventDefault(); imgArea.style.borderColor='var(--organizer-accent)'; });
+        imgArea.addEventListener('dragleave', () => imgArea.style.borderColor='#d0d0d0');
+        imgArea.addEventListener('drop', e => {
+            e.preventDefault(); imgArea.style.borderColor='#d0d0d0';
+            document.getElementById('imgInput').files = e.dataTransfer.files; handleImgSelect();
+        });
+    }
+
+    // Toggle team size
+    document.getElementById('chkTeam')?.addEventListener('change', function() {
+        const g = document.getElementById('maxTeamSizeGroup');
+        if (g) g.style.display = this.checked ? '' : 'none';
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTotalWeight();
+        updateHiddenWeightValues();
+    });
+
+    document.getElementById('editForm').addEventListener('submit', () => updateHiddenWeightValues());
+</script>
 }

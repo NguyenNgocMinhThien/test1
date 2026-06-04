@@ -28,22 +28,24 @@
         public string Status { get; set; } = string.Empty; // Draft, Active, Closed, Completed
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public DateTime RegistrationDeadline { get; set; }
         public DateTime SubmissionDeadline { get; set; }
+        public DateTime? LatestRegistrationDeadline { get; set; } // EndDate của round cuối cùng
 
         // Statistics for card
         public int TotalRegistrations { get; set; }
         public int ApprovedRegistrations { get; set; }
         public int TotalSubmissions { get; set; }
         public int EvaluatedSubmissions { get; set; }
+        public int MinParticipants { get; set; }
         public int MaxParticipants { get; set; }
         public int MaxTeamSize { get; set; }
 
         // Progress
         public int ProgressPercentage { get; set; }
         public string CurrentPhase { get; set; } = string.Empty;
-        public string StatusDisplay { get; set; } = string.Empty; // "Đang Nhận Bài", "Đang Chấm Điểm", etc.
+        public string StatusDisplay { get; set; } = string.Empty;
         public bool IsTeamBased { get; set; }
+        public bool HasActiveRound { get; set; }
     }
 
     public class CompetitionDetailViewModel
@@ -56,16 +58,18 @@
         public string? Prize { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public DateTime RegistrationDeadline { get; set; }
         public DateTime SubmissionDeadline { get; set; }
+        public DateTime? LatestRegistrationDeadline { get; set; }
         public string Status { get; set; } = string.Empty;
         public bool IsTeamBased { get; set; }
+        public int MinParticipants { get; set; }
         public int MaxParticipants { get; set; }
         public int MaxTeamSize { get; set; }
         public int TotalRegistrations { get; set; }
         public int ApprovedRegistrations { get; set; }
         public int TotalSubmissions { get; set; }
         public List<ScoringCriteriaDto> ScoringCriteria { get; set; } = new();
+        public List<RegistrationRoundReadDto> RegistrationRounds { get; set; } = new();
     }
 
     public class ScoringCriteriaDto

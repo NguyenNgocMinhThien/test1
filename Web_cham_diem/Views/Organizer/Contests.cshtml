@@ -449,7 +449,7 @@
                                     var startLocal  = TimeZoneInfo.ConvertTimeFromUtc(comp.StartDate, tz);
                                     var endLocal    = TimeZoneInfo.ConvertTimeFromUtc(comp.EndDate, tz);
                                     var subLocal    = TimeZoneInfo.ConvertTimeFromUtc(comp.SubmissionDeadline, tz);
-                                    var regLocal    = TimeZoneInfo.ConvertTimeFromUtc(comp.RegistrationDeadline, tz);
+                                    var regLocal    = comp.LatestRegistrationDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(comp.LatestRegistrationDeadline.Value, tz) : (DateTime?)null;
                                 }
                                 <div class="comp-date-range">
                                     <i class="bi bi-calendar2-check text-muted"></i>
@@ -505,7 +505,7 @@
                                 <!-- Hạn cuối -->
                                 <div class="small text-muted mb-2">
                                     <i class="bi bi-clock-history"></i>
-                                    <strong>Hạn đăng ký:</strong> @regLocal.ToString("dd/MM/yyyy HH:mm")
+                                    <strong>Hạn đăng ký:</strong> @(regLocal.HasValue ? regLocal.Value.ToString("dd/MM/yyyy HH:mm") : "—")
                                     &nbsp;|&nbsp;
                                     <strong>Hạn nộp:</strong> @subLocal.ToString("dd/MM/yyyy HH:mm")
                                 </div>
