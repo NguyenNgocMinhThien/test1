@@ -222,6 +222,11 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
+                .ThenInclude(r => r.Registrations)
+            .Include(c => c.CompetitionImages)
+            .Include(c => c.CompetitionDocuments)
+            .Include(c => c.CompetitionSponsors)
+                .ThenInclude(cs => cs.Sponsor)
             .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
 
         if (competition == null) return null;
@@ -230,12 +235,56 @@ public class CompetitionService : ICompetitionService
             .OrderBy(r => r.StartDate)
             .Select(r => new RegistrationRoundReadDto
             {
-                RoundId   = r.RoundId,
-                RoundName = r.RoundName,
-                StartDate = r.StartDate,
-                EndDate   = r.EndDate,
-                RegistrationCount = competition.Registrations.Count(reg => reg.RoundId == r.RoundId)
+                RoundId           = r.RoundId,
+                RoundName         = r.RoundName,
+                StartDate         = r.StartDate,
+                EndDate           = r.EndDate,
+                RegistrationCount = r.Registrations.Count
             }).ToList();
+
+        var images = competition.CompetitionImages
+            .OrderByDescending(i => i.IsThumbnail).ThenBy(i => i.CreatedAt)
+            .Select(i => new ImageReadDto
+            {
+                ImageId     = i.ImageId,
+                ImageUrl    = i.ImageUrl,
+                IsThumbnail = i.IsThumbnail,
+                CreatedAt   = i.CreatedAt
+            }).ToList();
+
+        var documents = competition.CompetitionDocuments
+            .OrderBy(d => d.UploadedAt)
+            .Select(d => new DocumentReadDto
+            {
+                DocumentId = d.DocumentId,
+                FileName   = d.FileName,
+                FileUrl    = d.FileUrl,
+                FileType   = d.FileType,
+                UploadedAt = d.UploadedAt
+            }).ToList();
+
+        var sponsors = competition.CompetitionSponsors
+            .Where(cs => cs.IsDisplayed)
+            .OrderBy(cs => cs.DisplayOrder)
+            .Select(cs => new CompetitionSponsorReadDto
+            {
+                CompetitionSponsorId = cs.CompetitionSponsorId,
+                SponsorId            = cs.SponsorId,
+                SponsorName          = cs.Sponsor.SponsorName,
+                LogoUrl              = cs.Sponsor.LogoUrl,
+                SponsorshipLevel     = cs.SponsorshipLevel,
+                ContributionAmount   = cs.ContributionAmount,
+                Currency             = cs.Currency,
+                Notes                = cs.Notes,
+                IsDisplayed          = cs.IsDisplayed,
+                DisplayOrder         = cs.DisplayOrder
+            }).ToList();
+
+        var bannerUrl = competition.CompetitionImages
+            .FirstOrDefault(i => i.IsThumbnail)?.ImageUrl
+            ?? competition.CompetitionImages.FirstOrDefault()?.ImageUrl;
+
+        var evaluatedCount = competition.Submissions.Count(s => s.Status == "Evaluated");
 
         return new CompetitionDetailViewModel
         {
@@ -250,21 +299,27 @@ public class CompetitionService : ICompetitionService
             SubmissionDeadline = competition.SubmissionDeadline,
             LatestRegistrationDeadline = GetLatestRegistrationDeadline(competition.RegistrationRounds),
             Status             = competition.Status,
+            StatusDisplay      = GetStatusDisplay(competition),
             IsTeamBased        = competition.IsTeamBased,
             MinParticipants    = competition.MinParticipants,
             MaxParticipants    = competition.MaxParticipants,
             MaxTeamSize        = competition.MaxTeamSize,
-            TotalRegistrations = competition.Registrations.Count,
+            TotalRegistrations    = competition.Registrations.Count,
             ApprovedRegistrations = competition.Registrations.Count(r => r.Status == "Approved"),
-            TotalSubmissions   = competition.Submissions.Count,
-            ScoringCriteria    = competition.ScoringCriteria.Select(sc => new ScoringCriteriaDto
+            TotalSubmissions      = competition.Submissions.Count,
+            EvaluatedSubmissions  = evaluatedCount,
+            BannerImageUrl        = bannerUrl,
+            ScoringCriteria    = competition.ScoringCriteria.OrderBy(sc => sc.Order).Select(sc => new ScoringCriteriaDto
             {
                 CriteriaId   = sc.CriteriaId,
                 CriteriaName = sc.CriteriaName,
                 Weight       = sc.Weight,
                 MaxScore     = sc.MaxScore
             }).ToList(),
-            RegistrationRounds = roundDtos
+            RegistrationRounds = roundDtos,
+            Images             = images,
+            Documents          = documents,
+            Sponsors           = sponsors
         };
     }
 
@@ -908,21 +963,163 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
+            .Include(c => c.Teams)
             .ToListAsync();
 
         var judges = await _context.Judges.ToListAsync();
 
+        // ===== COMPETITION STATUS BREAKDOWN =====
+        int totalCompetitions = competitions.Count;
+        int draftCompetitions = competitions.Count(c => c.Status == "Draft");
+        int completedCompetitions = competitions.Count(c => c.Status == "Completed");
+
+        int openRegistrationCompetitions = competitions.Count(c =>
+            c.Status == "Active" && HasActiveRound(c.RegistrationRounds));
+
+        int acceptingSubmissions = competitions.Count(c =>
+            c.Status == "Active"
+            && !HasActiveRound(c.RegistrationRounds)
+            && now < c.SubmissionDeadline);
+
+        int gradingCompetitions = competitions.Count(c =>
+            c.Status == "Active" && now >= c.SubmissionDeadline && now < c.EndDate);
+
+        // ===== ACTIVITY METRICS =====
         var activeCompetitions   = competitions.Count(c => c.Status == "Active");
-        var pendingRegistrations = await _context.Registrations.CountAsync(r => r.Status == "Pending");
+        var pendingRegistrations = competitions.Sum(c => c.Registrations.Count(r => r.Status == "Pending"));
+        var totalRegistrations   = competitions.Sum(c => c.Registrations.Count);
+        var totalTeams           = competitions.Sum(c => c.Teams.Count);
         var totalSubmissions     = competitions.Sum(c => c.Submissions.Count);
-        var evaluatedSubmissions = await _context.Submissions.CountAsync(s => s.Status == "Evaluated");
-        var activeJudges         = judges.Count;
+        var evaluatedSubmissions = competitions.Sum(c => c.Submissions.Count(s => s.Status == "Evaluated"));
+        var activeJudges         = judges.Count(j => j.Status == "Active");
         var urgentCompetitions   = competitions.Count(c =>
             c.Status == "Active" && (c.EndDate - now).TotalDays < 7 && (c.EndDate - now).TotalDays >= 0);
+        var scoringCompletionRate = totalSubmissions > 0
+            ? Math.Round((decimal)evaluatedSubmissions / totalSubmissions * 100, 1)
+            : 0m;
 
-        // Progress data (4 tuần gần nhất)
-        var progressData       = new List<CompetitionProgressData>();
-        var activeCompetition  = competitions.FirstOrDefault(c => c.Status == "Active");
+        // ===== COMPETITION PROGRESS TABLE =====
+        var progressTable = competitions
+            .Where(c => c.Status == "Active" || c.Status == "Draft")
+            .OrderBy(c => c.Status == "Draft" ? 1 : 0)
+            .ThenBy(c => c.EndDate)
+            .Select(c =>
+            {
+                var activeRound = c.RegistrationRounds
+                    .FirstOrDefault(r => now >= r.StartDate && now <= r.EndDate);
+                var nextRound = c.RegistrationRounds
+                    .Where(r => r.StartDate > now)
+                    .OrderBy(r => r.StartDate)
+                    .FirstOrDefault();
+                var approved   = c.Registrations.Count(r => r.Status == "Approved");
+                var pending    = c.Registrations.Count(r => r.Status == "Pending");
+                var graded     = c.Submissions.Count(s => s.Status == "Evaluated");
+                var total      = c.Submissions.Count;
+
+                return new CompetitionProgressRow
+                {
+                    CompetitionId       = c.CompetitionId,
+                    Name                = c.CompetitionName,
+                    Status              = c.Status,
+                    Phase               = DetermineCurrentPhase(c),
+                    TotalRegistrations  = c.Registrations.Count,
+                    PendingRegistrations = pending,
+                    ApprovedRegistrations = approved,
+                    TotalSubmissions    = total,
+                    GradedSubmissions   = graded,
+                    GradingProgress     = total > 0 ? Math.Round((decimal)graded / total * 100, 0) : 0,
+                    UnderMinParticipants = c.MinParticipants > 0 && approved < c.MinParticipants,
+                    MinParticipants     = c.MinParticipants,
+                    ActiveRoundName     = activeRound?.RoundName,
+                    ActiveRoundEnd      = activeRound?.EndDate,
+                    NextRoundStart      = nextRound?.StartDate
+                };
+            }).ToList();
+
+        // ===== ALERTS =====
+        var alerts = new List<AlertItem>();
+
+        // Hồ sơ chờ duyệt
+        if (pendingRegistrations > 0)
+            alerts.Add(new AlertItem
+            {
+                Level      = "warning",
+                Icon       = "bi-person-exclamation",
+                Message    = $"Có {pendingRegistrations} hồ sơ đăng ký đang chờ duyệt.",
+                ActionUrl  = "/Organizer/Submissions",
+                ActionText = "Xem ngay"
+            });
+
+        // Bài chưa chấm xong
+        var ungradedCount = totalSubmissions - evaluatedSubmissions;
+        if (ungradedCount > 0 && gradingCompetitions > 0)
+            alerts.Add(new AlertItem
+            {
+                Level      = "warning",
+                Icon       = "bi-file-earmark-x",
+                Message    = $"Còn {ungradedCount} bài thi chưa được chấm điểm.",
+                ActionUrl  = "/Organizer/Submissions",
+                ActionText = "Phân công chấm"
+            });
+
+        // Cuộc thi thiếu người khi đợt đăng ký đang mở sắp đóng (chỉ Active, có round đang mở)
+        var underMinNearDeadline = progressTable
+            .Where(r => r.Status == "Active"
+                        && r.UnderMinParticipants
+                        && r.ActiveRoundEnd.HasValue
+                        && (r.ActiveRoundEnd.Value - now).TotalDays <= 7)
+            .ToList();
+
+        foreach (var comp in underMinNearDeadline)
+        {
+            var roundEnd  = comp.ActiveRoundEnd!.Value;
+            var dLeft     = (roundEnd - now).TotalDays;
+            var hLeft     = (roundEnd - now).TotalHours;
+            var timeText  = dLeft >= 1 ? $"còn {(int)dLeft} ngày" : $"còn {(int)hLeft} giờ";
+            var lvl       = dLeft < 3 ? "danger" : "warning";
+
+            alerts.Add(new AlertItem
+            {
+                Level      = lvl,
+                Icon       = "bi-people",
+                Message    = $"\"{comp.Name}\" mới đạt {comp.ApprovedRegistrations}/{comp.MinParticipants} người tối thiểu — đợt \"{comp.ActiveRoundName}\" {timeText} nữa.",
+                ActionUrl  = "/Organizer/Contests",
+                ActionText = "Xem chi tiết"
+            });
+        }
+
+        // Deadline khẩn cấp (trong 3 ngày)
+        var urgentDeadlines = competitions
+            .Where(c => c.Status == "Active")
+            .SelectMany(c => c.RegistrationRounds
+                .Where(r => r.EndDate > now && (r.EndDate - now).TotalDays < 3)
+                .Select(r => new { c.CompetitionName, r.RoundName, r.EndDate }))
+            .ToList();
+
+        foreach (var d in urgentDeadlines)
+            alerts.Add(new AlertItem
+            {
+                Level   = "danger",
+                Icon    = "bi-alarm",
+                Message = $"Đợt đăng ký \"{d.RoundName}\" của \"{d.CompetitionName}\" đóng sau {(int)(d.EndDate - now).TotalHours} giờ."
+            });
+
+        // ===== TOP COMPETITIONS =====
+        var topCompetitions = competitions
+            .OrderByDescending(c => c.Registrations.Count)
+            .Take(5)
+            .Select(c => new TopCompetitionItem
+            {
+                CompetitionId    = c.CompetitionId,
+                Name             = c.CompetitionName,
+                RegistrationCount = c.Registrations.Count,
+                Status           = c.Status,
+                Phase            = DetermineCurrentPhase(c)
+            }).ToList();
+
+        // ===== PROGRESS CHART (4 tuần gần nhất, cuộc thi Active đầu tiên) =====
+        var progressData      = new List<CompetitionProgressData>();
+        var activeCompetition = competitions.FirstOrDefault(c => c.Status == "Active");
         if (activeCompetition != null)
         {
             for (int i = 3; i >= 0; i--)
@@ -947,32 +1144,37 @@ public class CompetitionService : ICompetitionService
             }
         }
 
-        // Approval ratio
-        var allRegistrations = await _context.Registrations.ToListAsync();
+        // ===== APPROVAL RATIO =====
         var approvalRatio = new ApprovalRatioData
         {
-            ApprovedCount = allRegistrations.Count(r => r.Status == "Approved"),
-            PendingCount  = allRegistrations.Count(r => r.Status == "Pending"),
-            RejectedCount = allRegistrations.Count(r => r.Status == "Rejected")
+            ApprovedCount = competitions.Sum(c => c.Registrations.Count(r => r.Status == "Approved")),
+            PendingCount  = pendingRegistrations,
+            RejectedCount = competitions.Sum(c => c.Registrations.Count(r => r.Status == "Rejected"))
         };
 
-        // Deadlines — dùng rounds thay cho RegistrationDeadline
+        // ===== DEADLINES (dựa trên RegistrationRounds) =====
         var deadlines = new List<DeadlineItem>();
         foreach (var comp in competitions.Where(c => c.Status == "Active" || c.Status == "Draft"))
         {
-            var latestDeadline = GetLatestRegistrationDeadline(comp.RegistrationRounds);
-
-            if (latestDeadline.HasValue && latestDeadline.Value > now)
+            // Từng round đang mở hoặc sắp mở
+            foreach (var round in comp.RegistrationRounds.OrderBy(r => r.EndDate))
             {
-                var daysUntil = (latestDeadline.Value - now).TotalDays;
+                if (round.EndDate <= now) continue;
+
+                var daysUntil = (round.EndDate - now).TotalDays;
+                var isActive  = now >= round.StartDate;
+                var label     = isActive ? $"Đóng đợt \"{round.RoundName}\"" : $"Mở đợt \"{round.RoundName}\"";
+                var date      = isActive ? round.EndDate : round.StartDate;
+                var days2     = (date - now).TotalDays;
+
                 deadlines.Add(new DeadlineItem
                 {
                     CompetitionId   = comp.CompetitionId,
                     CompetitionName = comp.CompetitionName,
-                    Title           = "Đóng cổng Nhận hồ sơ",
-                    DeadlineDate    = latestDeadline.Value,
-                    Status          = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal",
-                    Description     = $"Cuộc thi: {comp.CompetitionName}. Đã nhận {comp.Registrations.Count} hồ sơ."
+                    Title           = label,
+                    DeadlineDate    = date,
+                    Status          = days2 < 3 ? "urgent" : days2 < 7 ? "warning" : "normal",
+                    Description     = $"{comp.CompetitionName} — Đã nhận {comp.Registrations.Count} hồ sơ."
                 });
             }
 
@@ -986,32 +1188,31 @@ public class CompetitionService : ICompetitionService
                     Title           = "Đóng cổng Nhận bài dự thi",
                     DeadlineDate    = comp.SubmissionDeadline,
                     Status          = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal",
-                    Description     = $"Cuộc thi: {comp.CompetitionName}. Đã nhận {comp.Submissions.Count} bài thi."
+                    Description     = $"{comp.CompetitionName} — Đã nhận {comp.Submissions.Count} bài thi."
                 });
             }
 
             if (comp.EndDate > now && comp.Submissions.Count > 0)
             {
-                var evaluatedCount  = comp.Submissions.Count(s => s.Status == "Evaluated");
-                var progressPercent = (decimal)evaluatedCount / comp.Submissions.Count * 100;
-                var daysUntil       = (comp.EndDate - now).TotalDays;
-
+                var graded      = comp.Submissions.Count(s => s.Status == "Evaluated");
+                var pct         = (decimal)graded / comp.Submissions.Count * 100;
+                var daysUntil   = (comp.EndDate - now).TotalDays;
                 deadlines.Add(new DeadlineItem
                 {
                     CompetitionId      = comp.CompetitionId,
                     CompetitionName    = comp.CompetitionName,
-                    Title              = "Hạn nộp điểm của Giám khảo",
+                    Title              = "Hạn nộp điểm Giám khảo",
                     DeadlineDate       = comp.EndDate,
                     Status             = daysUntil < 3 ? "urgent" : daysUntil < 7 ? "warning" : "normal",
-                    ProgressPercentage = progressPercent,
-                    Description        = $"Cuộc thi: {comp.CompetitionName}."
+                    ProgressPercentage = Math.Round(pct, 0),
+                    Description        = $"{comp.CompetitionName} — Đã chấm {graded}/{comp.Submissions.Count} bài."
                 });
             }
         }
 
         deadlines = deadlines.OrderBy(d => d.DeadlineDate).ToList();
 
-        // Recent activities
+        // ===== RECENT ACTIVITIES =====
         var recentActivities = new List<ActivityLog>();
 
         var recentScores = await _context.Scores
@@ -1021,7 +1222,6 @@ public class CompetitionService : ICompetitionService
             .ToListAsync();
 
         foreach (var score in recentScores)
-        {
             recentActivities.Add(new ActivityLog
             {
                 Type        = "score",
@@ -1030,7 +1230,6 @@ public class CompetitionService : ICompetitionService
                 CreatedAt   = score.ScoredDate,
                 UserName    = "Giám khảo"
             });
-        }
 
         var recentRegistrations = await _context.Registrations
             .Include(r => r.User)
@@ -1040,7 +1239,6 @@ public class CompetitionService : ICompetitionService
             .ToListAsync();
 
         foreach (var reg in recentRegistrations)
-        {
             recentActivities.Add(new ActivityLog
             {
                 Type        = "registration",
@@ -1049,7 +1247,6 @@ public class CompetitionService : ICompetitionService
                 CreatedAt   = reg.RegistrationDate,
                 UserName    = reg.User?.FullName
             });
-        }
 
         var recentSubmissions = await _context.Submissions
             .OrderByDescending(s => s.SubmissionDate)
@@ -1057,7 +1254,6 @@ public class CompetitionService : ICompetitionService
             .ToListAsync();
 
         foreach (var sub in recentSubmissions)
-        {
             recentActivities.Add(new ActivityLog
             {
                 Type        = "submission",
@@ -1065,22 +1261,33 @@ public class CompetitionService : ICompetitionService
                 Description = $"Bài thi #{sub.SubmissionId} đã được nộp.",
                 CreatedAt   = sub.SubmissionDate
             });
-        }
 
         recentActivities = recentActivities.OrderByDescending(a => a.CreatedAt).ToList();
 
         return new OrganizerDashboardViewModel
         {
-            ActiveCompetitions   = activeCompetitions,
-            PendingRegistrations = pendingRegistrations,
-            TotalSubmissions     = totalSubmissions,
-            EvaluatedSubmissions = evaluatedSubmissions,
-            ActiveJudges         = activeJudges,
-            UrgentCompetitions   = urgentCompetitions,
-            ProgressData         = progressData,
-            ApprovalRatio        = approvalRatio,
-            UpcomingDeadlines    = deadlines,
-            RecentActivities     = recentActivities
+            TotalCompetitions            = totalCompetitions,
+            DraftCompetitions            = draftCompetitions,
+            OpenRegistrationCompetitions = openRegistrationCompetitions,
+            AcceptingSubmissions         = acceptingSubmissions,
+            GradingCompetitions          = gradingCompetitions,
+            CompletedCompetitions        = completedCompetitions,
+            ActiveCompetitions           = activeCompetitions,
+            PendingRegistrations         = pendingRegistrations,
+            TotalRegistrations           = totalRegistrations,
+            TotalTeams                   = totalTeams,
+            TotalSubmissions             = totalSubmissions,
+            EvaluatedSubmissions         = evaluatedSubmissions,
+            ActiveJudges                 = activeJudges,
+            UrgentCompetitions           = urgentCompetitions,
+            ScoringCompletionRate        = scoringCompletionRate,
+            Alerts                       = alerts,
+            CompetitionProgressTable     = progressTable,
+            TopCompetitionsByRegistrations = topCompetitions,
+            ProgressData                 = progressData,
+            ApprovalRatio                = approvalRatio,
+            UpcomingDeadlines            = deadlines,
+            RecentActivities             = recentActivities
         };
     }
 
