@@ -2,6 +2,12 @@
 using Microsoft.EntityFrameworkCore;
 using Web_cham_diem.Models;
 using Web_cham_diem.Services;
+using System.Globalization;
+
+// Đảm bảo model binding dùng InvariantCulture để parse số thập phân (.) và ngày ISO 8601 đúng
+// trong mọi locale của OS (tránh lỗi "The value '' is invalid" khi OS dùng vi-VN)
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 

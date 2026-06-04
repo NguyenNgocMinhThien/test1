@@ -107,7 +107,10 @@ namespace Web_cham_diem.Controllers
             if (model.CompetitionId != id) return BadRequest();
 
             if (!ModelState.IsValid)
+            {
+                await ReloadReadonlyData(id, model);
                 return View(model);
+            }
 
             try
             {
@@ -121,24 +124,34 @@ namespace Web_cham_diem.Controllers
             {
                 ModelState.AddModelError("", ex.Message);
                 _logger.LogWarning("Validation error updating competition {Id}: {Message}", id, ex.Message);
-                // Reload readonly data
-                var reloaded = await _competitionService.GetCompetitionForEditAsync(id);
-                if (reloaded != null)
-                {
-                    model.ExistingRounds     = reloaded.ExistingRounds;
-                    model.RegistrationCount  = reloaded.RegistrationCount;
-                    model.SubmissionCount    = reloaded.SubmissionCount;
-                    model.HasStarted         = reloaded.HasStarted;
-                    model.HasSubmissions     = reloaded.HasSubmissions;
-                }
+                await ReloadReadonlyData(id, model);
                 return View(model);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Có lỗi xảy ra. Vui lòng thử lại.");
                 _logger.LogError(ex, "Error updating competition {Id}", id);
+                await ReloadReadonlyData(id, model);
                 return View(model);
             }
+        }
+
+        private async Task ReloadReadonlyData(int competitionId, EditCompetitionViewModel model)
+        {
+            try
+            {
+                var fresh = await _competitionService.GetCompetitionForEditAsync(competitionId);
+                if (fresh == null) return;
+                model.ExistingRounds              = fresh.ExistingRounds;
+                model.Images                      = fresh.Images;
+                model.Documents                   = fresh.Documents;
+                model.ExistingCompetitionSponsors = fresh.ExistingCompetitionSponsors;
+                model.RegistrationCount           = fresh.RegistrationCount;
+                model.SubmissionCount             = fresh.SubmissionCount;
+                model.HasStarted                  = fresh.HasStarted;
+                model.HasSubmissions              = fresh.HasSubmissions;
+            }
+            catch { /* không làm hỏng luồng chính */ }
         }
 
         // === THÊM ĐỢT ĐĂNG KÝ MỚI (API) ===
@@ -282,6 +295,28 @@ namespace Web_cham_diem.Controllers
             {
                 _logger.LogError(ex, "Error requesting supplement");
                 return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // ====== ROUNDS ======
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteRound(int roundId, int competitionId)
+        {
+            try
+            {
+                var result = await _competitionService.DeleteRegistrationRoundAsync(roundId, competitionId);
+                if (!result) return Json(new { success = false, message = "Đợt không tìm thấy." });
+                return Json(new { success = true, message = "Đã xóa đợt đăng ký." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting round {RoundId}", roundId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
             }
         }
 
