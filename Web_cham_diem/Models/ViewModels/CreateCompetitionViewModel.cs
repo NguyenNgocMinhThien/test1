@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Web_cham_diem.Models.ViewModels
 {
@@ -17,25 +17,36 @@ namespace Web_cham_diem.Models.ViewModels
 
         // Step 2: Lịch trình & Hạn chế
         [Required]
-        public DateTime StartDate { get; set; } = DateTime.UtcNow.AddDays(1);
+        public DateTime StartDate { get; set; } = DateTime.Now.AddDays(15);
 
         [Required]
-        public DateTime EndDate { get; set; } = DateTime.UtcNow.AddDays(31);
+        public DateTime EndDate { get; set; } = DateTime.Now.AddDays(45);
 
         [Required]
-        public DateTime RegistrationDeadline { get; set; } = DateTime.UtcNow.AddDays(10);
+        public DateTime SubmissionDeadline { get; set; } = DateTime.Now.AddDays(40);
 
-        [Required]
-        public DateTime SubmissionDeadline { get; set; } = DateTime.UtcNow.AddDays(20);
+        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
+        public int MinParticipants { get; set; } = 0;
 
-        [Range(1, int.MaxValue, ErrorMessage = "Số lượng tham gia phải lớn hơn 0.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng tối đa phải lớn hơn 0.")]
         public int MaxParticipants { get; set; } = 100;
 
         [Range(1, int.MaxValue, ErrorMessage = "Số người/đội phải lớn hơn 0.")]
-        public int MaxTeamSize { get; set; } = 5;
+        public int MaxTeamSize { get; set; } = 1;
         public bool IsTeamBased { get; set; } = false;
 
-        // Step 3: Tiêu chí chấm điểm
+        // Step 2b: Đợt đăng ký (bắt buộc ít nhất 1)
+        public List<RegistrationRoundCreateDto> RegistrationRounds { get; set; } = new()
+        {
+            new RegistrationRoundCreateDto
+            {
+                RoundName = "Đợt 1",
+                StartDate = DateTime.Now.AddDays(1),
+                EndDate = DateTime.Now.AddDays(10)
+            }
+        };
+
+        // Step 3: Tiêu chí chấm điểm (bắt buộc ít nhất 1)
         public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new()
         {
             new ScoringCriteriaCreateDto { CriteriaName = "Ý tưởng", MaxScore = 100, Weight = 0.30m, Order = 1 },
@@ -43,29 +54,23 @@ namespace Web_cham_diem.Models.ViewModels
             new ScoringCriteriaCreateDto { CriteriaName = "Thuyết trình", MaxScore = 100, Weight = 0.30m, Order = 3 }
         };
 
+        // Step 4: Ảnh & Tài liệu (Không bắt buộc)
+        public List<string>? SelectedImageData { get; set; } = new();
+        public List<string>? SelectedDocumentData { get; set; } = new();
+        public List<string>? DocumentFileNames { get; set; } = new();
+
         // Step 5: Nhà tài trợ (Không bắt buộc)
         public List<SponsorCreateDto> Sponsors { get; set; } = new();
 
-        // Step 4: Ảnh & Tài liệu (Không bắt buộc)
-        /// <summary>
-        /// Danh sách ảnh được chọn (base64 hoặc URL từ form upload)
-        /// Sẽ được xử lý để tải lên storage sau khi cuộc thi được tạo
-        /// </summary>
-        public List<string>? SelectedImageData { get; set; } = new();
-
-        /// <summary>
-        /// Danh sách tài liệu được chọn (base64 hoặc URL từ form upload)
-        /// Sẽ được xử lý để tải lên storage sau khi cuộc thi được tạo
-        /// </summary>
-        public List<string>? SelectedDocumentData { get; set; } = new();
-
-        /// <summary>
-        /// Tên file tài liệu tương ứng (để sử dụng khi upload)
-        /// </summary>
-        public List<string>? DocumentFileNames { get; set; } = new();
-
-        // Step 5: Xác nhận
+        // Xác nhận
         public bool Confirmed { get; set; } = false;
+    }
+
+    public class RegistrationRoundCreateDto
+    {
+        public string RoundName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
     }
 
     public class ScoringCriteriaCreateDto
@@ -94,8 +99,89 @@ namespace Web_cham_diem.Models.ViewModels
         public int DisplayOrder { get; set; } = 0;
     }
 
+    // ─── Read-only DTOs for Edit page ───────────────────────────────────────
+
+    public class ImageReadDto
+    {
+        public int ImageId { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsThumbnail { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class DocumentReadDto
+    {
+        public int DocumentId { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FileUrl { get; set; } = string.Empty;
+        public string FileType { get; set; } = string.Empty;
+        public DateTime UploadedAt { get; set; }
+    }
+
+    public class CompetitionSponsorReadDto
+    {
+        public int CompetitionSponsorId { get; set; }
+        public int SponsorId { get; set; }
+        public string SponsorName { get; set; } = string.Empty;
+        public string? LogoUrl { get; set; }
+        public string SponsorshipLevel { get; set; } = "General";
+        public decimal ContributionAmount { get; set; }
+        public string Currency { get; set; } = "VND";
+        public string? Notes { get; set; }
+        public bool IsDisplayed { get; set; } = true;
+        public int DisplayOrder { get; set; }
+    }
+
+    public class SponsorSearchDto
+    {
+        public int SponsorId { get; set; }
+        public string SponsorName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? LogoUrl { get; set; }
+    }
+
+    public class AddSponsorToCompetitionDto
+    {
+        public int SponsorId { get; set; }
+        public string SponsorshipLevel { get; set; } = "General";
+        public decimal ContributionAmount { get; set; } = 0;
+        public string Currency { get; set; } = "VND";
+        public string? Notes { get; set; }
+        public bool IsDisplayed { get; set; } = true;
+        public int DisplayOrder { get; set; } = 0;
+    }
+
+    // ─── Edit ViewModel ──────────────────────────────────────────────────────
+
     public class EditCompetitionViewModel : CreateCompetitionViewModel
     {
         public int CompetitionId { get; set; }
+
+        // Trạng thái (readonly)
+        public int RegistrationCount { get; set; }
+        public int SubmissionCount { get; set; }
+        public bool HasStarted { get; set; }
+        public bool HasSubmissions { get; set; }
+
+        // Rounds hiện có (readonly, không sửa trực tiếp)
+        public List<RegistrationRoundReadDto> ExistingRounds { get; set; } = new();
+        public RegistrationRoundCreateDto? NewRound { get; set; }
+
+        // Ảnh, tài liệu, nhà tài trợ hiện có (readonly, quản lý qua AJAX)
+        public List<ImageReadDto> Images { get; set; } = new();
+        public List<DocumentReadDto> Documents { get; set; } = new();
+        public List<CompetitionSponsorReadDto> ExistingCompetitionSponsors { get; set; } = new();
+    }
+
+    public class RegistrationRoundReadDto
+    {
+        public int RoundId { get; set; }
+        public string RoundName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int RegistrationCount { get; set; }
+        public bool HasRegistrations => RegistrationCount > 0;
+        public bool IsActive => DateTime.Now >= StartDate && DateTime.Now <= EndDate;
+        public bool IsPast => DateTime.Now > EndDate;
     }
 }

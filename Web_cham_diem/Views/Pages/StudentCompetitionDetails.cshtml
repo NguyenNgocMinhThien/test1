@@ -5,7 +5,9 @@
     ViewData["ActivePage"] = "Competitions";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    var isRegistrationOpen = Model.Status == "Active" && DateTime.UtcNow <= Model.RegistrationDeadline;
+    var latestRegDeadline = Model.RegistrationRounds.Any() ? Model.RegistrationRounds.Max(r => r.EndDate) : (DateTime?)null;
+    var hasActiveRound = Model.RegistrationRounds.Any(r => DateTime.UtcNow >= r.StartDate && DateTime.UtcNow <= r.EndDate);
+    var isRegistrationOpen = Model.Status == "Active" && DateTime.UtcNow < Model.StartDate && hasActiveRound;
     var statusBadgeClass = Model.Status switch
     {
         "Active" => "bg-success",
@@ -37,15 +39,15 @@
 
     var now = DateTime.UtcNow;
     var currentPhase = now < Model.StartDate ? "prestart"
-        : now <= Model.RegistrationDeadline ? "registration"
+        : (latestRegDeadline.HasValue && now <= latestRegDeadline.Value) ? "registration"
         : now <= Model.SubmissionDeadline ? "submission"
         : now <= Model.EndDate ? "evaluation"
         : "completed";
 
     var stages = new[]
-{
+    {
         new { Title = "Mở cuộc thi", Date = Model.StartDate, Description = "Chính thức khởi động" },
-        new { Title = "Hạn chót đăng ký", Date = Model.RegistrationDeadline, Description = "Đóng cổng tiếp nhận đăng ký" },
+        new { Title = "Hạn chót đăng ký", Date = latestRegDeadline ?? Model.StartDate, Description = "Đóng cổng tiếp nhận đăng ký" },
         new { Title = "Hạn chót nộp bài", Date = Model.SubmissionDeadline, Description = "Hệ thống khóa chức năng nộp bài" },
         new { Title = "Kết thúc & Công bố", Date = Model.EndDate, Description = "Trao giải và tổng kết" }
     };

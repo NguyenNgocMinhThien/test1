@@ -43,7 +43,6 @@ public class CompetitiveController : Controller
                 c.Category,
                 c.StartDate,
                 c.EndDate,
-                c.RegistrationDeadline,
                 c.SubmissionDeadline,
                 c.MaxParticipants,
                 c.MaxTeamSize,
@@ -69,13 +68,19 @@ public class CompetitiveController : Controller
     [Route("Competitions/Register/{id:int}")]
     public async Task<IActionResult> Register(int id)
     {
-        var competition = await _context.Competitions.FirstOrDefaultAsync(c => c.CompetitionId == id);
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == id);
         if (competition == null)
             return NotFound("Cuộc thi không tồn tại.");
 
-        if (competition.Status != "Active" || DateTime.UtcNow > competition.RegistrationDeadline)
+        var nowUtc = DateTime.UtcNow;
+        var hasActiveRound = competition.RegistrationRounds
+            .Any(r => nowUtc >= r.StartDate && nowUtc <= r.EndDate);
+
+        if (competition.Status != "Active" || nowUtc >= competition.StartDate || !hasActiveRound)
         {
-            TempData["ErrorMessage"] = "Cuộc thi đã đóng đăng ký hoặc không còn hiệu lực.";
+            TempData["ErrorMessage"] = "Cuộc thi đã đóng đăng ký hoặc không trong đợt đăng ký.";
             return RedirectToAction("Details", new { id });
         }
 
@@ -106,13 +111,19 @@ public class CompetitiveController : Controller
     [Route("Competitions/Register/{id:int}")]
     public async Task<IActionResult> Register(int id, CompetitionRegistrationViewModel model)
     {
-        var competition = await _context.Competitions.FirstOrDefaultAsync(c => c.CompetitionId == id);
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == id);
         if (competition == null)
             return NotFound("Cuộc thi không tồn tại.");
 
-        if (competition.Status != "Active" || DateTime.UtcNow > competition.RegistrationDeadline)
+        var nowUtc2 = DateTime.UtcNow;
+        var hasActiveRound2 = competition.RegistrationRounds
+            .Any(r => nowUtc2 >= r.StartDate && nowUtc2 <= r.EndDate);
+
+        if (competition.Status != "Active" || nowUtc2 >= competition.StartDate || !hasActiveRound2)
         {
-            TempData["ErrorMessage"] = "Cuộc thi đã đóng đăng ký hoặc không còn hiệu lực.";
+            TempData["ErrorMessage"] = "Cuộc thi đã đóng đăng ký hoặc không trong đợt đăng ký.";
             return RedirectToAction("Details", new { id });
         }
 
@@ -131,6 +142,10 @@ public class CompetitiveController : Controller
         {
             return RedirectToAction("RegistrationDetail", new { id });
         }
+
+        // Tìm round đang hoạt động để lưu vào registration
+        var activeRound = competition.RegistrationRounds
+            .FirstOrDefault(r => nowUtc2 >= r.StartDate && nowUtc2 <= r.EndDate);
 
         var currentCount = await _context.Registrations
             .CountAsync(r => r.CompetitionId == id && r.Status != "Withdrawn");
@@ -224,6 +239,7 @@ public class CompetitiveController : Controller
             UserId = user.UserId,
             CompetitionId = competition.CompetitionId,
             TeamId = team?.TeamId,
+            RoundId = activeRound?.RoundId,
             RegistrationType = team != null ? "Team" : "Individual",
             Status = "Pending",
             Notes = model.Notes?.Trim(),
@@ -262,13 +278,17 @@ public class CompetitiveController : Controller
 
     private CompetitionRegistrationViewModel BuildRegistrationViewModel(Competitions competition, Users user)
     {
+        var latestDeadline = competition.RegistrationRounds.Any()
+            ? competition.RegistrationRounds.Max(r => r.EndDate)
+            : (DateTime?)null;
+
         return new CompetitionRegistrationViewModel
         {
             CompetitionId = competition.CompetitionId,
             CompetitionName = competition.CompetitionName,
             Category = competition.Category ?? "Chưa xác định",
             Description = competition.Description,
-            RegistrationDeadline = competition.RegistrationDeadline,
+            LatestRegistrationDeadline = latestDeadline,
             SubmissionDeadline = competition.SubmissionDeadline,
             IsTeamBased = competition.IsTeamBased,
             MaxTeamSize = competition.MaxTeamSize,
@@ -276,7 +296,6 @@ public class CompetitiveController : Controller
             FullName = user.FullName,
             StudentId = user.StudentId ?? string.Empty,
             Email = user.Email,
-  
         };
     }
 
@@ -306,6 +325,7 @@ public class CompetitiveController : Controller
             .Include(c => c.Submissions)
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionDocuments)
+            .Include(c => c.RegistrationRounds)
             .Include(c => c.Teams)
                 .ThenInclude(t => t.Registrations)
             .Include(c => c.Teams)

@@ -1,4 +1,4 @@
-﻿using Web_cham_diem.Models;
+using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
 
 namespace Web_cham_diem.Services;
@@ -17,4 +17,24 @@ public interface ICompetitionService
     Task<bool> DeleteCompetitionAsync(int competitionId);
     Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus);
     Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync();
+
+    /// <summary>Thêm đợt đăng ký mới. Chỉ được gọi khi cuộc thi chưa bắt đầu.</summary>
+    Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto);
+
+    // ─── Images ────────────────────────────────────────────────────────────
+    Task<bool> UploadImagesAsync(int competitionId, List<string> base64DataList);
+    Task<bool> DeleteImageAsync(int imageId, int competitionId);
+    Task<bool> SetThumbnailAsync(int imageId, int competitionId);
+
+    // ─── Documents ─────────────────────────────────────────────────────────
+    Task<bool> UploadDocumentsAsync(int competitionId, List<string> base64DataList, List<string> fileNames);
+    Task<bool> DeleteDocumentAsync(int documentId, int competitionId);
+    Task<(byte[] data, string fileName, string contentType)?> GetDocumentFileAsync(int documentId, int competitionId);
+
+    // ─── Sponsors ──────────────────────────────────────────────────────────
+    Task<List<SponsorSearchDto>> GetAllSponsorsForSearchAsync();
+    Task<bool> AddSponsorToCompetitionAsync(int competitionId, AddSponsorToCompetitionDto dto);
+    Task<bool> CreateAndLinkSponsorAsync(int competitionId, SponsorCreateDto dto);
+    Task<bool> RemoveSponsorFromCompetitionAsync(int competitionSponsorId, int competitionId);
+    Task<bool> UpdateSponsorLinkAsync(int competitionSponsorId, AddSponsorToCompetitionDto dto);
 }

@@ -8,8 +8,8 @@
         public string? Category { get; set; } // Lĩnh vực thi
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public DateTime RegistrationDeadline { get; set; }
         public DateTime SubmissionDeadline { get; set; }
+        public int MinParticipants { get; set; } = 0;
         public int MaxParticipants { get; set; }
         public int MaxTeamSize { get; set; }
         public decimal MaxScore { get; set; } = 100;
