@@ -631,7 +631,9 @@ public class CompetitionService : ICompetitionService
             competition.Prize       = model.Prize;
             competition.UpdatedAt   = now;
 
-            // === Trường hợp A: Chưa có đăng ký — sửa toàn bộ ===
+            // ────────────────────────────────────────────────────────────────────
+            // CASE 1: Chưa có đăng ký — sửa toàn bộ (trừ rounds, quản lý qua AJAX)
+            // ────────────────────────────────────────────────────────────────────
             if (!hasRegistrations)
             {
                 var startDate          = ToUtc(model.StartDate);
@@ -640,15 +642,20 @@ public class CompetitionService : ICompetitionService
 
                 if (endDate <= startDate)
                     throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
-
                 if (submissionDeadline > endDate)
                     throw new InvalidOperationException("Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
-
                 if (model.MinParticipants > model.MaxParticipants)
                     throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
-
                 if (model.IsTeamBased && model.MaxTeamSize < 2)
                     throw new InvalidOperationException("Cuộc thi theo đội phải có tối thiểu 2 thành viên/đội.");
+
+                // Khi dời StartDate, kiểm tra các rounds hiện có vẫn kết thúc trước StartDate mới
+                foreach (var r in competition.RegistrationRounds)
+                {
+                    if (r.EndDate > startDate)
+                        throw new InvalidOperationException(
+                            $"Đợt \"{r.RoundName}\" kết thúc {r.EndDate:dd/MM/yyyy HH:mm} — phải trước ngày bắt đầu cuộc thi ({startDate:dd/MM/yyyy HH:mm}). Vui lòng xóa hoặc điều chỉnh đợt đó trước.");
+                }
 
                 competition.CompetitionName    = model.CompetitionName;
                 competition.Category           = model.Category;
@@ -660,159 +667,113 @@ public class CompetitionService : ICompetitionService
                 competition.MaxTeamSize        = model.IsTeamBased ? model.MaxTeamSize : 1;
                 competition.IsTeamBased        = model.IsTeamBased;
 
-                // Xóa rounds cũ và tạo lại
-                _context.RegistrationRounds.RemoveRange(competition.RegistrationRounds);
+                // Rounds được quản lý hoàn toàn qua AJAX (AddRegistrationRound / DeleteRound)
+                // — không xóa/tạo lại tại đây để tránh mất dữ liệu khi form submit
 
-                if (model.RegistrationRounds != null && model.RegistrationRounds.Count > 0)
-                {
-                    ValidateRounds(model.RegistrationRounds, startDate);
-                    foreach (var round in model.RegistrationRounds)
-                    {
-                        _context.RegistrationRounds.Add(new RegistrationRounds
-                        {
-                            CompetitionId = competitionId,
-                            RoundName     = round.RoundName,
-                            StartDate     = ToUtc(round.StartDate),
-                            EndDate       = ToUtc(round.EndDate),
-                            CreatedAt     = now
-                        });
-                    }
-                }
-
-                // Xóa tiêu chí cũ và tạo lại
+                // Cập nhật ScoringCriteria
                 if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
                 {
                     _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                    foreach (var criteria in model.ScoringCriteria)
-                    {
+                    foreach (var c in model.ScoringCriteria)
                         _context.ScoringCriteria.Add(new ScoringCriteria
                         {
                             CompetitionId = competitionId,
-                            CriteriaName  = criteria.CriteriaName,
-                            Description   = criteria.Description,
-                            MaxScore      = criteria.MaxScore,
-                            Weight        = criteria.Weight,
-                            Order         = criteria.Order,
+                            CriteriaName  = c.CriteriaName,
+                            Description   = c.Description,
+                            MaxScore      = c.MaxScore,
+                            Weight        = c.Weight,
+                            Order         = c.Order,
                             CreatedAt     = now
                         });
-                    }
                 }
             }
-            else // === Đã có đăng ký ===
+            // ────────────────────────────────────────────────────────────────────
+            // Đã có đăng ký
+            // ────────────────────────────────────────────────────────────────────
+            else if (hasSubmissions)
             {
-                // === Trường hợp E: Đã có bài nộp — khóa tiêu chí và lịch trình ===
-                if (hasSubmissions)
+                // CASE 4: Đã có bài nộp — chỉ Description/Rules/Prize (đã cập nhật ở trên)
+                // Mọi trường khác đều bị khóa, backend không cập nhật
+            }
+            else if (hasStarted)
+            {
+                // CASE 3: Đã bắt đầu, chưa có bài nộp — cập nhật criteria được
+                if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
                 {
-                    // Không cho sửa ScoringCriteria, StartDate, EndDate, SubmissionDeadline,
-                    // MaxParticipants, MaxTeamSize, IsTeamBased, RegistrationRounds
-                    // Chỉ còn Description/Rules/Prize đã cập nhật ở trên
+                    _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
+                    foreach (var c in model.ScoringCriteria)
+                        _context.ScoringCriteria.Add(new ScoringCriteria
+                        {
+                            CompetitionId = competitionId,
+                            CriteriaName  = c.CriteriaName,
+                            Description   = c.Description,
+                            MaxScore      = c.MaxScore,
+                            Weight        = c.Weight,
+                            Order         = c.Order,
+                            CreatedAt     = now
+                        });
                 }
-                else
+            }
+            else
+            {
+                // CASE 2: Có đăng ký, chưa bắt đầu
+                if (model.IsTeamBased != competition.IsTeamBased)
+                    throw new InvalidOperationException("Không thể thay đổi hình thức thi sau khi đã có người đăng ký.");
+
+                if (competition.IsTeamBased && model.MaxTeamSize < competition.MaxTeamSize)
+                    throw new InvalidOperationException(
+                        $"Không thể giảm số thành viên tối đa từ {competition.MaxTeamSize} xuống {model.MaxTeamSize} khi đã có người đăng ký.");
+
+                var currentRegCount = await _context.Registrations
+                    .CountAsync(r => r.CompetitionId == competitionId);
+                if (model.MaxParticipants < currentRegCount)
+                    throw new InvalidOperationException(
+                        $"Không thể giảm số lượng tối đa xuống {model.MaxParticipants} khi đã có {currentRegCount} người đăng ký.");
+
+                if (model.MinParticipants > model.MaxParticipants)
+                    throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
+
+                var newStartDate          = ToUtc(model.StartDate);
+                var newEndDate            = ToUtc(model.EndDate);
+                var newSubmissionDeadline = ToUtc(model.SubmissionDeadline);
+
+                if (newEndDate <= newStartDate)
+                    throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+                if (newSubmissionDeadline > newEndDate)
+                    throw new InvalidOperationException("Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
+
+                // Khi dời StartDate, kiểm tra rounds hiện có vẫn kết thúc trước StartDate mới
+                foreach (var r in competition.RegistrationRounds)
                 {
-                    // === Trường hợp D: Đã bắt đầu — khóa lịch trình và cấu trúc ===
-                    if (hasStarted)
-                    {
-                        // Không cho sửa StartDate, EndDate, RegistrationRounds,
-                        // MaxParticipants, MaxTeamSize, IsTeamBased
-                        // Cho phép sửa ScoringCriteria (chưa có bài nộp)
-                        if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
-                        {
-                            _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                            foreach (var criteria in model.ScoringCriteria)
-                            {
-                                _context.ScoringCriteria.Add(new ScoringCriteria
-                                {
-                                    CompetitionId = competitionId,
-                                    CriteriaName  = criteria.CriteriaName,
-                                    Description   = criteria.Description,
-                                    MaxScore      = criteria.MaxScore,
-                                    Weight        = criteria.Weight,
-                                    Order         = criteria.Order,
-                                    CreatedAt     = now
-                                });
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // === Trường hợp B+C: Đã có đăng ký nhưng chưa bắt đầu ===
-
-                        // Không cho đổi IsTeamBased
-                        if (model.IsTeamBased != competition.IsTeamBased)
-                            throw new InvalidOperationException("Không thể thay đổi hình thức thi sau khi đã có người đăng ký.");
-
-                        // Không cho giảm MaxParticipants dưới số đã đăng ký
-                        var currentRegCount = await _context.Registrations
-                            .CountAsync(r => r.CompetitionId == competitionId);
-                        if (model.MaxParticipants < currentRegCount)
-                            throw new InvalidOperationException(
-                                $"Không thể giảm số lượng tối đa xuống {model.MaxParticipants} khi đã có {currentRegCount} người đăng ký.");
-
-                        // Cho phép dời ngày (C)
-                        var newStartDate          = ToUtc(model.StartDate);
-                        var newEndDate            = ToUtc(model.EndDate);
-                        var newSubmissionDeadline = ToUtc(model.SubmissionDeadline);
-
-                        if (newEndDate <= newStartDate)
-                            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
-
-                        if (newSubmissionDeadline > newEndDate)
-                            throw new InvalidOperationException("Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
-
-                        competition.StartDate          = newStartDate;
-                        competition.EndDate            = newEndDate;
-                        competition.SubmissionDeadline = newSubmissionDeadline;
-                        competition.MinParticipants    = model.MinParticipants;
-                        competition.MaxParticipants    = model.MaxParticipants;
-
-                        // Cập nhật ScoringCriteria (B - chưa có bài nộp)
-                        if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
-                        {
-                            _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                            foreach (var criteria in model.ScoringCriteria)
-                            {
-                                _context.ScoringCriteria.Add(new ScoringCriteria
-                                {
-                                    CompetitionId = competitionId,
-                                    CriteriaName  = criteria.CriteriaName,
-                                    Description   = criteria.Description,
-                                    MaxScore      = criteria.MaxScore,
-                                    Weight        = criteria.Weight,
-                                    Order         = criteria.Order,
-                                    CreatedAt     = now
-                                });
-                            }
-                        }
-
-                        // Thêm round mới nếu được gửi (C - gia hạn đăng ký)
-                        if (model.NewRound != null && !string.IsNullOrWhiteSpace(model.NewRound.RoundName))
-                        {
-                            var newRoundDto = new List<RegistrationRoundCreateDto> { model.NewRound };
-                            ValidateRounds(newRoundDto, newStartDate);
-
-                            // Kiểm tra không chồng chéo với rounds hiện có
-                            var existingRounds = competition.RegistrationRounds.ToList();
-                            var newStart = ToUtc(model.NewRound.StartDate);
-                            var newEnd   = ToUtc(model.NewRound.EndDate);
-
-                            foreach (var existing in existingRounds)
-                            {
-                                if (newStart <= existing.EndDate && newEnd >= existing.StartDate)
-                                    throw new InvalidOperationException(
-                                        $"Đợt mới chồng chéo với đợt \"{existing.RoundName}\" ({existing.StartDate:dd/MM/yyyy} - {existing.EndDate:dd/MM/yyyy}).");
-                            }
-
-                            _context.RegistrationRounds.Add(new RegistrationRounds
-                            {
-                                CompetitionId = competitionId,
-                                RoundName     = model.NewRound.RoundName,
-                                StartDate     = newStart,
-                                EndDate       = newEnd,
-                                CreatedAt     = now
-                            });
-                        }
-                    }
+                    if (r.EndDate > newStartDate)
+                        throw new InvalidOperationException(
+                            $"Đợt \"{r.RoundName}\" kết thúc {r.EndDate:dd/MM/yyyy HH:mm} — phải trước ngày bắt đầu mới ({newStartDate:dd/MM/yyyy HH:mm}).");
                 }
+
+                competition.StartDate          = newStartDate;
+                competition.EndDate            = newEndDate;
+                competition.SubmissionDeadline = newSubmissionDeadline;
+                competition.MinParticipants    = model.MinParticipants;
+                competition.MaxParticipants    = model.MaxParticipants;
+
+                // Cập nhật ScoringCriteria (chưa có bài nộp nên được phép)
+                if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
+                {
+                    _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
+                    foreach (var c in model.ScoringCriteria)
+                        _context.ScoringCriteria.Add(new ScoringCriteria
+                        {
+                            CompetitionId = competitionId,
+                            CriteriaName  = c.CriteriaName,
+                            Description   = c.Description,
+                            MaxScore      = c.MaxScore,
+                            Weight        = c.Weight,
+                            Order         = c.Order,
+                            CreatedAt     = now
+                        });
+                }
+
+                // Rounds: quản lý qua AJAX (AddRegistrationRound / DeleteRound)
             }
 
             await _context.SaveChangesAsync();
@@ -885,6 +846,35 @@ public class CompetitionService : ICompetitionService
         _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
         _context.RegistrationRounds.RemoveRange(competition.RegistrationRounds);
         _context.Competitions.Remove(competition);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // ===== DELETE REGISTRATION ROUND =====
+
+    public async Task<bool> DeleteRegistrationRoundAsync(int roundId, int competitionId)
+    {
+        var round = await _context.RegistrationRounds
+            .Include(r => r.Registrations)
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+
+        if (round == null) return false;
+
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+
+        if (competition != null && DateTime.UtcNow >= competition.StartDate)
+            throw new InvalidOperationException("Không thể xóa đợt đăng ký sau khi cuộc thi đã bắt đầu.");
+
+        if (competition != null && competition.RegistrationRounds.Count <= 1)
+            throw new InvalidOperationException("Không thể xóa — cuộc thi phải có ít nhất một đợt đăng ký.");
+
+        if (round.Registrations.Any())
+            throw new InvalidOperationException(
+                $"Đợt \"{round.RoundName}\" đã có {round.Registrations.Count} người đăng ký — không thể xóa.");
+
+        _context.RegistrationRounds.Remove(round);
         await _context.SaveChangesAsync();
         return true;
     }

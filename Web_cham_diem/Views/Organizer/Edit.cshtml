@@ -127,7 +127,7 @@
     }
 
     <!-- Main form -->
-    <form method="post" asp-action="Edit" asp-route-id="@cid" id="editForm">
+    <form method="post" asp-action="Edit" asp-route-id="@cid" id="editForm" novalidate>
         <input type="hidden" asp-for="CompetitionId" />
         <input type="hidden" asp-for="RegistrationCount" />
         <input type="hidden" asp-for="SubmissionCount" />
@@ -246,7 +246,9 @@
                         </div>
                         <div class="col-md-3" id="maxTeamSizeGroup" style="@(Model.IsTeamBased ? "" : "display:none")">
                             <label class="form-label">Tối đa thành viên/đội</label>
-                            <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" />
+                            <input type="number" id="MaxTeamSize" name="MaxTeamSize"
+                                   value="@Model.MaxTeamSize" class="form-control" min="2"
+                                   @(Model.IsTeamBased ? "" : "disabled") />
                         </div>
                     </div>
 
@@ -259,29 +261,39 @@
                     </div>
 
                     <!-- Rounds hiện có -->
+                    @{
+                        var seTz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                    }
                     @foreach (var r in Model.ExistingRounds)
                     {
-                        <div class="round-item" style="@(canEditRounds ? "" : "opacity:.7")">
+                        <div class="round-item" id="round-@r.RoundId" style="@(canEditRounds ? "" : "opacity:.7")">
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Tên đợt</label>
                                 <div class="fw-semibold">@r.RoundName</div>
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Bắt đầu</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).ToString("dd/MM/yyyy HH:mm")</div>
+                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Kết thúc</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")).ToString("dd/MM/yyyy HH:mm")</div>
+                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
                             </div>
-                            <div class="d-flex align-items-end">
+                            <div class="d-flex align-items-end gap-2">
                                 @if (r.RegistrationCount > 0)
                                 {
                                     <span class="badge bg-success">@r.RegistrationCount đăng ký</span>
                                 }
-                                else if (r.IsPast && canEditRounds)
+                                else if (r.IsPast)
                                 {
                                     <span class="badge bg-secondary">Đã qua</span>
+                                }
+                                @if (canEditRounds && r.RegistrationCount == 0)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            onclick="deleteRound(@r.RoundId)" title="Xóa đợt này">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -741,6 +753,32 @@
         }
     }
 
+    // ═══════════════════════════════════ ROUNDS ══════════════════════════════
+
+    async function deleteRound(roundId) {
+        const allRounds = document.querySelectorAll('.round-item[id^="round-"]');
+        if (allRounds.length <= 1) {
+            showToast('Không thể xóa — cuộc thi phải có ít nhất một đợt đăng ký.', 'warning');
+            return;
+        }
+        if (!confirm('Xóa đợt đăng ký này? Hành động không thể hoàn tác.')) return;
+        const res = await fetch(`/Organizer/DeleteRound?roundId=${roundId}&competitionId=${CID}`, {
+            method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById(`round-${roundId}`)?.remove();
+            showToast('Đã xóa đợt đăng ký.', 'success');
+            // Ẩn nút xóa nếu chỉ còn 1 đợt
+            const remaining = document.querySelectorAll('.round-item[id^="round-"]');
+            if (remaining.length === 1) {
+                remaining[0].querySelector('button[onclick^="deleteRound"]')?.remove();
+            }
+        } else {
+            showToast(data.message, 'danger');
+        }
+    }
+
     // ═══════════════════════════════════ IMAGES ══════════════════════════════
 
     let pendingImages = [];
@@ -1007,17 +1045,56 @@
         });
     }
 
-    // Toggle team size
+    // Toggle team size — phải set disabled để browser validation không block submit
+    function syncTeamSizeField(isTeam) {
+        const g   = document.getElementById('maxTeamSizeGroup');
+        const inp = document.getElementById('MaxTeamSize');
+        if (g)   g.style.display = isTeam ? '' : 'none';
+        if (inp) inp.disabled    = !isTeam;
+    }
+
     document.getElementById('chkTeam')?.addEventListener('change', function() {
-        const g = document.getElementById('maxTeamSizeGroup');
-        if (g) g.style.display = this.checked ? '' : 'none';
+        syncTeamSizeField(this.checked);
     });
+
+    const ACTIVE_TAB_KEY = 'editCompetitionTab_@cid';
 
     document.addEventListener('DOMContentLoaded', () => {
         updateTotalWeight();
         updateHiddenWeightValues();
+        const chk = document.getElementById('chkTeam');
+        syncTeamSizeField(chk ? chk.checked : false);
+
+        // Khôi phục tab đang mở trước khi submit
+        const savedTab = sessionStorage.getItem(ACTIVE_TAB_KEY);
+        if (savedTab) {
+            const tabEl = document.querySelector(`[href="${savedTab}"]`);
+            if (tabEl) bootstrap.Tab.getOrCreateInstance(tabEl).show();
+            sessionStorage.removeItem(ACTIVE_TAB_KEY);
+        }
+
+        // Nếu có lỗi → scroll lên đầu để thấy thông báo
+        const errDiv = document.querySelector('.alert-danger');
+        if (errDiv) {
+            errDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Lưu tab hiện tại khi user chuyển tab
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tabBtn => {
+            tabBtn.addEventListener('shown.bs.tab', e => {
+                const activeHref = e.target.getAttribute('href');
+                sessionStorage.setItem(ACTIVE_TAB_KEY, activeHref);
+            });
+        });
     });
 
-    document.getElementById('editForm').addEventListener('submit', () => updateHiddenWeightValues());
+    document.getElementById('editForm').addEventListener('submit', () => {
+        updateHiddenWeightValues();
+        const chk = document.getElementById('chkTeam');
+        syncTeamSizeField(chk ? chk.checked : false);
+        // Lưu tab đang active để khôi phục sau reload
+        const activeTab = document.querySelector('[data-bs-toggle="tab"].active');
+        if (activeTab) sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab.getAttribute('href'));
+    });
 </script>
 }
