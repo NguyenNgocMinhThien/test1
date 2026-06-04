@@ -592,16 +592,12 @@
     </div>
 </div>
 
-<!-- Modal Chi Tiết & Timeline Quản lý -->
+<!-- Modal Chi Tiết -->
 <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content" style="border-radius:12px; border:none;">
-            <div class="modal-header border-bottom-0 bg-light rounded-top-3">
-                <h5 class="modal-title fw-bold text-dark" id="modalTitle">Chi tiết Cuộc thi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4" id="modalBody">
-                <div class="text-center">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius:12px; border:none; max-height:92vh;">
+            <div class="modal-body p-0" id="modalBody">
+                <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Đang tải...</span>
                     </div>
@@ -625,155 +621,289 @@
 @section Scripts {
     <script>
         function loadCompetitionDetail(competitionId) {
+            document.getElementById('modalBody').innerHTML =
+                '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
+            document.getElementById('editLink').href = `/Organizer/Edit/${competitionId}`;
+
             fetch(`/Organizer/GetCompetitionDetail?id=${competitionId}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('modalTitle').textContent = data.competitionName;
-                    document.getElementById('editLink').href = `/Organizer/Edit/${data.competitionId}`;
-
-                    // Helper: format ngày giờ UTC → giờ Việt Nam hiển thị
-                    const fmtDate = (iso, opts) =>
-                        new Date(iso).toLocaleDateString('vi-VN', opts || { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    const fmtDateTime = iso =>
-                        new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-                    const now = new Date();
-                    const regDeadline = new Date(data.registrationDeadline);
-                    const subDeadline = new Date(data.submissionDeadline);
-
-                    // Loại hình: team hay cá nhân
-                    const typeLabel = data.isTeamBased
-                        ? `👥 Thi Theo Đội &nbsp;(tối đa <strong>${data.maxParticipants}</strong> đội &bull; <strong>${data.maxTeamSize}</strong> thành viên/đội)`
-                        : `👤 Cá Nhân &nbsp;(tối đa <strong>${data.maxParticipants}</strong> người)`;
-
-                    const typeColor = data.isTeamBased ? '#dbeafe' : '#dcfce7';
-                    const typeBorder = data.isTeamBased ? '#3b82f6' : '#22c55e';
-
-                    // Bảng tiêu chí
-                    let criteriaRows = '';
-                    (data.scoringCriteria || []).forEach(c => {
-                        criteriaRows += `
-                            <tr class="border-bottom">
-                                <td>${c.criteriaName}</td>
-                                <td>${c.maxScore}</td>
-                                <td class="text-end"><span class="badge bg-primary">${(c.weight * 100).toFixed(1)}%</span></td>
-                            </tr>`;
-                    });
-
-                    const html = `
-                        <div class="row">
-                            <div class="col-md-7">
-                                <h5 class="fw-bold mb-1" style="color: var(--organizer-accent);">${data.competitionName}</h5>
-                                <p class="small text-muted mb-3">${data.category || 'Không xác định'}</p>
-
-                                <!-- Loại cuộc thi -->
-                                <div class="small mb-3 px-3 py-2 rounded" style="background:${typeColor}; border-left: 4px solid ${typeBorder};">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    <strong>Loại cuộc thi:</strong> ${typeLabel}
-                                </div>
-
-                                <!-- Lịch trình -->
-                                <h6 class="fw-bold text-dark mt-3 mb-2">
-                                    <i class="bi bi-calendar2-check me-2 text-primary"></i>Lịch trình
-                                </h6>
-                                <div class="p-2 bg-light rounded small text-muted">
-                                    <div class="mb-1"><strong>Ngày bắt đầu:</strong> ${fmtDate(data.startDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                                    <div class="mb-1"><strong>Ngày kết thúc:</strong> ${fmtDate(data.endDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                                    <div class="mb-1"><strong>Hạn đăng ký:</strong> ${fmtDateTime(data.registrationDeadline)}</div>
-                                    <div><strong>Hạn nộp bài:</strong> ${fmtDateTime(data.submissionDeadline)}</div>
-                                </div>
-
-                                <!-- Mô tả & Thể lệ -->
-                                <h6 class="fw-bold text-dark mt-4 mb-2">
-                                    <i class="bi bi-file-text me-2 text-success"></i>Mô tả & Thể lệ
-                                </h6>
-                                <div class="p-3 bg-light rounded small text-muted" style="max-height: 120px; overflow-y: auto;">
-                                    ${data.description || '<em>Không có mô tả</em>'}
-                                </div>
-
-                                <!-- Luật lệ & Giải thưởng -->
-                                <h6 class="fw-bold text-dark mt-4 mb-2">
-                                    <i class="bi bi-award me-2 text-warning"></i>Luật lệ & Giải Thưởng
-                                </h6>
-                                ${data.rules
-                                    ? `<div class="p-2 bg-light rounded small text-muted mb-2"><strong>Luật lệ:</strong><br/>${data.rules}</div>`
-                                    : '<p class="small text-muted fst-italic">Không có luật lệ</p>'}
-                                ${data.prize
-                                    ? `<div class="p-2 bg-light rounded small text-muted"><strong>Giải thưởng:</strong><br/>${data.prize}</div>`
-                                    : ''}
-
-                                <!-- Tiêu chí chấm điểm -->
-                                <h6 class="fw-bold text-dark mt-4 mb-2">
-                                    <i class="bi bi-star me-2 text-warning"></i>Tiêu chí Chấm điểm
-                                </h6>
-                                <div class="small">
-                                    <table class="table table-sm table-borderless">
-                                        <thead>
-                                            <tr class="text-muted border-bottom">
-                                                <th style="width:50%">Tiêu chí</th>
-                                                <th style="width:20%">Thang điểm</th>
-                                                <th style="width:30%" class="text-end">Trọng số</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>${criteriaRows}</tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="col-md-5 border-start ps-4">
-                                <!-- Quản lý Vòng đời -->
-                                <h6 class="fw-bold text-dark mb-3">
-                                    <i class="bi bi-clock-history text-primary me-2"></i>Quản lý Vòng đời
-                                </h6>
-                                <div class="timeline-box">
-                                    <div class="timeline-step done">
-                                        <div class="fw-bold small">1. Mở Cổng Đăng ký</div>
-                                        <div class="text-muted" style="font-size:.75rem;">
-                                            Đã hoàn tất (${fmtDate(data.startDate)})
-                                        </div>
-                                    </div>
-                                    <div class="timeline-step ${now < regDeadline ? 'active' : 'done'}">
-                                        <div class="fw-bold small">2. Xét duyệt Hồ sơ</div>
-                                        <div class="text-muted" style="font-size:.75rem;">${fmtDateTime(data.registrationDeadline)}</div>
-                                    </div>
-                                    <div class="timeline-step ${now < subDeadline ? 'active' : 'done'}">
-                                        <div class="fw-bold small">3. Nhận Bài Dự Thi</div>
-                                        <div class="text-muted" style="font-size:.75rem;">${fmtDateTime(data.submissionDeadline)}</div>
-                                    </div>
-                                    <div class="timeline-step">
-                                        <div class="fw-bold small text-muted">4. Giám khảo Chấm điểm</div>
-                                        <div class="text-muted" style="font-size:.75rem;">Dự kiến: ${fmtDate(data.endDate)}</div>
-                                    </div>
-                                </div>
-
-                                <!-- Thống kê nhanh -->
-                                <h6 class="fw-bold text-dark mt-4 mb-3">
-                                    <i class="bi bi-graph-up me-2 text-success"></i>Thống kê
-                                </h6>
-                                <div class="d-flex gap-2">
-                                    <div class="flex-fill text-center p-3 bg-light rounded" style="border-left: 3px solid #0d6efd;">
-                                        <div class="small text-muted fw-bold">Đăng ký</div>
-                                        <div class="h5 fw-bold text-primary mb-0">${data.totalRegistrations}</div>
-                                    </div>
-                                    <div class="flex-fill text-center p-3 bg-light rounded" style="border-left: 3px solid #22c55e;">
-                                        <div class="small text-muted fw-bold">Được duyệt</div>
-                                        <div class="h5 fw-bold text-success mb-0">${data.approvedRegistrations}</div>
-                                    </div>
-                                    <div class="flex-fill text-center p-3 bg-light rounded" style="border-left: 3px solid #3b82f6;">
-                                        <div class="small text-muted fw-bold">Nộp bài</div>
-                                        <div class="h5 fw-bold text-info mb-0">${data.totalSubmissions}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-
-                    document.getElementById('modalBody').innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+                .then(r => r.json())
+                .then(d => buildDetailModal(d))
+                .catch(() => {
                     document.getElementById('modalBody').innerHTML =
-                        '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi khi tải dữ liệu</div>';
+                        '<div class="alert alert-danger m-3"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi khi tải dữ liệu</div>';
                 });
+        }
+
+        function buildDetailModal(d) {
+            document.getElementById('editLink').href = `/Organizer/Edit/${d.competitionId}`;
+
+            const fmtDate = iso => new Date(iso).toLocaleDateString('vi-VN',
+                { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const fmtDT = iso => new Date(iso).toLocaleString('vi-VN',
+                { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const now = new Date();
+
+            // ── Status badge ──────────────────────────────────────────────────
+            const statusColors = {
+                'Draft':'#f59e0b','Active':'#22c55e','Closed':'#64748b','Completed':'#3b82f6'
+            };
+            const statusColor = statusColors[d.status] || '#64748b';
+            const statusLabel = d.statusDisplay || d.status;
+
+            // ── 1. Header ─────────────────────────────────────────────────────
+            const bannerBg = d.bannerImageUrl
+                ? `background:url('${d.bannerImageUrl}') center/cover; min-height:180px;`
+                : `background:linear-gradient(135deg,#059669,#10b981); min-height:180px;`;
+
+            // ── 2. Thống kê nhanh ─────────────────────────────────────────────
+            const stats = [
+                { label:'Đăng ký',    val: d.totalRegistrations,    color:'#0d6efd' },
+                { label:'Được duyệt', val: d.approvedRegistrations,  color:'#22c55e' },
+                { label:'Đã nộp',     val: d.totalSubmissions,       color:'#06b6d4' },
+                { label:'Đã chấm',    val: d.evaluatedSubmissions,   color:'#f59e0b' }
+            ];
+            const statsHtml = stats.map(s => `
+                <div class="text-center flex-fill p-2 rounded" style="border-top:3px solid ${s.color}; background:#f8fafc;">
+                    <div style="font-size:.7rem;color:#666;font-weight:700;text-transform:uppercase;">${s.label}</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:${s.color};">${s.val}</div>
+                </div>`).join('');
+
+            // ── 3. Timeline ───────────────────────────────────────────────────
+            const latestReg = d.latestRegistrationDeadline ? new Date(d.latestRegistrationDeadline) : null;
+            const subDL = new Date(d.submissionDeadline);
+            const endDT = new Date(d.endDate);
+
+            const tlStep = (num, title, dateStr, isDone, isActive) => {
+                const cls = isDone ? 'done' : (isActive ? 'active' : '');
+                return `<div class="timeline-step ${cls}">
+                    <div class="fw-bold small">${num}. ${title}</div>
+                    <div class="text-muted" style="font-size:.75rem;">${dateStr}</div>
+                </div>`;
+            };
+
+            const s1Done = now > new Date(d.startDate);
+            const s2Done = latestReg ? now > latestReg : false;
+            const s3Done = now > subDL;
+            const s4Done = now > endDT;
+
+            const timelineHtml = `<div class="timeline-box">
+                ${tlStep(1,'Mở Cổng Đăng ký', fmtDT(d.startDate), s1Done, !s1Done)}
+                ${tlStep(2,'Xét duyệt Hồ sơ', latestReg ? fmtDT(d.latestRegistrationDeadline) : '—', s2Done, s1Done && !s2Done)}
+                ${tlStep(3,'Nhận Bài Dự Thi',  fmtDT(d.submissionDeadline), s3Done, s2Done && !s3Done)}
+                ${tlStep(4,'Giám khảo Chấm điểm', 'Dự kiến: '+fmtDate(d.endDate), s4Done, s3Done && !s4Done)}
+            </div>`;
+
+            // ── 7. Tiêu chí ───────────────────────────────────────────────────
+            const criteriaRows = (d.scoringCriteria||[]).map(c => `
+                <tr>
+                    <td class="py-1">${c.criteriaName}</td>
+                    <td class="py-1 text-center">${c.maxScore}</td>
+                    <td class="py-1 text-end"><span class="badge" style="background:#0d6efd;">${(c.weight*100).toFixed(1)}%</span></td>
+                </tr>`).join('');
+
+            // ── 8. Đợt đăng ký ────────────────────────────────────────────────
+            const roundsHtml = (d.registrationRounds||[]).length === 0
+                ? '<p class="small text-muted fst-italic mb-0">Chưa có đợt đăng ký nào.</p>'
+                : `<div class="table-responsive"><table class="table table-sm table-hover mb-0">
+                    <thead class="table-light"><tr>
+                        <th class="py-1">Tên đợt</th>
+                        <th class="py-1">Bắt đầu</th>
+                        <th class="py-1">Kết thúc</th>
+                        <th class="py-1 text-center">Đăng ký</th>
+                    </tr></thead><tbody>
+                    ${(d.registrationRounds||[]).map(r => {
+                        const rEnd = new Date(r.endDate);
+                        const rActive = now >= new Date(r.startDate) && now <= rEnd;
+                        const rPast   = now > rEnd;
+                        const badge   = r.registrationCount > 0
+                            ? `<span class="badge bg-success">${r.registrationCount}</span>`
+                            : (rPast ? '<span class="badge bg-secondary">Đã qua</span>'
+                                     : (rActive ? '<span class="badge bg-warning text-dark">Đang mở</span>' : '<span class="badge bg-light text-muted">Sắp mở</span>'));
+                        return `<tr>
+                            <td class="py-1 fw-semibold">${r.roundName}</td>
+                            <td class="py-1 small">${fmtDT(r.startDate)}</td>
+                            <td class="py-1 small">${fmtDT(r.endDate)}</td>
+                            <td class="py-1 text-center">${badge}</td>
+                        </tr>`;
+                    }).join('')}
+                    </tbody></table></div>`;
+
+            // ── 9. Tài liệu ───────────────────────────────────────────────────
+            const docIcons = {pdf:'📕',doc:'📗',docx:'📗',xls:'📊',xlsx:'📊',ppt:'📎',pptx:'📎'};
+            const docsHtml = (d.documents||[]).length === 0
+                ? '<p class="small text-muted fst-italic mb-0">Chưa có tài liệu đính kèm.</p>'
+                : (d.documents||[]).map(doc => `
+                    <div class="d-flex align-items-center gap-2 py-2" style="border-bottom:1px solid #f0f0f0;">
+                        <span style="font-size:1.3rem;">${docIcons[doc.fileType]||'📄'}</span>
+                        <div class="flex-fill">
+                            <div class="fw-semibold" style="font-size:.85rem;">${doc.fileName}</div>
+                            <div class="text-muted" style="font-size:.72rem;">${doc.fileType.toUpperCase()} — ${new Date(doc.uploadedAt).toLocaleDateString('vi-VN')}</div>
+                        </div>
+                        <a href="/Organizer/DownloadDocument?documentId=${doc.documentId}&competitionId=${d.competitionId}"
+                           class="btn btn-sm btn-outline-primary" style="font-size:.75rem;" target="_blank">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </div>`).join('');
+
+            // ── 10. Nhà tài trợ ───────────────────────────────────────────────
+            const lvColors = {Gold:'#fef3c7',Silver:'#f1f5f9',Bronze:'#fdf4e8',General:'#ede9fe'};
+            const lvText   = {Gold:'#92400e',Silver:'#475569',Bronze:'#92480f',General:'#5b21b6'};
+            const spHtml = (d.sponsors||[]).length === 0
+                ? '<p class="small text-muted fst-italic mb-0">Chưa có nhà tài trợ.</p>'
+                : `<div class="d-flex flex-wrap gap-2">
+                    ${(d.sponsors||[]).map(s => `
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 rounded border" style="background:#fff;">
+                            ${s.logoUrl ? `<img src="${s.logoUrl}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;">` : ''}
+                            <div>
+                                <div class="fw-semibold" style="font-size:.85rem;">${s.sponsorName}</div>
+                                <span class="badge" style="background:${lvColors[s.sponsorshipLevel]||'#eee'};color:${lvText[s.sponsorshipLevel]||'#333'};font-size:.7rem;">${s.sponsorshipLevel}</span>
+                                ${s.contributionAmount > 0 ? `<span class="text-muted ms-1" style="font-size:.75rem;">${Number(s.contributionAmount).toLocaleString('vi-VN')} ${s.currency}</span>` : ''}
+                            </div>
+                        </div>`).join('')}
+                </div>`;
+
+            // ── 11. Thư viện ảnh ──────────────────────────────────────────────
+            const imgHtml = (d.images||[]).length === 0
+                ? '<p class="small text-muted fst-italic mb-0">Chưa có ảnh.</p>'
+                : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;">
+                    ${(d.images||[]).map(img => `
+                        <div style="position:relative;border-radius:6px;overflow:hidden;height:80px;">
+                            <img src="${img.imageUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">
+                            ${img.isThumbnail ? '<span style="position:absolute;bottom:3px;left:3px;background:#059669;color:#fff;font-size:.62rem;padding:1px 5px;border-radius:3px;">Thumb</span>' : ''}
+                        </div>`).join('')}
+                </div>`;
+
+            // ── 12. Thông tin quản trị ────────────────────────────────────────
+            const typeInfo = d.isTeamBased
+                ? `Thi theo đội — tối đa <strong>${d.maxParticipants}</strong> đội, <strong>${d.maxTeamSize}</strong> thành viên/đội`
+                : `Cá nhân — tối đa <strong>${d.maxParticipants}</strong> người`;
+
+            // ── Helper section ─────────────────────────────────────────────────
+            const sec = (icon, title, color, content) => `
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2" style="color:#333;border-left:3px solid ${color};padding-left:8px;">
+                        <i class="bi bi-${icon} me-1" style="color:${color};"></i>${title}
+                    </h6>
+                    ${content}
+                </div>`;
+
+            // ── Compose full HTML ──────────────────────────────────────────────
+            const html = `
+            <!-- 1. Header -->
+            <div style="${bannerBg} position:relative; display:flex; align-items:flex-end; padding:20px;">
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.6));border-radius:12px 12px 0 0;"></div>
+                <div style="position:relative;z-index:1;color:#fff;flex:1;">
+                    <div class="d-flex gap-2 align-items-center flex-wrap mb-1">
+                        <span class="badge" style="background:${statusColor};font-size:.75rem;">${statusLabel}</span>
+                        <span class="badge bg-dark bg-opacity-50" style="font-size:.72rem;">
+                            <i class="bi bi-${d.isTeamBased?'people-fill':'person-fill'} me-1"></i>
+                            ${d.isTeamBased?'Thi Theo Đội':'Cá Nhân'}
+                        </span>
+                    </div>
+                    <h5 class="fw-bold mb-0" style="text-shadow:0 1px 3px rgba(0,0,0,.5);">${d.competitionName}</h5>
+                    <div style="font-size:.82rem;opacity:.85;">${d.category||'Không xác định'}</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:12px;right:12px;z-index:2;"></button>
+            </div>
+
+            <div class="p-4">
+                <!-- 2. Thống kê nhanh -->
+                <div class="d-flex gap-3 mb-4">${statsHtml}</div>
+
+                <!-- 3. Timeline -->
+                ${sec('clock-history','Timeline','#0d6efd', timelineHtml)}
+
+                <!-- 4. Mô tả -->
+                ${sec('file-text','Mô tả','#22c55e',
+                    d.description
+                        ? `<div class="p-3 bg-light rounded small text-muted" style="max-height:120px;overflow-y:auto;white-space:pre-wrap;">${d.description}</div>`
+                        : '<p class="small text-muted fst-italic mb-0">Chưa có mô tả.</p>'
+                )}
+
+                <!-- 5. Thể lệ -->
+                ${sec('journal-text','Thể lệ / Quy định','#8b5cf6',
+                    d.rules
+                        ? `<div class="p-3 bg-light rounded small text-muted" style="max-height:120px;overflow-y:auto;white-space:pre-wrap;">${d.rules}</div>`
+                        : '<p class="small text-muted fst-italic mb-0">Chưa có thể lệ.</p>'
+                )}
+
+                <!-- 6. Giải thưởng -->
+                ${sec('trophy','Giải thưởng','#f59e0b',
+                    d.prize
+                        ? `<div class="p-3 rounded small" style="background:#fffbeb;border:1px solid #fcd34d;white-space:pre-wrap;">${d.prize}</div>`
+                        : '<p class="small text-muted fst-italic mb-0">Chưa có thông tin giải thưởng.</p>'
+                )}
+
+                <!-- 7. Tiêu chí chấm điểm -->
+                ${sec('bar-chart','Tiêu chí Chấm điểm','#0d6efd',
+                    (d.scoringCriteria||[]).length === 0
+                        ? '<p class="small text-muted fst-italic mb-0">Chưa có tiêu chí.</p>'
+                        : `<div class="table-responsive"><table class="table table-sm mb-0">
+                            <thead class="table-light"><tr>
+                                <th class="py-1">Tiêu chí</th>
+                                <th class="py-1 text-center">Thang điểm</th>
+                                <th class="py-1 text-end">Trọng số</th>
+                            </tr></thead>
+                            <tbody>${criteriaRows}</tbody>
+                           </table></div>`
+                )}
+
+                <!-- 8. Đợt đăng ký -->
+                ${sec('calendar3','Danh sách Đợt Đăng ký','#059669', roundsHtml)}
+
+                <!-- 9. Tài liệu -->
+                ${sec('file-earmark-text','Tài liệu Đính kèm','#6366f1', docsHtml)}
+
+                <!-- 10. Nhà tài trợ -->
+                ${sec('building','Nhà tài trợ','#f59e0b', spHtml)}
+
+                <!-- 11. Thư viện ảnh -->
+                ${sec('images','Thư viện Ảnh','#ec4899', imgHtml)}
+
+                <!-- 12. Thông tin quản trị -->
+                ${sec('gear','Thông tin Quản trị','#64748b',`
+                    <div class="row g-2 small">
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Hình thức:</span>
+                                <span class="ms-1">${typeInfo}</span>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Tối thiểu đội/người:</span>
+                                <strong class="ms-1">${d.minParticipants||0}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Ngày bắt đầu:</span>
+                                <strong class="ms-1">${fmtDT(d.startDate)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Ngày kết thúc:</span>
+                                <strong class="ms-1">${fmtDT(d.endDate)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Hạn nộp bài:</span>
+                                <strong class="ms-1">${fmtDT(d.submissionDeadline)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-2 bg-light rounded">
+                                <span class="text-muted">Hạn đăng ký (cuối):</span>
+                                <strong class="ms-1">${d.latestRegistrationDeadline ? fmtDT(d.latestRegistrationDeadline) : '—'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `)}
+            </div>`;
+
+            document.getElementById('modalBody').innerHTML = html;
         }
 
         function changeStatus(competitionId, newStatus) {

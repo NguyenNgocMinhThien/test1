@@ -61,6 +61,7 @@
         public DateTime SubmissionDeadline { get; set; }
         public DateTime? LatestRegistrationDeadline { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string StatusDisplay { get; set; } = string.Empty;
         public bool IsTeamBased { get; set; }
         public int MinParticipants { get; set; }
         public int MaxParticipants { get; set; }
@@ -68,8 +69,13 @@
         public int TotalRegistrations { get; set; }
         public int ApprovedRegistrations { get; set; }
         public int TotalSubmissions { get; set; }
+        public int EvaluatedSubmissions { get; set; }
+        public string? BannerImageUrl { get; set; }
         public List<ScoringCriteriaDto> ScoringCriteria { get; set; } = new();
         public List<RegistrationRoundReadDto> RegistrationRounds { get; set; } = new();
+        public List<ImageReadDto> Images { get; set; } = new();
+        public List<DocumentReadDto> Documents { get; set; } = new();
+        public List<CompetitionSponsorReadDto> Sponsors { get; set; } = new();
     }
 
     public class ScoringCriteriaDto
