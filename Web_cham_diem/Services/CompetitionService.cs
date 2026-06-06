@@ -606,6 +606,7 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
+            .Include(c => c.CompetitionRounds)
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
@@ -696,6 +697,18 @@ public class CompetitionService : ICompetitionService
             IsTeamBased        = competition.IsTeamBased,
             ScoringCriteria    = scoringCriteria,
             ExistingRounds     = existingRounds,
+            ExistingCompetitionRounds = competition.CompetitionRounds
+                .OrderBy(r => r.RoundOrder)
+                .Select(r => new CompetitionRoundReadDto
+                {
+                    RoundId      = r.RoundId,
+                    RoundName    = r.RoundName,
+                    RoundOrder   = r.RoundOrder,
+                    StartDate    = r.StartDate,
+                    EndDate      = r.EndDate,
+                    MaxAdvancing = r.MaxAdvancing,
+                    Status       = r.Status
+                }).ToList(),
             RegistrationCount  = totalRegistrations,
             SubmissionCount    = submissionCount,
             HasStarted         = now >= competition.StartDate,
@@ -1630,6 +1643,84 @@ public class CompetitionService : ICompetitionService
         link.DisplayOrder       = dto.DisplayOrder;
         link.UpdatedAt          = DateTime.UtcNow;
 
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // ===== COMPETITION ROUNDS (VÒNG THI) =====
+
+    public async Task<bool> AddCompetitionRoundAsync(int competitionId, CompetitionRoundCreateDto dto)
+    {
+        var competition = await _context.Competitions
+            .Include(c => c.CompetitionRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+        if (competition == null) return false;
+
+        var startDate = ToUtc(dto.StartDate);
+        var endDate   = ToUtc(dto.EndDate);
+
+        if (endDate <= startDate)
+            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+        if (startDate < competition.SubmissionDeadline)
+            throw new InvalidOperationException("Vòng thi phải bắt đầu sau hạn nộp bài.");
+        if (endDate > competition.EndDate)
+            throw new InvalidOperationException("Vòng thi phải kết thúc trước ngày kết thúc cuộc thi.");
+
+        var nextOrder = competition.CompetitionRounds.Any()
+            ? competition.CompetitionRounds.Max(r => r.RoundOrder) + 1 : 1;
+
+        _context.CompetitionRounds.Add(new CompetitionRounds
+        {
+            CompetitionId = competitionId,
+            RoundName     = dto.RoundName,
+            RoundOrder    = nextOrder,
+            StartDate     = startDate,
+            EndDate       = endDate,
+            MaxAdvancing  = dto.MaxAdvancing,
+            Status        = "Upcoming",
+            CreatedAt     = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateCompetitionRoundAsync(int roundId, int competitionId, UpdateCompetitionRoundDto dto)
+    {
+        var round = await _context.CompetitionRounds
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+        if (round == null) return false;
+
+        var competition = await _context.Competitions
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+        if (competition == null) return false;
+
+        var startDate = ToUtc(dto.StartDate);
+        var endDate   = ToUtc(dto.EndDate);
+
+        if (endDate <= startDate)
+            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+        if (startDate < competition.SubmissionDeadline)
+            throw new InvalidOperationException("Vòng thi phải bắt đầu sau hạn nộp bài.");
+        if (endDate > competition.EndDate)
+            throw new InvalidOperationException("Vòng thi phải kết thúc trước ngày kết thúc cuộc thi.");
+
+        round.RoundName    = dto.RoundName;
+        round.StartDate    = startDate;
+        round.EndDate      = endDate;
+        round.MaxAdvancing = dto.MaxAdvancing;
+        round.UpdatedAt    = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteCompetitionRoundAsync(int roundId, int competitionId)
+    {
+        var round = await _context.CompetitionRounds
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+        if (round == null) return false;
+
+        _context.CompetitionRounds.Remove(round);
         await _context.SaveChangesAsync();
         return true;
     }

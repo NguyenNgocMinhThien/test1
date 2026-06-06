@@ -178,6 +178,9 @@ namespace Web_cham_diem.Models.ViewModels
         public List<RegistrationRoundReadDto> ExistingRounds { get; set; } = new();
         public RegistrationRoundCreateDto? NewRound { get; set; }
 
+        // Vòng thi hiện có (readonly, quản lý qua AJAX)
+        public List<CompetitionRoundReadDto> ExistingCompetitionRounds { get; set; } = new();
+
         // Ảnh, tài liệu, nhà tài trợ hiện có (readonly, quản lý qua AJAX)
         public List<ImageReadDto> Images { get; set; } = new();
         public List<DocumentReadDto> Documents { get; set; } = new();
@@ -194,5 +197,26 @@ namespace Web_cham_diem.Models.ViewModels
         public bool HasRegistrations => RegistrationCount > 0;
         public bool IsActive => DateTime.Now >= StartDate && DateTime.Now <= EndDate;
         public bool IsPast => DateTime.Now > EndDate;
+    }
+
+    public class CompetitionRoundReadDto
+    {
+        public int RoundId { get; set; }
+        public string RoundName { get; set; } = string.Empty;
+        public int RoundOrder { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int? MaxAdvancing { get; set; }
+        public string Status { get; set; } = "Upcoming";
+        public bool IsActive => DateTime.UtcNow >= StartDate && DateTime.UtcNow <= EndDate;
+        public bool IsPast => DateTime.UtcNow > EndDate;
+    }
+
+    public class UpdateCompetitionRoundDto
+    {
+        public string RoundName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int? MaxAdvancing { get; set; }
     }
 }
