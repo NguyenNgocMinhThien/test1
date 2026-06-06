@@ -5,9 +5,9 @@ namespace Web_cham_diem.Models.ViewModels
         // ===== COMPETITION STATUS BREAKDOWN =====
         public int TotalCompetitions { get; set; }
         public int DraftCompetitions { get; set; }
-        public int OpenRegistrationCompetitions { get; set; }   // Active + round đang mở
-        public int AcceptingSubmissions { get; set; }            // Active + sau deadline đăng ký, trước SubmissionDeadline
-        public int GradingCompetitions { get; set; }             // Active + sau SubmissionDeadline
+        public int OpenRegistrationCompetitions { get; set; }
+        public int AcceptingSubmissions { get; set; }
+        public int GradingCompetitions { get; set; }
         public int CompletedCompetitions { get; set; }
 
         // ===== ACTIVITY METRICS =====
@@ -19,7 +19,7 @@ namespace Web_cham_diem.Models.ViewModels
         public int EvaluatedSubmissions { get; set; }
         public int ActiveJudges { get; set; }
         public int UrgentCompetitions { get; set; }
-        public decimal ScoringCompletionRate { get; set; }      // 0-100%
+        public decimal ScoringCompletionRate { get; set; }
 
         // ===== ALERTS =====
         public List<AlertItem> Alerts { get; set; } = new();
@@ -61,7 +61,7 @@ namespace Web_cham_diem.Models.ViewModels
         public int ApprovedRegistrations { get; set; }
         public int TotalSubmissions { get; set; }
         public int GradedSubmissions { get; set; }
-        public decimal GradingProgress { get; set; }    // 0-100
+        public decimal GradingProgress { get; set; }
         public bool UnderMinParticipants { get; set; }
         public int MinParticipants { get; set; }
         public string? ActiveRoundName { get; set; }

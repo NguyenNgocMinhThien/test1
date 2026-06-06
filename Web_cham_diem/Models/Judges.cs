@@ -17,5 +17,6 @@
 
         // Navigation properties
         public ICollection<Scores> Scores { get; set; } = new List<Scores>();
+        public ICollection<JudgeAssignments> JudgeAssignments { get; set; } = new List<JudgeAssignments>();
     }
 }

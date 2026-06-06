@@ -7,6 +7,7 @@
         public int CompetitionId { get; set; }
         public int LeaderId { get; set; } // UserId của trưởng đội
         public string? Description { get; set; }
+        public string? MemberList { get; set; }// Danh sách thành viên (có thể lưu dưới dạng JSON hoặc chuỗi phân tách)
         public string Status { get; set; } = "Active"; // Active, Disbanded
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

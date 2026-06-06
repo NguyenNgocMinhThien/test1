@@ -24,6 +24,8 @@ namespace Web_cham_diem.Models
         public DbSet<RegistrationRounds> RegistrationRounds { get; set; }
         public DbSet<Sponsors> Sponsors { get; set; }
         public DbSet<CompetitionSponsors> CompetitionSponsors { get; set; }
+        public DbSet<CompetitionRounds> CompetitionRounds { get; set; }
+        public DbSet<JudgeAssignments> JudgeAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -188,6 +190,11 @@ namespace Web_cham_diem.Models
                 .WithMany(t => t.Submissions)
                 .HasForeignKey(s => s.TeamId)
                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Submissions>()
+                .HasOne(s => s.CompetitionRound)
+                .WithMany(r => r.Submissions)
+                .HasForeignKey(s => s.CompetitionRoundId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Judges
             modelBuilder.Entity<Judges>()
@@ -199,7 +206,7 @@ namespace Web_cham_diem.Models
                 .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Judges>()
                 .HasOne(j => j.Competition)
-                .WithMany()
+                .WithMany(c => c.Judges)
                 .HasForeignKey(j => j.CompetitionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -297,6 +304,58 @@ namespace Web_cham_diem.Models
                 .WithMany(c => c.RegistrationRounds)
                 .HasForeignKey(rr => rr.CompetitionId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure CompetitionRounds
+            modelBuilder.Entity<CompetitionRounds>()
+                .HasKey(cr => cr.RoundId);
+            modelBuilder.Entity<CompetitionRounds>()
+                .Property(cr => cr.RoundName)
+                .IsRequired()
+                .HasMaxLength(100);
+            modelBuilder.Entity<CompetitionRounds>()
+                .Property(cr => cr.Status)
+                .HasMaxLength(50);
+            modelBuilder.Entity<CompetitionRounds>()
+                .HasOne(cr => cr.Competition)
+                .WithMany(c => c.CompetitionRounds)
+                .HasForeignKey(cr => cr.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure JudgeAssignments
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasKey(ja => ja.AssignmentId);
+            modelBuilder.Entity<JudgeAssignments>()
+                .Property(ja => ja.Status)
+                .HasMaxLength(50);
+            // Unique: một giám khảo chỉ được giao một bài một lần
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasIndex(ja => new { ja.JudgeId, ja.SubmissionId })
+                .IsUnique();
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasOne(ja => ja.Judge)
+                .WithMany(j => j.JudgeAssignments)
+                .HasForeignKey(ja => ja.JudgeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasOne(ja => ja.Submission)
+                .WithMany(s => s.JudgeAssignments)
+                .HasForeignKey(ja => ja.SubmissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasOne(ja => ja.Competition)
+                .WithMany(c => c.JudgeAssignments)
+                .HasForeignKey(ja => ja.CompetitionId)
+                .OnDelete(DeleteBehavior.NoAction);  // Tránh multiple cascade paths
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasOne(ja => ja.Round)
+                .WithMany(r => r.JudgeAssignments)
+                .HasForeignKey(ja => ja.RoundId)
+                .OnDelete(DeleteBehavior.SetNull);   // Giữ assignment nếu round bị xóa
+            modelBuilder.Entity<JudgeAssignments>()
+                .HasOne(ja => ja.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(ja => ja.AssignedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);  // Không cascade khi user bị xóa
 
             // Seed initial roles
             modelBuilder.Entity<Roles>().HasData(

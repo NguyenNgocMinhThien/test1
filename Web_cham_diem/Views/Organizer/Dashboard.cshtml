@@ -1,674 +1,652 @@
-@model OrganizerDashboardViewModel
-
+@model Web_cham_diem.Models.ViewModels.OrganizerDashboardViewModel
 @{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
-    ViewData["Title"] = "Dashboard Ban Tổ Chức";
+    ViewData["Title"] = "Dashboard";
 }
 
 @section Styles {
-    <style>
-        .org-dashboard-wrapper {
-            background-color: var(--primary-bg);
-            min-height: calc(100vh - 70px);
-        }
-
-        /* --- STAT CARDS --- */
-        .stat-card-org {
-            background: #fff;
-            border-radius: 12px;
-            padding: 1.25rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .stat-card-org:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-            border-color: var(--organizer-accent);
-        }
-        .stat-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.35rem;
-            flex-shrink: 0;
-        }
-        .stat-val {
-            font-size: 1.55rem;
-            font-weight: 800;
-            color: var(--text-dark);
-            line-height: 1.1;
-        }
-        .stat-label {
-            font-size: 0.63rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: #94a3b8;
-            margin-bottom: 2px;
-        }
-
-        /* --- PANELS --- */
-        .panel-box {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            height: 100%;
-        }
-        .panel-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--navy-blue);
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* --- ALERT ZONE --- */
-        .alert-zone .alert-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 500;
-        }
-        .alert-zone .alert-item.danger  { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
-        .alert-zone .alert-item.warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
-        .alert-zone .alert-item.info    { background: #eff6ff; border: 1px solid #93c5fd; color: #1e40af; }
-        .alert-zone .alert-item a       { font-weight: 700; margin-left: auto; white-space: nowrap; text-decoration: none; }
-        .alert-zone .alert-item.danger  a { color: #b91c1c; }
-        .alert-zone .alert-item.warning a { color: #92400e; }
-
-        /* --- PROGRESS TABLE --- */
-        .progress-table th {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            color: #64748b;
-            font-weight: 700;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 10px 12px;
-        }
-        .progress-table td {
-            padding: 10px 12px;
-            vertical-align: middle;
-            font-size: 0.88rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .progress-table tr:last-child td { border-bottom: none; }
-        .progress-table tr:hover td { background: #f8fafc; }
-        .phase-badge {
-            font-size: 0.72rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 20px;
-        }
-        .bar-mini { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
-        .bar-mini-fill { height: 100%; border-radius: 3px; }
-
-        /* --- TIMELINE --- */
-        .timeline-vertical {
-            border-left: 2px solid #e2e8f0;
-            margin-left: 10px;
-            padding-left: 20px;
-            list-style: none;
-        }
-        .timeline-item { position: relative; margin-bottom: 20px; }
-        .timeline-item:last-child { margin-bottom: 0; }
-        .timeline-dot {
-            position: absolute;
-            left: -27px;
-            top: 3px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-        }
-        .tl-title { font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
-        .progress-micro { height: 5px; border-radius: 3px; }
-
-        /* --- ACTIVITIES --- */
-        .activity-list { margin: 0; padding: 0; list-style: none; }
-        .activity-item {
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .activity-item:last-child { border-bottom: none; padding-bottom: 0; }
-
-        /* --- TOP COMPETITIONS --- */
-        .top-comp-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 9px 0;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .top-comp-item:last-child { border-bottom: none; }
-        .top-rank {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-    </style>
+<style>
+    .dash-stat-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    .dash-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.11);
+    }
+    .dash-icon {
+        width: 52px; height: 52px;
+        border-radius: 13px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.45rem;
+        flex-shrink: 0;
+    }
+    .dash-card-full {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        height: 100%;
+    }
+    .progress-bar-sm { height: 6px; border-radius: 4px; }
+    .status-badge {
+        font-size: 0.72rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .chip-active  { background: #d1fae5; color: #059669; }
+    .chip-draft   { background: #e0f2fe; color: #0369a1; }
+    .chip-closed  { background: #f1f5f9; color: #64748b; }
+    .timeline-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 6px;
+    }
+    .table-comp th {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        font-weight: 700;
+    }
+    .table-comp td { vertical-align: middle; font-size: 0.875rem; }
+    .top-comp-bar  { height: 8px; border-radius: 4px; background: #e2e8f0; }
+    .top-comp-fill { height: 100%; border-radius: 4px; background: var(--organizer-accent); transition: width 0.7s ease; }
+    .mini-status-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border: 1px solid var(--border-color);
+        height: 100%;
+    }
+    .mini-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .activity-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+</style>
 }
 
-<div class="org-dashboard-wrapper py-4">
-    <div class="container-fluid">
-
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h3 class="fw-bold mb-1 text-dark">Tổng quan Vận hành Cuộc thi</h3>
-                <p class="text-muted small mb-0">Theo dõi tiến độ, duyệt hồ sơ và đôn đốc chấm điểm.</p>
-            </div>
-            <a href="/Organizer/Create" class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
-                <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi mới
-            </a>
-        </div>
-
-        <!-- ROW 1: Trạng thái cuộc thi -->
-        <div class="row g-3 mb-3">
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org">
-                    <div class="stat-icon bg-secondary bg-opacity-10 text-secondary"><i class="bi bi-trophy"></i></div>
-                    <div>
-                        <div class="stat-label">Tổng cuộc thi</div>
-                        <div class="stat-val">@Model.TotalCompetitions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org" style="border-left: 3px solid #22c55e;">
-                    <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-person-plus"></i></div>
-                    <div>
-                        <div class="stat-label">Mở đăng ký</div>
-                        <div class="stat-val text-success">@Model.OpenRegistrationCompetitions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org" style="border-left: 3px solid #0ea5e9;">
-                    <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="bi bi-cloud-arrow-up"></i></div>
-                    <div>
-                        <div class="stat-label">Nhận bài</div>
-                        <div class="stat-val text-info">@Model.AcceptingSubmissions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org" style="border-left: 3px solid #f59e0b;">
-                    <div class="stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-clipboard2-check"></i></div>
-                    <div>
-                        <div class="stat-label">Đang chấm</div>
-                        <div class="stat-val text-warning">@Model.GradingCompetitions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org" style="border-left: 3px solid #8b5cf6;">
-                    <div class="stat-icon" style="background:rgba(139,92,246,.1);color:#8b5cf6;"><i class="bi bi-check-circle"></i></div>
-                    <div>
-                        <div class="stat-label">Hoàn thành</div>
-                        <div class="stat-val" style="color:#8b5cf6;">@Model.CompletedCompetitions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="stat-card-org border-danger">
-                    <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-hourglass-bottom"></i></div>
-                    <div>
-                        <div class="stat-label">Sắp kết thúc</div>
-                        <div class="stat-val text-danger">@Model.UrgentCompetitions</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ROW 2: Chỉ số hoạt động -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="stat-card-org">
-                    <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-file-earmark-person"></i></div>
-                    <div>
-                        <div class="stat-label">Tổng đăng ký</div>
-                        <div class="stat-val">@Model.TotalRegistrations
-                            @if (Model.PendingRegistrations > 0)
-                            {
-                                <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">@Model.PendingRegistrations chờ</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card-org">
-                    <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-people"></i></div>
-                    <div>
-                        <div class="stat-label">Tổng đội thi</div>
-                        <div class="stat-val">@Model.TotalTeams</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card-org">
-                    <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="bi bi-file-zip"></i></div>
-                    <div>
-                        <div class="stat-label">Bài dự thi</div>
-                        <div class="stat-val">@Model.TotalSubmissions</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card-org" style="border-left: 3px solid #22c55e;">
-                    <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check-all"></i></div>
-                    <div>
-                        <div class="stat-label">Tỷ lệ chấm</div>
-                        <div class="stat-val text-success">@Model.ScoringCompletionRate%</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ALERT ZONE -->
-        @if (Model.Alerts.Any())
-        {
-            <div class="alert-zone mb-4">
-                <div class="panel-box p-0" style="overflow:hidden;">
-                    <div class="px-4 pt-3 pb-2 d-flex align-items-center gap-2" style="border-bottom:1px solid #f1f5f9;">
-                        <i class="bi bi-bell-fill text-danger"></i>
-                        <span class="fw-bold" style="font-size:.95rem;">Cảnh báo cần xử lý</span>
-                        <span class="badge bg-danger ms-1">@Model.Alerts.Count</span>
-                    </div>
-                    <div class="p-3 d-flex flex-column gap-2">
-                        @foreach (var alert in Model.Alerts)
-                        {
-                            <div class="alert-item @alert.Level">
-                                <i class="bi @alert.Icon flex-shrink-0"></i>
-                                <span>@alert.Message</span>
-                                @if (!string.IsNullOrEmpty(alert.ActionUrl))
-                                {
-                                    <a href="@alert.ActionUrl"><i class="bi bi-arrow-right-circle me-1"></i>@alert.ActionText</a>
-                                }
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-
-        <!-- COMPETITION PROGRESS TABLE -->
-        @if (Model.CompetitionProgressTable.Any())
-        {
-            <div class="panel-box mb-4">
-                <div class="panel-title">
-                    <span><i class="bi bi-table me-2 text-primary"></i>Tiến độ từng Cuộc thi</span>
-                    <a href="/Organizer/Contests" class="small text-decoration-none" style="color:var(--organizer-accent);">Xem tất cả</a>
-                </div>
-                <div class="table-responsive">
-                    <table class="table progress-table mb-0">
-                        <thead>
-                            <tr>
-                                <th style="min-width:200px;">Cuộc thi</th>
-                                <th>Giai đoạn</th>
-                                <th class="text-center">Đăng ký<br><small class="fw-normal text-muted">(duyệt / tổng)</small></th>
-                                <th class="text-center">Chờ duyệt</th>
-                                <th class="text-center">Bài nộp</th>
-                                <th style="min-width:140px;">Tiến độ chấm</th>
-                                <th>Đợt đăng ký</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var row in Model.CompetitionProgressTable)
-                            {
-                                var phaseColor = row.Phase switch
-                                {
-                                    var p when p.Contains("Hồ Sơ") || p.Contains("Nhận") => "background:#dcfce7;color:#166534;",
-                                    var p when p.Contains("Bài") => "background:#dbeafe;color:#1e40af;",
-                                    var p when p.Contains("Chấm") => "background:#fef9c3;color:#854d0e;",
-                                    var p when p.Contains("Kết quả") => "background:#ede9fe;color:#5b21b6;",
-                                    _ => "background:#f1f5f9;color:#475569;"
-                                };
-
-                                var barColor = row.GradingProgress >= 80 ? "#22c55e"
-                                    : row.GradingProgress >= 50 ? "#f59e0b"
-                                    : "#ef4444";
-
-                                <tr>
-                                    <td>
-                                        <a href="/Organizer/Contests" class="fw-semibold text-decoration-none text-dark">@row.Name</a>
-                                        @if (row.UnderMinParticipants)
-                                        {
-                                            <span class="ms-1 badge bg-danger" style="font-size:.65rem;" title="Chưa đạt số người tối thiểu">
-                                                <i class="bi bi-exclamation-triangle-fill"></i> Thiếu người
-                                            </span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <span class="phase-badge" style="@phaseColor">@row.Phase</span>
-                                    </td>
-                                    <td class="text-center fw-semibold">
-                                        @row.ApprovedRegistrations / @row.TotalRegistrations
-                                    </td>
-                                    <td class="text-center">
-                                        @if (row.PendingRegistrations > 0)
-                                        {
-                                            <span class="badge bg-warning text-dark">@row.PendingRegistrations</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">—</span>
-                                        }
-                                    </td>
-                                    <td class="text-center fw-semibold">@row.TotalSubmissions</td>
-                                    <td>
-                                        @if (row.TotalSubmissions > 0)
-                                        {
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="bar-mini flex-grow-1">
-                                                    <div class="bar-mini-fill" style="width:@row.GradingProgress%;background:@barColor;"></div>
-                                                </div>
-                                                <small class="fw-bold" style="color:@barColor;min-width:32px;">@row.GradingProgress%</small>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">Chưa có bài</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(row.ActiveRoundName))
-                                        {
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size:.72rem;">
-                                                <i class="bi bi-circle-fill me-1" style="font-size:.5rem;"></i>@row.ActiveRoundName
-                                            </span>
-                                            <div class="text-muted" style="font-size:.7rem;">Đóng @row.ActiveRoundEnd?.ToString("dd/MM HH:mm")</div>
-                                        }
-                                        else if (row.NextRoundStart.HasValue)
-                                        {
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border" style="font-size:.72rem;">
-                                                <i class="bi bi-clock me-1"></i>Sắp mở
-                                            </span>
-                                            <div class="text-muted" style="font-size:.7rem;">@row.NextRoundStart?.ToString("dd/MM/yyyy")</div>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">—</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        }
-
-        <!-- ROW 3: Charts + Top Competitions -->
-        <div class="row g-4 mb-4">
-            <!-- Chart Tiến độ -->
-            <div class="col-lg-5">
-                <div class="panel-box">
-                    <div class="panel-title">
-                        <span><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Đăng ký & Bài thi theo tuần</span>
-                        <span class="small text-muted">
-                            @(Model.ProgressData.Any() ? "Cuộc thi đang hoạt động" : "Chưa có dữ liệu")
-                        </span>
-                    </div>
-                    <div style="height: 240px;">
-                        <canvas id="progressChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tỷ lệ duyệt -->
-            <div class="col-lg-3">
-                <div class="panel-box">
-                    <div class="panel-title">
-                        <span><i class="bi bi-pie-chart-fill me-2 text-success"></i>Tỷ lệ Hồ sơ</span>
-                    </div>
-                    <div style="height: 180px; display:flex; justify-content:center;">
-                        <canvas id="approvalChart"></canvas>
-                    </div>
-                    <div class="mt-3 text-center small text-muted">
-                        Đã xử lý <strong>@Model.ApprovalRatio.TotalProcessed</strong> hồ sơ
-                    </div>
-                </div>
-            </div>
-
-            <!-- Top cuộc thi -->
-            <div class="col-lg-4">
-                <div class="panel-box">
-                    <div class="panel-title">
-                        <span><i class="bi bi-bar-chart-steps me-2 text-warning"></i>Top đăng ký nhiều nhất</span>
-                    </div>
-                    @if (Model.TopCompetitionsByRegistrations.Any())
-                    {
-                        @foreach (var (item, idx) in Model.TopCompetitionsByRegistrations.Select((x, i) => (x, i)))
-                        {
-                            var rankColors = new[] { "#f59e0b", "#94a3b8", "#cd7c2f", "#0ea5e9", "#8b5cf6" };
-                            var rankColor = idx < rankColors.Length ? rankColors[idx] : "#94a3b8";
-                            var maxReg = Model.TopCompetitionsByRegistrations.Max(t => t.RegistrationCount);
-                            var barWidth = maxReg > 0 ? (int)((decimal)item.RegistrationCount / maxReg * 100) : 0;
-
-                            <div class="top-comp-item">
-                                <div class="top-rank" style="background:@(rankColor)22;color:@rankColor;">@(idx + 1)</div>
-                                <div class="flex-grow-1" style="min-width:0;">
-                                    <div class="fw-semibold text-truncate" style="font-size:.85rem;" title="@item.Name">@item.Name</div>
-                                    <div class="bar-mini mt-1" style="width:100%;">
-                                        <div class="bar-mini-fill" style="width:@barWidth%;background:@rankColor;"></div>
-                                    </div>
-                                </div>
-                                <div class="fw-bold" style="font-size:.9rem;color:@rankColor;min-width:32px;text-align:right;">@item.RegistrationCount</div>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <p class="text-muted small text-center mt-3">Chưa có dữ liệu đăng ký</p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- ROW 4: Deadlines + Activities -->
-        <div class="row g-4">
-            <!-- Deadlines -->
-            <div class="col-lg-5">
-                <div class="panel-box">
-                    <div class="panel-title">
-                        <span><i class="bi bi-calendar-event me-2 text-warning"></i>Deadlines sắp tới</span>
-                        <span class="small text-muted">Dựa trên RegistrationRounds</span>
-                    </div>
-                    <ul class="timeline-vertical mt-3">
-                        @if (Model.UpcomingDeadlines.Any())
-                        {
-                            @foreach (var deadline in Model.UpcomingDeadlines.Take(6))
-                            {
-                                var dotClass = deadline.Status switch
-                                {
-                                    "urgent"  => "bg-danger",
-                                    "warning" => "bg-warning",
-                                    _         => "bg-success"
-                                };
-                                var badgeClass = deadline.Status switch
-                                {
-                                    "urgent"  => "bg-danger",
-                                    "warning" => "bg-warning text-dark",
-                                    _         => "bg-success"
-                                };
-                                var titleColor = deadline.Status switch
-                                {
-                                    "urgent"  => "text-danger",
-                                    "warning" => "text-warning",
-                                    _         => "text-success"
-                                };
-
-                                <li class="timeline-item">
-                                    <div class="timeline-dot @dotClass"></div>
-                                    <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <span class="tl-title @titleColor">@deadline.Title</span>
-                                        <span class="badge @badgeClass ms-2 flex-shrink-0" style="font-size:.7rem;">
-                                            @deadline.DeadlineDate.ToString("dd/MM/yyyy")
-                                        </span>
-                                    </div>
-                                    <p class="small text-muted mb-1">@deadline.Description</p>
-                                    @if (deadline.ProgressPercentage.HasValue)
-                                    {
-                                        var pct = deadline.ProgressPercentage.Value;
-                                        var barCol = pct >= 80 ? "bg-success" : pct >= 50 ? "bg-warning" : "bg-danger";
-                                        <div class="progress progress-micro">
-                                            <div class="progress-bar @barCol" style="width:@pct%"></div>
-                                        </div>
-                                        <small class="text-muted" style="font-size:.7rem;">Đã chấm @Math.Round(pct)%</small>
-                                    }
-                                </li>
-                            }
-                        }
-                        else
-                        {
-                            <li class="text-muted small"><i class="bi bi-check-circle text-success me-1"></i>Không có deadline sắp tới</li>
-                        }
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Activities -->
-            <div class="col-lg-7">
-                <div class="panel-box">
-                    <div class="panel-title">
-                        <span><i class="bi bi-clock-history me-2 text-info"></i>Hoạt động mới nhất</span>
-                        <button class="btn btn-sm btn-light" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i></button>
-                    </div>
-                    <ul class="activity-list">
-                        @if (Model.RecentActivities.Any())
-                        {
-                            @foreach (var activity in Model.RecentActivities.Take(6))
-                            {
-                                var iconClass = activity.Type switch
-                                {
-                                    "score"        => "bi-file-earmark-check-fill text-success",
-                                    "registration" => "bi-person-lines-fill text-warning",
-                                    "submission"   => "bi-cloud-arrow-up-fill text-info",
-                                    "message"      => "bi-chat-left-text-fill text-secondary",
-                                    _              => "bi-info-circle text-secondary"
-                                };
-                                var timespan = DateTime.UtcNow - activity.CreatedAt;
-                                var timeText = timespan.TotalMinutes < 1    ? "vừa xong"
-                                    : timespan.TotalMinutes < 60 ? $"{(int)timespan.TotalMinutes} phút trước"
-                                    : timespan.TotalHours   < 24 ? $"{(int)timespan.TotalHours} giờ trước"
-                                    : $"{(int)timespan.TotalDays} ngày trước";
-
-                                <li class="activity-item">
-                                    <div class="fs-4 mt-1"><i class="bi @iconClass"></i></div>
-                                    <div class="flex-grow-1">
-                                        <div class="fw-bold" style="font-size:.88rem;">@activity.Title</div>
-                                        <div class="small text-muted">@activity.Description</div>
-                                    </div>
-                                    <div class="small text-muted text-end" style="min-width:80px;">@timeText</div>
-                                </li>
-                            }
-                        }
-                        else
-                        {
-                            <li class="text-muted small py-3 text-center">Chưa có hoạt động nào</li>
-                        }
-                    </ul>
-                    <div class="mt-3 text-center">
-                        <button class="btn btn-link text-decoration-none fw-bold small" style="color:var(--organizer-accent);">Xem tất cả Logs</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+<!-- ===== PAGE HEADER ===== -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4">
+    <div>
+        <h4 class="fw-bold text-dark mb-1">
+            <i class="bi bi-speedometer2 me-2" style="color: var(--organizer-accent);"></i>Tổng quan Vận hành Cuộc thi
+        </h4>
+        <p class="text-muted mb-0 small">Theo dõi tiến độ, duyệt hồ sơ thí sinh và đôn đốc chấm điểm hội đồng.</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/Organizer/Submissions" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-file-earmark-text me-1"></i>Duyệt hồ sơ
+        </a>
+        <a href="/Organizer/Create" class="btn btn-sm fw-semibold text-white" style="background-color: var(--organizer-accent);">
+            <i class="bi bi-plus-lg me-1"></i>Tạo Cuộc thi mới
+        </a>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        Chart.defaults.font.family = "'Inter', sans-serif";
-
-        // Chart 1: Tiến độ theo tuần
-        const progressData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProgressData));
-        const ctxProgress = document.getElementById('progressChart').getContext('2d');
-
-        new Chart(ctxProgress, {
-            type: 'line',
-            data: {
-                labels: progressData.length > 0 ? progressData.map(d => d.week) : ['Tuần 1','Tuần 2','Tuần 3','Tuần 4'],
-                datasets: [
+<!-- ===== ALERTS ===== -->
+@if (Model.Alerts.Any())
+{
+    <div class="mb-4">
+        @foreach (var alert in Model.Alerts.Take(4))
+        {
+            <div class="alert alert-@alert.Level alert-dismissible fade show d-flex align-items-center justify-content-between mb-2 py-2 px-3 rounded-3 shadow-sm" role="alert">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi @alert.Icon"></i>
+                    <span class="small">@alert.Message</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
+                    @if (!string.IsNullOrEmpty(alert.ActionUrl))
                     {
-                        label: 'Hồ sơ đăng ký',
-                        data: progressData.length > 0 ? progressData.map(d => d.registrations) : [0,0,0,0],
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13,110,253,0.08)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 4
-                    },
-                    {
-                        label: 'Bài thi đã nộp',
-                        data: progressData.length > 0 ? progressData.map(d => d.submissions) : [0,0,0,0],
-                        borderColor: '#059669',
-                        borderWidth: 2,
-                        borderDash: [5,5],
-                        tension: 0.3,
-                        pointRadius: 4
+                        <a href="@alert.ActionUrl" class="btn btn-sm btn-outline-@alert.Level py-0 px-2 fw-semibold" style="font-size:0.72rem;">
+                            @alert.ActionText
+                        </a>
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } } },
-                scales: {
-                    y: { beginAtZero: true, ticks: { font: { size: 11 } } },
-                    x: { grid: { display: false }, ticks: { font: { size: 11 } } }
-                }
-            }
-        });
+                    <button type="button" class="btn-close" style="font-size:0.65rem;" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        }
+    </div>
+}
 
-        // Chart 2: Tỷ lệ duyệt hồ sơ
-        const approvalRatio = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ApprovalRatio));
-        const ctxApproval = document.getElementById('approvalChart').getContext('2d');
-        new Chart(ctxApproval, {
-            type: 'doughnut',
-            data: {
-                labels: ['Đã duyệt','Chờ duyệt','Từ chối'],
-                datasets: [{
-                    data: [approvalRatio.approvedCount, approvalRatio.pendingCount, approvalRatio.rejectedCount],
-                    backgroundColor: ['#22c55e','#f59e0b','#ef4444'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }
+<!-- ===== 4 STAT CARDS ===== -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Quy mô chiến dịch</span>
+                <div class="dash-icon" style="background:#ecfdf5; color:#059669;">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.TotalCompetitions</h2>
+            <div class="text-muted small">
+                <span class="text-success fw-bold">@Model.ActiveCompetitions</span> Active
+                &nbsp;|&nbsp;
+                <span style="color:#0369a1;" class="fw-bold">@Model.DraftCompetitions</span> Draft
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Hồ sơ Đăng ký</span>
+                <div class="dash-icon" style="background:#f0fdf4; color:#16a34a;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.TotalRegistrations</h2>
+            <div class="text-muted small">
+                Chờ duyệt: <span class="text-warning fw-bold">@Model.PendingRegistrations</span>
+                &nbsp;|&nbsp; Đội: <span class="text-info fw-bold">@Model.TotalTeams</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Bài thi đã nhận</span>
+                <div class="dash-icon" style="background:#fff7ed; color:#ea580c;">
+                    <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.TotalSubmissions</h2>
+            <div class="text-muted small">
+                Đã chấm: <span class="fw-bold text-dark">@Model.EvaluatedSubmissions</span>
+                &nbsp;/&nbsp;@Model.TotalSubmissions bài
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Tiến độ chấm điểm</span>
+                <div class="dash-icon" style="background:#eff6ff; color:#2563eb;">
+                    <i class="bi bi-check2-circle"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.ScoringCompletionRate.ToString("0.#")%</h2>
+            <div class="text-muted small">
+                <span class="fw-bold text-dark">@Model.EvaluatedSubmissions</span> / @Model.TotalSubmissions lượt chấm
+            </div>
+            <div class="progress mt-2 progress-bar-sm">
+                <div class="progress-bar" style="width:@Model.ScoringCompletionRate%; background: var(--organizer-accent);"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== COMPETITION STATUS MINI CARDS ===== -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="mini-status-card">
+            <div class="mini-icon" style="background:#d1fae5; color:#059669;">
+                <i class="bi bi-door-open-fill"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark fs-5 lh-1">@Model.OpenRegistrationCompetitions</div>
+                <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">Đang nhận hồ sơ</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="mini-status-card">
+            <div class="mini-icon" style="background:#fef9c3; color:#ca8a04;">
+                <i class="bi bi-inbox-fill"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark fs-5 lh-1">@Model.AcceptingSubmissions</div>
+                <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">Đang thu bài thi</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="mini-status-card">
+            <div class="mini-icon" style="background:#eff6ff; color:#2563eb;">
+                <i class="bi bi-ui-checks-grid"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark fs-5 lh-1">@Model.GradingCompetitions</div>
+                <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">Đang chấm điểm</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="mini-status-card">
+            <div class="mini-icon" style="background:#f1f5f9; color:#64748b;">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div>
+                <div class="fw-bold text-dark fs-5 lh-1">@Model.CompletedCompetitions</div>
+                <div class="text-muted" style="font-size:0.7rem; margin-top:2px;">Đã hoàn thành</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CHARTS ROW ===== -->
+<div class="row g-4 mb-4">
+    <!-- Line chart: Đăng ký & Bài thi theo tuần -->
+    <div class="col-12 col-lg-7">
+        <div class="card dash-card-full p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0">
+                    <i class="bi bi-graph-up text-primary me-2"></i>Thống kê Đăng ký & Bài thi theo tuần
+                </h6>
+                <span class="badge bg-secondary-subtle text-secondary px-2 py-1">4 Tuần gần nhất</span>
+            </div>
+            @if (Model.ProgressData.Any())
+            {
+                <canvas id="weeklyChart" height="90"></canvas>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center"
+                     style="height:220px; border:2px dashed #dee2e6; border-radius:8px; background:#fafafa; color:#6c757d;">
+                    <i class="bi bi-bar-chart-line fs-2 mb-2 text-black-50"></i>
+                    <p class="mb-0 small fw-medium">Chưa có dữ liệu trục thời gian</p>
+                    <span style="font-size:11px;">Biểu đồ xu hướng sẽ hiển thị khi cuộc thi chuyển sang Active</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Doughnut: Tỷ lệ xét duyệt -->
+    <div class="col-12 col-lg-5">
+        <div class="card dash-card-full p-4">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-pie-chart-fill text-success me-2"></i>Trạng thái xét duyệt hồ sơ
+            </h6>
+            <div class="row g-0 mb-3 text-center">
+                <div class="col-4 border-end">
+                    <div class="text-muted small">Chờ duyệt</div>
+                    <h4 class="fw-bold text-warning mt-1 mb-0">@Model.ApprovalRatio.PendingCount</h4>
+                </div>
+                <div class="col-4 border-end">
+                    <div class="text-muted small">Đã chấp nhận</div>
+                    <h4 class="fw-bold text-success mt-1 mb-0">@Model.ApprovalRatio.ApprovedCount</h4>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted small">Từ chối</div>
+                    <h4 class="fw-bold text-danger mt-1 mb-0">@Model.ApprovalRatio.RejectedCount</h4>
+                </div>
+            </div>
+            @if (Model.ApprovalRatio.TotalProcessed > 0)
+            {
+                <canvas id="approvalChart" height="140"></canvas>
+            }
+            else
+            {
+                <div class="text-center text-muted small py-3">
+                    <i class="bi bi-pie-chart fs-2 mb-2 d-block text-black-50"></i>
+                    Chưa có hồ sơ nào được xử lý.
+                </div>
+            }
+            <hr class="my-3">
+            <div class="bg-light rounded-3 px-3 py-2 d-flex align-items-center justify-content-between">
+                <span class="text-muted small fw-semibold">
+                    <i class="bi bi-person-badge me-1 text-success"></i>Giám khảo đang hoạt động
+                </span>
+                <span class="fw-bold text-dark">@Model.ActiveJudges người</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== COMPETITION PROGRESS TABLE ===== -->
+@if (Model.CompetitionProgressTable.Any())
+{
+    <div class="card dash-card-full p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-dark m-0">
+                <i class="bi bi-table text-primary me-2"></i>Tiến độ Cuộc thi đang vận hành
+            </h6>
+            <a href="/Organizer/Contests" class="btn btn-sm btn-outline-secondary py-1">
+                <i class="bi bi-arrow-right me-1"></i>Xem tất cả
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle table-comp mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cuộc thi</th>
+                        <th>Trạng thái</th>
+                        <th>Giai đoạn</th>
+                        <th class="text-center">Đăng ký</th>
+                        <th class="text-center">Bài thi</th>
+                        <th style="min-width:130px;">Tiến độ chấm</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.CompetitionProgressTable)
+                    {
+                        var chipCls = row.Status == "Active" ? "chip-active" :
+                                      row.Status == "Draft"  ? "chip-draft"  : "chip-closed";
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-dark">@row.Name</div>
+                                @if (row.ActiveRoundName != null)
+                                {
+                                    <div class="text-muted" style="font-size:0.72rem;">
+                                        <i class="bi bi-clock me-1"></i>Đợt: @row.ActiveRoundName
+                                        @if (row.ActiveRoundEnd.HasValue)
+                                        {
+                                            <span> — đến @row.ActiveRoundEnd.Value.ToLocalTime().ToString("dd/MM")</span>
+                                        }
+                                    </div>
+                                }
+                                else if (row.NextRoundStart.HasValue)
+                                {
+                                    <div class="text-muted" style="font-size:0.72rem;">
+                                        <i class="bi bi-calendar-event me-1"></i>Đợt tiếp: @row.NextRoundStart.Value.ToLocalTime().ToString("dd/MM")
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <span class="status-badge @chipCls">@row.Status</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small">@row.Phase</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="fw-semibold">@row.TotalRegistrations</div>
+                                @if (row.PendingRegistrations > 0)
+                                {
+                                    <div class="text-warning" style="font-size:0.72rem;">@row.PendingRegistrations chờ duyệt</div>
+                                }
+                                @if (row.UnderMinParticipants)
+                                {
+                                    <div class="text-danger" style="font-size:0.72rem;">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Thiếu @(row.MinParticipants - row.ApprovedRegistrations)
+                                    </div>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="fw-semibold">@row.TotalSubmissions</div>
+                                @if (row.GradedSubmissions > 0)
+                                {
+                                    <div class="text-success" style="font-size:0.72rem;">@row.GradedSubmissions đã chấm</div>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var barColor = row.GradingProgress >= 100 ? "#059669" :
+                                                   row.GradingProgress >= 50  ? "#0d6efd" : "#f59e0b";
+                                }
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1 progress-bar-sm">
+                                        <div class="progress-bar"
+                                             style="width:@row.GradingProgress.ToString("0")%; background:@barColor;">
+                                        </div>
+                                    </div>
+                                    <span class="text-muted small" style="min-width:34px;">@row.GradingProgress.ToString("0")%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="/Organizer/Edit/@row.CompetitionId"
+                                   class="btn btn-sm btn-outline-secondary py-0 px-2" title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- ===== BOTTOM ROW ===== -->
+<div class="row g-4">
+
+    <!-- Hạn chót sắp tới -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card dash-card-full p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0">
+                    <i class="bi bi-alarm-fill text-danger me-2"></i>Hạn chót sắp tới
+                </h6>
+                <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size:11px;">Quan trọng</span>
+            </div>
+            @if (Model.UpcomingDeadlines.Any())
+            {
+                foreach (var dl in Model.UpcomingDeadlines.Take(5))
+                {
+                    var daysLeft  = (dl.DeadlineDate - DateTime.UtcNow).TotalDays;
+                    var dotColor  = dl.Status == "urgent"  ? "#dc2626" :
+                                    dl.Status == "warning" ? "#d97706" : "#059669";
+                    var bgColor   = dl.Status == "urgent"  ? "#fee2e2" :
+                                    dl.Status == "warning" ? "#fff7ed" : "#f0fdf4";
+                    var timeLabel = daysLeft < 1 ? "Hôm nay"  :
+                                    daysLeft < 2 ? "Ngày mai" :
+                                    $"{(int)daysLeft} ngày";
+                    <div class="rounded-3 p-2 mb-2" style="background: @bgColor;">
+                        <div class="d-flex gap-2 align-items-start">
+                            <div class="timeline-dot" style="background: @dotColor;"></div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold text-dark small">@dl.Title</div>
+                                <div class="text-muted" style="font-size:0.72rem;">@dl.CompetitionName</div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="text-muted" style="font-size:0.7rem;">
+                                        <i class="bi bi-calendar3 me-1"></i>@dl.DeadlineDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                    <span class="fw-semibold" style="font-size:0.72rem; color: @dotColor;">@timeLabel</span>
+                                </div>
+                                @if (dl.ProgressPercentage.HasValue)
+                                {
+                                    <div class="progress mt-1 progress-bar-sm">
+                                        <div class="progress-bar" style="width:@dl.ProgressPercentage.Value.ToString("0")%; background: @dotColor;"></div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
                 }
             }
-        });
-    </script>
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-calendar-check fs-2 mb-2 d-block text-black-50"></i>
+                    <p class="small mb-0">Không có mốc thời gian nào sắp đến hạn.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Hoạt động vận hành mới nhất -->
+    <div class="col-12 col-md-6 col-xl-5">
+        <div class="card dash-card-full p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0">
+                    <i class="bi bi-lightning-charge-fill text-warning me-2"></i>Hoạt động vận hành mới nhất
+                </h6>
+                <button class="btn btn-sm btn-light border" onclick="location.reload()" title="Tải lại">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            @if (Model.RecentActivities.Any())
+            {
+                foreach (var act in Model.RecentActivities.Take(8))
+                {
+                    var iconCls = act.Type == "score"        ? "bi-star-fill text-warning"              :
+                                  act.Type == "registration" ? "bi-person-plus-fill text-primary"       :
+                                  act.Type == "submission"   ? "bi-file-earmark-check-fill text-success" :
+                                  "bi-chat-text-fill text-info";
+                    <div class="d-flex gap-3 mb-3 pb-2 border-bottom">
+                        <div class="activity-icon">
+                            <i class="bi @iconCls"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold text-dark small">@act.Title</div>
+                            <div class="text-muted" style="font-size:0.75rem;">@act.Description</div>
+                            <div class="text-muted mt-1" style="font-size:0.7rem;">
+                                <i class="bi bi-clock me-1"></i>@act.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-activity fs-2 mb-2 d-block text-black-50"></i>
+                    <p class="small mb-0">Chưa ghi nhận hoạt động tương tác nào.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Top cuộc thi nổi bật -->
+    <div class="col-12 col-xl-3">
+        <div class="card dash-card-full p-4">
+            <h6 class="fw-bold text-dark mb-3">
+                <i class="bi bi-fire me-2" style="color:#ff5722;"></i>Top Cuộc thi nổi bật
+            </h6>
+            @if (Model.TopCompetitionsByRegistrations.Any())
+            {
+                var maxReg = Model.TopCompetitionsByRegistrations.Max(t => t.RegistrationCount);
+                int rank = 1;
+                foreach (var top in Model.TopCompetitionsByRegistrations)
+                {
+                    var pct = maxReg > 0 ? (int)((double)top.RegistrationCount / maxReg * 100) : 0;
+                    var rankColor = rank == 1 ? "#f59e0b" : rank == 2 ? "#94a3b8" : rank == 3 ? "#cd7f32" : "#e2e8f0";
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                      style="width:22px;height:22px;font-size:0.68rem;background:@rankColor;color:@(rank<=3?"#fff":"#64748b");">
+                                    @rank
+                                </span>
+                                <a href="/Organizer/Edit/@top.CompetitionId" class="small fw-semibold text-dark text-decoration-none">
+                                    @(top.Name.Length > 28 ? top.Name[..25] + "..." : top.Name)
+                                </a>
+                            </div>
+                            <span class="small fw-bold text-dark ms-1">@top.RegistrationCount</span>
+                        </div>
+                        <div class="top-comp-bar ms-4">
+                            <div class="top-comp-fill" style="width:@pct%;"></div>
+                        </div>
+                        <div class="text-muted ms-4" style="font-size:0.68rem; margin-top:2px;">@top.Phase</div>
+                    </div>
+                    rank++;
+                }
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-tags fs-2 mb-2 d-block text-black-50"></i>
+                    <p class="small mb-0">Chưa có cuộc thi nào để xếp hạng.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+    // ─── Weekly Trend Chart ───────────────────────────────────────────────
+    @if (Model.ProgressData.Any())
+    {
+        <text>
+        (function () {
+            const ctx = document.getElementById('weeklyChart');
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProgressData.Select(p => p.Week))),
+                    datasets: [
+                        {
+                            label: 'Đăng ký',
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProgressData.Select(p => p.Registrations))),
+                            borderColor: '#059669',
+                            backgroundColor: 'rgba(5,150,105,0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#059669'
+                        },
+                        {
+                            label: 'Bài thi',
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProgressData.Select(p => p.Submissions))),
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13,110,253,0.07)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#0d6efd'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 11 } } },
+                        x: { ticks: { font: { size: 11 } } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    // ─── Approval Doughnut Chart ──────────────────────────────────────────
+    @if (Model.ApprovalRatio.TotalProcessed > 0)
+    {
+        <text>
+        (function () {
+            const ctx2 = document.getElementById('approvalChart');
+            if (!ctx2) return;
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ duyệt', 'Đã chấp nhận', 'Từ chối'],
+                    datasets: [{
+                        data: [@Model.ApprovalRatio.PendingCount, @Model.ApprovalRatio.ApprovedCount, @Model.ApprovalRatio.RejectedCount],
+                        backgroundColor: ['#fbbf24', '#059669', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+</script>
 }
