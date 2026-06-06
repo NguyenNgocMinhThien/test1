@@ -658,9 +658,9 @@
                     <!-- STEP 2: Lịch trình & Hạn chế -->
                     <div class="form-section" id="step2">
                         <div class="section-title">
-                            <i class="bi bi-calendar3 me-2"></i>Lịch trình & Hạn chế
+                            <i class="bi bi-calendar3 me-2"></i>Lịch trình & Giới hạn tham gia
                         </div>
-                        <p class="section-description">Cấu hình các mốc thời gian quan trọng</p>
+                        <p class="section-description">Cấu hình các mốc thời gian và số lượng tham gia</p>
 
                         <!-- Cảnh báo Validation -->
                         <div class="alert-danger-custom" id="step2-error"></div>
@@ -690,14 +690,29 @@
                                     <label class="form-label">Hạn nộp bài <span class="required">*</span></label>
                                     <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="SubmissionDeadline" class="text-danger"></span>
-                                    <small class="form-text">Hạn cuối cùng để nộp bài dự thi (phải ≤ ngày kết thúc)</small>
+                                    <small class="form-text">Hạn cuối để nộp bài (phải ≤ ngày kết thúc)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label" id="labelMaxParticipants">Số đội tối đa <span class="required">*</span></label>
+                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required>
+                                    <span asp-validation-for="MaxParticipants" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3" id="maxTeamSizeGroup" style="display:none;">
+                                <div class="form-group">
+                                    <label class="form-label">Thành viên tối đa/đội <span class="required">*</span></label>
+                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="1" value="5">
+                                    <span asp-validation-for="MaxTeamSize" class="text-danger"></span>
+                                    <small class="form-text">Được phép đội 1 người</small>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="alert alert-info mt-3">
+                        <div class="alert alert-info mt-2 mb-4">
                             <strong>📅 Quy tắc thời gian:</strong>
-                            <div class="mt-2">Hạn đăng ký (EndDate của round) ≤ Ngày bắt đầu cuộc thi ≤ Hạn nộp bài ≤ Ngày kết thúc</div>
+                            <div class="mt-1">Hạn đăng ký ≤ Ngày bắt đầu &nbsp;|&nbsp; Hạn nộp bài → Sơ khảo → Bán kết → Chung kết ≤ Ngày kết thúc</div>
                         </div>
 
                         <hr class="my-4">
@@ -745,31 +760,64 @@
 
                         <hr class="my-4">
 
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label">Tối thiểu thí sinh</label>
-                                    <input type="number" asp-for="MinParticipants" class="form-control" min="0" value="0">
-                                    <span asp-validation-for="MinParticipants" class="text-danger"></span>
-                                    <small class="form-text">Nếu chưa đủ, BTC có thể gia hạn hoặc huỷ</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label">Tối đa số lượng tham gia <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxParticipants" class="form-control" min="1" value="100" required>
-                                    <span asp-validation-for="MaxParticipants" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <!-- Phần này sẽ hiển thị/ẩn động dựa trên IsTeamBased -->
-                                <div id="maxTeamSizeGroup" class="form-group" style="display: none;">
-                                    <label class="form-label">Tối đa thành viên trong đội <span class="required">*</span></label>
-                                    <input type="number" asp-for="MaxTeamSize" class="form-control" min="2" value="5">
-                                    <span asp-validation-for="MaxTeamSize" class="text-danger"></span>
-                                </div>
-                            </div>
+                        <!-- VÒNG THI -->
+                        <div class="section-title" style="font-size:1.1rem; border-bottom-width:2px;">
+                            <i class="bi bi-trophy me-2"></i>Vòng thi <span style="color:#999; font-size:0.85rem; font-weight:400;">(Tùy chọn)</span>
                         </div>
+                        <p class="section-description">
+                            Thêm các vòng thi (Sơ khảo, Bán kết, Chung kết). Thứ tự thời gian bắt buộc:
+                            <strong>Hạn nộp bài → Sơ khảo → Bán kết → Chung kết → Ngày kết thúc</strong>
+                        </p>
+
+                        <div id="compRoundsContainer">
+                            @for (int i = 0; i < Model.CompetitionRounds.Count; i++)
+                            {
+                                <div class="comp-round-item" data-index="@i"
+                                     style="background:white; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:12px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Tên vòng</label>
+                                        <input type="hidden" name="CompetitionRounds[@i].RoundOrder" value="@(i+1)">
+                                        <select name="CompetitionRounds[@i].RoundName"
+                                                class="form-select comp-round-name"
+                                                data-value="@Model.CompetitionRounds[i].RoundName" required>
+                                            <option value="Sơ khảo">Sơ khảo</option>
+                                            <option value="Bán kết">Bán kết</option>
+                                            <option value="Chung kết">Chung kết</option>
+                                            <option value="Vòng khác">Vòng khác</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu</label>
+                                        <input type="datetime-local" name="CompetitionRounds[@i].StartDate"
+                                               class="form-control comp-round-start"
+                                               value="@Model.CompetitionRounds[i].StartDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc</label>
+                                        <input type="datetime-local" name="CompetitionRounds[@i].EndDate"
+                                               class="form-control comp-round-end"
+                                               value="@Model.CompetitionRounds[i].EndDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh được nhận</label>
+                                        <input type="number" name="CompetitionRounds[@i].MaxAdvancing"
+                                               class="form-control" min="1"
+                                               value="@Model.CompetitionRounds[i].MaxAdvancing"
+                                               placeholder="Không giới hạn">
+                                    </div>
+                                    <div style="display:flex; align-items:flex-end;">
+                                        <button type="button" class="remove-criteria-btn" onclick="removeCompRound(this)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <button type="button" class="add-criteria-btn mt-2" id="addCompRoundBtn" onclick="addCompRound()" style="background:#e8f4ff; color:#0d6efd; border-color:#0d6efd;">
+                            <i class="bi bi-plus-circle me-2"></i>Thêm vòng thi
+                        </button>
+                        <small class="form-text d-block mt-2">Tối đa 3 vòng: Sơ khảo → Bán kết → Chung kết</small>
                     </div>
 
                     <!-- STEP 3: Tiêu chí chấm điểm -->
@@ -1171,29 +1219,26 @@
             const subVal   = document.querySelector('[name="SubmissionDeadline"]').value;
 
             const errors = [];
+            let start, end, sub;
 
             if (!startVal || !endVal || !subVal) {
                 errors.push('Vui lòng điền đầy đủ: Ngày bắt đầu, Ngày kết thúc, Hạn nộp bài');
             } else {
-                const start = new Date(startVal);
-                const end   = new Date(endVal);
-                const sub   = new Date(subVal);
+                start = new Date(startVal);
+                end   = new Date(endVal);
+                sub   = new Date(subVal);
 
                 if (end <= start)
                     errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
-
                 if (sub > end)
                     errors.push('❌ Hạn nộp bài phải trước hoặc bằng ngày kết thúc');
             }
 
-            // Validate từng round
+            // Validate đợt đăng ký
             const roundRows = document.querySelectorAll('#roundsContainer .criteria-item');
             if (roundRows.length === 0) {
                 errors.push('❌ Phải có ít nhất một đợt đăng ký');
             } else {
-                const startVal2 = document.querySelector('[name="StartDate"]').value;
-                const compStart = startVal2 ? new Date(startVal2) : null;
-
                 roundRows.forEach((row, i) => {
                     const rStart = row.querySelector('.round-start').value;
                     const rEnd   = row.querySelector('.round-end').value;
@@ -1205,22 +1250,54 @@
                         const re = new Date(rEnd);
                         if (re <= rs)
                             errors.push(`❌ ${rName}: Ngày kết thúc phải sau ngày bắt đầu`);
-                        if (compStart && re > compStart)
+                        if (start && re > start)
                             errors.push(`❌ ${rName}: Hạn đăng ký phải trước ngày bắt đầu cuộc thi`);
                     }
                 });
 
-                // Kiểm tra chồng chéo giữa các rounds
-                const roundTimes = Array.from(roundRows).map(row => ({
-                    name: row.querySelector('[name$=".RoundName"]').value,
+                const regTimes = Array.from(roundRows).map(row => ({
+                    name:  row.querySelector('[name$=".RoundName"]').value,
                     start: new Date(row.querySelector('.round-start').value),
                     end:   new Date(row.querySelector('.round-end').value)
                 })).filter(r => r.start && r.end).sort((a, b) => a.start - b.start);
 
-                for (let i = 1; i < roundTimes.length; i++) {
-                    if (roundTimes[i].start <= roundTimes[i-1].end)
-                        errors.push(`❌ "${roundTimes[i].name}" chồng chéo với "${roundTimes[i-1].name}"`);
+                for (let i = 1; i < regTimes.length; i++) {
+                    if (regTimes[i].start <= regTimes[i-1].end)
+                        errors.push(`❌ Đợt "${regTimes[i].name}" chồng chéo với "${regTimes[i-1].name}"`);
                 }
+            }
+
+            // Validate vòng thi (nếu có)
+            const compRoundRows = document.querySelectorAll('#compRoundsContainer .comp-round-item');
+            if (compRoundRows.length > 0 && sub && end) {
+                const crTimes = Array.from(compRoundRows).map((row, i) => ({
+                    name:  row.querySelector('.comp-round-name')?.value || `Vòng ${i+1}`,
+                    start: new Date(row.querySelector('.comp-round-start').value),
+                    end:   new Date(row.querySelector('.comp-round-end').value)
+                })).filter(r => r.start && r.end).sort((a, b) => a.start - b.start);
+
+                crTimes.forEach(r => {
+                    if (isNaN(r.start) || isNaN(r.end))
+                        errors.push(`❌ Vòng "${r.name}": Vui lòng điền đầy đủ ngày`);
+                    else if (r.end <= r.start)
+                        errors.push(`❌ Vòng "${r.name}": Ngày kết thúc phải sau ngày bắt đầu`);
+                });
+
+                if (crTimes.length > 0 && !isNaN(crTimes[0].start)) {
+                    if (crTimes[0].start < sub)
+                        errors.push(`❌ Vòng "${crTimes[0].name}": Phải bắt đầu sau hạn nộp bài`);
+                }
+
+                for (let i = 1; i < crTimes.length; i++) {
+                    if (!isNaN(crTimes[i].start) && !isNaN(crTimes[i-1].end)) {
+                        if (crTimes[i].start < crTimes[i-1].end)
+                            errors.push(`❌ Vòng "${crTimes[i].name}": Phải bắt đầu sau khi vòng "${crTimes[i-1].name}" kết thúc`);
+                    }
+                }
+
+                const lastRound = crTimes[crTimes.length - 1];
+                if (lastRound && !isNaN(lastRound.end) && lastRound.end > end)
+                    errors.push(`❌ Vòng "${lastRound.name}": Phải kết thúc trước ngày kết thúc cuộc thi`);
             }
 
             if (errors.length > 0) {
@@ -1673,17 +1750,96 @@
             // Có thể mở rộng sau để cập nhật badge màu theo level
         }
 
-        // 🎫 HIỂN/ẨN PHẦN TEAM SIZE ĐỘNG
+        // 🎫 HIỂN/ẨN PHẦN TEAM SIZE ĐỘNG + đổi label MaxParticipants
         function toggleTeamSizeField() {
             const isTeamBased = document.querySelector('[name="IsTeamBased"]').checked;
-            const groupTeam = document.getElementById('maxTeamSizeGroup');
+            const groupTeam   = document.getElementById('maxTeamSizeGroup');
+            const labelMax    = document.getElementById('labelMaxParticipants');
 
             if (isTeamBased) {
                 groupTeam.style.display = 'block';
-                groupTeam.querySelector('[name="MaxTeamSize"]').focus();
+                labelMax.innerHTML = 'Số đội tối đa <span class="required">*</span>';
             } else {
                 groupTeam.style.display = 'none';
+                labelMax.innerHTML = 'Số thí sinh tối đa <span class="required">*</span>';
             }
+        }
+
+        // 🏆 QUẢN LÝ VÒNG THI
+        const COMP_ROUND_NAMES = ['Sơ khảo', 'Bán kết', 'Chung kết', 'Vòng khác'];
+
+        function addCompRound() {
+            const container = document.getElementById('compRoundsContainer');
+            const existing  = container.querySelectorAll('.comp-round-item').length;
+            if (existing >= 3) {
+                alert('❌ Tối đa 3 vòng thi (Sơ khảo, Bán kết, Chung kết)');
+                return;
+            }
+
+            const index = existing;
+            const subVal = document.querySelector('[name="SubmissionDeadline"]').value;
+            const defaultStart = subVal ? new Date(new Date(subVal).getTime() + (index + 1) * 7 * 86400000) : new Date();
+            const defaultEnd   = new Date(defaultStart.getTime() + 5 * 86400000);
+            const fmt = d => d.toISOString().slice(0, 16);
+
+            // Mặc định gợi ý tên vòng theo thứ tự
+            const suggestedNames = ['Sơ khảo', 'Bán kết', 'Chung kết'];
+            const defaultName = suggestedNames[index] || 'Vòng khác';
+
+            const optionsHtml = COMP_ROUND_NAMES.map(n =>
+                `<option value="${n}" ${n === defaultName ? 'selected' : ''}>${n}</option>`
+            ).join('');
+
+            const html = `
+                <div class="comp-round-item" data-index="${index}"
+                     style="background:white; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:12px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Tên vòng</label>
+                        <input type="hidden" name="CompetitionRounds[${index}].RoundOrder" value="${index + 1}">
+                        <select name="CompetitionRounds[${index}].RoundName" class="form-select comp-round-name" required>
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu</label>
+                        <input type="datetime-local" name="CompetitionRounds[${index}].StartDate"
+                               class="form-control comp-round-start" value="${fmt(defaultStart)}" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc</label>
+                        <input type="datetime-local" name="CompetitionRounds[${index}].EndDate"
+                               class="form-control comp-round-end" value="${fmt(defaultEnd)}" required>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh được nhận</label>
+                        <input type="number" name="CompetitionRounds[${index}].MaxAdvancing"
+                               class="form-control" min="1" placeholder="Không giới hạn">
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                        <button type="button" class="remove-criteria-btn" onclick="removeCompRound(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+
+            container.insertAdjacentHTML('beforeend', html);
+            reindexCompRounds();
+        }
+
+        function removeCompRound(btn) {
+            btn.closest('.comp-round-item').remove();
+            reindexCompRounds();
+        }
+
+        function reindexCompRounds() {
+            document.querySelectorAll('#compRoundsContainer .comp-round-item').forEach((item, i) => {
+                item.dataset.index = i;
+                item.querySelectorAll('input, select').forEach(el => {
+                    if (el.name) el.name = el.name.replace(/CompetitionRounds\[\d+\]/, `CompetitionRounds[${i}]`);
+                });
+                const orderInput = item.querySelector('[name$=".RoundOrder"]');
+                if (orderInput) orderInput.value = i + 1;
+            });
         }
 
         // Drag and drop cho ảnh
@@ -1733,6 +1889,12 @@
 
             // Khôi phục giá trị select cho sponsor (server-side re-render khi validation lỗi)
             document.querySelectorAll('#sponsorContainer select[data-value]').forEach(function (select) {
+                const val = select.dataset.value;
+                if (val) select.value = val;
+            });
+
+            // Khôi phục giá trị select cho vòng thi (server-side re-render khi validation lỗi)
+            document.querySelectorAll('#compRoundsContainer .comp-round-name[data-value]').forEach(function (select) {
                 const val = select.dataset.value;
                 if (val) select.value = val;
             });

@@ -26,6 +26,9 @@ namespace Web_cham_diem.Models
         public DbSet<CompetitionSponsors> CompetitionSponsors { get; set; }
         public DbSet<CompetitionRounds> CompetitionRounds { get; set; }
         public DbSet<JudgeAssignments> JudgeAssignments { get; set; }
+        public DbSet<TeamMembers> TeamMembers { get; set; }
+        public DbSet<TeamTasks> TeamTasks { get; set; }
+        public DbSet<TaskCompletions> TaskCompletions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -356,6 +359,94 @@ namespace Web_cham_diem.Models
                 .WithMany()
                 .HasForeignKey(ja => ja.AssignedByUserId)
                 .OnDelete(DeleteBehavior.NoAction);  // Không cascade khi user bị xóa
+
+            // Configure Scores approval
+            modelBuilder.Entity<Scores>()
+                .Property(s => s.ApprovalStatus)
+                .HasMaxLength(20);
+            modelBuilder.Entity<Scores>()
+                .HasOne(s => s.Approver)
+                .WithMany()
+                .HasForeignKey(s => s.ApprovedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure Judges JudgeRole
+            modelBuilder.Entity<Judges>()
+                .Property(j => j.JudgeRole)
+                .HasMaxLength(20);
+
+            // Configure TeamMembers
+            modelBuilder.Entity<TeamMembers>()
+                .HasKey(tm => tm.TeamMemberId);
+            modelBuilder.Entity<TeamMembers>()
+                .Property(tm => tm.Role)
+                .HasMaxLength(20);
+            modelBuilder.Entity<TeamMembers>()
+                .Property(tm => tm.Status)
+                .HasMaxLength(20);
+            // Một user chỉ thuộc một team một lần trong cùng team
+            modelBuilder.Entity<TeamMembers>()
+                .HasIndex(tm => new { tm.TeamId, tm.UserId })
+                .IsUnique();
+            modelBuilder.Entity<TeamMembers>()
+                .HasOne(tm => tm.Team)
+                .WithMany(t => t.TeamMembers)
+                .HasForeignKey(tm => tm.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TeamMembers>()
+                .HasOne(tm => tm.User)
+                .WithMany(u => u.TeamMemberships)
+                .HasForeignKey(tm => tm.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TeamMembers>()
+                .HasOne(tm => tm.Inviter)
+                .WithMany()
+                .HasForeignKey(tm => tm.InvitedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure TeamTasks
+            modelBuilder.Entity<TeamTasks>()
+                .HasKey(tt => tt.TaskId);
+            modelBuilder.Entity<TeamTasks>()
+                .Property(tt => tt.Title)
+                .IsRequired()
+                .HasMaxLength(200);
+            modelBuilder.Entity<TeamTasks>()
+                .Property(tt => tt.Status)
+                .HasMaxLength(20);
+            modelBuilder.Entity<TeamTasks>()
+                .HasOne(tt => tt.Team)
+                .WithMany(t => t.TeamTasks)
+                .HasForeignKey(tt => tt.TeamId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TeamTasks>()
+                .HasOne(tt => tt.AssignedByUser)
+                .WithMany()
+                .HasForeignKey(tt => tt.AssignedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure TaskCompletions
+            modelBuilder.Entity<TaskCompletions>()
+                .HasKey(tc => tc.CompletionId);
+            // Một thành viên chỉ đánh dấu hoàn thành một task một lần
+            modelBuilder.Entity<TaskCompletions>()
+                .HasIndex(tc => new { tc.TaskId, tc.CompletedBy })
+                .IsUnique();
+            modelBuilder.Entity<TaskCompletions>()
+                .HasOne(tc => tc.Task)
+                .WithMany(tt => tt.TaskCompletions)
+                .HasForeignKey(tc => tc.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TaskCompletions>()
+                .HasOne(tc => tc.CompletedByUser)
+                .WithMany(u => u.TaskCompletions)
+                .HasForeignKey(tc => tc.CompletedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TaskCompletions>()
+                .HasOne(tc => tc.VerifiedByUser)
+                .WithMany()
+                .HasForeignKey(tc => tc.VerifiedBy)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Seed initial roles
             modelBuilder.Entity<Roles>().HasData(

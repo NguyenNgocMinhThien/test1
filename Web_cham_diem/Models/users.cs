@@ -14,9 +14,10 @@
         public DateTime? LastLogin { get; set; }
 
         public ICollection<UserRoles> UserRoles { get; set; } = new List<UserRoles>();
-
         public ICollection<Registrations> Registrations { get; set; } = new List<Registrations>();
         public ICollection<Judges> Judges { get; set; } = new List<Judges>();
         public ICollection<Notifications> Notifications { get; set; } = new List<Notifications>();
+        public ICollection<TeamMembers> TeamMemberships { get; set; } = new List<TeamMembers>();
+        public ICollection<TaskCompletions> TaskCompletions { get; set; } = new List<TaskCompletions>();
     }
 }
