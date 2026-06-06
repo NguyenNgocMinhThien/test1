@@ -241,8 +241,12 @@
                         <i class="bi bi-plus-lg me-1"></i> Quick Action
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2">
-                        <li><a class="dropdown-item rounded-2" href="#"><i class="bi bi-person-plus me-2"></i>Tạo tài khoản</a></li>
-                        <li><a class="dropdown-item rounded-2" href="#"><i class="bi bi-plus-square me-2"></i>Tạo cuộc thi</a></li>
+                        <li><a class="dropdown-item rounded-2" href="/Account/UserManagement"><i class="bi bi-person-plus me-2"></i>Tạo tài khoản</a></li>
+                        <li>
+                            <a class="dropdown-item rounded-2" href="javascript:void(0);" onclick="handleQuickCreateContest()">
+                                <i class="bi bi-plus-square me-2"></i>Tạo cuộc thi
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
@@ -272,6 +276,26 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        function handleQuickCreateContest() {
+            if (typeof openCompModal === "function") {
+                openCompModal();
+            } else {
+                window.location.href = "/Account/ContestOverview#openCreate";
+            }
+        }
 
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.location.hash === "#openCreate") {
+                history.replaceState(null, null, window.location.pathname);
+                setTimeout(function() {
+                    if (typeof openCompModal === "function") {
+                        openCompModal();
+                    }
+                }, 400);
+            }
+        });
+    </script>
 </body>
+
 </html>
