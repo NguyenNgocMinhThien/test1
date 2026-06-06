@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -11,201 +11,397 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-            :root {
-                --primary-bg: #f0f2f5;
-                --sidebar-color: #ffffff;
-                --navy-blue: #003d7a;
-                --accent-blue: #0d6efd;
-                --organizer-accent: #059669; /* Đổi màu nhấn cho Ban tổ chức sang tông xanh lá đậm để phân biệt với Admin */
-                --text-dark: #1e293b;
-                --text-muted: #64748b;
-                --border-color: #e2e8f0;
-                --sidebar-width: 280px;
-                --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
+        :root {
+            --primary-bg: #f0f2f5;
+            --sidebar-color: #ffffff;
+            --navy-blue: #003d7a;
+            --accent-blue: #0d6efd;
+            --organizer-accent: #059669;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --sidebar-width: 280px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-            body {
-                font-family: 'Inter', sans-serif;
-                background-color: var(--primary-bg);
-                color: var(--text-dark);
-                overflow-x: hidden;
-            }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
 
-            /* --- SIDEBAR --- */
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
+            z-index: 1030;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .nav-section-title {
+            padding: 1.5rem 1.5rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.8rem 1.5rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: var(--transition);
+            border-radius: 0 50px 50px 0;
+            margin-right: 1rem;
+            text-decoration: none;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--organizer-accent);
+            background: #ecfdf5;
+        }
+
+        .nav-link.active {
+            border-left: 4px solid var(--organizer-accent);
+            font-weight: 600;
+        }
+
+        .nav-link i {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* --- MAIN CONTENT & NAVBAR --- */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            transition: var(--transition);
+            min-height: 100vh;
+        }
+
+        .navbar-top {
+            height: 70px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .search-container {
+            width: 380px;
+            position: relative;
+        }
+
+        .search-container input {
+            padding-left: 2.5rem;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+        }
+
+        .search-container input:focus {
+            border-color: var(--organizer-accent);
+            box-shadow: 0 0 0 0.15rem rgba(5, 150, 105, 0.15);
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .bg-soft-organizer {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* --- NOTIFICATION DROPDOWN --- */
+        .noti-dropdown {
+            width: 370px;
+            max-height: 460px;
+            overflow-y: auto;
+            padding: 0 !important;
+        }
+
+        .noti-dd-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .noti-dd-item:hover {
+            background: #f8fafc;
+        }
+
+        .noti-dd-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+
+        /* --- USER PROFILE --- */
+        .user-profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 25px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-profile-btn:hover {
+            background: #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .user-avatar-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #059669, #34d399);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .user-avatar-lg {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+            border: 2px solid rgba(255,255,255,0.6);
+            flex-shrink: 0;
+        }
+
+        .dropdown-header-org {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, #059669 0%, #34d399 100%);
+            color: white;
+        }
+
+        .dropdown-menu-user {
+            min-width: 300px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            margin-top: 8px;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+
+        .dropdown-item-user {
+            padding: 0.75rem 1.25rem !important;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+            color: #212529;
+        }
+
+        .dropdown-item-user:hover {
+            background: #f8f9fa;
+            color: var(--organizer-accent);
+            border-left-color: var(--organizer-accent);
+            transform: translateX(2px);
+        }
+
+        .dropdown-item-user i {
+            width: 18px;
+            font-size: 14px;
+            color: var(--organizer-accent);
+        }
+
+        .dropdown-item-logout {
+            color: #dc3545 !important;
+        }
+
+        .dropdown-item-logout:hover {
+            background: #ffe5e5 !important;
+            color: #dc3545 !important;
+            border-left-color: #dc3545 !important;
+        }
+
+        .dropdown-item-logout i {
+            color: #dc3545 !important;
+        }
+
+        /* --- ALERT DISMISSIBLE --- */
+        .org-alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        /* --- SIDEBAR OVERLAY (MOBILE) --- */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1029;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        @@media (max-width: 992px) {
             .sidebar {
-                width: var(--sidebar-width);
-                height: 100vh;
-                position: fixed;
-                left: 0;
-                top: 0;
-                background: var(--sidebar-color);
-                border-right: 1px solid var(--border-color);
-                z-index: 1030;
-                transition: var(--transition);
+                left: calc(-1 * var(--sidebar-width));
             }
-
-            .sidebar-header {
-                padding: 1.5rem;
-                border-bottom: 1px solid var(--border-color);
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .nav-section-title {
-                padding: 1.5rem 1.5rem 0.5rem;
-                font-size: 0.7rem;
-                font-weight: 700;
-                color: var(--text-muted);
-                text-transform: uppercase;
-                letter-spacing: 1px;
-            }
-
-            .nav-link {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 0.8rem 1.5rem;
-                color: var(--text-dark);
-                font-weight: 500;
-                transition: var(--transition);
-                border-radius: 0 50px 50px 0;
-                margin-right: 1rem;
-            }
-
-            .nav-link:hover, .nav-link.active {
-                color: var(--organizer-accent);
-                background: #ecfdf5; /* Nền xanh lá cực nhạt khi active */
-            }
-
-            .nav-link.active {
-                border-left: 4px solid var(--organizer-accent);
-                font-weight: 600;
-            }
-
-            .nav-link i {
-                font-size: 1.2rem;
-            }
-
-            /* --- MAIN CONTENT & NAVBAR --- */
             .main-wrapper {
-                margin-left: var(--sidebar-width);
-                transition: var(--transition);
+                margin-left: 0;
             }
-
-            .navbar-top {
-                height: 70px;
-                background: #fff;
-                border-bottom: 1px solid var(--border-color);
-                padding: 0 2rem;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                position: sticky;
-                top: 0;
-                z-index: 1020;
+            .sidebar.mobile-show {
+                left: 0;
             }
-
             .search-container {
-                width: 400px;
-                position: relative;
+                width: 220px;
             }
+        }
 
-            .search-container input {
-                padding-left: 2.5rem;
-                border-radius: 8px;
-                background: #f8fafc;
-                border: 1px solid var(--border-color);
+        @@media (max-width: 576px) {
+            .search-container {
+                display: none;
             }
-
-            .search-container i {
-                position: absolute;
-                left: 1rem;
-                top: 50%;
-                transform: translateY(-50%);
-                color: var(--text-muted);
+            .navbar-top {
+                padding: 0 1rem;
             }
+        }
 
-            .stat-icon {
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 1.4rem;
-            }
-
-            .bg-soft-organizer {
-                background: #d1fae5;
-                color: #059669;
-            }
-
-            @@media (max-width: 992px) {
-                .sidebar { left: -var(--sidebar-width); }
-                .main-wrapper { margin-left: 0; }
-                .sidebar.mobile-show { left: 0; }
-            }
-
-            /* Render styles từ các trang con */
-            @RenderSection("Styles", required: false)
     </style>
+    @RenderSection("Styles", required: false)
 </head>
+
+@{
+    var userFullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Ban Tổ Chức";
+    var userEmail    = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+    var userInitials = !string.IsNullOrEmpty(userFullName)
+        ? string.Concat(userFullName.Split(' ').Where(x => x.Length > 0).Select(x => x[0])).ToUpper()
+        : "BTC";
+    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+}
+
 <body>
+    <!-- SIDEBAR OVERLAY (mobile tap to close) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <!-- SIDEBAR SECTION -->
-    <aside class="sidebar d-flex flex-column">
+    <aside class="sidebar" id="mainSidebar">
         <div class="sidebar-header">
             <div class="stat-icon bg-soft-organizer"><i class="bi bi-diagram-3-fill"></i></div>
-            <span class="fw-bold text-dark fs-5">ORGANIZER</span>
+            <div>
+                <span class="fw-bold text-dark d-block fs-6">ORGANIZER</span>
+                <small class="text-muted" style="font-size: 0.68rem;">Ban Tổ Chức Cuộc thi</small>
+            </div>
         </div>
 
-        <div class="overflow-y-auto">
+        <div class="overflow-y-auto flex-grow-1">
             <div class="nav-section-title">Tổng quan</div>
 
-            <!-- 1. Dashboard -->
-            <a href="/Organizer/Dashboard" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+            <a href="/Organizer/Dashboard"
+               class="nav-link @(currentAction == "Dashboard" ? "active" : "")">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a>
 
             <div class="nav-section-title">Hoạt động Cuộc thi</div>
 
-            <!-- 2. Quản lý cuộc thi -->
-            <a href="/Organizer/Contests" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Contests" ? "active" : "")">
+            <a href="/Organizer/Contests"
+               class="nav-link @(currentAction == "Contests" || currentAction == "Create" || currentAction == "Edit" ? "active" : "")">
                 <i class="bi bi-trophy"></i> Quản lý cuộc thi
             </a>
 
-            <!-- 3. Quản lý đăng ký & bài dự thi -->
-            <a href="/Organizer/Submissions" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Submissions" ? "active" : "")">
+            <a href="/Organizer/Submissions"
+               class="nav-link @(currentAction == "Submissions" ? "active" : "")">
                 <i class="bi bi-file-earmark-text"></i> Khảo thí & Bài dự thi
             </a>
 
-            <!-- 4. Quản lý chấm điểm -->
-            <a href="/Organizer/Grading" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Grading" ? "active" : "")">
+            <a href="/Organizer/Grading"
+               class="nav-link @(currentAction == "Grading" ? "active" : "")">
                 <i class="bi bi-ui-checks"></i> Quản lý chấm điểm
             </a>
 
             <div class="nav-section-title">Giám sát & Tương tác</div>
 
-            <!-- 5. Kết quả & báo cáo -->
-            <a href="/Organizer/Results" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Results" ? "active" : "")">
+            <a href="/Organizer/Results"
+               class="nav-link @(currentAction == "Results" ? "active" : "")">
                 <i class="bi bi-bar-chart-steps"></i> Kết quả & Báo cáo
             </a>
 
-            <!-- 6. Thông báo cuộc thi -->
-            <a href="/Organizer/Notifications" class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Notifications" ? "active" : "")">
+            <a href="/Organizer/Notifications"
+               class="nav-link @(currentAction == "Notifications" ? "active" : "")">
                 <i class="bi bi-megaphone"></i> Thông báo cuộc thi
             </a>
-
-       
         </div>
 
-        <!-- Trạng thái / Support ở dưới cùng -->
-        <div class="mt-auto p-4 border-top">
+        <!-- Hỗ trợ IT ở dưới cùng -->
+        <div class="p-4 border-top flex-shrink-0">
             <div class="bg-light p-3 rounded-4 small">
-                <div class="fw-bold mb-1"><i class="bi bi-info-circle text-primary"></i> Hỗ trợ IT</div>
-                <div class="text-muted" style="font-size: 0.75rem;">Nếu gặp lỗi hệ thống, vui lòng liên hệ Admin.</div>
-                <button class="btn btn-sm btn-outline-secondary w-100 mt-2">Gửi Ticket hỗ trợ</button>
+                <div class="fw-bold mb-1">
+                    <i class="bi bi-info-circle text-primary"></i> Hỗ trợ IT
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                    Nếu gặp lỗi hệ thống, vui lòng liên hệ Admin.
+                </div>
+                <a href="mailto:admin@university.edu.vn"
+                   class="btn btn-sm btn-outline-secondary w-100 mt-2">
+                    <i class="bi bi-envelope me-1"></i>Gửi Ticket hỗ trợ
+                </a>
             </div>
         </div>
     </aside>
@@ -213,49 +409,228 @@
     <!-- MAIN WRAPPER SECTION -->
     <div class="main-wrapper">
 
-        <!-- HEADER (NAVBAR) -->
+        <!-- HEADER (NAVBAR TOP) -->
         <nav class="navbar-top shadow-sm">
-            <div class="search-container">
-                <i class="bi bi-search"></i>
-                <input type="text" class="form-control border-0" placeholder="Tìm kiếm bài thi, sinh viên, giám khảo...">
+
+            <!-- Trái: toggle (mobile) + search -->
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light border-0 d-lg-none" onclick="toggleSidebar()" title="Menu">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <div class="search-container">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control border-0" id="globalSearch"
+                           placeholder="Tìm bài thi, sinh viên, giám khảo..."
+                           onkeydown="handleSearch(event)">
+                </div>
             </div>
 
-            <div class="d-flex align-items-center gap-4">
+            <!-- Phải: quick action + bell + user -->
+            <div class="d-flex align-items-center gap-3">
+
+                <!-- Quick Action dropdown -->
                 <div class="dropdown">
-                    <!-- Quick action cho BTC -->
-                    <button class="btn border-0 rounded-pill px-3 shadow-sm btn-sm text-white" style="background-color: var(--organizer-accent);" data-bs-toggle="dropdown">
-                        <i class="bi bi-plus-lg me-1"></i> Tạo nhanh
+                    <button class="btn border-0 rounded-pill px-3 shadow-sm btn-sm text-white fw-semibold"
+                            style="background-color: var(--organizer-accent);"
+                            data-bs-toggle="dropdown">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        <span class="d-none d-md-inline">Tạo nhanh</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2">
-                        <li><a class="dropdown-item rounded-2" href="#"><i class="bi bi-trophy me-2"></i>Tạo cuộc thi mới</a></li>
-                        <li><a class="dropdown-item rounded-2" href="#"><i class="bi bi-bell me-2"></i>Gửi thông báo</a></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2" href="/Organizer/Create">
+                                <i class="bi bi-trophy me-2 text-warning"></i>Tạo cuộc thi mới
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2" href="/Organizer/Notifications">
+                                <i class="bi bi-megaphone me-2 text-primary"></i>Gửi thông báo
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item rounded-2" href="#"><i class="bi bi-person-plus me-2"></i>Thêm Giám khảo</a></li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2" href="/Organizer/Grading">
+                                <i class="bi bi-person-badge me-2 text-info"></i>Phân công Giám khảo
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2" href="/Organizer/Submissions">
+                                <i class="bi bi-card-checklist me-2 text-success"></i>Duyệt hồ sơ
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-2 py-2" href="/Organizer/Results">
+                                <i class="bi bi-bar-chart me-2 text-danger"></i>Xem kết quả
+                            </a>
+                        </li>
                     </ul>
                 </div>
 
-                <!-- Noti Icon -->
-                <div class="position-relative" style="cursor:pointer;">
-                    <i class="bi bi-bell fs-5 text-muted"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                <!-- Notification Bell dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-light border-0 position-relative rounded-circle p-2"
+                            style="width:38px;height:38px;"
+                            data-bs-toggle="dropdown"
+                            title="Thông báo">
+                        <i class="bi bi-bell fs-6 text-muted"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
+                              style="width:8px;height:8px;"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 noti-dropdown">
+                        <li class="px-3 py-2 border-bottom bg-light d-flex justify-content-between align-items-center sticky-top">
+                            <span class="fw-bold text-dark">Thông báo</span>
+                            <a href="/Organizer/Notifications" class="small text-decoration-none fw-semibold"
+                               style="color: var(--organizer-accent);">Xem tất cả</a>
+                        </li>
+                        <li>
+                            <div class="noti-dd-item">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <div class="noti-dd-dot bg-danger"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark mb-1">Hồ sơ mới chờ xét duyệt</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Có hồ sơ đăng ký vừa được gửi lên, cần phê duyệt sớm.</div>
+                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>Vừa xong</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="noti-dd-item">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <div class="noti-dd-dot bg-warning"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark mb-1">Deadline sắp đến</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">Cuộc thi Hackathon 2026 còn 2 ngày hạn nộp bài.</div>
+                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>30 phút trước</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="noti-dd-item">
+                                <div class="d-flex gap-2 align-items-start">
+                                    <div class="noti-dd-dot bg-primary"></div>
+                                    <div class="flex-grow-1">
+                                        <div class="small fw-bold text-dark mb-1">Giám khảo chậm tiến độ</div>
+                                        <div class="text-muted" style="font-size:0.75rem;">TS. Lê Thị C mới chấm 10% số bài được giao.</div>
+                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>1 ngày trước</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="border-top">
+                            <a href="/Organizer/Notifications"
+                               class="d-block text-center small py-2 text-decoration-none fw-semibold"
+                               style="color: var(--organizer-accent);">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Đến trang Thông báo
+                            </a>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- User Profile -->
-                <div class="d-flex align-items-center gap-3" style="cursor:pointer;" data-bs-toggle="dropdown">
-                    <div class="text-end lh-1">
-                        <div class="fw-bold small">Khoa CNTT (BTC)</div>
-                        <span class="text-muted" style="font-size: 0.7rem;">Phân quyền: Ban Tổ Chức</span>
-                    </div>
-                    <img src="https://ui-avatars.com/api/?name=BTC&background=059669&color=fff" class="rounded-circle shadow-sm" width="40">
+                <!-- User Profile dropdown -->
+                <div class="dropdown">
+                    <button type="button"
+                            class="user-profile-btn dropdown-toggle"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false">
+                        <div class="user-avatar-sm">@userInitials</div>
+                        <div class="d-none d-lg-block text-start lh-1">
+                            <div class="fw-bold small text-dark" style="font-size:13px;">@userFullName</div>
+                            <span class="text-muted" style="font-size: 0.68rem;">Ban Tổ Chức</span>
+                        </div>
+                        <i class="bi bi-chevron-down text-muted d-none d-lg-block" style="font-size:11px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-user">
+                        <!-- Header -->
+                        <li class="dropdown-header-org">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="user-avatar-lg">@userInitials</div>
+                                <div>
+                                    <div class="fw-bold" style="font-size:14px;">@userFullName</div>
+                                    <div style="font-size:12px; opacity:0.9;">@userEmail</div>
+                                    <div class="mt-1" style="font-size:11px; opacity:0.8;">
+                                        <i class="bi bi-shield-check me-1"></i>Ban Tổ Chức (Organizer)
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li><hr class="dropdown-divider m-0"></li>
+
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Organizer/Dashboard">
+                                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Organizer/Contests">
+                                <i class="bi bi-trophy"></i><span>Cuộc thi của tôi</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Organizer/Notifications">
+                                <i class="bi bi-bell"></i><span>Thông báo cuộc thi</span>
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider m-0"></li>
+
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Profile">
+                                <i class="bi bi-person-circle"></i><span>Hồ sơ cá nhân</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Settings">
+                                <i class="bi bi-gear"></i><span>Cài đặt tài khoản</span>
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider m-0"></li>
+
+                        <li>
+                            <form asp-controller="Login" asp-action="Logout" method="post" class="m-0">
+                                <button type="submit"
+                                        class="dropdown-item dropdown-item-user dropdown-item-logout w-100 text-start border-0 bg-transparent"
+                                        style="cursor:pointer;">
+                                    <i class="bi bi-box-arrow-right"></i><span>Đăng xuất</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Cài đặt tài khoản</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
-                </ul>
+
             </div>
         </nav>
+
+        <!-- TEMPDATA ALERTS -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show org-alert mx-4 mt-3 shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Thành công!</strong> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show org-alert mx-4 mt-3 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Lỗi!</strong> @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["WarningMessage"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show org-alert mx-4 mt-3 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <strong>Cảnh báo!</strong> @TempData["WarningMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
 
         <!-- CONTENT BODY RENDER -->
         <div class="p-4 p-md-5">
@@ -267,6 +642,42 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('mobile-show');
+            overlay.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.remove('mobile-show');
+            overlay.classList.remove('show');
+        }
+
+        // Global search (Enter key)
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                const query = document.getElementById('globalSearch').value.trim();
+                if (query) {
+                    window.location.href = `/Organizer/Submissions?search=${encodeURIComponent(query)}`;
+                }
+            }
+        }
+
+        // Auto dismiss alerts after 5 seconds
+        document.querySelectorAll('.org-alert').forEach(function (alert) {
+            setTimeout(function () {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>

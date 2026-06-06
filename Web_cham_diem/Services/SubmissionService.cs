@@ -120,7 +120,9 @@ public class SubmissionService : ISubmissionService
 
             // 4. Tính toán thống kê tiến độ
             var competition = competitionId.HasValue
-                ? await _context.Competitions.FirstOrDefaultAsync(c => c.CompetitionId == competitionId.Value)
+                ? await _context.Competitions
+                    .Include(c => c.Registrations)
+                    .FirstOrDefaultAsync(c => c.CompetitionId == competitionId.Value)
                 : null;
 
             var progressStats = new ProgressStatisticsDto();
