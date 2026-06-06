@@ -16,7 +16,7 @@
         public ICollection<UserRoles> UserRoles { get; set; } = new List<UserRoles>();
 
         public ICollection<Registrations> Registrations { get; set; } = new List<Registrations>();
-        public ICollection<Judges> JudgeAssignments { get; set; } = new List<Judges>();
+        public ICollection<Judges> Judges { get; set; } = new List<Judges>();
         public ICollection<Notifications> Notifications { get; set; } = new List<Notifications>();
     }
 }
