@@ -7,6 +7,7 @@
         public int CompetitionId { get; set; }
         public int? TeamId { get; set; }
         public int? RoundId { get; set; }
+        public int? AdvisorId { get; set; }            // Giảng viên hướng dẫn (nullable)
         public string RegistrationType { get; set; } = "Individual"; // Individual, Team
         public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Withdrawn
         public string? SubmissionDocument { get; set; } // Tài liệu hồ sơ
@@ -20,5 +21,6 @@
         public Competitions Competition { get; set; } = null!;
         public Teams? Team { get; set; }
         public RegistrationRounds? RegistrationRound { get; set; }
+        public Users? Advisor { get; set; }
     }
 }

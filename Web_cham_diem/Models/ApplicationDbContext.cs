@@ -152,6 +152,11 @@ namespace Web_cham_diem.Models
                 .WithMany(rr => rr.Registrations)
                 .HasForeignKey(r => r.RoundId)
                 .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Registrations>()
+                .HasOne(r => r.Advisor)
+                .WithMany()
+                .HasForeignKey(r => r.AdvisorId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Teams
             modelBuilder.Entity<Teams>()
@@ -424,6 +429,11 @@ namespace Web_cham_diem.Models
                 .WithMany()
                 .HasForeignKey(tt => tt.AssignedBy)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<TeamTasks>()
+                .HasOne(tt => tt.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(tt => tt.AssignedTo)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure TaskCompletions
             modelBuilder.Entity<TaskCompletions>()

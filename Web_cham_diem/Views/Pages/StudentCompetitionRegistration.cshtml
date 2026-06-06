@@ -1,8 +1,9 @@
-﻿@model Web_cham_diem.Models.ViewModels.CompetitionRegistrationViewModel
+@model Web_cham_diem.Models.ViewModels.CompetitionRegistrationViewModel
 
 @{
     ViewData["Title"] = "Đăng ký tham gia cuộc thi";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var isLecturer = Model.IsLecturerFlow;
 }
 
 @section Styles {
@@ -12,10 +13,7 @@
             --light-blue: #F0F7FA;
             --soft-gray: #F8F9FA;
         }
-
-        body {
-            background-color: var(--soft-gray);
-        }
+        body { background-color: var(--soft-gray); }
 
         .card-academic {
             border: none;
@@ -31,67 +29,142 @@
             background: #fff;
             transition: 0.2s;
         }
+        .upload-box:hover { border-color: var(--academic-blue); background: #f8fbff; }
 
-            .upload-box:hover {
-                border-color: var(--academic-blue);
-                background: #f8fbff;
-            }
+        .member-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e8f0fe;
+            border: 1px solid #c0d4f5;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: .85rem;
+            margin: 3px;
+        }
+        .member-tag .remove-member {
+            cursor: pointer;
+            color: #dc3545;
+            font-weight: bold;
+            line-height: 1;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .search-result-box {
+            border: 1px solid #c3d8f0;
+            border-radius: .5rem;
+            padding: 10px 14px;
+            background: #f0f7ff;
+            font-size: .88rem;
+        }
+        .search-result-box.found { border-color: #28a745; background: #f0fff4; }
+        .search-result-box.error { border-color: #dc3545; background: #fff5f5; }
+
+        .section-divider {
+            border: none;
+            border-top: 2px dashed #d0e4f7;
+            margin: 1.5rem 0;
+        }
     </style>
 }
 
 <div class="container py-5">
     <div class="row g-4">
-        <!-- SECTION 1: INFO -->
+
+        <!-- SECTION 1: Thông tin cuộc thi -->
         <div class="col-lg-4">
             <div class="card card-academic p-4">
                 <h5 class="fw-bold text-primary mb-3">@Model.CompetitionName</h5>
-                <p class="text-muted">@Model.Description</p>
+                <p class="text-muted small">@Model.Description</p>
                 <div class="small text-secondary">
                     <div><strong>Lĩnh vực:</strong> @Model.Category</div>
                     <div><strong>Hạn đăng ký:</strong> @(Model.LatestRegistrationDeadline.HasValue ? Model.LatestRegistrationDeadline.Value.ToString("dd/MM/yyyy HH:mm") : "—")</div>
                     <div><strong>Hạn nộp bài:</strong> @Model.SubmissionDeadline.ToString("dd/MM/yyyy HH:mm")</div>
                     <div><strong>Hình thức:</strong> @(Model.IsTeamBased ? "Đội nhóm" : "Cá nhân")</div>
-                    <div><strong>Max team size:</strong> @Model.MaxTeamSize</div>
+                    @if (Model.IsTeamBased)
+                    {
+                        <div><strong>Số thành viên tối đa:</strong> @Model.MaxTeamSize</div>
+                    }
                 </div>
+                @if (isLecturer)
+                {
+                    <div class="alert alert-info mt-3 mb-0 small p-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Bạn đang đăng ký với tư cách <strong>Giảng viên hướng dẫn</strong>.
+                    </div>
+                }
             </div>
         </div>
 
-        <!-- SECTION 2: FORM -->
+        <!-- SECTION 2: Form đăng ký -->
         <div class="col-lg-8">
             <div class="card card-academic p-4">
                 <h4 class="fw-bold mb-4">Form đăng ký tham gia</h4>
 
-                <form asp-action="Register" asp-controller="Competitive" asp-route-id="@Model.CompetitionId" method="post" enctype="multipart/form-data">
+                <form asp-action="Register" asp-controller="Competitive" asp-route-id="@Model.CompetitionId"
+                      method="post" enctype="multipart/form-data" id="regForm">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="IsLecturerFlow" />
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Họ tên</label>
-                            <input class="form-control" asp-for="FullName" readonly />
+                    @* ── Lecturer flow: tìm thí sinh/đội trưởng ── *@
+                    @if (isLecturer)
+                    {
+                        <div class="mb-4 p-3" style="background:#fff8e1; border:1px solid #ffe082; border-radius:8px;">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-1 text-warning"></i>
+                                MSSV Thí sinh / Đội trưởng <span class="text-danger">*</span>
+                            </label>
+                            <div class="d-flex gap-2">
+                                <input type="text" id="leaderInput" class="form-control"
+                                       placeholder="Nhập MSSV của thí sinh chính"
+                                       value="@Model.LeaderStudentId">
+                                <button type="button" class="btn btn-warning" onclick="lookupLeader()">
+                                    <i class="bi bi-search"></i> Tìm
+                                </button>
+                            </div>
+                            <div id="leaderResult" class="mt-2"></div>
+                            <input type="hidden" asp-for="LeaderStudentId" id="leaderStudentIdHidden" />
+                            <span asp-validation-for="LeaderStudentId" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">MSSV</label>
-                            <input class="form-control" asp-for="StudentId" readonly />
+                    }
+                    else
+                    {
+                        @* Student: hiển thị thông tin bản thân *@
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Họ tên</label>
+                                <input class="form-control" asp-for="FullName" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">MSSV</label>
+                                <input class="form-control" asp-for="StudentId" readonly />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Email</label>
+                                <input class="form-control" asp-for="Email" readonly />
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Email</label>
-                            <input class="form-control" asp-for="Email" readonly />
-                        </div>
-                       
-                    </div>
+                    }
 
+                    <hr class="section-divider" />
+
+                    @* ── Hình thức đăng ký (chỉ khi cuộc thi IsTeamBased) ── *@
                     @if (Model.IsTeamBased)
                     {
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Hình thức đăng ký</label>
                             <div class="d-flex gap-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" asp-for="RegistrationType" type="radio" value="Individual" id="typeIndividual" checked>
+                                    <input class="form-check-input" asp-for="RegistrationType"
+                                           type="radio" value="Individual" id="typeIndividual">
                                     <label class="form-check-label" for="typeIndividual">Cá nhân</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" asp-for="RegistrationType" type="radio" value="Team" id="typeTeam">
+                                    <input class="form-check-input" asp-for="RegistrationType"
+                                           type="radio" value="Team" id="typeTeam">
                                     <label class="form-check-label" for="typeTeam">Đội nhóm</label>
                                 </div>
                             </div>
@@ -99,15 +172,40 @@
 
                         <div id="teamSection" style="display:none;">
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Tên nhóm</label>
+                                <label class="form-label fw-semibold">Tên nhóm <span class="text-danger">*</span></label>
                                 <input class="form-control" asp-for="TeamName" placeholder="Nhập tên nhóm" />
                                 <span asp-validation-for="TeamName" class="text-danger small"></span>
                             </div>
+
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Danh sách thành viên (mỗi dòng 1 người)</label>
-                                <textarea class="form-control" asp-for="TeamMembers" rows="4" placeholder="Họ tên - MSSV - Vai trò"></textarea>
-                                <span asp-validation-for="TeamMembers" class="text-danger small"></span>
-                                <div class="small text-muted">Tối đa @Model.MaxTeamSize thành viên (bao gồm trưởng nhóm).</div>
+                                <label class="form-label fw-semibold">
+                                    Thêm thành viên
+                                    <span class="text-muted fw-normal small">(tối đa @(Model.MaxTeamSize - 1) thành viên ngoài trưởng nhóm)</span>
+                                </label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" id="memberInput" class="form-control"
+                                           placeholder="Nhập MSSV thành viên">
+                                    <button type="button" class="btn btn-outline-primary" onclick="lookupMember()">
+                                        <i class="bi bi-person-plus"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="memberSearchResult" class="mb-2"></div>
+
+                                <div id="memberTags" class="mb-1">
+                                    @* Re-populate từ POST validation error *@
+                                    @foreach (var mssvItem in Model.MemberStudentIds)
+                                    {
+                                        <span class="member-tag" data-id="@mssvItem">
+                                            @mssvItem
+                                            <button type="button" class="remove-member" onclick="removeMember(this)">✕</button>
+                                        </span>
+                                        <input type="hidden" name="MemberStudentIds" value="@mssvItem" />
+                                    }
+                                </div>
+                                <div class="small text-muted" id="memberCount">
+                                    Đã thêm: <span id="memberCountNum">@Model.MemberStudentIds.Count</span> thành viên
+                                </div>
+                                <span asp-validation-for="MemberStudentIds" class="text-danger small"></span>
                             </div>
                         </div>
                     }
@@ -116,12 +214,53 @@
                         <input type="hidden" asp-for="RegistrationType" value="Individual" />
                     }
 
+                    <hr class="section-divider" />
+
+                    @* ── Giảng viên hướng dẫn ── *@
+                    @if (!isLecturer)
+                    {
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-workspace me-1 text-secondary"></i>
+                                Giảng viên hướng dẫn
+                                <span class="text-muted fw-normal small">(không bắt buộc)</span>
+                            </label>
+                            <div class="d-flex gap-2">
+                                <input type="text" id="advisorInput" class="form-control"
+                                       placeholder="Nhập MSSV / mã GV của giảng viên"
+                                       value="@Model.AdvisorStudentId">
+                                <button type="button" class="btn btn-outline-secondary" onclick="lookupAdvisor()">
+                                    <i class="bi bi-search"></i> Tìm
+                                </button>
+                                <button type="button" class="btn btn-outline-danger d-none" id="clearAdvisorBtn" onclick="clearAdvisor()">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                            <div id="advisorResult" class="mt-2"></div>
+                            <input type="hidden" asp-for="AdvisorStudentId" id="advisorStudentIdHidden" />
+                            <span asp-validation-for="AdvisorStudentId" class="text-danger small"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        @* Lecturer: tự động là advisor, ẩn input *@
+                        <div class="mb-4 p-3" style="background:#e8f5e9; border:1px solid #a5d6a7; border-radius:8px;">
+                            <i class="bi bi-person-check me-1 text-success"></i>
+                            <strong>Giảng viên hướng dẫn:</strong> @Model.FullName (@Model.Email)
+                            <span class="badge bg-success ms-2">Bạn</span>
+                        </div>
+                    }
+
+                    <hr class="section-divider" />
+
+                    @* ── Ghi chú ── *@
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Ghi chú</label>
-                        <textarea class="form-control" asp-for="Notes" rows="3" placeholder="Ghi chú thêm (nếu có)"></textarea>
+                        <textarea class="form-control" asp-for="Notes" rows="3"
+                                  placeholder="Ghi chú thêm (nếu có)"></textarea>
                     </div>
 
-                    <!-- SECTION 3: FILES -->
+                    @* ── Hồ sơ đăng ký ── *@
                     <div class="mb-4">
                         <h6 class="fw-bold">Hồ sơ đăng ký</h6>
                         <div class="row g-3">
@@ -147,7 +286,7 @@
                         <div class="small text-muted mt-2">Hỗ trợ PDF/DOC/DOCX/ZIP/RAR</div>
                     </div>
 
-                    <!-- SECTION 4: CONFIRM -->
+                    @* ── Xác nhận ── *@
                     <div class="mb-4">
                         <div class="form-check">
                             <input class="form-check-input" asp-for="AcceptRules" />
@@ -161,17 +300,14 @@
                         </div>
                     </div>
 
-                    <!-- SECTION 5: ACTION -->
+                    @* ── Action ── *@
                     <div class="d-flex flex-wrap gap-3">
                         <button type="submit" class="btn btn-primary px-4 rounded-pill">
-                            Gửi đăng ký
+                            <i class="bi bi-send me-1"></i> Gửi đăng ký
                         </button>
-                        <button type="submit"
-                                formnovalidate
-                                formaction="/Competitions/Register/@Model.CompetitionId/cancel"
-                                class="btn btn-outline-secondary px-4 rounded-pill">
-                            Hủy đăng ký
-                        </button>
+                        <a href="/Competitions/@Model.CompetitionId" class="btn btn-outline-secondary px-4 rounded-pill">
+                            Hủy
+                        </a>
                     </div>
                 </form>
             </div>
@@ -180,25 +316,151 @@
 </div>
 
 @section Scripts {
-    <script>
-        const cancelBtn = document.getElementById("cancelBtn");
-        if (cancelBtn) {
-            cancelBtn.addEventListener("click", () => {
-                window.location.href = "/Competitions";
-            });
+<script>
+    const MAX_TEAM_SIZE = @Model.MaxTeamSize;
+    let memberCount = @Model.MemberStudentIds.Count;
+    const addedMemberIds = new Set(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MemberStudentIds)));
+
+    // ── Toggle team section ──────────────────────────────────────────────────
+    const teamSection = document.getElementById('teamSection');
+    const typeIndividual = document.getElementById('typeIndividual');
+    const typeTeam = document.getElementById('typeTeam');
+
+    function toggleTeam() {
+        if (!teamSection) return;
+        const show = typeTeam && typeTeam.checked;
+        teamSection.style.display = show ? 'block' : 'none';
+    }
+
+    if (typeIndividual) typeIndividual.addEventListener('change', toggleTeam);
+    if (typeTeam) typeTeam.addEventListener('change', toggleTeam);
+    toggleTeam();
+
+    // ── Leader lookup (Lecturer flow) ────────────────────────────────────────
+    async function lookupLeader() {
+        const mssv = document.getElementById('leaderInput')?.value.trim();
+        const resultEl = document.getElementById('leaderResult');
+        const hiddenEl = document.getElementById('leaderStudentIdHidden');
+
+        if (!mssv) { showResult(resultEl, 'error', 'Vui lòng nhập MSSV.'); return; }
+
+        try {
+            const res = await fetch(`/api/users/lookup?studentId=${encodeURIComponent(mssv)}&role=Student`);
+            const data = await res.json();
+            if (res.ok) {
+                showResult(resultEl, 'found', `<i class="bi bi-check-circle-fill me-1 text-success"></i><strong>${data.fullName}</strong> &nbsp;|&nbsp; ${data.email}`);
+                hiddenEl.value = mssv;
+            } else {
+                showResult(resultEl, 'error', `<i class="bi bi-x-circle me-1 text-danger"></i>${data.message}`);
+                hiddenEl.value = '';
+            }
+        } catch {
+            showResult(resultEl, 'error', 'Lỗi kết nối.');
+        }
+    }
+
+    // ── Advisor lookup ───────────────────────────────────────────────────────
+    async function lookupAdvisor() {
+        const mssv = document.getElementById('advisorInput')?.value.trim();
+        const resultEl = document.getElementById('advisorResult');
+        const hiddenEl = document.getElementById('advisorStudentIdHidden');
+        const clearBtn = document.getElementById('clearAdvisorBtn');
+
+        if (!mssv) { showResult(resultEl, 'error', 'Vui lòng nhập MSSV / mã GV.'); return; }
+
+        try {
+            const res = await fetch(`/api/users/lookup?studentId=${encodeURIComponent(mssv)}&role=Lecturer`);
+            const data = await res.json();
+            if (res.ok) {
+                showResult(resultEl, 'found', `<i class="bi bi-check-circle-fill me-1 text-success"></i><strong>${data.fullName}</strong> &nbsp;|&nbsp; ${data.email} <span class="badge bg-secondary ms-1">Giảng viên</span>`);
+                hiddenEl.value = mssv;
+                if (clearBtn) clearBtn.classList.remove('d-none');
+            } else {
+                showResult(resultEl, 'error', `<i class="bi bi-x-circle me-1 text-danger"></i>${data.message}`);
+                hiddenEl.value = '';
+                if (clearBtn) clearBtn.classList.add('d-none');
+            }
+        } catch {
+            showResult(resultEl, 'error', 'Lỗi kết nối.');
+        }
+    }
+
+    function clearAdvisor() {
+        document.getElementById('advisorInput').value = '';
+        document.getElementById('advisorStudentIdHidden').value = '';
+        document.getElementById('advisorResult').innerHTML = '';
+        document.getElementById('clearAdvisorBtn')?.classList.add('d-none');
+    }
+
+    // ── Member lookup ────────────────────────────────────────────────────────
+    async function lookupMember() {
+        const mssv = document.getElementById('memberInput')?.value.trim();
+        const resultEl = document.getElementById('memberSearchResult');
+
+        if (!mssv) { showResult(resultEl, 'error', 'Vui lòng nhập MSSV.'); return; }
+
+        if (addedMemberIds.has(mssv)) {
+            showResult(resultEl, 'error', 'MSSV này đã được thêm.');
+            return;
         }
 
-        const teamSection = document.getElementById("teamSection");
-        const typeIndividual = document.getElementById("typeIndividual");
-        const typeTeam = document.getElementById("typeTeam");
-
-        if (typeIndividual && typeTeam) {
-            const toggleTeam = () => {
-                teamSection.style.display = typeTeam.checked ? "block" : "none";
-            };
-            typeIndividual.addEventListener("change", toggleTeam);
-            typeTeam.addEventListener("change", toggleTeam);
-            toggleTeam();
+        // Tổng = trưởng nhóm (1) + thành viên đã thêm
+        if (MAX_TEAM_SIZE > 0 && (1 + memberCount + 1) > MAX_TEAM_SIZE) {
+            showResult(resultEl, 'error', `Nhóm đã đủ tối đa ${MAX_TEAM_SIZE} người (bao gồm trưởng nhóm).`);
+            return;
         }
-    </script>
+
+        try {
+            const res = await fetch(`/api/users/lookup?studentId=${encodeURIComponent(mssv)}`);
+            const data = await res.json();
+            if (res.ok) {
+                addedMemberIds.add(mssv);
+                memberCount++;
+                addMemberTag(data.fullName, mssv);
+                document.getElementById('memberInput').value = '';
+                showResult(resultEl, 'found', `<i class="bi bi-check-circle-fill me-1 text-success"></i>Đã thêm <strong>${data.fullName}</strong>`);
+                setTimeout(() => { resultEl.innerHTML = ''; }, 2000);
+            } else {
+                showResult(resultEl, 'error', `<i class="bi bi-x-circle me-1 text-danger"></i>${data.message}`);
+            }
+        } catch {
+            showResult(resultEl, 'error', 'Lỗi kết nối.');
+        }
+    }
+
+    function addMemberTag(fullName, mssv) {
+        const container = document.getElementById('memberTags');
+        const tag = document.createElement('span');
+        tag.className = 'member-tag';
+        tag.dataset.id = mssv;
+        tag.innerHTML = `${fullName} <span class="text-muted small">(${mssv})</span>
+            <button type="button" class="remove-member" onclick="removeMember(this)">✕</button>
+            <input type="hidden" name="MemberStudentIds" value="${mssv}">`;
+        container.appendChild(tag);
+        updateMemberCount();
+    }
+
+    function removeMember(btn) {
+        const tag = btn.closest('.member-tag');
+        const mssv = tag.dataset.id;
+        addedMemberIds.delete(mssv);
+        tag.remove();
+        memberCount--;
+        updateMemberCount();
+    }
+
+    function updateMemberCount() {
+        document.getElementById('memberCountNum').textContent = memberCount;
+    }
+
+    // ── Enter key triggers search ────────────────────────────────────────────
+    document.getElementById('memberInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupMember(); } });
+    document.getElementById('advisorInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupAdvisor(); } });
+    document.getElementById('leaderInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); lookupLeader(); } });
+
+    // ── Utility ──────────────────────────────────────────────────────────────
+    function showResult(el, type, html) {
+        el.innerHTML = `<div class="search-result-box ${type === 'found' ? 'found' : 'error'} mt-1">${html}</div>`;
+    }
+</script>
 }

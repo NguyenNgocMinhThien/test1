@@ -342,22 +342,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Teams">
-                            <i class="bi bi-people me-1 text-primary"></i>
-                            <span class="d-none d-lg-inline">Đội thi</span>
+                        <a class="nav-link" href="/MyRegistrations">
+                            <i class="bi bi-journal-check me-1 text-primary"></i>
+                            <span class="d-none d-lg-inline">Cuộc thi đã đăng ký</span>
                         </a>
                     </li>
                   
 
                     @if (User.IsInRole("Organizer"))
                     {
-                        @* <li class="nav-item">
-                            <a class="nav-link" href="/Competitive/Rules">
-                                <i class="bi bi-file-earmark-text me-1 text-danger"></i>
-                                <span class="d-none d-lg-inline">Tạo luật lệ</span>
-                            </a>
-                        </li> *@
-
                         <li class="nav-item">
                             <a class="nav-link" href="/Organizer/Dashboard">
                                 <i class="bi bi-bar-chart-line me-1 text-warning"></i>

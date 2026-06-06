@@ -1,305 +1,301 @@
-﻿@{
-    ViewData["Title"] = "Danh Sách Cuộc Thi - Quản Lý Cuộc Thi Sinh Viên";
+@{
+    ViewData["Title"] = "Danh Sách Cuộc Thi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+    .comp-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        transition: transform 0.25s, box-shadow 0.25s;
+        overflow: hidden;
+    }
+    .comp-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.13);
+    }
+
+    .comp-thumb {
+        height: 190px;
+        object-fit: cover;
+        width: 100%;
+    }
+    .comp-thumb-placeholder {
+        height: 190px;
+        background: linear-gradient(135deg, #0A4A91 0%, #1976D2 60%, #42A5F5 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .badge-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: .75rem;
+        padding: 5px 10px;
+        border-radius: 50px;
+    }
+    .badge-reg-open {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: .72rem;
+        padding: 4px 9px;
+        border-radius: 50px;
+        background: #28a745;
+        color: #fff;
+    }
+
+    .deadline-row {
+        font-size: .82rem;
+        color: #555;
+        margin-bottom: 4px;
+    }
+    .deadline-row i { width: 18px; }
+
+    .filter-bar .form-control,
+    .filter-bar .form-select { border-radius: .6rem; }
+
+    .card-prize {
+        background: #fffbea;
+        border: 1px solid #ffe082;
+        border-radius: .5rem;
+        padding: 6px 12px;
+        font-size: .82rem;
+        color: #6d4c00;
+    }
+</style>
+
 <div class="container py-5">
-    <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h1 class="fw-bold text-dark mb-2">
+            <h1 class="fw-bold mb-1">
                 <i class="bi bi-trophy-fill text-warning me-2"></i>Danh Sách Cuộc Thi
             </h1>
-            <p class="text-secondary mb-0">Khám phá các cuộc thi hấp dẫn và đăng ký tham gia ngay</p>
+            <p class="text-secondary mb-0">Khám phá các cuộc thi và đăng ký tham gia</p>
         </div>
-        <a href="/admin/competitions/create" class="btn btn-primary rounded-pill px-4 py-2" style="display: none;">
-            <i class="bi bi-plus-circle me-2"></i>Tạo Cuộc Thi Mới
-        </a>
     </div>
 
-    <!-- Filter & Search Bar -->
-    <div class="row mb-4 g-3">
-        <div class="col-12 col-md-6">
+    <!-- Filter bar -->
+    <div class="row g-3 mb-4 filter-bar">
+        <div class="col-12 col-md-5">
             <div class="input-group">
-                <span class="input-group-text bg-white border">
-                    <i class="bi bi-search text-secondary"></i>
-                </span>
-                <input type="text" id="searchInput" class="form-control border" placeholder="Tìm kiếm cuộc thi...">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm tên cuộc thi...">
             </div>
         </div>
-        <div class="col-12 col-md-3">
-            <select id="statusFilter" class="form-select border">
+        <div class="col-6 col-md-3">
+            <select id="statusFilter" class="form-select">
                 <option value="">-- Tất cả trạng thái --</option>
-                <option value="Draft">Bản nháp</option>
                 <option value="Active">Đang diễn ra</option>
-                <option value="Closed">Đã đóng đăng ký</option>
+                <option value="Closed">Đã đóng</option>
                 <option value="Completed">Hoàn thành</option>
             </select>
         </div>
-        <div class="col-12 col-md-3">
-            <select id="categoryFilter" class="form-select border">
+        <div class="col-6 col-md-4">
+            <select id="categoryFilter" class="form-select">
                 <option value="">-- Tất cả lĩnh vực --</option>
-                <option value="Technology">Công Nghệ</option>
-                <option value="Science">Khoa Học</option>
-                <option value="Business">Kinh Doanh</option>
-                <option value="Innovation">Đổi Mới Sáng Tạo</option>
             </select>
         </div>
     </div>
 
-    <!-- Competitions Grid -->
+    <!-- Grid -->
     <div id="competitionsContainer" class="row g-4">
-        <!-- Placeholder Skeleton Loaders -->
+        <!-- Skeleton loaders -->
         @for (int i = 0; i < 6; i++)
         {
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden placeholder-glow h-100">
-                    <div class="placeholder" style="height: 200px;"></div>
+            <div class="col-12 col-md-6 col-lg-4 skeleton-card">
+                <div class="card comp-card placeholder-glow h-100">
+                    <div class="placeholder comp-thumb-placeholder" style="background:#e9ecef;"></div>
                     <div class="card-body">
-                        <h5 class="placeholder-wave"><span class="placeholder col-6"></span></h5>
-                        <p class="placeholder-wave"><span class="placeholder col-12"></span></p>
-                        <div class="placeholder-wave"><span class="placeholder col-8"></span></div>
+                        <h5 class="placeholder-wave"><span class="placeholder col-8"></span></h5>
+                        <p class="placeholder-wave"><span class="placeholder col-12"></span><span class="placeholder col-10"></span></p>
+                        <div class="placeholder-wave"><span class="placeholder col-6"></span></div>
                     </div>
                 </div>
             </div>
         }
     </div>
 
-    <!-- No Results Message -->
-    <div id="noResultsMessage" class="alert alert-info text-center rounded-4 p-5" style="display: none;">
-        <i class="bi bi-info-circle-fill fs-1 mb-3"></i>
-        <h5 class="fw-bold">Không tìm thấy cuộc thi</h5>
-        <p class="text-secondary mb-0">Vui lòng thử lại với từ khóa hoặc bộ lọc khác</p>
+    <div id="noResultsMessage" class="text-center py-5" style="display:none;">
+        <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
+        <h5 class="fw-bold text-muted">Không tìm thấy cuộc thi nào</h5>
+        <p class="text-secondary">Thử thay đổi từ khóa hoặc bộ lọc</p>
     </div>
 </div>
 
-<style>
-    .competition-card {
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        overflow: hidden;
-    }
-
-        .competition-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-    .competition-badge {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        z-index: 10;
-    }
-
-    .competition-image {
-        height: 200px;
-        object-fit: cover;
-        background: linear-gradient(135deg, #0d6efd 0%, #0a429b 100%);
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 0.5rem 0.75rem;
-        border-radius: 50px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .status-active {
-        background-color: #d1e7dd;
-        color: #0f5132;
-    }
-
-    .status-draft {
-        background-color: #e2e3e5;
-        color: #383d41;
-    }
-
-    .status-closed {
-        background-color: #f8d7da;
-        color: #842029;
-    }
-
-    .status-completed {
-        background-color: #cfe2ff;
-        color: #084298;
-    }
-
-    .deadline-info {
-        font-size: 0.875rem;
-        color: #6c757d;
-    }
-</style>
-
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Fetch competitions data
-        fetchCompetitions();
+    let allCompetitions = [];
 
-        // Event listeners
-        document.getElementById('searchInput').addEventListener('keyup', filterCompetitions);
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchCompetitions();
+        document.getElementById('searchInput').addEventListener('input', filterCompetitions);
         document.getElementById('statusFilter').addEventListener('change', filterCompetitions);
         document.getElementById('categoryFilter').addEventListener('change', filterCompetitions);
     });
 
     async function fetchCompetitions() {
         try {
-            const response = await fetch('/api/competitions');
-            if (!response.ok) throw new Error('Failed to fetch competitions');
-
-            const competitions = await response.json();
-            renderCompetitions(competitions);
-        } catch (error) {
-            console.error('Error:', error);
+            const res = await fetch('/api/competitions');
+            if (!res.ok) throw new Error('Failed');
+            allCompetitions = await res.json();
+            populateCategoryFilter(allCompetitions);
+            renderCompetitions(allCompetitions);
+        } catch {
             document.getElementById('competitionsContainer').innerHTML =
-                '<div class="alert alert-danger col-12">Lỗi tải dữ liệu cuộc thi</div>';
+                '<div class="alert alert-danger col-12 rounded-3">Không thể tải danh sách cuộc thi. Vui lòng thử lại.</div>';
         }
     }
 
-        function renderCompetitions(competitions) {
-        const container = document.getElementById('competitionsContainer');
-        const noResults = document.getElementById('noResultsMessage');
-
-        if (!competitions || competitions.length === 0) {
-            container.innerHTML = '';
-            noResults.style.display = 'block';
-            return;
-        }
-
-        noResults.style.display = 'none';
-        container.innerHTML = competitions.map(comp => {
-            const name = comp.competitionName || 'Chưa cập nhật';
-            const description = comp.description || 'Không có mô tả';
-            const category = comp.category || 'Chưa cập nhật';
-            const status = comp.status || 'Draft';
-            const prize = comp.prize || 'Chưa cập nhật';
-            const maxParticipants = Number.isFinite(comp.maxParticipants) ? comp.maxParticipants : 0;
-            const maxTeamSize = Number.isFinite(comp.maxTeamSize) ? comp.maxTeamSize : 0;
-            const maxScore = Number.isFinite(comp.maxScore) ? comp.maxScore : 0;
-
-            return `
-                <div class="col-12 col-md-6 col-lg-4" data-competition-id="${comp.competitionId}">
-                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden competition-card h-100">
-                        <div class="position-relative">
-                            <div class="competition-image d-flex align-items-center justify-content-center">
-                                <i class="bi bi-trophy-fill text-white" style="font-size: 4rem; opacity: 0.3;"></i>
-                            </div>
-                            <span class="competition-badge">
-                                <span class="status-badge status-${status.toLowerCase()}">
-                                    ${getStatusLabel(status)}
-                                </span>
-                            </span>
-                        </div>
-
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold text-dark mb-2 text-truncate" data-comp-name="${name}">
-                                ${name}
-                            </h5>
-
-                            <p class="card-text text-secondary small mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                ${description}
-                            </p>
-
-                            <div class="mb-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge bg-light text-dark text-uppercase fw-6" style="font-size: 0.75rem;" data-comp-category="${category}">
-                                        ${category}
-                                    </span>
-                                    ${comp.isTeamBased
-                                        ? '<span class="badge bg-info ms-2 text-white"><i class="bi bi-people-fill me-1"></i>Thi theo nhóm</span>'
-                                        : '<span class="badge bg-success ms-2 text-white"><i class="bi bi-person-fill me-1"></i>Thi cá nhân</span>'
-                                    }
-                                </div>
-                                <small class="text-secondary">
-                                    <i class="bi bi-people me-1"></i>
-                                    Tối đa: ${maxParticipants}
-                                    ${comp.isTeamBased ? ` / Kích thước đội: ${maxTeamSize}` : ''}
-                                </small>
-                            </div>
-
-                            <div class="border-top pt-3 mb-3">
-                                <div class="deadline-info mb-2">
-                                    <i class="bi bi-calendar-event text-danger me-1"></i>
-                                    <strong>Bắt đầu:</strong> ${formatDate(comp.startDate)}
-                                </div>
-                                <div class="deadline-info mb-2">
-                                    <i class="bi bi-calendar-check text-primary me-1"></i>
-                                    <strong>Kết thúc:</strong> ${formatDate(comp.endDate)}
-                                </div>
-                                <div class="deadline-info">
-                                    <i class="bi bi-clock-history text-warning me-1"></i>
-                                    <strong>Đăng ký trước:</strong> ${formatDate(comp.registrationDeadline)}
-                                </div>
-                            </div>
-
-                            <div class="alert alert-light mb-3 py-2 px-3">
-                                <small>
-                                    <strong>Giải thưởng:</strong> ${prize}<br>
-                                    <strong>Điểm tối đa:</strong> ${maxScore}
-                                </small>
-                            </div>
-
-                            <div class="d-grid gap-2 mt-auto">
-                                <a href="/Competitions/${comp.competitionId}" class="btn btn-primary btn-sm rounded-pill py-2">
-                                    <i class="bi bi-eye me-1"></i>Xem Chi Tiết
-                                </a>
-                                <a href="/Competitions/Register/${comp.competitionId}" class="btn btn-outline-warning btn-sm rounded-pill py-2">
-                                    <i class="bi bi-pencil-square me-1"></i>Đăng Ký Tham Gia
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+    function populateCategoryFilter(list) {
+        const sel = document.getElementById('categoryFilter');
+        const cats = [...new Set(list.map(c => c.category).filter(Boolean))].sort();
+        cats.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            sel.appendChild(opt);
+        });
     }
 
     function filterCompetitions() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
+        const search = document.getElementById('searchInput').value.toLowerCase().trim();
         const status = document.getElementById('statusFilter').value;
         const category = document.getElementById('categoryFilter').value;
 
-        const cards = document.querySelectorAll('[data-competition-id]');
-        let visibleCount = 0;
-
-        cards.forEach(card => {
-            const name = card.querySelector('[data-comp-name]')?.textContent.toLowerCase() || '';
-            const compStatus = card.querySelector('[data-comp-status]')?.textContent || '';
-            const compCategory = card.querySelector('[data-comp-category]')?.textContent || '';
-
-            const matchSearch = name.includes(search);
-            const matchStatus = !status || compStatus === status;
-            const matchCategory = !category || compCategory === category;
-
-            if (matchSearch && matchStatus && matchCategory) {
-                card.style.display = '';
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
+        const filtered = allCompetitions.filter(c => {
+            const matchSearch = !search || (c.competitionName || '').toLowerCase().includes(search);
+            const matchStatus = !status || c.status === status;
+            const matchCat = !category || c.category === category;
+            return matchSearch && matchStatus && matchCat;
         });
 
-        document.getElementById('noResultsMessage').style.display = visibleCount === 0 ? 'block' : 'none';
+        renderCompetitions(filtered);
     }
 
-    function getStatusLabel(status) {
-        const labels = {
-            'Draft': 'Bản Nháp',
-            'Active': 'Đang Diễn Ra',
-            'Closed': 'Đã Đóng',
-            'Completed': 'Hoàn Thành'
-        };
-        return labels[status] || status;
-    }
+    function renderCompetitions(list) {
+        const container = document.getElementById('competitionsContainer');
+        const noMsg = document.getElementById('noResultsMessage');
 
-        function formatDate(dateString) {
-        if (!dateString) return 'Chưa cập nhật';
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Chưa cập nhật';
+        // Remove skeleton cards
+        document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
 
-        return date.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
+        if (!list || list.length === 0) {
+            container.innerHTML = '';
+            noMsg.style.display = 'block';
+            return;
+        }
+        noMsg.style.display = 'none';
+
+        const existing = new Set([...container.querySelectorAll('[data-comp-id]')].map(el => el.dataset.compId));
+        const fragment = document.createDocumentFragment();
+
+        list.forEach(c => {
+            if (existing.has(String(c.competitionId))) return; // prevent duplicates on re-render
         });
+
+        container.innerHTML = list.map(c => buildCard(c)).join('');
+    }
+
+    function buildCard(c) {
+        const status = c.status || 'Active';
+        const statusLabel = { Active: 'Đang diễn ra', Closed: 'Đã đóng', Completed: 'Hoàn thành' }[status] || status;
+        const statusClass = { Active: 'bg-success', Closed: 'bg-danger', Completed: 'bg-primary' }[status] || 'bg-secondary';
+
+        const thumbHtml = c.thumbnailUrl
+            ? `<img src="${c.thumbnailUrl}" class="comp-thumb" alt="${escHtml(c.competitionName)}" loading="lazy">`
+            : `<div class="comp-thumb-placeholder"><i class="bi bi-trophy-fill text-white" style="font-size:3.5rem;opacity:.35;"></i></div>`;
+
+        const regOpenBadge = c.hasActiveRound
+            ? `<span class="badge-reg-open"><i class="bi bi-dot"></i>Đang mở đăng ký</span>`
+            : '';
+
+        const prize = c.prize ? `<div class="card-prize mt-2"><i class="bi bi-gift me-1"></i>${escHtml(c.prize)}</div>` : '';
+
+        const isTeam = c.isTeamBased;
+        const formTypeBadge = isTeam
+            ? `<span class="badge bg-info text-white"><i class="bi bi-people-fill me-1"></i>Theo nhóm</span>`
+            : `<span class="badge bg-success text-white"><i class="bi bi-person-fill me-1"></i>Cá nhân</span>`;
+
+        const maxInfo = isTeam
+            ? `Tối đa ${c.maxParticipants} đội · ${c.maxTeamSize} thành viên/đội`
+            : `Tối đa ${c.maxParticipants} thí sinh`;
+
+        const regDeadlineRow = c.latestRegistrationDeadline
+            ? `<div class="deadline-row"><i class="bi bi-person-check text-success"></i><strong>Hạn đăng ký:</strong> ${formatDate(c.latestRegistrationDeadline)}</div>`
+            : '';
+
+        const canRegister = status === 'Active' && c.hasActiveRound;
+        const registerBtn = canRegister
+            ? `<a href="/Competitions/Register/${c.competitionId}" class="btn btn-warning btn-sm rounded-pill py-2">
+                    <i class="bi bi-pencil-square me-1"></i>Đăng ký tham gia
+               </a>`
+            : `<button class="btn btn-outline-secondary btn-sm rounded-pill py-2" disabled>
+                    <i class="bi bi-lock me-1"></i>${status === 'Active' ? 'Hết hạn đăng ký' : statusLabel}
+               </button>`;
+
+        return `
+        <div class="col-12 col-md-6 col-lg-4" data-comp-id="${c.competitionId}">
+            <div class="card comp-card h-100">
+                <div class="position-relative">
+                    ${thumbHtml}
+                    ${regOpenBadge}
+                    <span class="badge-status badge ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        ${formTypeBadge}
+                        <span class="badge bg-light text-dark border">${escHtml(c.category || 'Chưa xác định')}</span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1" style="line-height:1.3;">
+                        <a href="/Competitions/${c.competitionId}" class="text-dark text-decoration-none stretched-link-title">${escHtml(c.competitionName)}</a>
+                    </h5>
+
+                    <p class="text-secondary small mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                        ${escHtml(c.description || 'Không có mô tả.')}
+                    </p>
+
+                    <div class="mb-2">
+                        <div class="deadline-row"><i class="bi bi-calendar-event text-primary"></i><strong>Bắt đầu:</strong> ${formatDate(c.startDate)}</div>
+                        ${regDeadlineRow}
+                        <div class="deadline-row"><i class="bi bi-file-earmark-text text-warning"></i><strong>Hạn nộp bài:</strong> ${formatDate(c.submissionDeadline)}</div>
+                        <div class="deadline-row"><i class="bi bi-calendar-check text-secondary"></i><strong>Kết thúc:</strong> ${formatDate(c.endDate)}</div>
+                    </div>
+
+                    <div class="small text-muted mb-2">
+                        <i class="bi bi-people me-1"></i>${maxInfo}
+                    </div>
+
+                    ${prize}
+
+                    <div class="d-grid gap-2 mt-auto pt-3">
+                        <a href="/Competitions/${c.competitionId}" class="btn btn-outline-primary btn-sm rounded-pill py-2">
+                            <i class="bi bi-eye me-1"></i>Xem chi tiết
+                        </a>
+                        ${registerBtn}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function formatDate(str) {
+        if (!str) return '—';
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return '—';
+        return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 </script>
