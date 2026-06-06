@@ -24,6 +24,11 @@ public interface ICompetitionService
     /// <summary>Xóa đợt đăng ký. Chỉ được xóa khi round chưa có đăng ký nào và cuộc thi chưa bắt đầu.</summary>
     Task<bool> DeleteRegistrationRoundAsync(int roundId, int competitionId);
 
+    // ─── Competition Rounds (Vòng thi) ─────────────────────────────────────
+    Task<bool> AddCompetitionRoundAsync(int competitionId, CompetitionRoundCreateDto dto);
+    Task<bool> UpdateCompetitionRoundAsync(int roundId, int competitionId, UpdateCompetitionRoundDto dto);
+    Task<bool> DeleteCompetitionRoundAsync(int roundId, int competitionId);
+
     // ─── Images ────────────────────────────────────────────────────────────
     Task<bool> UploadImagesAsync(int competitionId, List<string> base64DataList);
     Task<bool> DeleteImageAsync(int imageId, int competitionId);

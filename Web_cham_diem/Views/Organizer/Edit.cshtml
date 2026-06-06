@@ -318,6 +318,120 @@
                             <div id="roundMsg" class="small mt-1"></div>
                         </div>
                     }
+
+                    <hr class="my-4" />
+
+                    <!-- ── VÒNG THI ── -->
+                    <div class="section-title">
+                        <i class="bi bi-trophy me-1"></i>Vòng thi
+                        <span style="color:#999; font-size:.8rem; font-weight:400;">(Sơ khảo / Bán kết / Chung kết)</span>
+                    </div>
+
+                    @if (!Model.ExistingCompetitionRounds.Any())
+                    {
+                        <div class="text-center py-3 text-muted" id="compRoundEmpty">
+                            <i class="bi bi-trophy fs-3 d-block mb-1 opacity-50"></i>
+                            Chưa có vòng thi nào. Thêm mới bên dưới.
+                        </div>
+                    }
+
+                    <div id="compRoundList">
+                        @foreach (var r in Model.ExistingCompetitionRounds)
+                        {
+                            var rStart = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rEnd   = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
+                            <div class="comp-round-row" id="cr-@r.RoundId"
+                                 style="background:#f0f4ff; border:1px solid #c7d7f5; border-radius:8px; padding:14px; margin-bottom:10px;">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-2">
+                                        <label class="form-label" style="font-size:.8rem;">Tên vòng</label>
+                                        <select class="form-select form-select-sm cr-name" id="crName-@r.RoundId">
+                                            @foreach (var opt in new[] { "Sơ khảo", "Bán kết", "Chung kết", "Vòng khác" })
+                                            {
+                                                if (opt == r.RoundName)
+                                                { <option value="@opt" selected>@opt</option> }
+                                                else
+                                                { <option value="@opt">@opt</option> }
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" style="font-size:.8rem;">Ngày bắt đầu</label>
+                                        <input type="datetime-local" class="form-control form-control-sm cr-start"
+                                               id="crStart-@r.RoundId" value="@rStart">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label" style="font-size:.8rem;">Ngày kết thúc</label>
+                                        <input type="datetime-local" class="form-control form-control-sm cr-end"
+                                               id="crEnd-@r.RoundId" value="@rEnd">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label" style="font-size:.8rem;">Số đội/thí sinh nhận</label>
+                                        <input type="number" class="form-control form-control-sm cr-max"
+                                               id="crMax-@r.RoundId" value="@(r.MaxAdvancing?.ToString() ?? "")"
+                                               min="1" placeholder="Không giới hạn">
+                                    </div>
+                                    <div class="col-md-2 d-flex gap-1">
+                                        <button type="button" class="btn btn-primary btn-sm flex-fill"
+                                                onclick="updateCompRound(@r.RoundId)">
+                                            <i class="bi bi-check2"></i> Lưu
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                onclick="deleteCompRound(@r.RoundId)" title="Xóa vòng này">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="cr-msg small mt-1" id="crMsg-@r.RoundId"></div>
+                                @{
+                                    string badgeClass = r.IsActive ? "bg-success" : (r.IsPast ? "bg-secondary" : "bg-warning text-dark");
+                                    string badgeText  = r.IsActive ? "Đang diễn ra" : (r.IsPast ? "Đã qua" : "Sắp diễn ra");
+                                }
+                                <div class="mt-2">
+                                    <span class="badge @badgeClass" style="font-size:.72rem;">@badgeText</span>
+                                    <span class="text-muted ms-2" style="font-size:.78rem;">Thứ tự: @r.RoundOrder</span>
+                                    @if (r.MaxAdvancing.HasValue)
+                                    {
+                                        <span class="text-muted ms-2" style="font-size:.78rem;">| Nhận tối đa @r.MaxAdvancing đội/thí sinh</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Thêm vòng thi mới -->
+                    <div class="mt-2 p-3" style="background:#f8f9fa; border:2px dashed #0d6efd33; border-radius:8px;">
+                        <div class="fw-semibold mb-2" style="color:#0d6efd;"><i class="bi bi-plus-circle me-1"></i>Thêm vòng thi mới</div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size:.8rem;">Tên vòng</label>
+                                <select id="newCrName" class="form-select form-select-sm">
+                                    <option value="Sơ khảo">Sơ khảo</option>
+                                    <option value="Bán kết">Bán kết</option>
+                                    <option value="Chung kết">Chung kết</option>
+                                    <option value="Vòng khác">Vòng khác</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:.8rem;">Ngày bắt đầu</label>
+                                <input type="datetime-local" id="newCrStart" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:.8rem;">Ngày kết thúc</label>
+                                <input type="datetime-local" id="newCrEnd" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size:.8rem;">Số đội/thí sinh nhận</label>
+                                <input type="number" id="newCrMax" class="form-control form-control-sm" min="1" placeholder="Không giới hạn">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" onclick="addCompRoundAjax()">
+                                    <i class="bi bi-plus"></i> Thêm
+                                </button>
+                            </div>
+                        </div>
+                        <div id="newCrMsg" class="small mt-1"></div>
+                    </div>
                 </div>
 
                 <!-- ── TAB 3: Tiêu chí ── -->
@@ -771,6 +885,116 @@
             }
         } else {
             showToast(data.message, 'danger');
+        }
+    }
+
+    // ═══════════════════════════════════ VÒNG THI ════════════════════════════
+
+    function toUtcIso(localDatetimeStr) {
+        if (!localDatetimeStr) return null;
+        return new Date(localDatetimeStr).toISOString();
+    }
+
+    async function updateCompRound(roundId) {
+        const name  = document.getElementById(`crName-${roundId}`)?.value;
+        const start = document.getElementById(`crStart-${roundId}`)?.value;
+        const end   = document.getElementById(`crEnd-${roundId}`)?.value;
+        const maxV  = document.getElementById(`crMax-${roundId}`)?.value;
+        const msg   = document.getElementById(`crMsg-${roundId}`);
+
+        if (!name || !start || !end) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ tên vòng, ngày bắt đầu và kết thúc.</span>';
+            return;
+        }
+        if (new Date(start) >= new Date(end)) {
+            msg.innerHTML = '<span class="text-danger">Ngày bắt đầu phải trước ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/Organizer/UpdateCompetitionRound?roundId=${roundId}&competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({
+                    roundName:    name,
+                    startDate:    toUtcIso(start),
+                    endDate:      toUtcIso(end),
+                    maxAdvancing: maxV ? parseInt(maxV) : null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ Đã lưu thay đổi.</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 3000);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
+        }
+    }
+
+    async function deleteCompRound(roundId) {
+        if (!confirm('Xóa vòng thi này? Hành động không thể hoàn tác.')) return;
+        try {
+            const res = await fetch(`/Organizer/DeleteCompetitionRound?roundId=${roundId}&competitionId=${CID}`, {
+                method: 'POST', headers: { 'RequestVerificationToken': getToken() }
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById(`cr-${roundId}`)?.remove();
+                const remaining = document.querySelectorAll('#compRoundList .comp-round-row');
+                if (remaining.length === 0) {
+                    const emptyEl = document.getElementById('compRoundEmpty');
+                    if (emptyEl) emptyEl.style.display = '';
+                }
+                showToast('Đã xóa vòng thi.', 'success');
+            } else {
+                showToast(data.message, 'danger');
+            }
+        } catch (e) {
+            showToast('Lỗi kết nối, vui lòng thử lại.', 'danger');
+        }
+    }
+
+    async function addCompRoundAjax() {
+        const name  = document.getElementById('newCrName').value;
+        const start = document.getElementById('newCrStart').value;
+        const end   = document.getElementById('newCrEnd').value;
+        const maxV  = document.getElementById('newCrMax').value;
+        const msg   = document.getElementById('newCrMsg');
+
+        if (!name || !start || !end) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng chọn tên vòng, ngày bắt đầu và kết thúc.</span>';
+            return;
+        }
+        if (new Date(start) >= new Date(end)) {
+            msg.innerHTML = '<span class="text-danger">Ngày bắt đầu phải trước ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang thêm...</span>';
+        try {
+            const res = await fetch(`/Organizer/AddCompetitionRound?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({
+                    roundName:    name,
+                    startDate:    toUtcIso(start),
+                    endDate:      toUtcIso(end),
+                    maxAdvancing: maxV ? parseInt(maxV) : null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang tải lại...</span>';
+                setTimeout(() => location.reload(), 800);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
         }
     }
 

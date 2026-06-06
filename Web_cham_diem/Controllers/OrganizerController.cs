@@ -320,6 +320,70 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        // ====== COMPETITION ROUNDS (VÒNG THI) ======
+
+        [HttpPost]
+        public async Task<IActionResult> AddCompetitionRound(int competitionId, [FromBody] CompetitionRoundCreateDto dto)
+        {
+            try
+            {
+                if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
+                    return Json(new { success = false, message = "Tên vòng thi không được để trống." });
+
+                var result = await _competitionService.AddCompetitionRoundAsync(competitionId, dto);
+                if (!result) return Json(new { success = false, message = "Cuộc thi không tìm thấy." });
+                return Json(new { success = true, message = "Thêm vòng thi thành công!" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding competition round");
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateCompetitionRound(int roundId, int competitionId, [FromBody] UpdateCompetitionRoundDto dto)
+        {
+            try
+            {
+                if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
+                    return Json(new { success = false, message = "Tên vòng thi không được để trống." });
+
+                var result = await _competitionService.UpdateCompetitionRoundAsync(roundId, competitionId, dto);
+                if (!result) return Json(new { success = false, message = "Vòng thi không tìm thấy." });
+                return Json(new { success = true, message = "Cập nhật vòng thi thành công!" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating competition round {RoundId}", roundId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteCompetitionRound(int roundId, int competitionId)
+        {
+            try
+            {
+                var result = await _competitionService.DeleteCompetitionRoundAsync(roundId, competitionId);
+                if (!result) return Json(new { success = false, message = "Vòng thi không tìm thấy." });
+                return Json(new { success = true, message = "Đã xóa vòng thi." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting competition round {RoundId}", roundId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
         // ====== IMAGES ======
 
         [HttpPost]
