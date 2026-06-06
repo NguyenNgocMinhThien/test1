@@ -1,0 +1,332 @@
+@model List<Web_cham_diem.Models.Registrations>
+
+@{
+    ViewData["Title"] = "Cuộc thi đã đăng ký";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var isLecturer = ViewBag.IsLecturerView as bool? ?? false;
+    var pageTitle  = isLecturer ? "Cuộc thi tôi hướng dẫn" : "Cuộc thi đã đăng ký";
+    var pageDesc   = isLecturer
+        ? "Danh sách các cuộc thi bạn đang đảm nhận vai trò giảng viên hướng dẫn"
+        : "Danh sách các cuộc thi bạn đã đăng ký tham gia";
+
+    var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+    string StatusBadgeClass(string s) => s switch
+    {
+        "Approved" => "bg-success",
+        "Rejected" => "bg-danger",
+        "Pending"  => "bg-warning text-dark",
+        _          => "bg-secondary"
+    };
+    string StatusLabel(string s) => s switch
+    {
+        "Approved" => "Đã duyệt",
+        "Rejected" => "Từ chối",
+        "Pending"  => "Chờ duyệt",
+        _          => s
+    };
+    string CompStatusBadgeClass(string s) => s switch
+    {
+        "Active"    => "bg-success",
+        "Closed"    => "bg-danger",
+        "Completed" => "bg-primary",
+        _           => "bg-secondary"
+    };
+    string CompStatusLabel(string s) => s switch
+    {
+        "Active"    => "Đang diễn ra",
+        "Closed"    => "Đã đóng",
+        "Completed" => "Hoàn thành",
+        _           => s
+    };
+}
+
+@section Styles {
+<style>
+    .reg-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.07);
+        transition: transform 0.22s, box-shadow 0.22s;
+        overflow: hidden;
+    }
+    .reg-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+    }
+    .reg-thumb {
+        width: 110px;
+        min-width: 110px;
+        height: 110px;
+        object-fit: cover;
+        border-radius: .75rem;
+    }
+    .reg-thumb-placeholder {
+        width: 110px;
+        min-width: 110px;
+        height: 110px;
+        border-radius: .75rem;
+        background: linear-gradient(135deg, #0A4A91 0%, #1976D2 60%, #42A5F5 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .meta-row {
+        font-size: .82rem;
+        color: #555;
+        margin-bottom: 3px;
+    }
+    .meta-row i { width: 17px; }
+    .empty-state {
+        background: #fff;
+        border-radius: 1.2rem;
+        padding: 3.5rem 2rem;
+        text-align: center;
+        box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+    }
+    .filter-btn {
+        border-radius: 2rem;
+        font-size: .83rem;
+        padding: 5px 16px;
+        border: 1.5px solid #dee2e6;
+        background: #fff;
+        cursor: pointer;
+        transition: all .18s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+        background: #0A4A91;
+        color: #fff;
+        border-color: #0A4A91;
+    }
+    .reg-type-badge {
+        font-size: .72rem;
+        padding: 3px 9px;
+        border-radius: 50px;
+    }
+</style>
+}
+
+<div class="container py-5">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">
+                @if (isLecturer)
+                {
+                    <i class="bi bi-person-workspace me-2 text-primary"></i>
+                }
+                else
+                {
+                    <i class="bi bi-journal-check me-2 text-primary"></i>
+                }
+                @pageTitle
+            </h2>
+            <p class="text-secondary mb-0">@pageDesc</p>
+        </div>
+        <a href="/Competitions" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="bi bi-trophy me-1"></i>Khám phá cuộc thi
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="bi bi-@(isLecturer ? "person-workspace" : "journal-x") text-muted" style="font-size:3.5rem;"></i>
+            <h5 class="fw-bold mt-3 mb-1">
+                @(isLecturer ? "Chưa có cuộc thi nào bạn hướng dẫn" : "Bạn chưa đăng ký cuộc thi nào")
+            </h5>
+            <p class="text-secondary mb-3">
+                @(isLecturer
+                    ? "Khi thí sinh thêm bạn làm giảng viên hướng dẫn, cuộc thi sẽ xuất hiện tại đây."
+                    : "Hãy tham gia các cuộc thi đang mở đăng ký để bắt đầu hành trình của bạn.")
+            </p>
+            @if (!isLecturer)
+            {
+                <a href="/Competitions" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-search me-1"></i>Tìm cuộc thi
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Filter bar -->
+        <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+            <span class="text-muted small me-1">Lọc:</span>
+            <button class="filter-btn active" data-filter="all" onclick="filterCards(this,'all')">Tất cả (@Model.Count)</button>
+            @{
+                var pendingCount  = Model.Count(r => r.Status == "Pending");
+                var approvedCount = Model.Count(r => r.Status == "Approved");
+                var rejectedCount = Model.Count(r => r.Status == "Rejected");
+            }
+            @if (pendingCount > 0)
+            {
+                <button class="filter-btn" data-filter="Pending" onclick="filterCards(this,'Pending')">Chờ duyệt (@pendingCount)</button>
+            }
+            @if (approvedCount > 0)
+            {
+                <button class="filter-btn" data-filter="Approved" onclick="filterCards(this,'Approved')">Đã duyệt (@approvedCount)</button>
+            }
+            @if (rejectedCount > 0)
+            {
+                <button class="filter-btn" data-filter="Rejected" onclick="filterCards(this,'Rejected')">Từ chối (@rejectedCount)</button>
+            }
+        </div>
+
+        <!-- Registration list -->
+        <div id="regList" class="d-flex flex-column gap-3">
+            @foreach (var r in Model)
+            {
+                var comp       = r.Competition;
+                var regDate    = TimeZoneInfo.ConvertTimeFromUtc(r.RegistrationDate, tz);
+                var compStart  = TimeZoneInfo.ConvertTimeFromUtc(comp.StartDate, tz);
+                var compEnd    = TimeZoneInfo.ConvertTimeFromUtc(comp.EndDate, tz);
+                var thumbUrl   = comp.CompetitionImages?
+                    .FirstOrDefault(i => i.IsThumbnail)?.ImageUrl
+                    ?? comp.CompetitionImages?.FirstOrDefault()?.ImageUrl;
+
+                var memberCount = r.Team?.TeamMembers?.Count ?? 0;
+
+                <div class="reg-card card" data-status="@r.Status">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex gap-3 align-items-start">
+
+                            <!-- Thumbnail -->
+                            <a href="/Competitions/Registration/@comp.CompetitionId" class="flex-shrink-0 text-decoration-none">
+                                @if (!string.IsNullOrEmpty(thumbUrl))
+                                {
+                                    <img src="@thumbUrl" class="reg-thumb" alt="@comp.CompetitionName" />
+                                }
+                                else
+                                {
+                                    <div class="reg-thumb-placeholder">
+                                        <i class="bi bi-trophy-fill text-white" style="font-size:2rem;opacity:.4;"></i>
+                                    </div>
+                                }
+                            </a>
+
+                            <!-- Content -->
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
+                                    <span class="badge @CompStatusBadgeClass(comp.Status)" style="font-size:.72rem;">
+                                        @CompStatusLabel(comp.Status)
+                                    </span>
+                                    <span class="badge @StatusBadgeClass(r.Status)" style="font-size:.72rem;">
+                                        @if (r.Status == "Pending") { <i class="bi bi-hourglass-split me-1"></i> }
+                                        else if (r.Status == "Approved") { <i class="bi bi-check-circle me-1"></i> }
+                                        else { <i class="bi bi-x-circle me-1"></i> }
+                                        @StatusLabel(r.Status)
+                                    </span>
+                                    <span class="badge reg-type-badge @(r.RegistrationType == "Team" ? "bg-info text-white" : "bg-success text-white")">
+                                        @if (r.RegistrationType == "Team")
+                                        { <i class="bi bi-people-fill me-1"></i> }
+                                        else
+                                        { <i class="bi bi-person-fill me-1"></i> }
+                                        @(r.RegistrationType == "Team" ? "Đội nhóm" : "Cá nhân")
+                                    </span>
+                                </div>
+
+                                <a href="/Competitions/Registration/@comp.CompetitionId"
+                                   class="text-dark fw-bold text-decoration-none d-block mb-2"
+                                   style="font-size:1.05rem;line-height:1.35;">
+                                    @comp.CompetitionName
+                                </a>
+
+                                <div class="row g-2 mb-2">
+                                    <div class="col-12 col-md-6">
+                                        <div class="meta-row">
+                                            <i class="bi bi-tag text-secondary"></i>
+                                            @(comp.Category ?? "Chưa xác định")
+                                        </div>
+                                        <div class="meta-row">
+                                            <i class="bi bi-calendar-event text-primary"></i>
+                                            @compStart.ToString("dd/MM/yyyy") – @compEnd.ToString("dd/MM/yyyy")
+                                        </div>
+                                        <div class="meta-row">
+                                            <i class="bi bi-clock-history text-secondary"></i>
+                                            Đăng ký lúc: @regDate.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        @if (r.RegistrationType == "Team" && r.Team != null)
+                                        {
+                                            <div class="meta-row">
+                                                <i class="bi bi-people text-info"></i>
+                                                Nhóm: <strong>@r.Team.TeamName</strong>
+                                                @if (memberCount > 0)
+                                                {
+                                                    <span class="text-muted ms-1">(@memberCount thành viên)</span>
+                                                }
+                                            </div>
+                                        }
+
+                                        @if (isLecturer)
+                                        {
+                                            <!-- Lecturer view: show registrant (team leader / student) -->
+                                            <div class="meta-row">
+                                                <i class="bi bi-person-badge text-warning"></i>
+                                                Thí sinh: <strong>@r.User.FullName</strong>
+                                                @if (!string.IsNullOrEmpty(r.User.StudentId))
+                                                {
+                                                    <span class="text-muted ms-1">(@r.User.StudentId)</span>
+                                                }
+                                            </div>
+                                        }
+                                        else if (r.Advisor != null)
+                                        {
+                                            <!-- Student view: show advisor if any -->
+                                            <div class="meta-row">
+                                                <i class="bi bi-person-workspace text-secondary"></i>
+                                                GVHD: <strong>@r.Advisor.FullName</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Action buttons -->
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="/Competitions/Registration/@comp.CompetitionId"
+                                       class="btn btn-sm btn-primary rounded-pill px-3">
+                                        <i class="bi bi-folder2-open me-1"></i>Xem hồ sơ đăng ký
+                                    </a>
+                                    <a href="/Competitions/@comp.CompetitionId"
+                                       class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                        <i class="bi bi-eye me-1"></i>Chi tiết cuộc thi
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div id="noFilterResult" class="text-center py-5" style="display:none;">
+            <i class="bi bi-funnel text-muted fs-1 d-block mb-2"></i>
+            <p class="text-muted">Không có đăng ký nào phù hợp với bộ lọc.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    function filterCards(btn, status) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const cards = document.querySelectorAll('#regList .reg-card');
+        let visible = 0;
+        cards.forEach(card => {
+            const show = status === 'all' || card.dataset.status === status;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        const noResult = document.getElementById('noFilterResult');
+        if (noResult) noResult.style.display = visible === 0 ? 'block' : 'none';
+    }
+</script>
+}

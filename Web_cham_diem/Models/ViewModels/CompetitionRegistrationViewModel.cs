@@ -21,12 +21,23 @@ namespace Web_cham_diem.Models.ViewModels
         public string StudentId { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
 
+        // Set by controller based on logged-in role
+        public bool IsLecturerFlow { get; set; } = false;
+
+        // Lecturer flow only: MSSV của thí sinh đăng ký chính (đội trưởng)
+        public string? LeaderStudentId { get; set; }
+
         // Form fields
         [Required(ErrorMessage = "Vui lòng chọn hình thức đăng ký.")]
         public string RegistrationType { get; set; } = "Individual"; // Individual, Team
 
         public string? TeamName { get; set; }
-        public string? TeamMembers { get; set; } // Mỗi thành viên trên 1 dòng
+
+        // Thành viên đội (list MSSV, gửi qua hidden inputs)
+        public List<string> MemberStudentIds { get; set; } = new();
+
+        // MSSV của giảng viên hướng dẫn (tuỳ chọn)
+        public string? AdvisorStudentId { get; set; }
 
         [MaxLength(1000)]
         public string? Notes { get; set; }

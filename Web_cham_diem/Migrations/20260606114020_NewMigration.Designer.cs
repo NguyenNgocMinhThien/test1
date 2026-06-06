@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Web_cham_diem.Models;
@@ -11,9 +12,11 @@ using Web_cham_diem.Models;
 namespace Web_cham_diem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606114020_NewMigration")]
+    partial class NewMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -527,35 +530,35 @@ namespace Web_cham_diem.Migrations
                         new
                         {
                             RoleId = 1,
-                            CreatedAt = new DateTime(2026, 6, 6, 15, 24, 22, 495, DateTimeKind.Utc).AddTicks(1659),
+                            CreatedAt = new DateTime(2026, 6, 6, 11, 40, 20, 144, DateTimeKind.Utc).AddTicks(6099),
                             Description = "Quản trị viên hệ thống",
                             RoleName = "Admin"
                         },
                         new
                         {
                             RoleId = 2,
-                            CreatedAt = new DateTime(2026, 6, 6, 15, 24, 22, 495, DateTimeKind.Utc).AddTicks(1660),
+                            CreatedAt = new DateTime(2026, 6, 6, 11, 40, 20, 144, DateTimeKind.Utc).AddTicks(6100),
                             Description = "Sinh viên tham dự cuộc thi",
                             RoleName = "Student"
                         },
                         new
                         {
                             RoleId = 3,
-                            CreatedAt = new DateTime(2026, 6, 6, 15, 24, 22, 495, DateTimeKind.Utc).AddTicks(1662),
+                            CreatedAt = new DateTime(2026, 6, 6, 11, 40, 20, 144, DateTimeKind.Utc).AddTicks(6102),
                             Description = "Ban tổ chức cuộc thi",
                             RoleName = "Organizer"
                         },
                         new
                         {
                             RoleId = 4,
-                            CreatedAt = new DateTime(2026, 6, 6, 15, 24, 22, 495, DateTimeKind.Utc).AddTicks(1663),
+                            CreatedAt = new DateTime(2026, 6, 6, 11, 40, 20, 144, DateTimeKind.Utc).AddTicks(6103),
                             Description = "Giám khảo",
                             RoleName = "Judge"
                         },
                         new
                         {
                             RoleId = 5,
-                            CreatedAt = new DateTime(2026, 6, 6, 15, 24, 22, 495, DateTimeKind.Utc).AddTicks(1664),
+                            CreatedAt = new DateTime(2026, 6, 6, 11, 40, 20, 144, DateTimeKind.Utc).AddTicks(6104),
                             Description = "Giảng viên hướng dẫn",
                             RoleName = "Lecturer"
                         });
@@ -863,9 +866,6 @@ namespace Web_cham_diem.Migrations
                     b.Property<int>("AssignedBy")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("AssignedTo")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -894,8 +894,6 @@ namespace Web_cham_diem.Migrations
                     b.HasKey("TaskId");
 
                     b.HasIndex("AssignedBy");
-
-                    b.HasIndex("AssignedTo");
 
                     b.HasIndex("TeamId");
 
@@ -1322,11 +1320,6 @@ namespace Web_cham_diem.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Web_cham_diem.Models.Users", "AssignedToUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedTo")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Web_cham_diem.Models.Teams", "Team")
                         .WithMany("TeamTasks")
                         .HasForeignKey("TeamId")
@@ -1334,8 +1327,6 @@ namespace Web_cham_diem.Migrations
                         .IsRequired();
 
                     b.Navigation("AssignedByUser");
-
-                    b.Navigation("AssignedToUser");
 
                     b.Navigation("Team");
                 });

@@ -1,74 +1,594 @@
-﻿@model Web_cham_diem.Models.Registrations
+@model Web_cham_diem.Models.Registrations
 
 @{
-    ViewData["Title"] = "Hồ sơ đăng ký cuộc thi";
+    ViewData["Title"] = "Hồ sơ đăng ký";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    var statusClass = Model.Status switch
+    var isLecturer    = ViewBag.IsLecturerView as bool? ?? false;
+    var currentUserId = ViewBag.CurrentUserId  as int?  ?? 0;
+    var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+    var statusBadge = Model.Status switch
     {
-        "Pending" => "bg-warning text-dark",
-        "Approved" => "bg-success",
-        "Rejected" => "bg-danger",
-        _ => "bg-secondary"
+        "Pending"  => ("bg-warning text-dark", "Chờ duyệt"),
+        "Approved" => ("bg-success",            "Đã duyệt"),
+        "Rejected" => ("bg-danger",             "Từ chối"),
+        _          => ("bg-secondary",           Model.Status)
     };
 
-    var statusLabel = Model.Status switch
-    {
-        "Pending" => "Chờ duyệt",
-        "Approved" => "Đã duyệt",
-        "Rejected" => "Từ chối",
-        _ => Model.Status
-    };
-
-
-    var files = (Model.SubmissionDocument ?? string.Empty)
+    var files = (Model.SubmissionDocument ?? "")
         .Split(';', StringSplitOptions.RemoveEmptyEntries)
-        .Select(f => f.Trim())
+        .Select(f => f.Trim()).ToList();
+
+    var teamMembers = Model.Team?.TeamMembers?.ToList() ?? new();
+    var allTasks    = Model.Team?.TeamTasks?.ToList()   ?? new();
+
+    // Student chỉ thấy task giao cho mình hoặc cho cả nhóm
+    var myTasks = allTasks
+        .Where(t => !t.AssignedTo.HasValue || t.AssignedTo == currentUserId)
         .ToList();
 }
 
+@section Styles {
+<style>
+    .info-card  { border:none; border-radius:1rem; box-shadow:0 3px 14px rgba(0,0,0,.07); }
+    .task-panel { border:none; border-radius:1rem; box-shadow:0 3px 14px rgba(0,0,0,.07); position:sticky; top:80px; }
+
+    .task-item {
+        border:1px solid #e3eaf4;
+        border-radius:.75rem;
+        padding:14px 16px;
+        margin-bottom:10px;
+        background:#fafcff;
+        transition: box-shadow .18s;
+    }
+    .task-item:hover { box-shadow:0 3px 10px rgba(0,0,0,.08); }
+    .task-item.done  { background:#f0fff4; border-color:#a3d9b1; }
+    .task-item.overdue { border-color:#f5c6cb; background:#fff8f8; }
+
+    .member-pill {
+        display:inline-flex; align-items:center; gap:6px;
+        background:#eef2ff; border:1px solid #c7d5f5;
+        border-radius:50px; padding:4px 12px; font-size:.82rem;
+    }
+    .member-avatar {
+        width:26px; height:26px; border-radius:50%;
+        background:linear-gradient(135deg,#0A4A91,#42A5F5);
+        color:#fff; font-size:.72rem; font-weight:700;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .section-heading {
+        font-size:.72rem; font-weight:700; letter-spacing:.07em;
+        text-transform:uppercase; color:#888; margin-bottom:12px;
+    }
+    .complete-form { display:none; margin-top:10px; }
+    .toast-msg {
+        position:fixed; bottom:24px; right:24px;
+        padding:10px 20px; border-radius:8px;
+        color:#fff; font-size:.88rem; z-index:9999;
+        box-shadow:0 4px 14px rgba(0,0,0,.2);
+        display:none;
+    }
+</style>
+}
+
+@Html.AntiForgeryToken()
+
+<div id="toastMsg" class="toast-msg"></div>
+
 <div class="container py-5">
     <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm rounded-4 border-0 p-4">
-                <h4 class="fw-bold text-primary mb-3">Hồ sơ đăng ký</h4>
 
-                <div class="mb-3">
-                    <span class="badge @statusClass rounded-pill px-3 py-2">
-                        @statusLabel
+        <!-- ── LEFT: Thông tin hồ sơ ─────────────────────────────────── -->
+        <div class="col-lg-7">
+            <div class="info-card card p-4">
+
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                    <h4 class="fw-bold text-primary mb-0">Hồ sơ đăng ký</h4>
+                    <span class="badge @statusBadge.Item1 rounded-pill px-3 py-2 fs-6">
+                        @statusBadge.Item2
                     </span>
                 </div>
 
-                <h6 class="fw-bold mt-4">Thông tin cuộc thi</h6>
-                <p class="mb-1"><strong>Tên cuộc thi:</strong> @Model.Competition.CompetitionName</p>
-                <p class="mb-1"><strong>Lĩnh vực:</strong> @Model.Competition.Category</p>
-                <p class="mb-3"><strong>Trạng thái:</strong> @Model.Competition.Status</p>
+                <!-- Cuộc thi -->
+                <div class="mb-4">
+                    <p class="section-heading"><i class="bi bi-trophy me-1"></i>Thông tin cuộc thi</p>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Tên cuộc thi</div>
+                            <div class="fw-semibold">@Model.Competition.CompetitionName</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Lĩnh vực</div>
+                            <div>@(Model.Competition.Category ?? "—")</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Trạng thái cuộc thi</div>
+                            <div>@Model.Competition.Status</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Hạn nộp bài</div>
+                            <div>@TimeZoneInfo.ConvertTimeFromUtc(Model.Competition.SubmissionDeadline, tz).ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                </div>
 
-                <h6 class="fw-bold mt-4">Thông tin đăng ký</h6>
-                <p class="mb-1"><strong>Họ tên:</strong> @Model.User.FullName</p>
-                <p class="mb-1"><strong>MSSV:</strong> @Model.User.StudentId</p>
-                <p class="mb-1"><strong>Email:</strong> @Model.User.Email</p>
-                <p class="mb-1"><strong>Team:</strong> @(Model.Team?.TeamName ?? "Cá nhân")</p>
-                <p class="mb-3"><strong>Thời gian đăng ký:</strong> @Model.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</p>
+                <hr class="my-2" />
 
-                <h6 class="fw-bold mt-4">File đã upload</h6>
-                @if (files.Any())
-                {
-                    <ul class="list-group list-group-flush">
-                        @foreach (var file in files)
+                <!-- Đăng ký -->
+                <div class="mb-4">
+                    <p class="section-heading"><i class="bi bi-person-lines-fill me-1"></i>Thông tin đăng ký</p>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Thí sinh chính</div>
+                            <div class="fw-semibold">@Model.User.FullName</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">MSSV</div>
+                            <div>@(Model.User.StudentId ?? "—")</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Email</div>
+                            <div>@Model.User.Email</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="small text-muted">Hình thức</div>
+                            <div>
+                                @if (Model.RegistrationType == "Team")
+                                { <span class="badge bg-info text-white"><i class="bi bi-people-fill me-1"></i>Đội nhóm</span> }
+                                else
+                                { <span class="badge bg-success text-white"><i class="bi bi-person-fill me-1"></i>Cá nhân</span> }
+                            </div>
+                        </div>
+                        @if (Model.Team != null)
                         {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <span>@System.IO.Path.GetFileName(file)</span>
-                                <a href="@file" class="btn btn-sm btn-outline-primary" target="_blank">Xem</a>
-                            </li>
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Tên nhóm</div>
+                                <div class="fw-semibold">@Model.Team.TeamName</div>
+                            </div>
                         }
-                    </ul>
+                        @if (Model.Advisor != null)
+                        {
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Giảng viên hướng dẫn</div>
+                                <div class="fw-semibold">@Model.Advisor.FullName</div>
+                            </div>
+                        }
+                        <div class="col-12">
+                            <div class="small text-muted">Ngày đăng ký</div>
+                            <div>@TimeZoneInfo.ConvertTimeFromUtc(Model.RegistrationDate, tz).ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thành viên nhóm -->
+                @if (teamMembers.Any())
+                {
+                    <hr class="my-2" />
+                    <div class="mb-4">
+                        <p class="section-heading"><i class="bi bi-people me-1"></i>Thành viên nhóm</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var tm in teamMembers)
+                            {
+                                var initial = string.Concat(tm.User.FullName.Split(' ')
+                                    .Where(w => w.Length > 0).Select(w => w[0])).ToUpper();
+                                <div class="member-pill">
+                                    <div class="member-avatar">@initial</div>
+                                    <div>
+                                        <div style="font-weight:600;">@tm.User.FullName</div>
+                                        <div class="text-muted" style="font-size:.75rem;">@(tm.User.StudentId ?? tm.User.Email) · @(tm.Role == "Leader" ? "Trưởng nhóm" : "Thành viên")</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Files -->
+                <hr class="my-2" />
+                <div>
+                    <p class="section-heading"><i class="bi bi-paperclip me-1"></i>Hồ sơ đính kèm</p>
+                    @if (files.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var file in files)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span class="small"><i class="bi bi-file-earmark me-1 text-muted"></i>@System.IO.Path.GetFileName(file)</span>
+                                    <a href="@file" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-eye me-1"></i>Xem
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted fst-italic small">Chưa có file đính kèm.</p>
+                    }
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── RIGHT: Task Panel ──────────────────────────────────────── -->
+        <div class="col-lg-5">
+            <div class="task-panel card p-4">
+
+                @if (Model.Team == null)
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-people fs-1 d-block mb-2 opacity-40"></i>
+                        <p class="small">Chức năng quản lý task chỉ áp dụng cho cuộc thi theo đội nhóm.</p>
+                    </div>
+                }
+                else if (isLecturer)
+                {
+                    <!-- ══ LECTURER VIEW ════════════════════════════════════ -->
+                    <h5 class="fw-bold mb-1"><i class="bi bi-list-task me-2 text-primary"></i>Quản lý Task nhóm</h5>
+                    <p class="text-muted small mb-3">Phân công nhiệm vụ cho thành viên trong nhóm</p>
+
+                    <!-- Form tạo task -->
+                    <div class="p-3 mb-4" style="background:#f0f4ff; border:1.5px solid #c7d5f5; border-radius:.75rem;">
+                        <p class="section-heading mb-2">Tạo task mới</p>
+
+                        <div class="mb-2">
+                            <input type="text" id="taskTitle" class="form-control form-control-sm" placeholder="Tiêu đề task *" maxlength="200">
+                        </div>
+                        <div class="mb-2">
+                            <textarea id="taskDesc" class="form-control form-control-sm" rows="2"
+                                      placeholder="Mô tả / ghi chú (tuỳ chọn)"></textarea>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-7">
+                                <select id="taskAssignTo" class="form-select form-select-sm">
+                                    <option value="">Giao cho cả nhóm</option>
+                                    @foreach (var tm in teamMembers)
+                                    {
+                                        <option value="@tm.UserId">@tm.User.FullName (@(tm.Role == "Leader" ? "Trưởng nhóm" : "TV"))</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-5">
+                                <input type="datetime-local" id="taskDueDate" class="form-control form-control-sm" title="Hạn hoàn thành (tuỳ chọn)">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" onclick="createTask(@Model.Team.TeamId)">
+                            <i class="bi bi-plus-circle me-1"></i>Tạo task
+                        </button>
+                        <div id="createTaskMsg" class="small mt-1"></div>
+                    </div>
+
+                    <!-- Danh sách task -->
+                    <p class="section-heading">Danh sách task (@allTasks.Count)</p>
+                    <div id="taskList">
+                        @if (!allTasks.Any())
+                        {
+                            <div id="taskEmptyMsg" class="text-center text-muted py-3 small">
+                                <i class="bi bi-inbox fs-3 d-block mb-1 opacity-40"></i>Chưa có task nào.
+                            </div>
+                        }
+                        @foreach (var task in allTasks)
+                        {
+                            var isDone    = task.Status == "Completed";
+                            var isOverdue = task.DueDate.HasValue && task.DueDate < DateTime.UtcNow && !isDone;
+                            var doneClass = isDone ? "done" : (isOverdue ? "overdue" : "");
+                            var completions = task.TaskCompletions?.ToList() ?? new();
+                            var taskCreated = TimeZoneInfo.ConvertTimeFromUtc(task.CreatedAt, tz);
+                            <div class="task-item @doneClass" id="lec-task-@task.TaskId">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold" style="font-size:.92rem;">@task.Title</div>
+                                        @if (!string.IsNullOrEmpty(task.Description))
+                                        {
+                                            <div class="text-muted small mt-1">@task.Description</div>
+                                        }
+                                        <div class="mt-1 d-flex flex-wrap gap-2">
+                                            <span class="badge @(isDone ? "bg-success" : isOverdue ? "bg-danger" : "bg-warning text-dark")" style="font-size:.7rem;">
+                                                @(isDone ? "Hoàn thành" : isOverdue ? "Quá hạn" : "Chờ")
+                                            </span>
+                                            @if (task.AssignedToUser != null)
+                                            {
+                                                <span class="badge bg-light text-dark border" style="font-size:.7rem;">
+                                                    <i class="bi bi-person me-1"></i>@task.AssignedToUser.FullName
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark border" style="font-size:.7rem;">
+                                                    <i class="bi bi-people me-1"></i>Cả nhóm
+                                                </span>
+                                            }
+                                            @if (task.DueDate.HasValue)
+                                            {
+                                                <span class="text-muted" style="font-size:.75rem;">
+                                                    <i class="bi bi-alarm me-1"></i>@TimeZoneInfo.ConvertTimeFromUtc(task.DueDate.Value, tz).ToString("dd/MM HH:mm")
+                                                </span>
+                                            }
+                                        </div>
+                                        <div class="text-muted mt-1" style="font-size:.73rem;">
+                                            Tạo lúc @taskCreated.ToString("dd/MM/yyyy HH:mm")
+                                        </div>
+                                        @if (completions.Any())
+                                        {
+                                            <div class="mt-2">
+                                                @foreach (var c in completions)
+                                                {
+                                                    var cTime = TimeZoneInfo.ConvertTimeFromUtc(c.CompletedAt, tz);
+                                                    <div class="small" style="color:#28a745;">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        <strong>@c.CompletedByUser.FullName</strong> hoàn thành lúc @cTime.ToString("dd/MM HH:mm")
+                                                        @if (!string.IsNullOrEmpty(c.Note))
+                                                        {
+                                                            <span class="text-muted ms-1">— @c.Note</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <button class="btn btn-xs btn-outline-danger btn-sm flex-shrink-0"
+                                            onclick="deleteTask(@task.TaskId)" title="Xóa task">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
                 else
                 {
-                    <p class="text-muted fst-italic">Chưa có file đính kèm.</p>
+                    <!-- ══ STUDENT VIEW ════════════════════════════════════ -->
+                    <h5 class="fw-bold mb-1"><i class="bi bi-check2-square me-2 text-success"></i>Nhiệm vụ của tôi</h5>
+                    <p class="text-muted small mb-3">
+                        Danh sách task giảng viên hướng dẫn đã giao cho bạn
+                    </p>
+
+                    @if (!myTasks.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-2 d-block mb-2 opacity-40"></i>
+                            <p class="small">Chưa có task nào được giao cho bạn.</p>
+                        </div>
+                    }
+
+                    <div id="studentTaskList">
+                        @foreach (var task in myTasks)
+                        {
+                            var myCompletion = task.TaskCompletions?
+                                .FirstOrDefault(tc => tc.CompletedBy == currentUserId);
+                            var isDone    = myCompletion != null;
+                            var isOverdue = task.DueDate.HasValue && task.DueDate < DateTime.UtcNow && !isDone;
+                            var doneClass = isDone ? "done" : (isOverdue ? "overdue" : "");
+                            var taskCreated = TimeZoneInfo.ConvertTimeFromUtc(task.CreatedAt, tz);
+
+                            <div class="task-item @doneClass" id="stu-task-@task.TaskId">
+                                <div class="fw-semibold mb-1" style="font-size:.92rem;">@task.Title</div>
+                                @if (!string.IsNullOrEmpty(task.Description))
+                                {
+                                    <div class="text-muted small mb-1">@task.Description</div>
+                                }
+                                <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                                    <span class="badge @(isDone ? "bg-success" : isOverdue ? "bg-danger" : "bg-warning text-dark")" style="font-size:.7rem;">
+                                        @(isDone ? "Đã hoàn thành" : isOverdue ? "Quá hạn" : "Chờ hoàn thành")
+                                    </span>
+                                    @if (task.AssignedToUser == null)
+                                    {
+                                        <span class="badge bg-info text-white" style="font-size:.7rem;">
+                                            <i class="bi bi-people me-1"></i>Giao cả nhóm
+                                        </span>
+                                    }
+                                    @if (task.DueDate.HasValue)
+                                    {
+                                        <span class="text-muted" style="font-size:.75rem;">
+                                            <i class="bi bi-alarm me-1"></i>Hạn: @TimeZoneInfo.ConvertTimeFromUtc(task.DueDate.Value, tz).ToString("dd/MM/yyyy HH:mm")
+                                        </span>
+                                    }
+                                </div>
+                                <div class="text-muted mb-2" style="font-size:.73rem;">
+                                    Giao bởi: @task.AssignedByUser.FullName · @taskCreated.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+
+                                @if (isDone)
+                                {
+                                    var doneTime = TimeZoneInfo.ConvertTimeFromUtc(myCompletion!.CompletedAt, tz);
+                                    <div class="p-2 rounded" style="background:#e8f5e9; font-size:.82rem;">
+                                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                        <strong>Bạn đã hoàn thành</strong> lúc @doneTime.ToString("dd/MM/yyyy HH:mm")
+                                        @if (!string.IsNullOrEmpty(myCompletion.Note))
+                                        {
+                                            <div class="text-muted mt-1">Ghi chú: @myCompletion.Note</div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-success btn-sm"
+                                            onclick="toggleCompleteForm(@task.TaskId)">
+                                        <i class="bi bi-check2-circle me-1"></i>Đánh dấu hoàn thành
+                                    </button>
+                                    <div class="complete-form" id="cf-@task.TaskId">
+                                        <textarea id="note-@task.TaskId" class="form-control form-control-sm mb-2"
+                                                  rows="2" placeholder="Ghi chú (tuỳ chọn)..."></textarea>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-success btn-sm" onclick="completeTask(@task.TaskId)">
+                                                <i class="bi bi-check-lg me-1"></i>Xác nhận
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm"
+                                                    onclick="toggleCompleteForm(@task.TaskId)">Hủy</button>
+                                        </div>
+                                        <div id="completeMsg-@task.TaskId" class="small mt-1"></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 }
+
             </div>
         </div>
+
     </div>
 </div>
+
+@section Scripts {
+<script>
+    const TEAM_ID = @(Model.Team?.TeamId.ToString() ?? "0");
+
+    function getToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
+    function showToast(msg, type) {
+        const el = document.getElementById('toastMsg');
+        el.textContent = msg;
+        el.style.background = type === 'success' ? '#28a745' : '#dc3545';
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 3000);
+    }
+
+    // ── LECTURER: Create task ───────────────────────────────────────────────
+    async function createTask(teamId) {
+        const title      = document.getElementById('taskTitle').value.trim();
+        const desc       = document.getElementById('taskDesc').value.trim();
+        const assignToEl = document.getElementById('taskAssignTo');
+        const dueDateEl  = document.getElementById('taskDueDate');
+        const msgEl      = document.getElementById('createTaskMsg');
+
+        if (!title) { msgEl.innerHTML = '<span class="text-danger">Vui lòng nhập tiêu đề task.</span>'; return; }
+
+        const assignTo = assignToEl.value ? parseInt(assignToEl.value) : null;
+        const dueDate  = dueDateEl.value  ? new Date(dueDateEl.value).toISOString() : null;
+
+        msgEl.innerHTML = '<span class="text-secondary">Đang tạo...</span>';
+        try {
+            const res = await fetch(`/api/teams/${teamId}/tasks`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getToken()
+                },
+                body: JSON.stringify({ title, description: desc || null, assignedTo: assignTo, dueDate })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                msgEl.innerHTML = '<span class="text-success">✓ Đã tạo task thành công!</span>';
+                document.getElementById('taskTitle').value   = '';
+                document.getElementById('taskDesc').value    = '';
+                document.getElementById('taskDueDate').value = '';
+                assignToEl.value = '';
+
+                // Remove empty message
+                const emptyMsg = document.getElementById('taskEmptyMsg');
+                if (emptyMsg) emptyMsg.remove();
+
+                // Append new task card
+                appendTaskCard(data);
+                setTimeout(() => { msgEl.innerHTML = ''; }, 3000);
+            } else {
+                msgEl.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch {
+            msgEl.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+        }
+    }
+
+    function appendTaskCard(task) {
+        const list = document.getElementById('taskList');
+        const now  = new Date().toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        const assigneeHtml = task.assignedToName
+            ? `<span class="badge bg-light text-dark border" style="font-size:.7rem;"><i class="bi bi-person me-1"></i>${task.assignedToName}</span>`
+            : `<span class="badge bg-light text-dark border" style="font-size:.7rem;"><i class="bi bi-people me-1"></i>Cả nhóm</span>`;
+        const dueDateHtml = task.dueDate
+            ? `<span class="text-muted" style="font-size:.75rem;"><i class="bi bi-alarm me-1"></i>${new Date(task.dueDate).toLocaleString('vi-VN', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`
+            : '';
+
+        const html = `
+        <div class="task-item" id="lec-task-${task.taskId}">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="flex-grow-1">
+                    <div class="fw-semibold" style="font-size:.92rem;">${task.title}</div>
+                    ${task.description ? `<div class="text-muted small mt-1">${task.description}</div>` : ''}
+                    <div class="mt-1 d-flex flex-wrap gap-2">
+                        <span class="badge bg-warning text-dark" style="font-size:.7rem;">Chờ</span>
+                        ${assigneeHtml}
+                        ${dueDateHtml}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:.73rem;">Tạo lúc ${now}</div>
+                </div>
+                <button class="btn btn-xs btn-outline-danger btn-sm flex-shrink-0"
+                        onclick="deleteTask(${task.taskId})" title="Xóa task">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>`;
+        list.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // ── LECTURER: Delete task ───────────────────────────────────────────────
+    async function deleteTask(taskId) {
+        if (!confirm('Xóa task này? Hành động không thể hoàn tác.')) return;
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/delete`, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getToken() }
+            });
+            if (res.ok) {
+                document.getElementById(`lec-task-${taskId}`)?.remove();
+                showToast('Đã xóa task.', 'success');
+            } else {
+                const data = await res.json();
+                showToast(data.message || 'Lỗi khi xóa.', 'error');
+            }
+        } catch {
+            showToast('Lỗi kết nối.', 'error');
+        }
+    }
+
+    // ── STUDENT: Toggle complete form ────────────────────────────────────────
+    function toggleCompleteForm(taskId) {
+        const form = document.getElementById(`cf-${taskId}`);
+        form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+    }
+
+    // ── STUDENT: Mark complete ───────────────────────────────────────────────
+    async function completeTask(taskId) {
+        const note  = document.getElementById(`note-${taskId}`).value.trim();
+        const msgEl = document.getElementById(`completeMsg-${taskId}`);
+
+        msgEl.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': getToken()
+                },
+                body: JSON.stringify({ note: note || null })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                const card = document.getElementById(`stu-task-${taskId}`);
+                card.classList.add('done');
+
+                const doneTime = new Date(data.completedAt).toLocaleString('vi-VN', {
+                    day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+                });
+                // Replace the button + form area with "done" indicator
+                const completeArea = card.querySelector(`#cf-${taskId}`).parentElement;
+                completeArea.innerHTML = `
+                    <div class="p-2 rounded" style="background:#e8f5e9; font-size:.82rem; margin-top:6px;">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        <strong>Bạn đã hoàn thành</strong> lúc ${doneTime}
+                        ${note ? `<div class="text-muted mt-1">Ghi chú: ${note}</div>` : ''}
+                    </div>`;
+                showToast('Đã xác nhận hoàn thành!', 'success');
+            } else {
+                msgEl.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch {
+            msgEl.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+        }
+    }
+</script>
+}
