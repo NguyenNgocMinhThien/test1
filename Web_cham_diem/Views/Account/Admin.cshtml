@@ -79,6 +79,13 @@
             font-size: 0.7rem;
             font-weight: 700;
         }
+
+        /* KHỐNG CHẾ GIỚI HẠN CHIỀU CAO TUYỆT ĐỐI CHO CHART PHÍA DƯỚI */
+        .sub-chart-wrapper {
+            position: relative;
+            height: 220px; /* Định mức chiều cao cố định để cân bằng với ô thông tin bên cạnh */
+            width: 100%;
+        }
     </style>
 }
 
@@ -90,67 +97,70 @@
     <button class="btn btn-outline-dark rounded-pill"><i class="bi bi-calendar3 me-2"></i> @DateTime.Now.ToString("dd/MM/yyyy")</button>
 </div>
 
-<!-- Stats Rows -->
 <div class="row g-4 mb-5">
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-primary mb-3"><i class="bi bi-people"></i></div>
             <div class="text-muted small fw-bold">Tổng người dùng</div>
-            <h3 class="fw-black mb-0">1,420</h3>
+            <h3 class="fw-black mb-0" id="lblTotalUsers">--</h3>
         </div>
     </div>
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-success mb-3"><i class="bi bi-mortarboard"></i></div>
             <div class="text-muted small fw-bold">Tổng sinh viên</div>
-            <h3 class="fw-black mb-0">1,150</h3>
+            <h3 class="fw-black mb-0" id="lblTotalStudents">--</h3>
         </div>
     </div>
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-warning mb-3"><i class="bi bi-person-badge"></i></div>
             <div class="text-muted small fw-bold">Tổng giảng viên</div>
-            <h3 class="fw-black mb-0">180</h3>
+            <h3 class="fw-black mb-0" id="lblTotalLecturers">--</h3>
         </div>
     </div>
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-primary mb-3"><i class="bi bi-trophy"></i></div>
             <div class="text-muted small fw-bold">Tổng cuộc thi</div>
-            <h3 class="fw-black mb-0">32</h3>
+            <h3 class="fw-black mb-0" id="lblTotalContests">--</h3>
         </div>
     </div>
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-success mb-3"><i class="bi bi-activity"></i></div>
             <div class="text-muted small fw-bold">Đang hoạt động</div>
-            <h3 class="fw-black mb-0">12</h3>
+            <h3 class="fw-black mb-0" id="lblActiveContests">--</h3>
         </div>
     </div>
     <div class="col-md-4 col-xl-2">
         <div class="stat-card">
             <div class="stat-icon bg-soft-purple mb-3"><i class="bi bi-file-earmark-code"></i></div>
             <div class="text-muted small fw-bold">Tổng bài thi</div>
-            <h3 class="fw-black mb-0">480</h3>
+            <h3 class="fw-black mb-0" id="lblTotalSubmissions">--</h3>
         </div>
     </div>
 </div>
 
-<!-- Analytics Row -->
 <div class="row g-4 mb-5">
-    <div class="col-lg-8">
-        <div class="analytics-box shadow-sm">
-            <div class="d-flex justify-content-between mb-4">
-                <h5 class="fw-bold">Số lượng cuộc thi theo năm</h5>
-                <button class="btn btn-sm btn-light">Xuất Excel</button>
+    <div class="col-lg-8 col-md-12">
+        <div class="analytics-box shadow-sm p-4" style="background: #fff; border-radius: 16px; border: 1px solid var(--border-color); height: 100%;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Số lượng cuộc thi theo năm</h5>
+                <button class="btn btn-sm btn-outline-secondary rounded-pill">Xuất Excel</button>
             </div>
-            <canvas id="compMonthChart" height="300"></canvas>
+            <div style="position: relative; height: 320px; width: 100%;">
+                <canvas id="compMonthChart"></canvas>
+            </div>
         </div>
     </div>
-    <div class="col-lg-4">
-        <div class="analytics-box shadow-sm">
+
+    <div class="col-lg-4 col-md-12">
+        <div class="analytics-box shadow-sm p-4" style="background: #fff; border-radius: 16px; border: 1px solid var(--border-color); height: 100%;">
             <h5 class="fw-bold mb-4">Tỷ lệ vai trò</h5>
-            <canvas id="roleRatioChart"></canvas>
+            <div style="position: relative; height: 320px; width: 100%; display: flex; align-items: center; justify-content: center;">
+                <canvas id="roleRatioChart"></canvas>
+            </div>
         </div>
     </div>
 </div>
@@ -159,89 +169,174 @@
     <div class="col-lg-4">
         <div class="analytics-box">
             <h5 class="fw-bold mb-4">Trạng thái hồ sơ bài thi</h5>
-            <canvas id="fileStatusChart"></canvas>
+            <div class="sub-chart-wrapper">
+                <canvas id="fileStatusChart"></canvas>
+            </div>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="analytics-box">
             <h5 class="fw-bold mb-4">Đăng ký mới gần đây</h5>
-            <ul class="list-unstyled">
-                <li class="d-flex align-items-center gap-3 mb-4">
+            <ul class="list-unstyled mb-0">
+                <li class="d-flex align-items-center gap-3">
                     <img src="https://ui-avatars.com/api/?name=SV&background=e0f2fe&color=0ea5e9" class="rounded-circle" width="35">
                     <div class="flex-grow-1">
                         <div class="small fw-bold">Nguyễn Văn A</div>
                         <span class="text-muted small">Vừa đăng ký: Cuộc thi NCKH</span>
                     </div>
                     <span class="badge bg-success-subtle text-success badge-status">Mới</span>
-                </li>
-                <!-- Các thẻ khác bỏ bớt để ngắn gọn, bạn copy đầy đủ từ file cũ sang -->
-            </ul>
         </div>
+        </ul>
     </div>
-    <div class="col-lg-4">
-        <div class="analytics-box">
-            <h5 class="fw-bold mb-4">Trạng thái hạ tầng</h5>
-            <div class="system-status-indicator">
-                <div class="status-dot bg-success"></div>
-                <span class="flex-grow-1">Server Cloud Status</span>
-                <span class="fw-bold">99.9%</span>
-            </div>
-            <!-- Các thẻ khác bỏ bớt để ngắn gọn -->
+</div>
+<div class="col-lg-4">
+    <div class="analytics-box">
+        <h5 class="fw-bold mb-4">Trạng thái hạ tầng</h5>
+        <div class="system-status-indicator">
+            <div class="status-dot bg-success"></div>
+            <span class="flex-grow-1">Server Cloud Status</span>
+            <span class="fw-bold">99.9%</span>
+        </div>
 
-            <h6 class="fw-bold mt-5 mb-3">Quản trị nhanh</h6>
-            <a href="#" class="quick-action-link">
-                <i class="bi bi-person-plus-fill fs-5"></i>
-                <span class="ms-3 small fw-bold">Thêm tài khoản mới</span>
-            </a>
-            <a href="#" class="quick-action-link">
-                <i class="bi bi-plus-lg fs-5"></i>
-                <span class="ms-3 small fw-bold">Tạo cuộc thi nhanh</span>
-            </a>
-        </div>
+        <h6 class="fw-bold mt-4 mb-3">Quản trị nhanh</h6>
+        <a href="#" class="quick-action-link">
+            <i class="bi bi-person-plus-fill fs-5"></i>
+            <span class="ms-3 small fw-bold">Thêm tài khoản mới</span>
+        </a>
+        <a href="#" class="quick-action-link mb-0">
+            <i class="bi bi-plus-lg fs-5"></i>
+            <span class="ms-3 small fw-bold">Tạo cuộc thi nhanh</span>
+        </a>
     </div>
+</div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Các JS render Chart giữ nguyên ở đây
-        const ctxComp = document.getElementById('compMonthChart').getContext('2d');
-        new Chart(ctxComp, {
-            type: 'bar',
-            data: {
-                labels: ['Th 1', 'Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'Th 8', 'Th 9', 'Th 10', 'Th 11', 'Th 12'],
-                datasets: [{
-                    label: 'Số lượng cuộc thi',
-                    data: [12, 19, 3, 5, 2, 3, 20, 33, 22, 19, 11, 25],
-                    backgroundColor: '#0d6efd',
-                    borderRadius: 5
-                }]
-            },
-            options: { plugins: { legend: { display: false } } }
+        let barChartInstance = null;
+        let doughnutChartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Thực hiện gọi hàm đồng bộ dữ liệu thật khi tải trang
+            initDashboardRealData();
+            // Khởi tạo đồ thị tĩnh trạng thái hồ sơ giữ nguyên thiết kế UI ban đầu
+            initStaticFileChart();
         });
 
-        const ctxRole = document.getElementById('roleRatioChart').getContext('2d');
-        new Chart(ctxRole, {
-            type: 'doughnut',
-            data: {
-                labels: ['SV', 'GV', 'Judge', 'Admin'],
-                datasets: [{
-                    data: [1150, 180, 80, 10],
-                    backgroundColor: ['#0d6efd', '#22c55e', '#f59e0b', '#1e293b']
-                }]
-            },
-            options: { cutout: '70%' }
-        });
+        function initDashboardRealData() {
+            // Gọi chính xác API GetAdminMainDashboardData để gom dữ liệu tài khoản + cuộc thi thực tế
+            fetch('/Account/GetAdminMainDashboardData')
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        // --- 1. ĐỔ DỮ LIỆU THẬT VÀO 6 Ô THẺ TĨNH ---
+                        document.getElementById("lblTotalUsers").innerText = res.stats.totalUsers.toLocaleString();
+                        document.getElementById("lblTotalStudents").innerText = res.stats.totalStudents.toLocaleString();
+                        document.getElementById("lblTotalLecturers").innerText = res.stats.totalLecturers.toLocaleString();
+                        document.getElementById("lblTotalContests").innerText = res.stats.totalContests.toLocaleString();
+                        document.getElementById("lblActiveContests").innerText = res.stats.activeContests.toLocaleString();
+                        document.getElementById("lblTotalSubmissions").innerText = res.stats.totalSubmissions.toLocaleString();
 
-        const ctxFile = document.getElementById('fileStatusChart').getContext('2d');
-        new Chart(ctxFile, {
-            type: 'pie',
-            data: {
-                labels: ['Chờ duyệt', 'Đã duyệt', 'Từ chối'],
-                datasets: [{
-                    data: [150, 300, 30],
-                    backgroundColor: ['#f59e0b', '#22c55e', '#ef4444']
-                }]
-            }
-        });
+                        // --- 2. ĐỒNG BỘ BIỂU ĐỒ CỘT (CUỘC THI THEO NĂM THỰC TẾ) ---
+                        renderBarChart(res.barChart.labels, res.barChart.data);
+
+                        // --- 3. ĐỒNG BỘ BIỂU ĐỒ TRÒN (TỶ LỆ VAI TRÒ THỰC TẾ) ---
+                        renderDoughnutChart(res.pieChart.labels, res.pieChart.data);
+                    } else {
+                        console.error("Lỗi từ hệ thống backend: " + res.message);
+                    }
+                })
+                .catch(err => console.error("Không thể kết nối tới máy chủ API Dashboard:", err));
+        }
+
+        function renderBarChart(labels, dataValues) {
+            const ctxComp = document.getElementById('compMonthChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy(); // Hủy biểu đồ cũ nếu có để tránh lỗi chồng dữ liệu
+
+            barChartInstance = new Chart(ctxComp, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số lượng cuộc thi',
+                        data: dataValues,
+                        backgroundColor: '#0d6efd',
+                        borderRadius: 6,
+                        maxBarThickness: 45, // GIỚI HẠN: Ngăn cột phình to thô kệch khi dữ liệu chỉ có 1-2 cột
+                        barThickness: 35
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // BẮT BUỘC: Để chart tuân thủ theo height của thẻ div cha
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* ĐÃ XÓA BỎ HÀM TRÙNG LẶP RENDERDOUGHNUTCHART VÀ TỐI ƯU KHUNG GIỚI HẠN */
+        function renderDoughnutChart(labels, dataValues) {
+            const ctxRole = document.getElementById('roleRatioChart').getContext('2d');
+            if (doughnutChartInstance) doughnutChartInstance.destroy();
+
+            doughnutChartInstance = new Chart(ctxRole, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: ['#0d6efd', '#22c55e', '#f59e0b', '#1e293b'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // BẮT BUỘC: Giữ chart nằm gọn trong vùng 320px
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initStaticFileChart() {
+            const ctxFile = document.getElementById('fileStatusChart').getContext('2d');
+            new Chart(ctxFile, {
+                type: 'pie',
+                data: {
+                    labels: ['Chờ duyệt', 'Đã duyệt', 'Từ chối'],
+                    datasets: [{
+                        data: [150, 300, 30],
+                        backgroundColor: ['#f59e0b', '#22c55e', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false // Khống chế chặt chẽ, ép tuân thủ theo wrapper .sub-chart-wrapper
+                }
+            });
+        }
     </script>
 }
