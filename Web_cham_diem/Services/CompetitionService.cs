@@ -889,6 +889,8 @@ public class CompetitionService : ICompetitionService
     {
         var competition = await _context.Competitions
             .Include(c => c.Registrations)
+            .Include(c => c.Teams)
+            .Include(c => c.Submissions)
             .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
             .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
@@ -896,7 +898,13 @@ public class CompetitionService : ICompetitionService
         if (competition == null) return false;
 
         if (competition.Registrations.Count > 0)
-            throw new InvalidOperationException("Không thể xóa cuộc thi có người đăng ký.");
+            throw new InvalidOperationException("Không thể xóa cuộc thi đã có người đăng ký.");
+
+        if (competition.Submissions.Count > 0)
+            throw new InvalidOperationException("Không thể xóa cuộc thi đã có bài dự thi.");
+
+        if (competition.Teams.Count > 0)
+            throw new InvalidOperationException("Không thể xóa cuộc thi đã có đội nhóm tham gia.");
 
         _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
         _context.RegistrationRounds.RemoveRange(competition.RegistrationRounds);

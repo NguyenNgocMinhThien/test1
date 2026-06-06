@@ -201,7 +201,7 @@ namespace Web_cham_diem.Models
                 .HasKey(j => j.JudgeId);
             modelBuilder.Entity<Judges>()
                 .HasOne(j => j.User)
-                .WithMany(u => u.JudgeAssignments)
+                .WithMany(u => u.Judges)
                 .HasForeignKey(j => j.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Judges>()
