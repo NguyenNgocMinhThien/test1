@@ -55,13 +55,13 @@ namespace Web_cham_diem.Controllers
                 StartDate          = now.AddDays(15),
                 EndDate            = now.AddDays(45),
                 SubmissionDeadline = now.AddDays(40),
-                MinParticipants    = 0,
                 MaxParticipants    = 100,
-                MaxTeamSize        = 1,
+                MaxTeamSize        = 5,
                 RegistrationRounds = new List<RegistrationRoundCreateDto>
                 {
                     new() { RoundName = "Đợt 1", StartDate = now.AddDays(1), EndDate = now.AddDays(10) }
-                }
+                },
+                CompetitionRounds = new List<CompetitionRoundCreateDto>()
             };
             return View(model);
         }

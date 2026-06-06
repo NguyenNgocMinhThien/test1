@@ -234,11 +234,6 @@
                                    class="form-control" @(canEditDates ? "" : "readonly") />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Tối thiểu đội/thí sinh</label>
-                            <input type="number" id="MinParticipants" name="MinParticipants" value="@Model.MinParticipants"
-                                   class="form-control" min="0" @(canEditDates ? "" : "readonly") />
-                        </div>
-                        <div class="col-md-3">
                             <label class="form-label">Tối đa tham gia *
                                 @if (!canDecreaseMax) { <span class="state-locked">Chỉ tăng</span> }
                             </label>

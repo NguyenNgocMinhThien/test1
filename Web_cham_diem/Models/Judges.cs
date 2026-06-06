@@ -5,6 +5,7 @@
         public int JudgeId { get; set; }
         public int UserId { get; set; }
         public int CompetitionId { get; set; }
+        public string JudgeRole { get; set; } = "Member"; // HeadJudge | ViceHead | Member
         public string Expertise { get; set; } = string.Empty; // Lĩnh vực chuyên môn
         public int Priority { get; set; } = 0; // Mức độ ưu tiên (0=cao, 1=trung bình, 2=thấp)
         public string Status { get; set; } = "Active"; // Active, Inactive

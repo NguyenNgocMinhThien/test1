@@ -116,6 +116,40 @@ public class CompetitionService : ICompetitionService
         }
     }
 
+    private void ValidateCompetitionRounds(List<CompetitionRoundCreateDto>? rounds, DateTime submissionDeadline, DateTime competitionEndDate)
+    {
+        if (rounds == null || rounds.Count == 0) return; // Vòng thi không bắt buộc
+
+        var sorted = rounds
+            .Select(r => (start: ToUtc(r.StartDate), end: ToUtc(r.EndDate), name: r.RoundName))
+            .OrderBy(r => r.start)
+            .ToList();
+
+        foreach (var r in sorted)
+        {
+            if (r.end <= r.start)
+                throw new InvalidOperationException($"Vòng \"{r.name}\": Ngày kết thúc phải sau ngày bắt đầu.");
+        }
+
+        // Vòng đầu phải bắt đầu sau hạn nộp bài
+        if (sorted.First().start < submissionDeadline)
+            throw new InvalidOperationException(
+                $"Vòng \"{sorted.First().name}\": Phải bắt đầu sau hạn nộp bài ({submissionDeadline:dd/MM/yyyy}).");
+
+        // Các vòng phải nối tiếp nhau (vòng sau bắt đầu sau khi vòng trước kết thúc)
+        for (int i = 1; i < sorted.Count; i++)
+        {
+            if (sorted[i].start < sorted[i - 1].end)
+                throw new InvalidOperationException(
+                    $"Vòng \"{sorted[i].name}\" phải bắt đầu sau khi vòng \"{sorted[i - 1].name}\" kết thúc ({sorted[i - 1].end:dd/MM/yyyy}).");
+        }
+
+        // Vòng cuối phải kết thúc trước ngày kết thúc cuộc thi
+        if (sorted.Last().end > competitionEndDate)
+            throw new InvalidOperationException(
+                $"Vòng \"{sorted.Last().name}\": Phải kết thúc trước ngày kết thúc cuộc thi ({competitionEndDate:dd/MM/yyyy}).");
+    }
+
     // ===== READ =====
 
     public async Task<List<Competitions>> GetAllCompetitionsAsync()
@@ -343,23 +377,17 @@ public class CompetitionService : ICompetitionService
         if (submissionDeadline > endDate)
             throw new InvalidOperationException("Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
 
-        if (model.MinParticipants < 0)
-            throw new InvalidOperationException("Số lượng tối thiểu không được âm.");
-
         if (model.MaxParticipants < 1)
             throw new InvalidOperationException("Số lượng tối đa phải lớn hơn 0.");
-
-        if (model.MinParticipants > model.MaxParticipants)
-            throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
-
-        if (model.IsTeamBased && model.MaxTeamSize < 2)
-            throw new InvalidOperationException("Cuộc thi theo đội phải có tối thiểu 2 thành viên/đội.");
 
         if (!model.IsTeamBased)
             model.MaxTeamSize = 1;
 
-        // Validate rounds
+        // Validate đợt đăng ký
         ValidateRounds(model.RegistrationRounds, startDate);
+
+        // Validate vòng thi (thời gian phải theo thứ tự: hạn nộp bài → vòng 1 → vòng 2 → ... → kết thúc)
+        ValidateCompetitionRounds(model.CompetitionRounds, submissionDeadline, endDate);
 
         // Validate scoring criteria
         if (model.ScoringCriteria == null || model.ScoringCriteria.Count == 0)
@@ -386,7 +414,7 @@ public class CompetitionService : ICompetitionService
             StartDate          = startDate,
             EndDate            = endDate,
             SubmissionDeadline = submissionDeadline,
-            MinParticipants    = model.MinParticipants,
+            MinParticipants    = 0,
             MaxParticipants    = model.MaxParticipants,
             MaxTeamSize        = model.MaxTeamSize,
             IsTeamBased        = model.IsTeamBased,
@@ -408,6 +436,26 @@ public class CompetitionService : ICompetitionService
                 EndDate       = ToUtc(round.EndDate),
                 CreatedAt     = DateTime.UtcNow
             });
+        }
+
+        // Tạo các vòng thi
+        if (model.CompetitionRounds != null && model.CompetitionRounds.Any())
+        {
+            int order = 1;
+            foreach (var round in model.CompetitionRounds.OrderBy(r => r.RoundOrder))
+            {
+                _context.CompetitionRounds.Add(new CompetitionRounds
+                {
+                    CompetitionId  = competition.CompetitionId,
+                    RoundName      = round.RoundName,
+                    RoundOrder     = order++,
+                    StartDate      = ToUtc(round.StartDate),
+                    EndDate        = ToUtc(round.EndDate),
+                    MaxAdvancing   = round.MaxAdvancing,
+                    Status         = "Upcoming",
+                    CreatedAt      = DateTime.UtcNow
+                });
+            }
         }
 
         // Tạo tiêu chí chấm điểm
@@ -643,7 +691,6 @@ public class CompetitionService : ICompetitionService
             StartDate          = competition.StartDate,
             EndDate            = competition.EndDate,
             SubmissionDeadline = competition.SubmissionDeadline,
-            MinParticipants    = competition.MinParticipants,
             MaxParticipants    = competition.MaxParticipants,
             MaxTeamSize        = competition.MaxTeamSize,
             IsTeamBased        = competition.IsTeamBased,
@@ -699,10 +746,6 @@ public class CompetitionService : ICompetitionService
                     throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
                 if (submissionDeadline > endDate)
                     throw new InvalidOperationException("Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
-                if (model.MinParticipants > model.MaxParticipants)
-                    throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
-                if (model.IsTeamBased && model.MaxTeamSize < 2)
-                    throw new InvalidOperationException("Cuộc thi theo đội phải có tối thiểu 2 thành viên/đội.");
 
                 // Khi dời StartDate, kiểm tra các rounds hiện có vẫn kết thúc trước StartDate mới
                 foreach (var r in competition.RegistrationRounds)
@@ -717,7 +760,6 @@ public class CompetitionService : ICompetitionService
                 competition.StartDate          = startDate;
                 competition.EndDate            = endDate;
                 competition.SubmissionDeadline = submissionDeadline;
-                competition.MinParticipants    = model.MinParticipants;
                 competition.MaxParticipants    = model.MaxParticipants;
                 competition.MaxTeamSize        = model.IsTeamBased ? model.MaxTeamSize : 1;
                 competition.IsTeamBased        = model.IsTeamBased;
@@ -785,9 +827,6 @@ public class CompetitionService : ICompetitionService
                     throw new InvalidOperationException(
                         $"Không thể giảm số lượng tối đa xuống {model.MaxParticipants} khi đã có {currentRegCount} người đăng ký.");
 
-                if (model.MinParticipants > model.MaxParticipants)
-                    throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
-
                 var newStartDate          = ToUtc(model.StartDate);
                 var newEndDate            = ToUtc(model.EndDate);
                 var newSubmissionDeadline = ToUtc(model.SubmissionDeadline);
@@ -808,7 +847,6 @@ public class CompetitionService : ICompetitionService
                 competition.StartDate          = newStartDate;
                 competition.EndDate            = newEndDate;
                 competition.SubmissionDeadline = newSubmissionDeadline;
-                competition.MinParticipants    = model.MinParticipants;
                 competition.MaxParticipants    = model.MaxParticipants;
 
                 // Cập nhật ScoringCriteria (chưa có bài nộp nên được phép)

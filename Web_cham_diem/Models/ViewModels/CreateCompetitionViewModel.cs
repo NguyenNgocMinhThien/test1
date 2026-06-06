@@ -25,14 +25,13 @@ namespace Web_cham_diem.Models.ViewModels
         [Required]
         public DateTime SubmissionDeadline { get; set; } = DateTime.Now.AddDays(40);
 
-        [Range(0, int.MaxValue, ErrorMessage = "Số lượng tối thiểu phải >= 0.")]
-        public int MinParticipants { get; set; } = 0;
-
+        // MaxParticipants: nếu theo đội = số đội tối đa; nếu cá nhân = số thí sinh tối đa
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng tối đa phải lớn hơn 0.")]
         public int MaxParticipants { get; set; } = 100;
 
-        [Range(1, int.MaxValue, ErrorMessage = "Số người/đội phải lớn hơn 0.")]
-        public int MaxTeamSize { get; set; } = 1;
+        // MaxTeamSize: chỉ dùng khi IsTeamBased = true (tối đa thành viên/đội, cho phép đội 1 người)
+        [Range(1, int.MaxValue, ErrorMessage = "Số thành viên tối đa phải lớn hơn 0.")]
+        public int MaxTeamSize { get; set; } = 5;
         public bool IsTeamBased { get; set; } = false;
 
         // Step 2b: Đợt đăng ký (bắt buộc ít nhất 1)
@@ -45,6 +44,9 @@ namespace Web_cham_diem.Models.ViewModels
                 EndDate = DateTime.Now.AddDays(10)
             }
         };
+
+        // Step 2c: Vòng thi (tùy chọn, có thể thêm nhiều vòng)
+        public List<CompetitionRoundCreateDto> CompetitionRounds { get; set; } = new();
 
         // Step 3: Tiêu chí chấm điểm (bắt buộc ít nhất 1)
         public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new()
@@ -71,6 +73,15 @@ namespace Web_cham_diem.Models.ViewModels
         public string RoundName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+    }
+
+    public class CompetitionRoundCreateDto
+    {
+        public string RoundName { get; set; } = string.Empty;    // "Sơ khảo", "Bán kết", "Chung kết"
+        public int RoundOrder { get; set; } = 1;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int? MaxAdvancing { get; set; }                   // Số đội/thí sinh được nhận vào vòng này
     }
 
     public class ScoringCriteriaCreateDto
