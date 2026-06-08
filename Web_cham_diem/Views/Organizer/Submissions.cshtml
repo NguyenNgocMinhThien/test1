@@ -1,160 +1,78 @@
-﻿@model Web_cham_diem.Models.ViewModels.OrganizerSubmissionsViewModel
-@using System.IO
-
+@model Web_cham_diem.Models.ViewModels.OrganizerSubmissionsViewModel
 @{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Quản lý Đăng ký & Bài dự thi";
+    var ps = Model.ProgressStatistics;
+    var submitPct = ps.TotalExpected > 0 ? (int)Math.Round(Model.TotalSubmissions * 100.0 / ps.TotalExpected) : 0;
+}
+
+@functions {
+    string RegBadge(string s) => s switch { "Approved" => "w-appr", "Rejected" => "w-rej", _ => "w-wait" };
+    string RegText(string s)  => s switch { "Approved" => "Đã duyệt", "Rejected" => "Từ chối", _ => "Chờ duyệt" };
+    string SubBadge(string s) => s switch { "Evaluated" => "w-appr", "Under Review" => "w-rev", "Draft" => "w-wait", _ => "bg-secondary text-white" };
+    string SubText(string s)  => s switch { "Evaluated" => "Đã chấm điểm", "Under Review" => "Đang chấm", "Draft" => "Bản nháp", _ => "Đã nộp" };
+    string FileIcon(string t) => (t == "zip" || t == "rar") ? "bi-file-earmark-zip-fill text-warning"
+                               : t == "pdf" ? "bi-file-earmark-pdf-fill text-danger"
+                               : "bi-file-earmark-code-fill text-primary";
 }
 
 @section Styles {
-    <style>
-        .org-submission-wrapper {
-            background-color: var(--primary-bg);
-            min-height: calc(100vh - 70px);
-        }
+<style>
+    .org-submission-wrapper { background-color: var(--primary-bg); min-height: calc(100vh - 70px); }
 
-        /* --- STAT CARDS --- */
-        .sub-stat-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+    .sub-stat-card {
+        background: #fff; padding: 20px; border-radius: 12px;
+        border: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px;
+        transition: box-shadow .2s;
+    }
+    .sub-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+    .sub-stat-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+    .sub-stat-val { font-size: 1.6rem; font-weight: 800; line-height: 1; margin-top: 5px; }
 
-        .sub-stat-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-        }
+    .filter-panel { background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-color); }
 
-        .sub-stat-val {
-            font-size: 1.6rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-top: 5px;
-        }
+    .workflow-tabs { border-bottom: 2px solid var(--border-color); margin-top: 20px; margin-bottom: 0; }
+    .workflow-tabs .nav-link { border: none; color: var(--text-muted); font-weight: 600; padding: 12px 22px; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .3s; }
+    .workflow-tabs .nav-link:hover { color: var(--organizer-accent); }
+    .workflow-tabs .nav-link.active { background: none; color: var(--organizer-accent); border-bottom-color: var(--organizer-accent); }
 
-        /* --- TABS NAVIGATION --- */
-        .workflow-tabs {
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 20px;
-        }
+    .workflow-table-container { background: #fff; border-radius: 0 0 12px 12px; border: 1px solid var(--border-color); border-top: none; overflow: hidden; }
+    .workflow-table th { text-transform: uppercase; font-size: .73rem; font-weight: 700; color: var(--text-muted); background: #f8fafc; padding: 13px 15px; border-bottom: 2px solid var(--border-color); white-space: nowrap; }
+    .workflow-table td { padding: 13px 15px; vertical-align: middle; font-size: .87rem; border-bottom: 1px solid var(--border-color); color: var(--text-dark); }
+    .workflow-table tbody tr:last-child td { border-bottom: none; }
+    .workflow-table tbody tr:hover td { background: #f8fafc; }
 
-            .workflow-tabs .nav-link {
-                border: none;
-                color: var(--text-muted);
-                font-weight: 600;
-                padding: 12px 25px;
-                border-bottom: 3px solid transparent;
-                margin-bottom: -2px;
-                transition: all 0.3s;
-            }
+    .w-badge { padding: 4px 11px; border-radius: 50px; font-size: .72rem; font-weight: 700; white-space: nowrap; }
+    .w-wait { background: #fef3c7; color: #b45309; }
+    .w-appr { background: #dcfce7; color: #166534; }
+    .w-rej  { background: #fee2e2; color: #991b1b; }
+    .w-rev  { background: #e0f2fe; color: #075985; }
 
-                .workflow-tabs .nav-link:hover {
-                    color: var(--organizer-accent);
-                }
-
-                .workflow-tabs .nav-link.active {
-                    background: none;
-                    color: var(--organizer-accent);
-                    border-bottom-color: var(--organizer-accent);
-                }
-
-        /* --- FILTER PANEL --- */
-        .filter-panel {
-            background: #fff;
-            padding: 15px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-
-        /* --- WORKFLOW TABLE --- */
-        .workflow-table-container {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-        }
-
-        .workflow-table th {
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            background: #f8fafc;
-            padding: 15px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .workflow-table td {
-            padding: 15px;
-            vertical-align: middle;
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-dark);
-        }
-
-        .workflow-table tr:hover td {
-            background-color: #f1f5f9;
-        }
-
-        /* --- STATUS BADGES --- */
-        .w-badge {
-            padding: 5px 12px;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        .w-wait {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .w-appr {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .w-rej {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .w-rev {
-            background: #e0f2fe;
-            color: #075985;
-        }
-
-        /* --- FILE CARD --- */
-        .file-icon {
-            font-size: 2rem;
-            color: #ef4444;
-        }
-
-            .file-icon.zip {
-                color: #f59e0b;
-            }
-    </style>
+    .file-icon { font-size: 1.9rem; }
+    .empty-state { padding: 55px 20px; text-align: center; color: var(--text-muted); }
+    .empty-state i { font-size: 3rem; opacity: .25; }
+    .action-btn-group .btn { padding: .25rem .45rem; font-size: .78rem; }
+</style>
 }
 
 <div class="org-submission-wrapper py-4">
     <div class="container-fluid">
+
         <!-- Header -->
         <h3 class="fw-bold mb-1 text-dark">Quản lý Đăng ký & Bài dự thi</h3>
         <p class="text-muted small mb-4">Luồng tiếp nhận hồ sơ xét duyệt và thu thập bài làm của sinh viên.</p>
 
-        <!-- 1. Statistics Cards -->
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-3">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- Statistics -->
         <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="sub-stat-card border-warning">
                     <div class="sub-stat-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-person-lines-fill"></i></div>
                     <div>
@@ -163,7 +81,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="sub-stat-card border-success">
                     <div class="sub-stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-shield-check"></i></div>
                     <div>
@@ -172,16 +90,16 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="sub-stat-card" style="border-color: var(--organizer-accent);">
-                    <div class="sub-stat-icon bg-primary bg-opacity-10" style="color: var(--organizer-accent);"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+            <div class="col-6 col-md-3">
+                <div class="sub-stat-card" style="border-color:var(--organizer-accent)">
+                    <div class="sub-stat-icon bg-primary bg-opacity-10" style="color:var(--organizer-accent)"><i class="bi bi-cloud-arrow-up-fill"></i></div>
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Tổng bài đã nộp</div>
-                        <div class="sub-stat-val" style="color: var(--organizer-accent);">@Model.TotalSubmissions</div>
+                        <div class="sub-stat-val" style="color:var(--organizer-accent)">@Model.TotalSubmissions</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-6 col-md-3">
                 <div class="sub-stat-card border-danger">
                     <div class="sub-stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-alarm-fill"></i></div>
                     <div>
@@ -192,486 +110,650 @@
             </div>
         </div>
 
-        <!-- 2. Search & Filter -->
-        <div class="filter-panel shadow-sm d-flex flex-wrap gap-3 align-items-end">
-            <div style="width: 250px;">
-                <label class="form-label small fw-bold text-muted mb-1">Chọn Cuộc thi</label>
-                <select class="form-select form-select-sm border-primary" id="competitionFilter">
-                    <option value="">Tất cả cuộc thi</option>
-                    @foreach (var comp in Model.Competitions)
+        <!-- Filter -->
+        <form method="get" asp-action="Submissions" asp-controller="Organizer"
+              class="filter-panel shadow-sm d-flex flex-wrap gap-3 align-items-end mb-0">
+
+            @* <div style="min-width:200px">
+                <label class="form-label small fw-bold text-muted mb-1">Cuộc thi</label>
+                <select name="competitionId" class="form-select form-select-sm border-primary"
+                        onchange="this.form.submit()">
+                    @if (!Model.SelectedCompetitionId.HasValue)
                     {
-                        var isSelected = Model.SelectedCompetitionId == comp.CompetitionId;
-                        <option value="@comp.CompetitionId" selected="@(isSelected)">
-                            @comp.CompetitionName
-                        </option>
+                        <option value="" selected>Tất cả cuộc thi</option>
+                    }
+                    else
+                    {
+                        <option value="">Tất cả cuộc thi</option>
+                    }
+                    @foreach (var c in Model.Competitions)
+                    {
+                        if (Model.SelectedCompetitionId == c.CompetitionId)
+                        {
+                            <option value="@c.CompetitionId" selected>@c.CompetitionName</option>
+                        }
+                        else
+                        {
+                            <option value="@c.CompetitionId">@c.CompetitionName</option>
+                        }
                     }
                 </select>
+            </div> *@
+
+            <div style="min-width:160px">
+                <label class="form-label small fw-bold text-muted mb-1">Loại đăng ký</label>
+                <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @{ var tf = Model.RegistrationTypeFilter ?? ""; }
+                    @if (tf == "") { <option value="" selected>Tất cả</option> } else { <option value="">Tất cả</option> }
+                    @if (tf == "Individual") { <option value="Individual" selected>Cá nhân</option> } else { <option value="Individual">Cá nhân</option> }
+                    @if (tf == "Team")       { <option value="Team" selected>Theo đội</option>      } else { <option value="Team">Theo đội</option>      }
+                </select>
             </div>
-            <div style="flex: 1 1 200px;">
+
+            <div style="flex:1 1 180px">
                 <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                    <input type="text" class="form-control" id="searchInput" placeholder="Tên HS, Đề tài, MSSV..." value="@Model.SearchQuery">
+                    <input type="text" name="search" value="@Model.SearchQuery"
+                           class="form-control" placeholder="Tên, MSSV, Email, Đội...">
                 </div>
             </div>
-            <div style="width: 180px;">
-                <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
-                <select class="form-select form-select-sm" id="statusFilter">
-                    <option value="">Tất cả</option>
-                    <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Chờ duyệt</option>
-                    <option value="Approved" selected="@(Model.StatusFilter == "Approved")">Đã duyệt</option>
-                    <option value="Rejected" selected="@(Model.StatusFilter == "Rejected")">Từ chối</option>
-                </select>
-            </div>
-            <div style="width: 150px;">
-                <label class="form-label small fw-bold text-muted mb-1">Khoa tham gia</label>
-                <select class="form-select form-select-sm" id="departmentFilter">
-                    <option value="">Tất cả khoa</option>
-                    <option value="CNTT">Công nghệ Thông tin</option>
-                    <option value="KT">Kinh tế</option>
-                </select>
-            </div>
-            <div>
-                <button class="btn btn-outline-secondary btn-sm" onclick="applyFilters()"><i class="bi bi-filter"></i> Lọc</button>
-            </div>
-        </div>
 
-        <!-- 3. WORKFLOW TABS -->
+            <div style="min-width:145px">
+                <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
+                <select name="status" class="form-select form-select-sm">
+                    @{ var sf = Model.StatusFilter ?? ""; }
+                    @if (sf == "") { <option value="" selected>Tất cả</option> } else { <option value="">Tất cả</option> }
+                    @if (sf == "Pending")  { <option value="Pending" selected>Chờ duyệt</option>  } else { <option value="Pending">Chờ duyệt</option>  }
+                    @if (sf == "Approved") { <option value="Approved" selected>Đã duyệt</option>  } else { <option value="Approved">Đã duyệt</option>  }
+                    @if (sf == "Rejected") { <option value="Rejected" selected>Từ chối</option>   } else { <option value="Rejected">Từ chối</option>   }
+                </select>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel-fill"></i> Lọc
+                </button>
+                <a asp-action="Submissions" asp-controller="Organizer"
+                   class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
+                </a>
+            </div>
+        </form>
+
+        <!-- Tabs -->
         <ul class="nav nav-tabs workflow-tabs" id="submissionTabs" role="tablist">
             <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#registration-tab" type="button">
-                    <i class="bi bi-card-checklist me-2"></i> Hồ sơ Đăng ký <span class="badge bg-warning text-dark ms-1">@Model.PendingRegistrations</span>
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-reg" type="button" id="btn-tab-reg">
+                    <i class="bi bi-card-checklist me-2"></i>Hồ sơ Đăng ký
+                    @if (Model.PendingRegistrations > 0)
+                    {
+                        <span class="badge bg-warning text-dark ms-1">@Model.PendingRegistrations</span>
+                    }
                 </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#files-tab" type="button">
-                    <i class="bi bi-file-earmark-zip me-2"></i> File Bài dự thi <span class="badge bg-info text-white ms-1">@Model.TotalSubmissions</span>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-files" type="button" id="btn-tab-files">
+                    <i class="bi bi-file-earmark-zip me-2"></i>Bài dự thi
+                    @if (Model.TotalSubmissions > 0)
+                    {
+                        <span class="badge bg-secondary ms-1">@Model.TotalSubmissions</span>
+                    }
                 </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#progress-tab" type="button">
-                    <i class="bi bi-graph-up-arrow me-2"></i> Theo dõi Tiến độ
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-progress" type="button" id="btn-tab-progress">
+                    <i class="bi bi-graph-up-arrow me-2"></i>Tiến độ Nộp bài
                 </button>
             </li>
         </ul>
 
-        <!-- TABS CONTENT -->
         <div class="tab-content">
 
-            <!-- TAB 1: DANH SÁCH HỒ SƠ ĐĂNG KÝ -->
-            <div class="tab-pane fade show active" id="registration-tab">
+            <!-- TAB 1: HỒ SƠ ĐĂNG KÝ -->
+            <div class="tab-pane fade show active" id="tab-reg">
                 <div class="workflow-table-container shadow-sm">
-                    <div class="table-responsive">
-                        <table class="table workflow-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th width="5%">ID</th>
-                                    <th width="25%">Đại diện / Đội thi</th>
-                                    <th>Đề tài đăng ký</th>
-                                    <th>Cập nhật lúc</th>
-                                    <th class="text-center">Trạng thái</th>
-                                    <th class="text-center">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.AllRegistrationsList.Any())
-                                {
+                    @if (!Model.AllRegistrationsList.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-inbox d-block mb-3"></i>
+                            <p class="fw-bold mb-1">Không có hồ sơ nào</p>
+                            <p class="small mb-0">Chưa có hồ sơ đăng ký hoặc không khớp bộ lọc.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table workflow-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th width="6%">ID</th>
+                                        <th width="22%">Đại diện / Đội thi</th>
+                                        <th>Đề tài / Ghi chú</th>
+                                        <th width="11%">Ngày ĐK</th>
+                                        <th width="10%" class="text-center">Trạng thái</th>
+                                        <th width="14%" class="text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     @foreach (var reg in Model.AllRegistrationsList)
                                     {
-                                        <tr>
+                                        <tr data-id="@reg.RegistrationId"
+                                            data-name="@reg.RepresentativeName"
+                                            data-student-id="@(reg.StudentId ?? "")"
+                                            data-department="@(reg.Department ?? "")"
+                                            data-topic="@reg.Topic"
+                                            data-doc="@(reg.SubmissionDocument ?? "")"
+                                            data-status="@reg.Status"
+                                            data-notes="@reg.Notes"
+                                            data-date="@reg.RegistrationDate.ToString("dd/MM/yyyy HH:mm")">
                                             <td class="fw-bold text-muted">#@reg.RegistrationId</td>
                                             <td>
-                                                <div class="fw-bold text-dark">@reg.RepresentativeName <span class="badge bg-light text-muted border border-secondary small ms-1">@reg.Department</span></div>
-                                                <div class="small text-muted">Email: @reg.Email</div>
+                                                <div class="fw-bold text-dark">@reg.TeamName</div>
+                                                @if (!string.IsNullOrEmpty(reg.Email))
+                                                {
+                                                    <div class="small text-muted">@reg.Email</div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(reg.StudentId))
+                                                {
+                                                    <div class="small text-muted">MSSV: @reg.StudentId</div>
+                                                }
                                             </td>
                                             <td>
                                                 <div class="fw-bold">@reg.Topic</div>
                                                 @if (!string.IsNullOrEmpty(reg.SubmissionDocument))
                                                 {
-                                                    var fileName = System.IO.Path.GetFileName(reg.SubmissionDocument);
-                                                    <a href="#" class="small text-decoration-none"><i class="bi bi-paperclip"></i> @fileName</a>
+                                                    <a href="@reg.SubmissionDocument" target="_blank"
+                                                       class="small text-decoration-none">
+                                                        <i class="bi bi-paperclip"></i> Xem tài liệu
+                                                    </a>
                                                 }
-                                            </td>
-                                            <td><small class="text-muted">@reg.RegistrationDate.ToString("HH:mm, dd/MM/yyyy")</small></td>
-                                            <td class="text-center">
-                                                @{
-                                                    var statusClass = reg.Status switch
-                                                    {
-                                                        "Pending" => "w-wait",
-                                                        "Approved" => "w-appr",
-                                                        "Rejected" => "w-rej",
-                                                        _ => "w-rev"
-                                                    };
-                                                    var statusDisplay = reg.Status switch
-                                                    {
-                                                        "Pending" => "Chờ duyệt",
-                                                        "Approved" => "Đã duyệt",
-                                                        "Rejected" => "Từ chối",
-                                                        _ => reg.Status
-                                                    };
-                                                }
-                                                <span class="w-badge @statusClass">@statusDisplay</span>
-                                            </td>
-                                            <td class="text-center">
-                                                <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal" data-bs-target="#previewModal" onclick="loadRegistrationDetail(@reg.RegistrationId)" title="Xem hồ sơ">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
-                                                @if (reg.Status == "Pending")
+                                                @if (!string.IsNullOrEmpty(reg.Notes) && reg.Status == "Pending")
                                                 {
-                                                    <button class="btn btn-sm btn-success text-white" onclick="approveRegistration(@reg.RegistrationId)" title="Duyệt"><i class="bi bi-check-lg"></i></button>
-                                                    <button class="btn btn-sm btn-danger text-white" onclick="rejectRegistration(@reg.RegistrationId)" title="Từ chối"><i class="bi bi-x-lg"></i></button>
+                                                    <div class="small text-warning fst-italic mt-1">
+                                                        <i class="bi bi-exclamation-circle-fill"></i> @reg.Notes
+                                                    </div>
                                                 }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@reg.RegistrationDate.ToString("dd/MM/yyyy")</small>
+                                                @if (reg.ApprovalDate.HasValue)
+                                                {
+                                                    <div class="small text-muted">Duyệt: @reg.ApprovalDate.Value.ToString("dd/MM/yyyy")</div>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="w-badge @RegBadge(reg.Status)">@RegText(reg.Status)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-flex gap-1 justify-content-center action-btn-group">
+                                                    <button class="btn btn-sm btn-light text-primary btn-preview"
+                                                            title="Xem hồ sơ">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    @if (reg.Status == "Pending")
+                                                    {
+                                                        <button class="btn btn-sm btn-success text-white btn-quick-approve"
+                                                                data-id="@reg.RegistrationId" title="Duyệt nhanh">
+                                                            <i class="bi bi-check-lg"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-danger text-white btn-quick-reject"
+                                                                data-id="@reg.RegistrationId" title="Từ chối">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                    }
+                                                </div>
                                             </td>
                                         </tr>
                                     }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">Không có dữ liệu</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-3 bg-white border-top">
+                            <small class="text-muted">Hiển thị @Model.AllRegistrationsList.Count hồ sơ</small>
+                        </div>
+                    }
                 </div>
             </div>
 
-            <!-- TAB 2: QUẢN LÝ BÀI DỰ THI -->
-            <div class="tab-pane fade" id="files-tab">
+            <!-- TAB 2: BÀI DỰ THI -->
+            <div class="tab-pane fade" id="tab-files">
                 <div class="workflow-table-container shadow-sm">
-                    <div class="table-responsive">
-                        <table class="table workflow-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>File bài làm</th>
-                                    <th>Đại diện / Đội thi</th>
-                                    <th>Dung lượng</th>
-                                    <th>Thời gian nộp</th>
-                                    <th class="text-center">Trạng thái</th>
-                                    <th class="text-center">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.SubmissionsList.Any())
-                                {
+                    @if (!Model.SubmissionsList.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-file-earmark-x d-block mb-3"></i>
+                            <p class="fw-bold mb-1">Chưa có bài dự thi</p>
+                            <p class="small mb-0">Sinh viên chưa nộp bài cho cuộc thi này.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table workflow-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Bài dự thi</th>
+                                        <th width="20%">Đại diện / Đội</th>
+                                        <th width="16%">Thời gian nộp</th>
+                                        <th width="12%" class="text-center">Trạng thái</th>
+                                        <th width="12%" class="text-center">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     @foreach (var sub in Model.SubmissionsList)
                                     {
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center gap-3">
-                                                    @{
-                                                        var iconClass = sub.FileType == "zip" ? "file-earmark-zip-fill zip" : "file-earmark-pdf-fill";
-                                                    }
-                                                    <i class="bi bi-@iconClass file-icon"></i>
+                                                    <i class="bi @FileIcon(sub.FileType) file-icon"></i>
                                                     <div>
                                                         <div class="fw-bold">@sub.FileName</div>
-                                                        <small class="text-muted">Mã HS: #@sub.SubmissionId</small>
+                                                        <small class="text-muted">
+                                                            ID: #@sub.SubmissionId
+                                                            @if (!string.IsNullOrEmpty(sub.FileType) && sub.FileType != "unknown")
+                                                            {
+                                                                <span>• @sub.FileType.ToUpper()</span>
+                                                            }
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <div class="fw-bold">@sub.RepresentativeName</div>
-                                                <small class="text-muted">@sub.TeamName</small>
+                                                <div class="fw-bold">@sub.TeamName</div>
+                                                @if (sub.RepresentativeName != sub.TeamName)
+                                                {
+                                                    <div class="small text-muted">@sub.RepresentativeName</div>
+                                                }
                                             </td>
-                                            <td><span class="badge bg-light text-dark border">@sub.FileSizeInMB.ToString("F2") MB</span></td>
                                             <td>
                                                 <div class="small fw-bold">@sub.SubmissionDate.ToString("HH:mm, dd/MM/yyyy")</div>
                                                 @if (sub.IsLate)
                                                 {
-                                                    <small class="text-danger border border-danger rounded px-1" style="font-size:0.6rem;">Nộp trễ</small>
+                                                    <span class="w-badge w-rej" style="font-size:.65rem;">Trễ hạn</span>
                                                 }
                                                 else
                                                 {
-                                                    <small class="text-success border border-success rounded px-1" style="font-size:0.6rem;">Đúng hạn</small>
+                                                    <span class="w-badge w-appr" style="font-size:.65rem;">Đúng hạn</span>
                                                 }
                                             </td>
-                                            <td class="text-center"><span class="w-badge w-appr">@sub.Status</span></td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary" title="Preview"><i class="bi bi-eye"></i></button>
-                                                <button class="btn btn-sm btn-outline-primary" title="Tải về"><i class="bi bi-download"></i></button>
+                                                <span class="w-badge @SubBadge(sub.Status)">@SubText(sub.Status)</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @if (!string.IsNullOrEmpty(sub.FileUrl))
+                                                {
+                                                    <a href="@sub.FileUrl" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                        <i class="bi bi-download"></i> Tải về
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">Chưa có file</span>
+                                                }
                                             </td>
                                         </tr>
                                     }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-3 bg-white border-top">
+                            <small class="text-muted">Tổng cộng @Model.SubmissionsList.Count bài dự thi</small>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- TAB 3: TIẾN ĐỘ NỘP BÀI -->
+            <div class="tab-pane fade" id="tab-progress">
+                @if (!Model.Competitions.Any())
+                {
+                    <div class="workflow-table-container shadow-sm">
+                        <div class="empty-state">
+                            <i class="bi bi-bar-chart d-block mb-3"></i>
+                            <p class="fw-bold mb-1">Chưa có dữ liệu tiến độ</p>
+                            <p class="small mb-0">Chọn một cuộc thi đang hoạt động để xem tiến độ nộp bài.</p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-4 pt-1">
+                        <div class="col-lg-6">
+                            <div class="bg-white p-4 rounded-3 border shadow-sm h-100">
+                                <h6 class="fw-bold mb-4" style="color:var(--navy-blue)">
+                                    <i class="bi bi-speedometer2 me-2"></i>Tiến độ Nộp bài
+                                </h6>
+
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted small fw-bold">Đã nộp / Tổng hồ sơ duyệt</span>
+                                    <span class="fw-bold small">@Model.TotalSubmissions / @ps.TotalExpected (@submitPct%)</span>
+                                </div>
+                                <div class="progress mb-4" style="height:10px">
+                                    <div class="progress-bar" style="width:@submitPct%;background-color:var(--organizer-accent)"></div>
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-success bg-opacity-10 rounded-2">
+                                            <div class="fw-bold text-success">@ps.OnTimeSubmissions</div>
+                                            <div class="text-muted" style="font-size:.7rem">Đúng hạn</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-danger bg-opacity-10 rounded-2">
+                                            <div class="fw-bold text-danger">@ps.LateSubmissions</div>
+                                            <div class="text-muted" style="font-size:.7rem">Trễ hạn</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="text-center p-2 bg-secondary bg-opacity-10 rounded-2">
+                                            <div class="fw-bold text-secondary">@ps.NotSubmitted</div>
+                                            <div class="text-muted" style="font-size:.7rem">Chưa nộp</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (!ps.IsDeadlinePassing && ps.DeadlineDate > DateTime.MinValue)
+                                {
+                                    var urgency = ps.HoursUntilDeadline < 24 ? "danger" : "warning";
+                                    var days  = ps.HoursUntilDeadline / 24;
+                                    var hours = ps.HoursUntilDeadline % 24;
+                                    <div class="alert alert-@urgency border-@urgency mb-0">
+                                        <div class="fw-bold text-dark mb-1">
+                                            <i class="bi bi-clock-history text-@urgency me-1"></i>Cảnh báo hạn nộp bài
+                                        </div>
+                                        <p class="small mb-2">
+                                            Còn <strong class="text-@urgency">
+                                                @(days > 0 ? $"{days} ngày {hours} giờ" : $"{hours} giờ")
+                                            </strong> nữa đóng cổng.
+                                            <span class="fw-bold text-danger">@ps.NotSubmitted</span> hội thi chưa nộp.
+                                        </p>
+                                        @if (ps.NotSubmitted > 0)
+                                        {
+                                            <button class="btn btn-sm btn-@urgency fw-bold" onclick="sendBulkReminder()">
+                                                <i class="bi bi-envelope-fill me-1"></i>Gửi nhắc nhở hàng loạt
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                else if (ps.IsDeadlinePassing)
+                                {
+                                    <div class="alert alert-secondary mb-0">
+                                        <i class="bi bi-lock-fill me-1"></i>
+                                        <strong>Đã đóng cổng nộp bài.</strong>
+                                        <span class="small ms-1">Hạn: @ps.DeadlineDate.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="bg-white p-4 rounded-3 border shadow-sm h-100">
+                                <h6 class="fw-bold mb-4" style="color:var(--navy-blue)">
+                                    <i class="bi bi-pie-chart-fill me-2"></i>Phân tích Trạng thái Bài nộp
+                                </h6>
+                                @if (ps.OnTimeSubmissions == 0 && ps.LateSubmissions == 0 && ps.NotSubmitted == 0)
+                                {
+                                    <div class="text-center text-muted py-4">
+                                        <i class="bi bi-pie-chart" style="font-size:2.5rem;opacity:.25"></i>
+                                        <p class="mt-2 small">Chưa có dữ liệu để hiển thị.</p>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">Không có bài nộp</td>
-                                    </tr>
+                                    <div style="position:relative;height:220px">
+                                        <canvas id="submissionStatusChart"></canvas>
+                                    </div>
                                 }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 3: THEO DÕI TIẾN ĐỘ THU BÀI -->
-            <div class="tab-pane fade" id="progress-tab">
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="bg-white p-4 rounded-3 border h-100 shadow-sm">
-                            <h6 class="fw-bold mb-4" style="color: var(--navy-blue);">Tiến độ Nộp bài (@Model.ProgressStatistics.DeadlineDate.ToString("dd/MM/yyyy"))</h6>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted fw-bold">Tổng số đã nộp</span>
-                                <span class="fw-bold text-dark">
-                                    @{
-                                        var totalSubmitted = Model.ProgressStatistics.OnTimeSubmissions + Model.ProgressStatistics.LateSubmissions;
-                                        var percentage = Model.ProgressStatistics.TotalExpected > 0 
-                                            ? Math.Round((totalSubmitted * 100.0) / Model.ProgressStatistics.TotalExpected, 0)
-                                            : 0;
-                                    }
-                                    @totalSubmitted / @Model.ProgressStatistics.TotalExpected (@percentage%)
-                                </span>
-                            </div>
-                            <div class="progress mb-4" style="height: 10px;">
-                                @{
-                                    var progressPercent = Model.ProgressStatistics.TotalExpected > 0 
-                                        ? (totalSubmitted * 100.0) / Model.ProgressStatistics.TotalExpected
-                                        : 0;
-                                }
-                                <div class="progress-bar" style="width: @progressPercent%; background-color: var(--organizer-accent);"></div>
-                            </div>
-
-                            @if (Model.ProgressStatistics.IsDeadlinePassing)
-                            {
-                                <div class="alert alert-danger mb-0 border-danger">
-                                    <div class="fw-bold text-dark"><i class="bi bi-exclamation-triangle text-danger"></i> Hạn chót Đã Qua!</div>
-                                    <p class="small mb-0 mt-1">Đóng cổng nộp bài cách đây <strong>@(Math.Abs(Model.ProgressStatistics.HoursUntilDeadline / 24)) ngày</strong>.</p>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-warning mb-0 border-warning">
-                                    <div class="fw-bold text-dark"><i class="bi bi-clock-history text-danger"></i> Cảnh báo Hạn chót!</div>
-                                    <p class="small mb-0 mt-1">Chỉ còn <strong>@(Model.ProgressStatistics.HoursUntilDeadline / 24) ngày @(Model.ProgressStatistics.HoursUntilDeadline % 24) giờ</strong> nữa. Có <span class="text-danger fw-bold">@Model.ProgressStatistics.NotSubmitted sinh viên/đội</span> chưa nộp bài.</p>
-                                    <button class="btn btn-sm btn-warning fw-bold mt-2" onclick="sendReminderEmail()">Gửi Email nhắc nhở hàng loạt</button>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6">
-                        <div class="bg-white p-4 rounded-3 border h-100 shadow-sm">
-                            <h6 class="fw-bold mb-4" style="color: var(--navy-blue);">Phân tích Trạng thái Bài nộp</h6>
-                            <div style="height: 200px; display:flex; justify-content:center;">
-                                <canvas id="submissionStatusChart"></canvas>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
             </div>
 
+        </div><!-- /tab-content -->
+    </div>
+</div>
+
+<!-- Modal: Xem & Duyệt Hồ sơ -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:12px">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="bi bi-card-heading me-2"></i>Hồ sơ Đăng ký <span id="modal-reg-id"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Đại diện / Đội</div>
+                    <div class="col-sm-8 fw-bold" id="modal-name">—</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">MSSV / Khoa</div>
+                    <div class="col-sm-8 text-muted" id="modal-info">—</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Đề tài</div>
+                    <div class="col-sm-8 fw-bold" id="modal-topic">—</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Ngày đăng ký</div>
+                    <div class="col-sm-8 text-muted" id="modal-date">—</div>
+                </div>
+                <div class="row mb-3 d-none" id="modal-doc-row">
+                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Tài liệu</div>
+                    <div class="col-sm-8">
+                        <a id="modal-doc-link" href="#" target="_blank" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-file-pdf me-1"></i>Xem tài liệu
+                        </a>
+                    </div>
+                </div>
+
+                <div id="modal-action-area" class="d-none">
+                    <hr class="my-3">
+                    <h6 class="fw-bold text-dark mb-2">Phản hồi / Nhận xét của BTC</h6>
+                    <textarea class="form-control" id="modal-feedback" rows="3"
+                              placeholder="Nhập lý do từ chối hoặc yêu cầu bổ sung (nếu có)..."></textarea>
+                    <small class="text-muted">Bắt buộc khi Từ chối hoặc Yêu cầu bổ sung.</small>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-info text-white d-none" id="btn-supplement"
+                        onclick="modalAction('supplement')">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Yêu cầu bổ sung
+                </button>
+                <button type="button" class="btn btn-danger d-none" id="btn-reject"
+                        onclick="modalAction('reject')">
+                    <i class="bi bi-x-circle me-1"></i>Từ chối
+                </button>
+                <button type="button" class="btn text-white fw-bold d-none" id="btn-approve"
+                        style="background-color:var(--organizer-accent)"
+                        onclick="modalAction('approve')">
+                    <i class="bi bi-check-circle me-1"></i>Phê duyệt
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Duyệt / Xem trước Hồ sơ -->
-<div class="modal fade" id="previewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0" style="border-radius: 12px;">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-card-heading me-2"></i> Chi tiết Hồ sơ</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="row info-row mb-3">
-                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Tên Đề tài</div>
-                    <div class="col-sm-8 fw-bold" id="modalTopic">-</div>
-                </div>
-                <div class="row info-row mb-3">
-                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">Đại diện</div>
-                    <div class="col-sm-8" id="modalRepresentative">-</div>
-                </div>
-                <div class="row info-row mb-4">
-                    <div class="col-sm-4 text-muted fw-bold small text-uppercase">File Đăng ký</div>
-                    <div class="col-sm-8" id="modalDocument">-</div>
-                </div>
-
-                <hr />
-                <h6 class="fw-bold text-dark mb-3">Phản hồi / Nhận xét của BTC</h6>
-                <textarea class="form-control" id="modalFeedback" rows="3" placeholder="Nhập lý do từ chối hoặc yêu cầu bổ sung chỉnh sửa (nếu có)..."></textarea>
-            </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-info text-white" onclick="requestSupplement()"><i class="bi bi-arrow-counterclockwise"></i> Yêu cầu bổ sung</button>
-                <button type="button" class="btn btn-danger" onclick="rejectRegistrationModal()"><i class="bi bi-x-circle"></i> Từ chối</button>
-                <button type="button" class="btn text-white fw-bold" style="background-color: var(--organizer-accent);" onclick="approveRegistrationModal()"><i class="bi bi-check-circle"></i> Phê duyệt Hồ sơ</button>
-            </div>
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+    <div id="actionToast" class="toast align-items-center text-white border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body fw-bold" id="toastMsg"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        let currentRegistrationId = 0;
+<script>
+    let currentRegId = null;
 
-        // Lọc dữ liệu
-        function applyFilters() {
-            const competitionId = document.getElementById('competitionFilter').value;
-            const search = document.getElementById('searchInput').value;
-            const status = document.getElementById('statusFilter').value;
-            const department = document.getElementById('departmentFilter').value;
+    // ---- Preview button: open modal ----
+    document.querySelectorAll('.btn-preview').forEach(btn => {
+        btn.addEventListener('click', function () {
+            openModal(this.closest('tr'));
+        });
+    });
 
-            const params = new URLSearchParams();
-            if (competitionId) params.append('competitionId', competitionId);
-            if (search) params.append('search', search);
-            if (status) params.append('status', status);
-            if (department) params.append('department', department);
+    function openModal(row) {
+        currentRegId = row.dataset.id;
+        const isPending = row.dataset.status === 'Pending';
 
-            window.location.href = `?${params.toString()}`;
+        document.getElementById('modal-reg-id').textContent   = '#' + currentRegId;
+        document.getElementById('modal-name').textContent     = row.dataset.name  || '—';
+        document.getElementById('modal-topic').textContent    = row.dataset.topic || '—';
+        document.getElementById('modal-date').textContent     = row.dataset.date  || '—';
+        document.getElementById('modal-feedback').value       = '';
+
+        const sid  = row.dataset.studentId;
+        const dept = row.dataset.department;
+        document.getElementById('modal-info').textContent = [sid, dept].filter(Boolean).join(' • ') || '—';
+
+        const docRow  = document.getElementById('modal-doc-row');
+        const docUrl  = row.dataset.doc;
+        if (docUrl) {
+            document.getElementById('modal-doc-link').href = docUrl;
+            docRow.classList.remove('d-none');
+        } else {
+            docRow.classList.add('d-none');
         }
 
-        // Tải chi tiết hồ sơ
-        async function loadRegistrationDetail(registrationId) {
-            currentRegistrationId = registrationId;
-            try {
-                const rows = document.querySelectorAll('tbody tr');
-                let found = false;
-                rows.forEach(row => {
-                    if (row.querySelector('td:first-child').textContent.includes(`#${registrationId}`)) {
-                        const cells = row.querySelectorAll('td');
-                        document.getElementById('modalRepresentative').textContent = cells[1].querySelector('.fw-bold').textContent;
-                        document.getElementById('modalTopic').textContent = cells[2].querySelector('.fw-bold').textContent;
-                        document.getElementById('modalDocument').innerHTML = cells[2].innerHTML;
-                        found = true;
-                    }
-                });
-            } catch (error) {
-                console.error('Error loading registration detail:', error);
-            }
+        const area = document.getElementById('modal-action-area');
+        area.classList.toggle('d-none', !isPending);
+        document.getElementById('btn-approve').classList.toggle('d-none', !isPending);
+        document.getElementById('btn-reject').classList.toggle('d-none', !isPending);
+        document.getElementById('btn-supplement').classList.toggle('d-none', !isPending);
+
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
+    }
+
+    // ---- Quick approve ----
+    document.querySelectorAll('.btn-quick-approve').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            e.stopPropagation();
+            if (!confirm('Xác nhận duyệt hồ sơ này?')) return;
+            await doAction('/Organizer/ApproveRegistration', { registrationId: this.dataset.id, feedback: '' });
+        });
+    });
+
+    // ---- Quick reject ----
+    document.querySelectorAll('.btn-quick-reject').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+            e.stopPropagation();
+            const reason = prompt('Nhập lý do từ chối (bắt buộc):');
+            if (!reason || !reason.trim()) return;
+            await doAction('/Organizer/RejectRegistration', { registrationId: this.dataset.id, reason: reason.trim() });
+        });
+    });
+
+    // ---- Modal actions ----
+    async function modalAction(type) {
+        const feedback = document.getElementById('modal-feedback').value.trim();
+
+        if (type === 'reject' && !feedback) {
+            alert('Vui lòng nhập lý do từ chối.');
+            document.getElementById('modal-feedback').focus();
+            return;
+        }
+        if (type === 'supplement' && !feedback) {
+            alert('Vui lòng nhập nội dung yêu cầu bổ sung.');
+            document.getElementById('modal-feedback').focus();
+            return;
         }
 
-        // Duyệt hồ sơ
-        async function approveRegistration(registrationId) {
-            if (!confirm('Bạn chắc chắn muốn duyệt hồ sơ này?')) return;
+        const urls   = { approve: '/Organizer/ApproveRegistration', reject: '/Organizer/RejectRegistration', supplement: '/Organizer/RequestSupplement' };
+        const params = {
+            approve:    { registrationId: currentRegId, feedback },
+            reject:     { registrationId: currentRegId, reason: feedback },
+            supplement: { registrationId: currentRegId, feedback }
+        };
 
-            try {
-                const response = await fetch(`/Organizer/ApproveRegistration`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        registrationId: registrationId,
-                        feedback: null
-                    })
-                });
+        const ok = await doAction(urls[type], params[type]);
+        if (ok) bootstrap.Modal.getInstance(document.getElementById('previewModal'))?.hide();
+    }
 
-                const result = await response.json();
-                if (result.success) {
-                    alert('Duyệt hồ sơ thành công!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra');
-            }
-        }
-
-        // Từ chối hồ sơ
-        async function rejectRegistration(registrationId) {
-            const reason = prompt('Vui lòng nhập lý do từ chối:');
-            if (!reason) return;
-
-            try {
-                const response = await fetch(`/Organizer/RejectRegistration`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        registrationId: registrationId,
-                        reason: reason
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('Từ chối hồ sơ thành công!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra');
-            }
-        }
-
-        // Từ modal
-        async function approveRegistrationModal() {
-            await approveRegistration(currentRegistrationId);
-        }
-
-        async function rejectRegistrationModal() {
-            await rejectRegistration(currentRegistrationId);
-        }
-
-        async function requestSupplement() {
-            const feedback = document.getElementById('modalFeedback').value;
-            if (!feedback) {
-                alert('Vui lòng nhập yêu cầu bổ sung');
-                return;
-            }
-
-            try {
-                const response = await fetch(`/Organizer/RequestSupplement`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        registrationId: currentRegistrationId,
-                        feedback: feedback
-                    })
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    alert('Yêu cầu bổ sung đã gửi!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra');
-            }
-        }
-
-        // Gửi email nhắc nhở
-        function sendReminderEmail() {
-            if (confirm('Bạn chắc chắn muốn gửi email nhắc nhở cho các sinh viên chưa nộp bài?')) {
-                alert('Email nhắc nhở sẽ được gửi');
-            }
-        }
-
-        // Tab 3 Chart
-        const ctxStatus = document.getElementById('submissionStatusChart');
-        if (ctxStatus) {
-            new Chart(ctxStatus, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Nộp đúng hạn', 'Nộp trễ hạn', 'Chưa nộp'],
-                    datasets: [{
-                        data: [@Model.ProgressStatistics.OnTimeSubmissions, @Model.ProgressStatistics.LateSubmissions, @Model.ProgressStatistics.NotSubmitted],
-                        backgroundColor: ['#10b981', '#ef4444', '#cbd5e1'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'right' }
-                    }
-                }
+    async function doAction(url, params) {
+        try {
+            const res  = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(params).toString()
             });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+
+            showToast(data.message || (data.success ? 'Thành công!' : 'Có lỗi xảy ra.'), data.success ? 'success' : 'danger');
+            if (data.success) setTimeout(() => location.reload(), 900);
+            return data.success;
+        } catch (err) {
+            showToast('Không thể kết nối. Vui lòng thử lại.', 'danger');
+            return false;
         }
-    </script>
+    }
+
+    function showToast(msg, type = 'success') {
+        const el = document.getElementById('actionToast');
+        el.className = `toast align-items-center text-white bg-${type} border-0`;
+        document.getElementById('toastMsg').textContent = msg;
+        new bootstrap.Toast(el, { delay: 2500 }).show();
+    }
+
+    function sendBulkReminder() {
+        if (!confirm('Gửi email nhắc nhở đến tất cả thí sinh chưa nộp bài?')) return;
+        showToast('Chức năng đang được phát triển.', 'secondary');
+    }
+
+    // ---- Chart (khởi tạo khi tab được mở) ----
+    let chartInited = false;
+    document.getElementById('btn-tab-progress')?.addEventListener('shown.bs.tab', function () {
+        if (chartInited) return;
+        const ctx = document.getElementById('submissionStatusChart');
+        if (!ctx) return;
+        chartInited = true;
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Nộp đúng hạn', 'Nộp trễ hạn', 'Chưa nộp'],
+                datasets: [{
+                    data: [@ps.OnTimeSubmissions, @ps.LateSubmissions, @ps.NotSubmitted],
+                    backgroundColor: ['#10b981', '#ef4444', '#cbd5e1'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'right' },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct   = total > 0 ? Math.round(ctx.parsed * 100 / total) : 0;
+                                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // ---- Lưu tab đang chọn ----
+    const savedTab = localStorage.getItem('sub-active-tab');
+    if (savedTab) {
+        const tabEl = document.querySelector(`[data-bs-target="${savedTab}"]`);
+        if (tabEl) bootstrap.Tab.getOrCreateInstance(tabEl).show();
+    }
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(btn => {
+        btn.addEventListener('shown.bs.tab', () => localStorage.setItem('sub-active-tab', btn.dataset.bsTarget));
+    });
+</script>
 }

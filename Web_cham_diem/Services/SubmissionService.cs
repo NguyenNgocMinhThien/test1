@@ -19,16 +19,15 @@ public class SubmissionService : ISubmissionService
         int? competitionId = null,
         string? searchQuery = null,
         string? statusFilter = null,
-        string? departmentFilter = null)
+        string? departmentFilter = null,
+        string? registrationTypeFilter = null)
     {
         try
         {
             // 1. Lấy danh sách cuộc thi
-            var competitionsQuery = _context.Competitions
+            var competitions = await _context.Competitions
                 .Where(c => c.Status == "Active")
-                .OrderByDescending(c => c.CreatedAt);
-
-            var competitions = await competitionsQuery
+                .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new CompetitionBasicDto
                 {
                     CompetitionId = c.CompetitionId,
@@ -36,51 +35,62 @@ public class SubmissionService : ISubmissionService
                 })
                 .ToListAsync();
 
-            // Nếu không chọn cuộc thi, lấy cuộc thi đầu tiên (nếu có)
-            if (!competitionId.HasValue && competitions.Any())
+            // 2. Lấy thông tin cuộc thi được chọn (bao gồm Registrations để tính thống kê)
+            Competitions? selectedCompetition = null;
+            if (competitionId.HasValue)
             {
-                competitionId = competitions.First().CompetitionId;
+                selectedCompetition = await _context.Competitions
+                    .Include(c => c.Registrations)
+                    .FirstOrDefaultAsync(c => c.CompetitionId == competitionId.Value);
             }
 
-            // 2. Lấy dữ liệu hồ sơ đăng ký
+            // 3. Lấy dữ liệu hồ sơ đăng ký
             var registrationsQuery = _context.Registrations
                 .Include(r => r.User)
                 .Include(r => r.Team)
-                .Include(r => r.Competition)
                 .AsQueryable();
 
             if (competitionId.HasValue)
-            {
                 registrationsQuery = registrationsQuery.Where(r => r.CompetitionId == competitionId.Value);
-            }
 
-            // Apply filters
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 registrationsQuery = registrationsQuery.Where(r =>
                     r.User.FullName.Contains(searchQuery) ||
-                    r.Team.TeamName.Contains(searchQuery) ||
-                    r.User.StudentId.Contains(searchQuery) ||
+                    (r.Team != null && r.Team.TeamName.Contains(searchQuery)) ||
+                    (r.User.StudentId != null && r.User.StudentId.Contains(searchQuery)) ||
                     r.User.Email.Contains(searchQuery));
             }
 
             if (!string.IsNullOrWhiteSpace(statusFilter) && statusFilter != "all")
-            {
                 registrationsQuery = registrationsQuery.Where(r => r.Status == statusFilter);
-            }
+
+            if (!string.IsNullOrWhiteSpace(registrationTypeFilter))
+                registrationsQuery = registrationsQuery.Where(r => r.RegistrationType == registrationTypeFilter);
 
             var registrations = await registrationsQuery.ToListAsync();
 
-            // Map to DTOs
+            // Lấy tiêu đề bài nộp liên kết với từng hồ sơ đăng ký (Registration → Submission.Title)
+            var registrationIds = registrations.Select(r => r.RegistrationId).ToList();
+            var submissionTitleRaw = await _context.Submissions
+                .Where(s => s.RegistrationId.HasValue && registrationIds.Contains(s.RegistrationId.Value))
+                .Select(s => new { RegistrationId = s.RegistrationId!.Value, s.Title })
+                .ToListAsync();
+            var submissionTitleLookup = submissionTitleRaw
+                .GroupBy(x => x.RegistrationId)
+                .ToDictionary(g => g.Key, g => g.First().Title);
+
             var registrationDtos = registrations.Select(r => new RegistrationDetailDto
             {
                 RegistrationId = r.RegistrationId,
                 RepresentativeName = r.User.FullName,
                 Email = r.User.Email,
                 StudentId = r.User.StudentId,
-                Department = "Công nghệ Thông tin", // TODO: Lấy từ User profile
+                Department = string.Empty,
                 TeamName = r.Team?.TeamName ?? r.User.FullName,
-                Topic = r.SubmissionDocument ?? "Không có thông tin",
+                Topic = submissionTitleLookup.TryGetValue(r.RegistrationId, out var title)
+                    ? title
+                    : (r.Notes ?? "Chưa có đề tài"),
                 SubmissionDocument = r.SubmissionDocument,
                 Status = r.Status,
                 RegistrationDate = r.RegistrationDate,
@@ -89,55 +99,58 @@ public class SubmissionService : ISubmissionService
                 RegistrationId_FK = r.RegistrationId
             }).ToList();
 
-            // 3. Lấy dữ liệu bài nộp
+            // 4. Lấy dữ liệu bài nộp
             var submissionsQuery = _context.Submissions
                 .Include(s => s.Registration)
-                    .ThenInclude(r => r.User)
+                    .ThenInclude(r => r!.User)
                 .Include(s => s.Team)
-                    .ThenInclude(t => t.Leader)
+                    .ThenInclude(t => t!.Leader)
                 .AsQueryable();
 
             if (competitionId.HasValue)
-            {
                 submissionsQuery = submissionsQuery.Where(s => s.CompetitionId == competitionId.Value);
-            }
 
             var submissions = await submissionsQuery.ToListAsync();
 
+            var deadline = selectedCompetition?.SubmissionDeadline;
             var submissionDtos = submissions.Select(s => new SubmissionDetailDto
             {
                 SubmissionId = s.SubmissionId,
-                FileName = Path.GetFileName(s.FileUrl) ?? "File",
-                FileType = Path.GetExtension(s.FileUrl)?.TrimStart('.').ToLower() ?? "unknown",
-                FileSizeInMB = 0, // TODO: Tính từ file thực tế
+                FileName = s.Title,
+                FileType = !string.IsNullOrEmpty(s.FileUrl)
+                    ? (Path.GetExtension(s.FileUrl)?.TrimStart('.').ToLower() ?? "unknown")
+                    : "unknown",
+                FileSizeInMB = 0,
                 RepresentativeName = s.Registration?.User.FullName ?? s.Team?.Leader.FullName ?? "Unknown",
                 TeamName = s.Team?.TeamName ?? s.Registration?.User.FullName ?? "Unknown",
                 SubmissionDate = s.SubmissionDate,
-                IsLate = false, // TODO: So sánh với deadline
+                IsLate = deadline.HasValue && s.SubmissionDate > deadline.Value,
                 Status = s.Status,
                 FileUrl = s.FileUrl
             }).ToList();
 
-            // 4. Tính toán thống kê tiến độ
-            var competition = competitionId.HasValue
-                ? await _context.Competitions
-                    .Include(c => c.Registrations)
-                    .FirstOrDefaultAsync(c => c.CompetitionId == competitionId.Value)
-                : null;
-
+            // 5. Tính toán thống kê tiến độ
             var progressStats = new ProgressStatisticsDto();
-            if (competition != null)
+            if (selectedCompetition != null)
             {
                 var now = DateTime.UtcNow;
+                var approvedCount = selectedCompetition.Registrations.Count(r => r.Status == "Approved");
+                var onTimeCount = deadline.HasValue
+                    ? submissions.Count(s => s.SubmissionDate <= deadline.Value)
+                    : submissions.Count;
+                var lateCount = deadline.HasValue
+                    ? submissions.Count(s => s.SubmissionDate > deadline.Value)
+                    : 0;
+
                 progressStats = new ProgressStatisticsDto
                 {
-                    TotalExpected = competition.Registrations.Count,
-                    OnTimeSubmissions = submissions.Count(s => !s.SubmissionDate.Date.IsAfter(competition.SubmissionDeadline.Date)),
-                    LateSubmissions = submissions.Count(s => s.SubmissionDate.Date.IsAfter(competition.SubmissionDeadline.Date)),
-                    NotSubmitted = competition.Registrations.Count - submissions.Count,
-                    DeadlineDate = competition.SubmissionDeadline,
-                    HoursUntilDeadline = (int)(competition.SubmissionDeadline - now).TotalHours,
-                    IsDeadlinePassing = now > competition.SubmissionDeadline
+                    TotalExpected = approvedCount,
+                    OnTimeSubmissions = onTimeCount,
+                    LateSubmissions = lateCount,
+                    NotSubmitted = Math.Max(0, approvedCount - submissions.Count),
+                    DeadlineDate = selectedCompetition.SubmissionDeadline,
+                    HoursUntilDeadline = (int)(selectedCompetition.SubmissionDeadline - now).TotalHours,
+                    IsDeadlinePassing = now > selectedCompetition.SubmissionDeadline
                 };
 
                 if (progressStats.TotalExpected > 0)
@@ -162,6 +175,7 @@ public class SubmissionService : ISubmissionService
                 SearchQuery = searchQuery,
                 StatusFilter = statusFilter,
                 DepartmentFilter = departmentFilter,
+                RegistrationTypeFilter = registrationTypeFilter,
                 Competitions = competitions
             };
         }
@@ -260,13 +274,5 @@ public class SubmissionService : ISubmissionService
 
         // TODO: Implement file download from storage
         throw new NotImplementedException("File download not implemented yet");
-    }
-}
-
-internal static class DateExtensions
-{
-    public static bool IsAfter(this DateTime date, DateTime other)
-    {
-        return date > other;
     }
 }
