@@ -41,7 +41,7 @@ namespace Web_cham_diem.Models.ViewModels
         public bool IsDeadlinePassed => DateTime.UtcNow > SubmissionDeadline;
         public bool CanSubmit => RegistrationStatus == "Approved" && !IsDeadlinePassed;
         public bool HasExistingSubmission => ExistingSubmissionId.HasValue;
-        public bool CanEdit => CanSubmit && (!HasExistingSubmission || ExistingStatus == "Draft");
+        public bool CanEdit => CanSubmit && ExistingStatus != "Under Review" && ExistingStatus != "Evaluated";
     }
 
     public class SubmissionTeamMemberDto

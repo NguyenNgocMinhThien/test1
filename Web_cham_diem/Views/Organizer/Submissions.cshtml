@@ -333,29 +333,53 @@
                             <table class="table workflow-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Bài dự thi</th>
-                                        <th width="20%">Đại diện / Đội</th>
-                                        <th width="16%">Thời gian nộp</th>
-                                        <th width="12%" class="text-center">Trạng thái</th>
-                                        <th width="12%" class="text-center">Hành động</th>
+                                        <th>Thông tin bài dự thi</th>
+                                        <th width="18%">Thí sinh / Đội</th>
+                                        <th width="15%">Thời gian nộp</th>
+                                        <th width="11%" class="text-center">Trạng thái</th>
+                                        <th width="17%" class="text-center">Tài nguyên</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var sub in Model.SubmissionsList)
                                     {
-                                        <tr>
+                                        <tr class="sub-row" style="cursor:pointer"
+                                            onclick="toggleSubDetail(@sub.SubmissionId, this)">
                                             <td>
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <i class="bi @FileIcon(sub.FileType) file-icon"></i>
-                                                    <div>
-                                                        <div class="fw-bold">@sub.FileName</div>
-                                                        <small class="text-muted">
-                                                            ID: #@sub.SubmissionId
-                                                            @if (!string.IsNullOrEmpty(sub.FileType) && sub.FileType != "unknown")
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <div class="flex-shrink-0 mt-1">
+                                                        @if (!string.IsNullOrEmpty(sub.FileUrl))
+                                                        {
+                                                            <i class="bi @FileIcon(sub.FileType) file-icon"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-file-earmark-text file-icon text-secondary"></i>
+                                                        }
+                                                    </div>
+                                                    <div style="min-width:0">
+                                                        <div class="fw-bold text-dark" style="max-width:320px">@sub.Title</div>
+                                                        <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                                            <small class="text-muted">#@sub.SubmissionId</small>
+                                                            @if (!string.IsNullOrEmpty(sub.CompetitionName))
                                                             {
-                                                                <span>• @sub.FileType.ToUpper()</span>
+                                                                <small class="badge bg-primary bg-opacity-10 text-primary fw-semibold">
+                                                                    <i class="bi bi-trophy-fill me-1"></i>@sub.CompetitionName
+                                                                </small>
                                                             }
-                                                        </small>
+                                                            @if (!string.IsNullOrEmpty(sub.RoundName))
+                                                            {
+                                                                <small class="badge bg-secondary bg-opacity-10 text-secondary">
+                                                                    <i class="bi bi-layers me-1"></i>@sub.RoundName
+                                                                </small>
+                                                            }
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(sub.Description))
+                                                        {
+                                                            <div class="small text-muted mt-1" style="max-width:340px">
+                                                                @(sub.Description.Length > 90 ? sub.Description[..90] + "…" : sub.Description)
+                                                            </div>
+                                                        }
                                                     </div>
                                                 </div>
                                             </td>
@@ -367,7 +391,7 @@
                                                 }
                                             </td>
                                             <td>
-                                                <div class="small fw-bold">@sub.SubmissionDate.ToString("HH:mm, dd/MM/yyyy")</div>
+                                                <div class="small fw-bold">@sub.SubmissionDate.ToLocalTime().ToString("HH:mm, dd/MM/yyyy")</div>
                                                 @if (sub.IsLate)
                                                 {
                                                     <span class="w-badge w-rej" style="font-size:.65rem;">Trễ hạn</span>
@@ -380,19 +404,50 @@
                                             <td class="text-center">
                                                 <span class="w-badge @SubBadge(sub.Status)">@SubText(sub.Status)</span>
                                             </td>
-                                            <td class="text-center">
-                                                @if (!string.IsNullOrEmpty(sub.FileUrl))
-                                                {
-                                                    <a href="@sub.FileUrl" class="btn btn-sm btn-outline-primary" target="_blank">
-                                                        <i class="bi bi-download"></i> Tải về
-                                                    </a>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted small">Chưa có file</span>
-                                                }
+                                            <td class="text-center" onclick="event.stopPropagation()">
+                                                <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                                    @if (!string.IsNullOrEmpty(sub.FileUrl))
+                                                    {
+                                                        <a href="@sub.FileUrl" class="btn btn-sm btn-outline-primary" target="_blank" title="Tải file đính kèm">
+                                                            <i class="bi bi-download"></i>
+                                                            @if (!string.IsNullOrEmpty(sub.FileType) && sub.FileType != "unknown")
+                                                            {
+                                                                <span>@sub.FileType.ToUpper()</span>
+                                                            }
+                                                        </a>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(sub.VideoUrl))
+                                                    {
+                                                        <a href="@sub.VideoUrl" class="btn btn-sm btn-outline-danger" target="_blank" title="Xem video trình bày">
+                                                            <i class="bi bi-play-circle-fill"></i> Video
+                                                        </a>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(sub.ProjectLink))
+                                                    {
+                                                        <a href="@sub.ProjectLink" class="btn btn-sm btn-outline-success" target="_blank" title="Xem link dự án">
+                                                            <i class="bi bi-box-arrow-up-right"></i> Dự án
+                                                        </a>
+                                                    }
+                                                    @if (string.IsNullOrEmpty(sub.FileUrl) && string.IsNullOrEmpty(sub.VideoUrl) && string.IsNullOrEmpty(sub.ProjectLink))
+                                                    {
+                                                        <span class="text-muted small">Chưa có</span>
+                                                    }
+                                                </div>
                                             </td>
                                         </tr>
+                                        @if (!string.IsNullOrEmpty(sub.Description) && sub.Description.Length > 90)
+                                        {
+                                            <tr class="sub-detail-row d-none" id="sub-detail-@sub.SubmissionId">
+                                                <td colspan="5" class="bg-light py-2 px-4">
+                                                    <div class="p-3 rounded-2 border bg-white">
+                                                        <div class="fw-semibold text-muted small text-uppercase mb-1">
+                                                            <i class="bi bi-card-text me-1"></i>Mô tả đầy đủ
+                                                        </div>
+                                                        <p class="mb-0 small text-dark" style="white-space:pre-wrap">@sub.Description</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
                                 </tbody>
                             </table>
@@ -707,6 +762,14 @@
     function sendBulkReminder() {
         if (!confirm('Gửi email nhắc nhở đến tất cả thí sinh chưa nộp bài?')) return;
         showToast('Chức năng đang được phát triển.', 'secondary');
+    }
+
+    function toggleSubDetail(id, row) {
+        const detail = document.getElementById('sub-detail-' + id);
+        if (!detail) return;
+        const isHidden = detail.classList.contains('d-none');
+        detail.classList.toggle('d-none', !isHidden);
+        row.classList.toggle('table-active', isHidden);
     }
 
     // ---- Chart (khởi tạo khi tab được mở) ----

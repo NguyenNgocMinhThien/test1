@@ -363,8 +363,9 @@
                 </div>
             }
 
-            @* ── Submitted / Under Review / Evaluated — read-only ── *@
-            else if (Model.HasExistingSubmission && Model.ExistingStatus != "Draft")
+            @* ── Read-only: đang chấm điểm, hoặc hết hạn ── *@
+            else if ((Model.ExistingStatus == "Under Review" || Model.ExistingStatus == "Evaluated")
+                     || (Model.IsDeadlinePassed && Model.HasExistingSubmission))
             {
                 <div class="card section-card">
                     <div class="card-header d-flex align-items-center justify-content-between">
@@ -375,14 +376,15 @@
                     </div>
                     <div class="card-body p-4">
 
-                        @if (Model.ExistingStatus == "Submitted")
+                        @if (Model.ExistingStatus == "Evaluated")
                         {
-                            <div class="alert alert-success d-flex align-items-center gap-3 py-2 mb-4">
-                                <i class="bi bi-check-circle-fill fs-4 flex-shrink-0"></i>
+                            <div class="alert alert-info d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-star-fill fs-4 flex-shrink-0"></i>
                                 <div>
-                                    <strong>Đã nộp thành công!</strong>
+                                    <strong>Đã có kết quả chấm điểm</strong>
                                     <div class="small text-muted mt-1">
-                                        Thời điểm nộp: @Model.ExistingSubmissionDate?.ToLocalTime().ToString("dd/MM/yyyy — HH:mm")
+                                        Xem điểm số tại mục
+                                        <a href="/MyScores" class="alert-link">Kết quả chấm điểm</a>
                                     </div>
                                 </div>
                             </div>
@@ -392,20 +394,33 @@
                             <div class="alert alert-primary d-flex align-items-center gap-3 py-2 mb-4">
                                 <i class="bi bi-hourglass-split fs-4 flex-shrink-0"></i>
                                 <div>
-                                    <strong>Đang được chấm điểm</strong>
-                                    <div class="small text-muted mt-1">Giám khảo đang xem xét bài nộp của bạn</div>
+                                    <strong>Bài đang được chấm điểm</strong>
+                                    <div class="small text-muted mt-1">Giám khảo đang xem xét — bài không thể chỉnh sửa trong thời gian này.</div>
                                 </div>
                             </div>
                         }
-                        else if (Model.ExistingStatus == "Evaluated")
+                        else if (Model.IsDeadlinePassed && Model.ExistingStatus == "Submitted")
                         {
-                            <div class="alert alert-info d-flex align-items-center gap-3 py-2 mb-4">
-                                <i class="bi bi-star-fill fs-4 flex-shrink-0"></i>
+                            <div class="alert alert-secondary d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-lock-fill fs-4 flex-shrink-0"></i>
                                 <div>
-                                    <strong>Đã có kết quả chấm điểm</strong>
+                                    <strong>Đã hết hạn chỉnh sửa</strong>
                                     <div class="small text-muted mt-1">
-                                        Xem điểm số tại mục
-                                        <a href="/MyScores" class="alert-link">Kết quả chấm điểm</a>
+                                        Bài nộp đã được ghi nhận lúc @Model.ExistingSubmissionDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm").
+                                        Hạn nộp đã kết thúc vào @Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy HH:mm").
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.IsDeadlinePassed)
+                        {
+                            <div class="alert alert-danger d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-calendar-x fs-4 flex-shrink-0"></i>
+                                <div>
+                                    <strong>Đã hết hạn — bài chưa nộp chính thức</strong>
+                                    <div class="small text-muted mt-1">
+                                        Bản nháp đã được lưu nhưng chưa được nộp trước hạn
+                                        @Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy HH:mm").
                                     </div>
                                 </div>
                             </div>
@@ -487,7 +502,19 @@
                         </div>
                         <div class="card-body p-4">
 
-                            @if (Model.HasExistingSubmission && Model.ExistingStatus == "Draft")
+                            @if (Model.ExistingStatus == "Submitted")
+                            {
+                                <div class="alert alert-info py-2 px-3 small d-flex align-items-center justify-content-between gap-2 mb-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-pencil-square flex-shrink-0"></i>
+                                        <span>
+                                            <strong>Bài đã nộp lúc @Model.ExistingSubmissionDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>
+                                            — Bạn có thể cập nhật bài trước hạn nộp. Sau khi lưu, bài vẫn ở trạng thái <strong>Đã nộp</strong>.
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                            else if (Model.ExistingStatus == "Draft")
                             {
                                 <div class="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2 mb-4">
                                     <i class="bi bi-floppy flex-shrink-0"></i>
@@ -523,7 +550,7 @@
                                           placeholder="Tóm tắt nội dung, phương pháp nghiên cứu và kết quả nổi bật của sản phẩm...">@Model.Description</textarea>
                             </div>
 
-                            @if (Model.AvailableRounds.Any())
+                            @* @if (Model.AvailableRounds.Any())
                             {
                                 <div class="mb-1">
                                     <label class="form-label" for="SelectedRoundId">
@@ -547,7 +574,7 @@
                                         }
                                     </select>
                                 </div>
-                            }
+                            } *@
                         </div>
                     </div>
 
@@ -661,11 +688,21 @@
                                 </strong>
                             </div>
                             <div class="d-flex flex-wrap gap-3">
-                                <button type="button" class="btn btn-draft" onclick="doSubmit('draft')">
-                                    <i class="bi bi-floppy me-2"></i>Lưu nháp
-                                </button>
+                                @if (Model.ExistingStatus != "Submitted")
+                                {
+                                    <button type="button" class="btn btn-draft" onclick="doSubmit('draft')">
+                                        <i class="bi bi-floppy me-2"></i>Lưu nháp
+                                    </button>
+                                }
                                 <button type="button" class="btn btn-submit-final" onclick="openConfirm()">
-                                    <i class="bi bi-send-fill me-2"></i>Nộp bài chính thức
+                                    @if (Model.ExistingStatus == "Submitted")
+                                    {
+                                        <i class="bi bi-arrow-repeat me-2"></i><text>Cập nhật bài nộp</text>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-send-fill me-2"></i><text>Nộp bài chính thức</text>
+                                    }
                                 </button>
                                 <a href="/Competitions/@Model.CompetitionId" class="btn btn-link text-muted px-0 align-self-center" style="font-size:13px;">
                                     Huỷ
@@ -852,18 +889,36 @@
             </div>
             <div class="modal-body px-4 pt-4 pb-3 text-center">
                 <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:2.5rem;"></i>
-                <p class="fw-semibold mt-3 mb-2">Bạn chắc chắn muốn nộp bài?</p>
-                <div class="alert alert-warning py-2 px-3 text-start small">
-                    <i class="bi bi-lock-fill me-1"></i>
-                    Sau khi nộp, bài <strong>không thể chỉnh sửa</strong>. Hãy kiểm tra kỹ trước khi xác nhận.
-                </div>
+                @if (Model.ExistingStatus == "Submitted")
+                {
+                    <p class="fw-semibold mt-3 mb-2">Xác nhận cập nhật bài nộp?</p>
+                    <div class="alert alert-info py-2 px-3 text-start small">
+                        <i class="bi bi-arrow-repeat me-1"></i>
+                        Bài hiện tại sẽ được <strong>thay thế</strong> bằng nội dung vừa chỉnh sửa. Bài vẫn ở trạng thái <strong>Đã nộp</strong>.
+                    </div>
+                }
+                else
+                {
+                    <p class="fw-semibold mt-3 mb-2">Bạn chắc chắn muốn nộp bài?</p>
+                    <div class="alert alert-warning py-2 px-3 text-start small">
+                        <i class="bi bi-lock-fill me-1"></i>
+                        Sau khi nộp, bài <strong>vẫn có thể chỉnh sửa</strong> trước hạn nộp. Hãy kiểm tra kỹ trước khi xác nhận.
+                    </div>
+                }
             </div>
             <div class="modal-footer border-0 pt-0 gap-2">
                 <button type="button" class="btn btn-outline-secondary rounded-pill flex-grow-1 btn-sm" data-bs-dismiss="modal">
                     <i class="bi bi-arrow-left me-1"></i>Kiểm tra lại
                 </button>
                 <button type="button" class="btn btn-danger rounded-pill flex-grow-1 btn-sm fw-bold" onclick="doSubmit('submit')">
-                    <i class="bi bi-send-fill me-2"></i>Xác nhận nộp
+                    @if (Model.ExistingStatus == "Submitted")
+                    {
+                        <i class="bi bi-arrow-repeat me-2"></i><text>Xác nhận cập nhật</text>
+                    }
+                    else
+                    {
+                        <i class="bi bi-send-fill me-2"></i><text>Xác nhận nộp</text>
+                    }
                 </button>
             </div>
         </div>
