@@ -674,9 +674,9 @@ public class CompetitiveController : Controller
 
         if (existing != null)
         {
-            if (existing.Status is "Submitted" or "Under Review" or "Evaluated")
+            if (existing.Status is "Under Review" or "Evaluated")
             {
-                TempData["ErrorMessage"] = "Bài đã nộp, không thể chỉnh sửa.";
+                TempData["ErrorMessage"] = "Bài đang trong quá trình chấm điểm, không thể chỉnh sửa.";
                 return RedirectToAction("Submit", new { id });
             }
 

@@ -47,15 +47,21 @@
     public class SubmissionDetailDto
     {
         public int SubmissionId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public string FileName { get; set; } = string.Empty;
         public string FileType { get; set; } = string.Empty; // zip, pdf, etc
         public double FileSizeInMB { get; set; }
         public string RepresentativeName { get; set; } = string.Empty;
         public string TeamName { get; set; } = string.Empty;
+        public string CompetitionName { get; set; } = string.Empty;
+        public string? RoundName { get; set; }
         public DateTime SubmissionDate { get; set; }
         public bool IsLate { get; set; }
         public string Status { get; set; } = string.Empty; // Pending, Evaluated, etc
         public string? FileUrl { get; set; }
+        public string? VideoUrl { get; set; }
+        public string? ProjectLink { get; set; }
     }
 
     public class ProgressStatisticsDto

@@ -105,6 +105,8 @@ public class SubmissionService : ISubmissionService
                     .ThenInclude(r => r!.User)
                 .Include(s => s.Team)
                     .ThenInclude(t => t!.Leader)
+                .Include(s => s.Competition)
+                .Include(s => s.CompetitionRound)
                 .AsQueryable();
 
             if (competitionId.HasValue)
@@ -116,17 +118,25 @@ public class SubmissionService : ISubmissionService
             var submissionDtos = submissions.Select(s => new SubmissionDetailDto
             {
                 SubmissionId = s.SubmissionId,
-                FileName = s.Title,
+                Title = s.Title,
+                Description = s.Description,
+                FileName = !string.IsNullOrEmpty(s.FileUrl)
+                    ? Path.GetFileName(s.FileUrl)
+                    : string.Empty,
                 FileType = !string.IsNullOrEmpty(s.FileUrl)
                     ? (Path.GetExtension(s.FileUrl)?.TrimStart('.').ToLower() ?? "unknown")
                     : "unknown",
                 FileSizeInMB = 0,
                 RepresentativeName = s.Registration?.User.FullName ?? s.Team?.Leader.FullName ?? "Unknown",
                 TeamName = s.Team?.TeamName ?? s.Registration?.User.FullName ?? "Unknown",
+                CompetitionName = s.Competition?.CompetitionName ?? string.Empty,
+                RoundName = s.CompetitionRound?.RoundName,
                 SubmissionDate = s.SubmissionDate,
                 IsLate = deadline.HasValue && s.SubmissionDate > deadline.Value,
                 Status = s.Status,
-                FileUrl = s.FileUrl
+                FileUrl = s.FileUrl,
+                VideoUrl = s.VideoUrl,
+                ProjectLink = s.ProjectLink
             }).ToList();
 
             // 5. Tính toán thống kê tiến độ
