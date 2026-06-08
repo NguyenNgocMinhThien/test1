@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -38,7 +38,7 @@
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             align-items: center;
-            gap: 4px !important;
+            gap: 2px !important;
             margin: 0 !important;
             padding: 0 !important;
             list-style: none;
@@ -49,11 +49,12 @@
                 display: flex !important;
                 align-items: center;
                 white-space: nowrap !important;
-                padding: 8px 12px !important;
+                padding: 7px 11px !important;
                 font-size: 13px;
                 border-radius: 20px;
                 color: #212529 !important;
                 transition: all 0.2s ease-in-out;
+                gap: 5px;
             }
 
                 .menu-zone .nav-link:hover {
@@ -67,11 +68,10 @@
                     background-color: #fff1f2;
                 }
 
-        /* Auth Zone - Phía bên phải */
         .auth-zone {
             display: flex !important;
             flex-wrap: nowrap !important;
-            gap: 12px;
+            gap: 10px;
             flex-shrink: 0;
             align-items: center;
             margin-left: auto;
@@ -83,35 +83,34 @@
                 font-size: 13px;
             }
 
-        /* User Profile Container */
-            .user-profile-wrapper {
-                display: flex !important;
-                align-items: center;
-                gap: 10px;
-                padding: 6px 12px;
-                border-radius: 25px;
-                background-color: #f8f9fa;
-                transition: all 0.3s ease;
-                cursor: pointer;
-                border: none;
-                outline: none;
-                background-clip: padding-box;
-                appearance: none;
+        .user-profile-wrapper {
+            display: flex !important;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            border-radius: 25px;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            background-clip: padding-box;
+            appearance: none;
+        }
+
+            .user-profile-wrapper:hover {
+                background-color: #e9ecef;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             }
 
-                .user-profile-wrapper:hover {
-                    background-color: #e9ecef;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                }
-
-            .dropdown-menu-user {
-                min-width: 320px !important;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-                margin-top: 8px;
-                z-index: 1050;
-            }
+        .dropdown-menu-user {
+            min-width: 320px !important;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-top: 8px;
+            z-index: 1050;
+        }
 
         .user-avatar-small {
             width: 36px;
@@ -147,15 +146,6 @@
             color: #6c757d;
         }
 
-        /* Dropdown Menu */
-        .dropdown-menu-user {
-            min-width: 320px !important;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-            margin-top: 8px;
-        }
-
         .dropdown-header-user {
             padding: 1.25rem;
             background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
@@ -183,31 +173,12 @@
             border: 2px solid white;
         }
 
-        .dropdown-user-info {
-            flex: 1;
-        }
+        .dropdown-user-info { flex: 1; }
+        .dropdown-user-name { font-weight: 600; color: white; font-size: 14px; }
+        .dropdown-user-email { font-size: 12px; color: rgba(255,255,255,0.9); margin-top: 2px; }
+        .dropdown-user-role { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 4px; }
 
-        .dropdown-user-name {
-            font-weight: 600;
-            color: white;
-            font-size: 14px;
-        }
-
-        .dropdown-user-email {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-top: 2px;
-        }
-
-        .dropdown-user-role {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.8);
-            margin-top: 4px;
-        }
-
-        .dropdown-menu-user .dropdown-divider {
-            margin: 0.5rem 0;
-        }
+        .dropdown-menu-user .dropdown-divider { margin: 0.5rem 0; }
 
         .dropdown-item-user {
             padding: 0.85rem 1.25rem !important;
@@ -233,15 +204,9 @@
                 font-size: 14px;
             }
 
-        .dropdown-item-logout {
-            color: #dc3545 !important;
-        }
+        .dropdown-item-logout { color: #dc3545 !important; }
+            .dropdown-item-logout:hover { background-color: #ffe5e5 !important; }
 
-            .dropdown-item-logout:hover {
-                background-color: #ffe5e5 !important;
-            }
-
-        /* Login/Register Buttons */
         .btn-outline-danger.rounded-pill:hover {
             background-color: #dc3545;
             color: #ffffff !important;
@@ -253,57 +218,22 @@
             box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
         }
 
-        .topbar-links a {
-            transition: color 0.2s ease;
-        }
+        .topbar-links a { transition: color 0.2s ease; }
+            .topbar-links a:hover { color: #ffc107 !important; }
 
-            .topbar-links a:hover {
-                color: #ffc107 !important;
-            }
+        .main-footer a { color: #b3b3b3 !important; transition: color 0.2s ease; }
+            .main-footer a:hover { color: #ffc107 !important; }
 
-        .main-footer a {
-            color: #b3b3b3 !important;
-            transition: color 0.2s ease;
-        }
-
-            .main-footer a:hover {
-                color: #ffc107 !important;
-            }
-
-        /* Responsive */
         @@media (max-width: 992px) {
-            .user-info-compact
-
-        {
-            display: none !important;
-        }
-
-        .menu-zone {
-            display: none !important;
-        }
-
-        .custom-header-container {
-            gap: 8px;
-        }
-
+            .user-info-compact { display: none !important; }
+            .menu-zone { display: none !important; }
+            .custom-header-container { gap: 8px; }
         }
 
         @@media (max-width: 576px) {
-            .brand-zone
-
-        {
-            min-width: auto;
-        }
-
-        .auth-zone {
-            gap: 4px;
-        }
-
-            .auth-zone .btn {
-                padding: 6px 10px !important;
-                font-size: 12px;
-            }
-
+            .brand-zone { min-width: auto; }
+            .auth-zone { gap: 4px; }
+            .auth-zone .btn { padding: 6px 10px !important; font-size: 12px; }
         }
     </style>
 </head>
@@ -316,7 +246,7 @@
                     <i class="bi bi-telephone-fill text-warning me-2"></i>Hotline Hỗ Trợ: <strong>1800.XXXX (Miễn phí)</strong>
                 </div>
                 <div class="topbar-links d-none d-md-flex gap-3">
-                    <a href="/HuongDan" class="text-white text-decoration-none"><i class="bi bi-info-circle me-1"></i>Hướng dẫn đăng ký thi</a>
+                    <a href="/HuongDan" class="text-white text-decoration-none"><i class="bi bi-book me-1"></i>Thể lệ tham gia</a>
                     <a href="/LichTrinh" class="text-white text-decoration-none"><i class="bi bi-calendar3 me-1"></i>Lịch trình cuộc thi</a>
                     <a href="/TinTuc" class="text-white text-decoration-none"><i class="bi bi-newspaper me-1"></i>Tin tức & Sự kiện</a>
                 </div>
@@ -327,38 +257,13 @@
             <div class="container-fluid custom-header-container">
 
                 <a class="navbar-brand d-flex align-items-center brand-zone" href="/">
-                    <img src="~/images/logo-uni.png" alt="Logo" width="40" class="me-2" onerror="this.src='https://via.placeholder.com/40'">
+                    <img src="~/images/logo-uni.png" alt="Logo" width="40" class="me-2"
+                         onerror="this.style.display='none'">
                     <div>
                         <span class="fw-bold text-danger d-block lh-1" style="font-size: 13px; letter-spacing: 0.3px;">HỆ THỐNG QUẢN LÝ CUỘC THI</span>
-                        <small class="text-secondary fw-semibold d-none d-sm-block" style="font-size: 10px;">ĐẠI HỌC CÔNG NGHỆ & KHẢO THÍ</small>
+                        <small class="text-secondary fw-semibold d-none d-sm-block" style="font-size: 10px;">SINH VIÊN CẤP TRƯỜNG</small>
                     </div>
                 </a>
-
-                <ul class="menu-zone fw-semibold">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/Competitions">
-                            <i class="bi bi-trophy me-1 text-danger"></i>
-                            <span class="d-none d-lg-inline">Cuộc thi</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/MyRegistrations">
-                            <i class="bi bi-journal-check me-1 text-primary"></i>
-                            <span class="d-none d-lg-inline">Cuộc thi đã đăng ký</span>
-                        </a>
-                    </li>
-                  
-
-                    @if (User.IsInRole("Organizer"))
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" href="/Organizer/Dashboard">
-                                <i class="bi bi-bar-chart-line me-1 text-warning"></i>
-                                <span class="d-none d-lg-inline">Trang ban tổ chức</span>
-                            </a>
-                        </li>
-                    }
-                </ul>
 
                 @{
                     var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
@@ -366,23 +271,73 @@
                     var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
                     var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Student";
                     var userInitial = !string.IsNullOrEmpty(userFullName)
-                    ? string.Concat(userFullName.Split(' ').Select(x => x[0])).ToUpper()
-                    : "U";
+                        ? string.Concat(userFullName.Split(' ').Select(x => x[0])).ToUpper()
+                        : "U";
                 }
+
+                <ul class="menu-zone fw-semibold">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="bi bi-house-door text-secondary"></i>
+                            <span>Trang chủ</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Competitions">
+                            <i class="bi bi-trophy text-danger"></i>
+                            <span>Cuộc thi</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Results">
+                            <i class="bi bi-award text-warning"></i>
+                            <span>Kết quả</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Notifications">
+                            <i class="bi bi-bell text-info"></i>
+                            <span>Thông báo</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/HuongDan">
+                            <i class="bi bi-question-circle text-success"></i>
+                            <span>Hướng dẫn</span>
+                        </a>
+                    </li>
+
+                    @if (isAuthenticated && User.IsInRole("Student"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/MyRegistrations">
+                                <i class="bi bi-journal-check text-primary"></i>
+                                <span>Cuộc thi đã đăng ký</span>
+                            </a>
+                        </li>
+                    }
+
+                    @if (User.IsInRole("Organizer"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Organizer/Dashboard">
+                                <i class="bi bi-bar-chart-line text-warning"></i>
+                                <span>Ban tổ chức</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
 
                 <div class="auth-zone">
                     @if (isAuthenticated)
                     {
-                        <!-- User Profile Dropdown - Phía bên phải -->
                         <div class="dropdown">
                             <button type="button"
                                     class="user-profile-wrapper dropdown-toggle"
                                     data-bs-toggle="dropdown"
                                     aria-expanded="false"
                                     data-bs-auto-close="outside">
-                                <div class="user-avatar-small" title="@userFullName">
-                                    @userInitial
-                                </div>
+                                <div class="user-avatar-small" title="@userFullName">@userInitial</div>
                                 <div class="user-info-compact d-none d-lg-flex">
                                     <span class="user-fullname-compact">@userFullName</span>
                                     <span class="user-email-compact">@userEmail</span>
@@ -412,21 +367,18 @@
                                         <span>Hồ sơ cá nhân</span>
                                     </a>
                                 </li>
-
                                 <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/MyCompetitions">
-                                        <i class="bi bi-bookmark-heart"></i>
-                                        <span>Cuộc thi của tôi</span>
+                                    <a class="dropdown-item dropdown-item-user" href="/MyRegistrations">
+                                        <i class="bi bi-journal-check"></i>
+                                        <span>Cuộc thi đã đăng ký</span>
                                     </a>
                                 </li>
-
                                 <li>
                                     <a class="dropdown-item dropdown-item-user" href="/MySubmissions">
                                         <i class="bi bi-file-earmark-arrow-up"></i>
                                         <span>Bài nộp của tôi</span>
                                     </a>
                                 </li>
-
                                 <li>
                                     <a class="dropdown-item dropdown-item-user" href="/MyScores">
                                         <i class="bi bi-graph-up"></i>
@@ -442,7 +394,6 @@
                                         <span>Cài đặt tài khoản</span>
                                     </a>
                                 </li>
-
                                 <li>
                                     <a class="dropdown-item dropdown-item-user" href="/Help">
                                         <i class="bi bi-question-circle"></i>
@@ -467,7 +418,6 @@
                     }
                     else
                     {
-                        <!-- Login & Register Buttons - Phía bên phải khi chưa đăng nhập -->
                         <a href="/Login" class="btn btn-outline-danger btn-sm rounded-pill d-flex align-items-center gap-2">
                             <i class="bi bi-box-arrow-in-right"></i>
                             <span class="d-none d-sm-inline">Đăng nhập</span>
@@ -495,28 +445,29 @@
         @RenderBody()
     </main>
 
-    <footer class="main-footer bg-dark text-light-50 pt-5 pb-3 mt-auto border-top border-4 border-danger" style="background-color: #1a1a1a !important; color: #b3b3b3;">
+    <footer class="main-footer bg-dark text-light-50 pt-5 pb-3 mt-auto border-top border-4 border-danger"
+            style="background-color: #1a1a1a !important; color: #b3b3b3;">
         <div class="container">
             <div class="row g-4">
                 <div class="col-12 col-md-4">
                     <h5 class="text-white fw-bold mb-3 border-bottom border-danger pb-2 d-inline-block">VỀ HỆ THỐNG</h5>
-                    <p class="small text-justify" style="line-height: 1.6;">
-                        Hệ thống quản lý cuộc thi và xét duyệt kết quả sinh viên trực tuyến, tối ưu hóa quy trình đăng ký, nộp bài đề tài nghiên cứu, chấm điểm từ hội đồng giám khảo và kết xuất báo cáo thống kê chính xác, minh bạch.
+                    <p class="small" style="line-height: 1.7;">
+                        Nền tảng quản lý cuộc thi sinh viên cấp trường trực tuyến, hỗ trợ toàn bộ quy trình từ tổ chức, đăng ký, nộp bài, chấm điểm đến công bố kết quả và kết xuất báo cáo thống kê chính xác, minh bạch.
                     </p>
                     <div class="social-links d-flex gap-3 mt-3">
-                        <a href="#" class="text-light fs-5"><i class="bi bi-facebook text-primary"></i></a>
-                        <a href="#" class="text-light fs-5"><i class="bi bi-youtube text-danger"></i></a>
-                        <a href="#" class="text-light fs-5"><i class="bi bi-globe2 text-info"></i></a>
+                        <a href="#" class="text-light fs-5" title="Facebook"><i class="bi bi-facebook text-primary"></i></a>
+                        <a href="#" class="text-light fs-5" title="YouTube"><i class="bi bi-youtube text-danger"></i></a>
+                        <a href="#" class="text-light fs-5" title="Website trường"><i class="bi bi-globe2 text-info"></i></a>
                     </div>
                 </div>
 
                 <div class="col-6 col-md-2">
                     <h5 class="text-white fw-bold mb-3 border-bottom border-danger pb-2 d-inline-block">TIỆN ÍCH</h5>
                     <ul class="list-unstyled small d-grid gap-2">
-                        <li><a href="/Activity/Competitions" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tất cả cuộc thi</a></li>
-                        <li><a href="/Activity/Guidelines" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thể lệ tham gia</a></li>
-                        <li><a href="/Activity/Criteria" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tiêu chí chấm điểm</a></li>
-                        <li><a href="/Activity/Statistics" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thống kê số liệu</a></li>
+                        <li><a href="/Competitions" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Tất cả cuộc thi</a></li>
+                        <li><a href="/Results" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Kết quả cuộc thi</a></li>
+                        <li><a href="/HuongDan" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thể lệ tham gia</a></li>
+                        <li><a href="/Statistics" class="text-decoration-none text-white-50"><i class="bi bi-chevron-right me-1 small"></i>Thống kê số liệu</a></li>
                     </ul>
                 </div>
 
@@ -539,7 +490,11 @@
                         </li>
                         <li class="d-flex align-items-center gap-2">
                             <i class="bi bi-envelope-fill text-warning"></i>
-                            <span>khoahocsinhvien@university.edu.vn</span>
+                            <span>cuocthi&#64;university.edu.vn</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <i class="bi bi-telephone-fill text-success"></i>
+                            <span>Hotline: 1800.XXXX (Miễn phí)</span>
                         </li>
                         <li class="d-flex align-items-center gap-2">
                             <i class="bi bi-building-fill text-info"></i>
@@ -553,10 +508,10 @@
 
             <div class="row align-items-center">
                 <div class="col-12 col-md-6 text-center text-md-start small text-white-50">
-                    &copy; 2026 Hệ thống Quản lý Cuộc thi Sinh viên. Phát triển dựa trên nền tảng ASP.NET Core & Postgresql.
+                    &copy; 2026 Hệ thống Quản lý Cuộc thi Sinh viên. Phát triển trên nền tảng ASP.NET Core & PostgreSQL.
                 </div>
                 <div class="col-12 col-md-6 text-center text-md-end small mt-2 mt-md-0 text-white-50">
-                    Mã nguồn dự án thuộc bản quyền ban đề tài nghiên cứu cấp Trường.
+                    Mã nguồn thuộc bản quyền Ban đề tài nghiên cứu cấp Trường.
                 </div>
             </div>
         </div>
