@@ -16,6 +16,13 @@
         _          => ("bg-secondary",           Model.Status)
     };
 
+    // Kiểm tra còn trong hạn đăng ký không
+    var nowUtc = DateTime.UtcNow;
+    var regDeadline = Model.RegistrationRound?.EndDate;
+    var canEdit = !isLecturer
+        && Model.UserId == currentUserId
+        && (regDeadline.HasValue ? nowUtc <= regDeadline.Value : nowUtc < Model.Competition.StartDate);
+
     var files = (Model.SubmissionDocument ?? "")
         .Split(';', StringSplitOptions.RemoveEmptyEntries)
         .Select(f => f.Trim()).ToList();
@@ -85,10 +92,46 @@
 
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                     <h4 class="fw-bold text-primary mb-0">Hồ sơ đăng ký</h4>
-                    <span class="badge @statusBadge.Item1 rounded-pill px-3 py-2 fs-6">
-                        @statusBadge.Item2
-                    </span>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge @statusBadge.Item1 rounded-pill px-3 py-2 fs-6">
+                            @statusBadge.Item2
+                        </span>
+                        @if (canEdit)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill"
+                                    data-bs-toggle="modal" data-bs-target="#editRegModal">
+                                <i class="bi bi-pencil-square me-1"></i>Sửa hồ sơ
+                            </button>
+                        }
+                    </div>
                 </div>
+
+                @* Banner trạng thái chỉnh sửa *@
+                @if (canEdit)
+                {
+                    <div class="alert alert-info d-flex align-items-center gap-2 py-2 px-3 mb-3"
+                         style="border-radius:.75rem; font-size:.88rem;">
+                        <i class="bi bi-pencil-fill flex-shrink-0"></i>
+                        <div>
+                            <strong>Bạn có thể chỉnh sửa hồ sơ.</strong>
+                            @if (regDeadline.HasValue)
+                            {
+                                var tz2 = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                                <span class="ms-1 text-muted">
+                                    Hạn đăng ký: @TimeZoneInfo.ConvertTimeFromUtc(regDeadline.Value, tz2).ToString("dd/MM/yyyy HH:mm")
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (!isLecturer && Model.UserId == currentUserId)
+                {
+                    <div class="alert alert-secondary d-flex align-items-center gap-2 py-2 px-3 mb-3"
+                         style="border-radius:.75rem; font-size:.88rem;">
+                        <i class="bi bi-lock-fill flex-shrink-0"></i>
+                        <span>Đã hết hạn đăng ký. Hồ sơ không thể chỉnh sửa.</span>
+                    </div>
+                }
 
                 @* Nút nộp sản phẩm — hiện khi cuộc thi đã bắt đầu *@
                 @if (Model.Competition.StartDate <= DateTime.UtcNow)
@@ -470,6 +513,162 @@
     </div>
 </div>
 
+@* ══ MODAL CHỈNH SỬA HỒ SƠ ══════════════════════════════════════════════ *@
+@if (canEdit)
+{
+    <div class="modal fade" id="editRegModal" tabindex="-1" aria-labelledby="editRegModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="editRegModalLabel">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>Chỉnh sửa hồ sơ đăng ký
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body pt-2">
+                    <div id="editRegAlert" class="d-none alert alert-danger py-2" style="border-radius:.5rem;"></div>
+
+                    <form id="editRegForm" enctype="multipart/form-data" novalidate>
+                        @Html.AntiForgeryToken()
+
+                        @* ── Ghi chú ─────────────────────────────────────── *@
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-chat-text me-1 text-muted"></i>Ghi chú / Giới thiệu đề tài
+                            </label>
+                            <textarea name="Notes" class="form-control" rows="4"
+                                      maxlength="1000" placeholder="Mô tả ngắn về đề tài hoặc lý do tham gia...">@Model.Notes</textarea>
+                            <div class="form-text text-end"><span id="notesCount">@(Model.Notes?.Length ?? 0)</span>/1000</div>
+                        </div>
+
+                        @* ── Giảng viên hướng dẫn (chỉ hiện khi không do GV đăng ký) *@
+                        @if (Model.AdvisorId == null || (Model.Advisor != null && !isLecturer))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    <i class="bi bi-person-badge me-1 text-muted"></i>Giảng viên hướng dẫn
+                                    <span class="text-muted fw-normal">(tuỳ chọn)</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="editAdvisorInput" name="AdvisorStudentId"
+                                           class="form-control" placeholder="Nhập MSSV / mã giảng viên"
+                                           value="@Model.Advisor?.StudentId">
+                                    <button type="button" class="btn btn-outline-secondary" id="lookupAdvisorBtn"
+                                            onclick="lookupAdvisor()">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div id="advisorInfo" class="mt-1 small">
+                                    @if (Model.Advisor != null)
+                                    {
+                                        <span class="text-success">
+                                            <i class="bi bi-check-circle me-1"></i>@Model.Advisor.FullName (@Model.Advisor.Email)
+                                        </span>
+                                    }
+                                </div>
+                                @if (Model.Advisor != null)
+                                {
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" id="clearAdvisor"
+                                               onchange="toggleClearAdvisor(this)">
+                                        <label class="form-check-label small text-danger" for="clearAdvisor">
+                                            Xóa giảng viên hướng dẫn hiện tại
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @* ── Tên nhóm (chỉ khi đăng ký nhóm) ─────────────── *@
+                        @if (Model.RegistrationType == "Team" && Model.Team != null)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    <i class="bi bi-people me-1 text-muted"></i>Tên nhóm
+                                </label>
+                                <input type="text" name="TeamName" class="form-control"
+                                       value="@Model.Team.TeamName" maxlength="200">
+                            </div>
+                        }
+
+                        @* ── Hồ sơ đính kèm hiện tại ─────────────────────── *@
+                        @if (files.Any())
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">
+                                    <i class="bi bi-paperclip me-1 text-muted"></i>Hồ sơ đính kèm hiện tại
+                                </label>
+                                <div class="border rounded-3 p-2">
+                                    @foreach (var file in files)
+                                    {
+                                        var fname = System.IO.Path.GetFileName(file);
+                                        <div class="d-flex align-items-center justify-content-between py-1 px-2 rounded hover-bg mb-1"
+                                             style="background:#f8f9fa;">
+                                            <span class="small">
+                                                <i class="bi bi-file-earmark me-1 text-muted"></i>@fname
+                                            </span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a href="@file" target="_blank" class="btn btn-xs btn-outline-secondary"
+                                                   style="padding:2px 8px; font-size:.78rem;">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="RemoveFiles" value="@file"
+                                                           id="rm-@fname.Replace(".", "-")"
+                                                           title="Xóa file này">
+                                                    <label class="form-check-label text-danger small"
+                                                           for="rm-@fname.Replace(".", "-")">Xóa</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* ── Thêm file mới ────────────────────────────────── *@
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-cloud-upload me-1 text-muted"></i>Thêm file mới
+                                <span class="text-muted fw-normal">(PDF/DOC/DOCX/ZIP/RAR, tối đa 3 file)</span>
+                            </label>
+                            <div class="d-grid gap-2">
+                                <input type="file" name="NewFile1" class="form-control form-control-sm"
+                                       accept=".pdf,.doc,.docx,.zip,.rar">
+                                <input type="file" name="NewFile2" class="form-control form-control-sm"
+                                       accept=".pdf,.doc,.docx,.zip,.rar">
+                                <input type="file" name="NewFile3" class="form-control form-control-sm"
+                                       accept=".pdf,.doc,.docx,.zip,.rar">
+                            </div>
+                        </div>
+
+                        @* Cảnh báo khi status Approved *@
+                        @if (Model.Status == "Approved")
+                        {
+                            <div class="alert alert-warning py-2 small mb-0" style="border-radius:.5rem;">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Lưu ý: hồ sơ đã được duyệt. Sau khi chỉnh sửa, trạng thái sẽ được đặt lại về
+                                <strong>Chờ duyệt</strong> để ban tổ chức xem xét lại.
+                            </div>
+                        }
+                    </form>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4"
+                            data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4"
+                            id="saveEditBtn" onclick="submitEditForm()">
+                        <i class="bi bi-floppy me-1"></i>Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
 <script>
     const TEAM_ID = @(Model.Team?.TeamId.ToString() ?? "0");
@@ -588,6 +787,99 @@
     function toggleCompleteForm(taskId) {
         const form = document.getElementById(`cf-${taskId}`);
         form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+    }
+
+    // ── EDIT REGISTRATION ────────────────────────────────────────────────────
+
+    // Đếm ký tự ghi chú
+    document.querySelector('[name="Notes"]')?.addEventListener('input', function () {
+        document.getElementById('notesCount').textContent = this.value.length;
+    });
+
+    // Tra cứu giảng viên hướng dẫn
+    async function lookupAdvisor() {
+        const input = document.getElementById('editAdvisorInput');
+        const infoEl = document.getElementById('advisorInfo');
+        const val = input?.value?.trim();
+        if (!val) { if (infoEl) infoEl.innerHTML = ''; return; }
+
+        if (infoEl) infoEl.innerHTML = '<span class="text-secondary">Đang tra cứu...</span>';
+        try {
+            const res = await fetch(`/api/users/lookup?studentId=${encodeURIComponent(val)}&role=Lecturer`);
+            const data = await res.json();
+            if (res.ok && infoEl) {
+                infoEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.fullName} (${data.email})</span>`;
+            } else if (infoEl) {
+                infoEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.message}</span>`;
+            }
+        } catch {
+            if (infoEl) infoEl.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
+        }
+    }
+
+    // Bấm Enter trong ô tìm kiếm GV
+    document.getElementById('editAdvisorInput')?.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); lookupAdvisor(); }
+    });
+
+    // Checkbox xóa giảng viên
+    function toggleClearAdvisor(cb) {
+        const input = document.getElementById('editAdvisorInput');
+        const infoEl = document.getElementById('advisorInfo');
+        const btn = document.getElementById('lookupAdvisorBtn');
+        if (!input) return;
+        if (cb.checked) {
+            input.value = '';
+            input.disabled = true;
+            if (btn) btn.disabled = true;
+            if (infoEl) infoEl.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Sẽ xóa giảng viên hướng dẫn sau khi lưu.</span>';
+        } else {
+            input.disabled = false;
+            if (btn) btn.disabled = false;
+            if (infoEl) infoEl.innerHTML = '';
+        }
+    }
+
+    // Gửi form chỉnh sửa hồ sơ
+    async function submitEditForm() {
+        const form = document.getElementById('editRegForm');
+        const alertEl = document.getElementById('editRegAlert');
+        const saveBtn = document.getElementById('saveEditBtn');
+        if (!form) return;
+
+        alertEl.classList.add('d-none');
+        alertEl.textContent = '';
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+
+        const formData = new FormData(form);
+
+        try {
+            const res = await fetch('/Competitions/Registration/@Model.CompetitionId/Edit', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': getToken() },
+                body: formData
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Đóng modal và hiển thị thông báo thành công
+                bootstrap.Modal.getInstance(document.getElementById('editRegModal'))?.hide();
+                showToast(data.message, 'success');
+                // Reload sau 1.2s để cập nhật nội dung mới
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                alertEl.textContent = data.message || 'Có lỗi xảy ra.';
+                alertEl.classList.remove('d-none');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="bi bi-floppy me-1"></i>Lưu thay đổi';
+            }
+        } catch {
+            alertEl.textContent = 'Lỗi kết nối. Vui lòng thử lại.';
+            alertEl.classList.remove('d-none');
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-floppy me-1"></i>Lưu thay đổi';
+        }
     }
 
     // ── STUDENT: Mark complete ───────────────────────────────────────────────

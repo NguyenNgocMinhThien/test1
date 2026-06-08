@@ -403,6 +403,7 @@ public class CompetitiveController : Controller
             .Include(r => r.Competition)
             .Include(r => r.User)
             .Include(r => r.Advisor)
+            .Include(r => r.RegistrationRound)
             .Include(r => r.Team)
                 .ThenInclude(t => t!.TeamMembers)
                     .ThenInclude(tm => tm.User)
@@ -430,6 +431,122 @@ public class CompetitiveController : Controller
         ViewBag.IsLecturerView = isLecturer;
         ViewBag.CurrentUserId  = currentUserId;
         return View("~/Views/Pages/RegistrationDetail.cshtml", registration);
+    }
+
+    // POST /Competitions/Registration/{id}/Edit — Thí sinh chỉnh sửa hồ sơ khi còn trong hạn
+    [Authorize(Roles = "Student")]
+    [HttpPost("/Competitions/Registration/{id:int}/Edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditRegistration(int id, [FromForm] EditRegistrationViewModel model)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr))
+            return Unauthorized(new { message = "Bạn chưa đăng nhập." });
+
+        var currentUserId = int.Parse(userIdStr);
+
+        var registration = await _context.Registrations
+            .Include(r => r.Competition)
+                .ThenInclude(c => c.RegistrationRounds)
+            .Include(r => r.RegistrationRound)
+            .Include(r => r.Team)
+            .Include(r => r.Advisor)
+            .FirstOrDefaultAsync(r => r.CompetitionId == id
+                && r.UserId == currentUserId
+                && r.Status != "Withdrawn");
+
+        if (registration == null)
+            return NotFound(new { message = "Không tìm thấy hồ sơ đăng ký." });
+
+        // Xác định hạn đăng ký
+        var deadline = registration.RegistrationRound?.EndDate
+            ?? (registration.Competition.RegistrationRounds.Any()
+                ? registration.Competition.RegistrationRounds.Max(r => r.EndDate)
+                : (DateTime?)null);
+
+        var nowUtc = DateTime.UtcNow;
+        if (deadline.HasValue && nowUtc > deadline.Value)
+            return BadRequest(new { message = "Đã quá hạn đăng ký. Không thể chỉnh sửa hồ sơ." });
+        if (!deadline.HasValue && nowUtc >= registration.Competition.StartDate)
+            return BadRequest(new { message = "Cuộc thi đã bắt đầu. Không thể chỉnh sửa hồ sơ." });
+
+        // Cập nhật ghi chú
+        registration.Notes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim();
+
+        // Cập nhật tên nhóm
+        if (registration.Team != null && !string.IsNullOrWhiteSpace(model.TeamName))
+            registration.Team.TeamName = model.TeamName.Trim();
+
+        // Cập nhật giảng viên hướng dẫn
+        if (model.AdvisorStudentId != null)
+        {
+            if (model.AdvisorStudentId.Trim() == "")
+            {
+                registration.AdvisorId = null;
+            }
+            else
+            {
+                var advisor = await _context.Users
+                    .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                    .FirstOrDefaultAsync(u => u.StudentId == model.AdvisorStudentId.Trim() && u.IsActive);
+
+                if (advisor == null)
+                    return BadRequest(new { message = "Không tìm thấy giảng viên với MSSV/mã này." });
+                if (!advisor.UserRoles.Any(ur => ur.Role.RoleName == "Lecturer"))
+                    return BadRequest(new { message = "Người dùng này không phải Giảng viên." });
+
+                registration.AdvisorId = advisor.UserId;
+            }
+        }
+
+        // Xử lý xóa file cũ
+        var currentFiles = (registration.SubmissionDocument ?? "")
+            .Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(f => f.Trim())
+            .ToList();
+
+        if (model.RemoveFiles?.Any() == true)
+            currentFiles = currentFiles.Where(f => !model.RemoveFiles.Contains(f)).ToList();
+
+        // Upload file mới
+        var uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "registrations", $"competition-{id}");
+        Directory.CreateDirectory(uploadDir);
+
+        async Task<string?> SaveFileAsync(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return null;
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowed = new[] { ".pdf", ".doc", ".docx", ".zip", ".rar" };
+            if (!allowed.Contains(ext))
+                throw new InvalidOperationException($"File '{file.FileName}' không hợp lệ. Chỉ hỗ trợ PDF/DOC/DOCX/ZIP/RAR.");
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            await using var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create);
+            await file.CopyToAsync(stream);
+            return $"/uploads/registrations/competition-{id}/{fileName}";
+        }
+
+        try
+        {
+            foreach (var upload in new[] { model.NewFile1, model.NewFile2, model.NewFile3 })
+            {
+                var path = await SaveFileAsync(upload);
+                if (path != null) currentFiles.Add(path);
+            }
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        registration.SubmissionDocument = currentFiles.Any() ? string.Join(";", currentFiles) : null;
+        registration.UpdatedAt = nowUtc;
+
+        // Reset về Pending nếu đã được duyệt/từ chối để ban tổ chức xem xét lại
+        if (registration.Status is "Approved" or "Rejected")
+            registration.Status = "Pending";
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = "Cập nhật hồ sơ đăng ký thành công!" });
     }
 
     // ── Task API ─────────────────────────────────────────────────────────────
