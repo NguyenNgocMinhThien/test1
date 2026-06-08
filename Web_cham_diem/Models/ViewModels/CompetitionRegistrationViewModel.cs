@@ -68,4 +68,25 @@ namespace Web_cham_diem.Models.ViewModels
         public long FileSize { get; set; }
         public string? PreviewUrl { get; set; }
     }
+
+    public class EditRegistrationViewModel
+    {
+        [MaxLength(1000)]
+        public string? Notes { get; set; }
+
+        // MSSV giảng viên hướng dẫn (để trống = xóa advisor)
+        public string? AdvisorStudentId { get; set; }
+
+        // Tên nhóm (chỉ dùng cho đăng ký nhóm)
+        [MaxLength(200)]
+        public string? TeamName { get; set; }
+
+        // Danh sách đường dẫn file cần xóa (path từ SubmissionDocument)
+        public List<string> RemoveFiles { get; set; } = new();
+
+        // File đính kèm mới (tối đa 3 file)
+        public IFormFile? NewFile1 { get; set; }
+        public IFormFile? NewFile2 { get; set; }
+        public IFormFile? NewFile3 { get; set; }
+    }
 }
