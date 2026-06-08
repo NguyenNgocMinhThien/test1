@@ -1,5 +1,957 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+@model Web_cham_diem.Models.ViewModels.SubmissionViewModel
 @{
+    ViewData["Title"] = "Nộp sản phẩm";
+    ViewData["UseFluidContainer"] = true;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string statusBadgeClass, statusText, statusIcon;
+    switch (Model.ExistingStatus)
+    {
+        case "Submitted":
+            statusBadgeClass = "bg-success"; statusText = "Đã nộp"; statusIcon = "bi-check-circle-fill"; break;
+        case "Draft":
+            statusBadgeClass = "bg-warning text-dark"; statusText = "Bản nháp"; statusIcon = "bi-pencil-fill"; break;
+        case "Under Review":
+            statusBadgeClass = "bg-primary"; statusText = "Đang chấm điểm"; statusIcon = "bi-hourglass-split"; break;
+        case "Evaluated":
+            statusBadgeClass = "bg-info"; statusText = "Đã chấm điểm"; statusIcon = "bi-star-fill"; break;
+        default:
+            statusBadgeClass = "bg-secondary"; statusText = "Chưa nộp"; statusIcon = "bi-dash-circle"; break;
+    }
+
+    string regBadgeClass, regText;
+    switch (Model.RegistrationStatus)
+    {
+        case "Approved": regBadgeClass = "bg-success"; regText = "Đã được duyệt"; break;
+        case "Pending":  regBadgeClass = "bg-warning text-dark"; regText = "Chờ duyệt"; break;
+        case "Rejected": regBadgeClass = "bg-danger"; regText = "Bị từ chối"; break;
+        default:         regBadgeClass = "bg-secondary"; regText = Model.RegistrationStatus; break;
+    }
+}
+
+@section Styles {
+<style>
+    .submission-hero {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        color: white;
+        padding: 2rem 0 1.75rem;
+        border-bottom: 4px solid #dc3545;
+    }
+
+    .deadline-pill {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        min-width: 200px;
+    }
+
+    #countdown-display { font-size: 13px; font-weight: 700; color: #ffc107; }
+    #countdown-display.safe   { color: #69db7c; }
+    #countdown-display.danger { color: #ff6b6b; animation: pulse 1s infinite; }
+    @@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+    .section-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .section-card .card-header {
+        background: #fff;
+        border-bottom: 2px solid #f3f4f6;
+        padding: 1rem 1.25rem;
+    }
+
+    .section-card .card-header h5 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1a1a2e;
+        display: flex;
+        align-items: center;
+    }
+
+    .step-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #dc3545;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+
+    .form-control, .form-select {
+        border-radius: 9px;
+        border-color: #d1d5db;
+        font-size: 14px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220,53,69,.12);
+    }
+
+    textarea.form-control { resize: vertical; min-height: 110px; }
+
+    .file-dropzone {
+        border: 2px dashed #d1d5db;
+        border-radius: 12px;
+        padding: 2.25rem 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all .25s ease;
+        background: #fafafa;
+        user-select: none;
+    }
+    .file-dropzone:hover, .file-dropzone.drag-over {
+        border-color: #dc3545;
+        background: #fff5f5;
+    }
+    .file-dropzone .drop-icon {
+        font-size: 2.8rem;
+        color: #9ca3af;
+        margin-bottom: 0.6rem;
+        transition: color .2s;
+    }
+    .file-dropzone:hover .drop-icon { color: #dc3545; }
+    .file-dropzone.file-selected {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+    .file-dropzone.file-selected .drop-icon { color: #16a34a; }
+
+    .btn-draft {
+        background: #f3f4f6;
+        border: 2px solid #d1d5db;
+        color: #374151;
+        font-weight: 600;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-size: 14px;
+        transition: all .2s;
+    }
+    .btn-draft:hover { background: #e5e7eb; border-color: #9ca3af; color: #111827; }
+
+    .btn-submit-final {
+        background: linear-gradient(135deg, #dc3545, #b91c1c);
+        border: none;
+        color: white;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 10px 26px;
+        font-size: 14px;
+        box-shadow: 0 4px 14px rgba(220,53,69,.3);
+        transition: all .2s;
+    }
+    .btn-submit-final:hover {
+        background: linear-gradient(135deg, #b91c1c, #991b1b);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(220,53,69,.38);
+        color: white;
+    }
+
+    /* Sidebar */
+    .sidebar-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+    .sidebar-card .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.7rem 1rem;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+    }
+    .info-item:last-child { border-bottom: none; }
+    .info-item-icon { color: #9ca3af; font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .info-label { color: #6b7280; font-size: 11.5px; margin-bottom: 1px; }
+    .info-value { color: #111827; font-weight: 500; }
+
+    .member-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 13px;
+    }
+    .member-row:last-child { border-bottom: none; }
+    .member-avatar {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #dc3545, #ff6b6b);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .leader-star { color: #f59e0b; font-size: 11px; }
+
+    /* Read-only submission detail */
+    .detail-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #f9fafb;
+        border-radius: 10px;
+        padding: 1rem 1.1rem;
+        margin-bottom: 0.75rem;
+    }
+    .detail-icon {
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        background: #dc3545;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 15px; flex-shrink: 0;
+    }
+    .detail-label { font-size: 11.5px; color: #6b7280; margin-bottom: 3px; }
+    .detail-val   { font-size: 14px; color: #111827; }
+</style>
+}
+
+<!-- ─── Hero ─────────────────────────────────────────────────── -->
+<div class="submission-hero">
+    <div class="container">
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="breadcrumb mb-0" style="font-size:12px;background:transparent;padding:0;">
+                <li class="breadcrumb-item"><a href="/" class="text-white-50 text-decoration-none">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/Competitions" class="text-white-50 text-decoration-none">Cuộc thi</a></li>
+                <li class="breadcrumb-item">
+                    <a href="/Competitions/@Model.CompetitionId" class="text-white-50 text-decoration-none">@Model.CompetitionName</a>
+                </li>
+                <li class="breadcrumb-item active text-white-50" aria-current="page">Nộp sản phẩm</li>
+            </ol>
+        </nav>
+
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mt-1">
+            <div>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="badge bg-danger bg-opacity-80 rounded-pill px-3 py-2" style="font-size:11px;">
+                        <i class="bi bi-upload me-1"></i>NỘP SẢN PHẨM
+                    </span>
+                    <span class="badge @statusBadgeClass rounded-pill px-3 py-2" style="font-size:11px;">
+                        <i class="bi @statusIcon me-1"></i>@statusText
+                    </span>
+                </div>
+                <h2 class="fw-bold mb-1" style="font-size:1.5rem;letter-spacing:-.2px;">@Model.CompetitionName</h2>
+                @if (!string.IsNullOrEmpty(Model.Category))
+                {
+                    <span class="text-white-50 small"><i class="bi bi-tag me-1"></i>@Model.Category</span>
+                }
+            </div>
+
+            <div class="deadline-pill">
+                <div class="text-white-50 mb-1" style="font-size:11px;letter-spacing:.4px;">
+                    <i class="bi bi-alarm me-1"></i>HẠN NỘP BÀI
+                </div>
+                <div class="text-white fw-semibold" style="font-size:13px;">
+                    @Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy — HH:mm")
+                </div>
+                <div id="countdown-display" class="mt-1">Đang tính...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Main ─────────────────────────────────────────────────── -->
+<div class="container mt-4 pb-5">
+
+    @* Error from TempData *@
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ModelState errors *@
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="bi bi-exclamation-circle me-1"></i>Có lỗi cần kiểm tra:</strong>
+            <ul class="mb-0 mt-1 ps-3">
+                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@err.ErrorMessage</li>
+                }
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- ── Left: Form / Status ────────────────────────────── -->
+        <div class="col-lg-8">
+
+            @* ── Registration pending ── *@
+            @if (Model.RegistrationStatus == "Pending")
+            {
+                <div class="card section-card text-center py-4">
+                    <div class="card-body">
+                        <i class="bi bi-hourglass-split text-warning" style="font-size:3rem;"></i>
+                        <h5 class="mt-3 fw-bold">Đăng ký đang chờ duyệt</h5>
+                        <p class="text-muted mb-3">Ban tổ chức đang xét duyệt đăng ký của bạn. Bạn có thể nộp bài sau khi được duyệt.</p>
+                        <a href="/Competitions/Registration/@Model.CompetitionId" class="btn btn-outline-warning rounded-pill px-4">
+                            <i class="bi bi-eye me-1"></i>Xem trạng thái đăng ký
+                        </a>
+                    </div>
+                </div>
+            }
+
+            @* ── Registration rejected ── *@
+            else if (Model.RegistrationStatus == "Rejected")
+            {
+                <div class="card section-card text-center py-4">
+                    <div class="card-body">
+                        <i class="bi bi-x-circle text-danger" style="font-size:3rem;"></i>
+                        <h5 class="mt-3 fw-bold">Đăng ký bị từ chối</h5>
+                        <p class="text-muted mb-3">Đăng ký của bạn không được chấp nhận. Vui lòng liên hệ ban tổ chức để biết thêm chi tiết.</p>
+                        <a href="/Competitions/@Model.CompetitionId" class="btn btn-outline-danger rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại cuộc thi
+                        </a>
+                    </div>
+                </div>
+            }
+
+            @* ── Deadline passed, no submission ── *@
+            else if (Model.IsDeadlinePassed && !Model.HasExistingSubmission)
+            {
+                <div class="card section-card text-center py-4">
+                    <div class="card-body">
+                        <i class="bi bi-calendar-x text-secondary" style="font-size:3rem;"></i>
+                        <h5 class="mt-3 fw-bold text-secondary">Đã hết hạn nộp bài</h5>
+                        <p class="text-muted mb-3">
+                            Thời hạn nộp đã kết thúc vào
+                            <strong>@Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>
+                            mà không có bài nộp nào được ghi nhận.
+                        </p>
+                        <a href="/Competitions/@Model.CompetitionId" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại cuộc thi
+                        </a>
+                    </div>
+                </div>
+            }
+
+            @* ── Submitted / Under Review / Evaluated — read-only ── *@
+            else if (Model.HasExistingSubmission && Model.ExistingStatus != "Draft")
+            {
+                <div class="card section-card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h5><i class="bi bi-clipboard2-check text-success me-2"></i>Chi tiết bài nộp</h5>
+                        <span class="badge @statusBadgeClass px-3 py-2">
+                            <i class="bi @statusIcon me-1"></i>@statusText
+                        </span>
+                    </div>
+                    <div class="card-body p-4">
+
+                        @if (Model.ExistingStatus == "Submitted")
+                        {
+                            <div class="alert alert-success d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-check-circle-fill fs-4 flex-shrink-0"></i>
+                                <div>
+                                    <strong>Đã nộp thành công!</strong>
+                                    <div class="small text-muted mt-1">
+                                        Thời điểm nộp: @Model.ExistingSubmissionDate?.ToLocalTime().ToString("dd/MM/yyyy — HH:mm")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.ExistingStatus == "Under Review")
+                        {
+                            <div class="alert alert-primary d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-hourglass-split fs-4 flex-shrink-0"></i>
+                                <div>
+                                    <strong>Đang được chấm điểm</strong>
+                                    <div class="small text-muted mt-1">Giám khảo đang xem xét bài nộp của bạn</div>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.ExistingStatus == "Evaluated")
+                        {
+                            <div class="alert alert-info d-flex align-items-center gap-3 py-2 mb-4">
+                                <i class="bi bi-star-fill fs-4 flex-shrink-0"></i>
+                                <div>
+                                    <strong>Đã có kết quả chấm điểm</strong>
+                                    <div class="small text-muted mt-1">
+                                        Xem điểm số tại mục
+                                        <a href="/MyScores" class="alert-link">Kết quả chấm điểm</a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="detail-block">
+                            <div class="detail-icon"><i class="bi bi-fonts"></i></div>
+                            <div>
+                                <div class="detail-label">Tiêu đề sản phẩm</div>
+                                <div class="detail-val fw-semibold">@Model.Title</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <div class="detail-block">
+                                <div class="detail-icon"><i class="bi bi-text-paragraph"></i></div>
+                                <div>
+                                    <div class="detail-label">Mô tả</div>
+                                    <div class="detail-val" style="white-space:pre-wrap;">@Model.Description</div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.ExistingFileUrl))
+                        {
+                            <div class="detail-block">
+                                <div class="detail-icon"><i class="bi bi-file-earmark-zip"></i></div>
+                                <div>
+                                    <div class="detail-label">File đính kèm</div>
+                                    <a href="@Model.ExistingFileUrl" class="text-danger fw-semibold text-decoration-none" target="_blank">
+                                        <i class="bi bi-download me-1"></i>Tải xuống file đã nộp
+                                    </a>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.VideoUrl))
+                        {
+                            <div class="detail-block">
+                                <div class="detail-icon"><i class="bi bi-play-circle"></i></div>
+                                <div>
+                                    <div class="detail-label">Video giới thiệu</div>
+                                    <a href="@Model.VideoUrl" class="text-danger text-decoration-none" target="_blank">
+                                        @Model.VideoUrl
+                                    </a>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.ProjectLink))
+                        {
+                            <div class="detail-block">
+                                <div class="detail-icon"><i class="bi bi-link-45deg"></i></div>
+                                <div>
+                                    <div class="detail-label">Link dự án / Demo</div>
+                                    <a href="@Model.ProjectLink" class="text-danger text-decoration-none" target="_blank">
+                                        @Model.ProjectLink
+                                    </a>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            }
+
+            @* ── Form: new submission or editing draft ── *@
+            else if (Model.CanEdit)
+            {
+                <form action="/Competitions/@Model.CompetitionId/Submit" method="post" enctype="multipart/form-data" id="submissionForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SubmitAction" id="hiddenAction" value="draft" />
+
+                    @* Section 1 *@
+                    <div class="card section-card">
+                        <div class="card-header">
+                            <h5><span class="step-badge">1</span>Thông tin sản phẩm</h5>
+                        </div>
+                        <div class="card-body p-4">
+
+                            @if (Model.HasExistingSubmission && Model.ExistingStatus == "Draft")
+                            {
+                                <div class="alert alert-warning py-2 px-3 small d-flex align-items-center gap-2 mb-4">
+                                    <i class="bi bi-floppy flex-shrink-0"></i>
+                                    <span>
+                                        <strong>Bản nháp đã lưu</strong> —
+                                        Lần lưu cuối: @Model.ExistingSubmissionDate?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                </div>
+                            }
+
+                            <div class="mb-4">
+                                <label class="form-label" for="Title">
+                                    Tiêu đề sản phẩm <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" id="Title" name="Title"
+                                       class="form-control @(ViewData.ModelState["Title"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                       value="@Model.Title"
+                                       placeholder="Nhập tên đề tài hoặc tên sản phẩm của bạn"
+                                       maxlength="200" />
+                                <div class="invalid-feedback">
+                                    @ViewData.ModelState["Title"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                </div>
+                                <div class="form-text">Tối đa 200 ký tự</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label" for="Description">
+                                    Mô tả sản phẩm
+                                    <span class="text-muted fw-normal">(tùy chọn)</span>
+                                </label>
+                                <textarea id="Description" name="Description" class="form-control"
+                                          rows="5"
+                                          placeholder="Tóm tắt nội dung, phương pháp nghiên cứu và kết quả nổi bật của sản phẩm...">@Model.Description</textarea>
+                            </div>
+
+                            @if (Model.AvailableRounds.Any())
+                            {
+                                <div class="mb-1">
+                                    <label class="form-label" for="SelectedRoundId">
+                                        <i class="bi bi-diagram-3 text-warning me-1"></i>Vòng thi
+                                    </label>
+                                    <select id="SelectedRoundId" name="SelectedRoundId" class="form-select">
+                                        <option value="">-- Chọn vòng thi --</option>
+                                        @foreach (var r in Model.AvailableRounds)
+                                        {
+                                            var deadlineStr = r.SubmissionDeadline.HasValue
+                                                ? $" · Hạn nộp: {r.SubmissionDeadline.Value.ToLocalTime():dd/MM/yyyy}"
+                                                : "";
+                                            if (Model.SelectedRoundId == r.RoundId)
+                                            {
+                                                <option value="@r.RoundId" selected="selected">Vòng @r.RoundOrder — @r.RoundName@deadlineStr</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@r.RoundId">Vòng @r.RoundOrder — @r.RoundName@deadlineStr</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @* Section 2 *@
+                    <div class="card section-card">
+                        <div class="card-header">
+                            <h5><span class="step-badge">2</span>Tài liệu đính kèm</h5>
+                        </div>
+                        <div class="card-body p-4">
+
+                            @* File upload *@
+                            <div class="mb-4">
+                                <label class="form-label">
+                                    File sản phẩm
+                                    @if (!string.IsNullOrEmpty(Model.ExistingFileUrl))
+                                    {
+                                        <span class="text-success fw-normal small ms-1">
+                                            (Đã có file — tải mới để thay thế)
+                                        </span>
+                                    }
+                                </label>
+
+                                <div id="dropzone"
+                                     class="file-dropzone @(!string.IsNullOrEmpty(Model.ExistingFileUrl) ? "file-selected" : "")"
+                                     onclick="document.getElementById('SubmissionFile').click()">
+                                    <div class="drop-icon bi @(!string.IsNullOrEmpty(Model.ExistingFileUrl) ? "bi-file-earmark-check-fill" : "bi-cloud-upload")"></div>
+                                    <div id="drop-main" class="fw-semibold mb-1" style="font-size:14px;">
+                                        @if (!string.IsNullOrEmpty(Model.ExistingFileUrl))
+                                        {
+                                            <span class="text-success">File đã được tải lên</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Kéo thả file vào đây hoặc
+                                                <span class="text-danger">click để chọn</span>
+                                            </span>
+                                        }
+                                    </div>
+                                    <div id="drop-sub" class="text-muted small">
+                                        @if (!string.IsNullOrEmpty(Model.ExistingFileUrl))
+                                        {
+                                            <a href="@Model.ExistingFileUrl" class="text-danger text-decoration-none"
+                                               onclick="event.stopPropagation()" target="_blank">
+                                                <i class="bi bi-download me-1"></i>Tải file hiện tại
+                                            </a>
+                                            <span class="mx-1 text-muted">·</span>
+                                            <span>Click để thay thế</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Hỗ trợ: PDF, DOC, DOCX, ZIP, RAR · Tối đa 50 MB</span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <input type="file" id="SubmissionFile" name="SubmissionFile"
+                                       class="d-none @(ViewData.ModelState["SubmissionFile"]?.Errors.Any() == true ? "is-invalid" : "")"
+                                       accept=".pdf,.doc,.docx,.zip,.rar" />
+                                <div class="invalid-feedback d-block">
+                                    @ViewData.ModelState["SubmissionFile"]?.Errors.FirstOrDefault()?.ErrorMessage
+                                </div>
+                            </div>
+
+                            @* Video URL *@
+                            <div class="mb-4">
+                                <label class="form-label" for="VideoUrl">
+                                    <i class="bi bi-play-btn-fill text-danger me-1"></i>
+                                    Link video giới thiệu
+                                    <span class="text-muted fw-normal">(tùy chọn)</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light" style="border-radius:9px 0 0 9px;">
+                                        <i class="bi bi-youtube text-danger"></i>
+                                    </span>
+                                    <input type="url" id="VideoUrl" name="VideoUrl"
+                                           class="form-control" style="border-radius:0 9px 9px 0;"
+                                           value="@Model.VideoUrl"
+                                           placeholder="https://youtube.com/watch?v=... hoặc Google Drive..." />
+                                </div>
+                            </div>
+
+                            @* Project link *@
+                            <div>
+                                <label class="form-label" for="ProjectLink">
+                                    <i class="bi bi-github me-1"></i>
+                                    Link dự án / Demo
+                                    <span class="text-muted fw-normal">(tùy chọn)</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light" style="border-radius:9px 0 0 9px;">
+                                        <i class="bi bi-link-45deg"></i>
+                                    </span>
+                                    <input type="url" id="ProjectLink" name="ProjectLink"
+                                           class="form-control" style="border-radius:0 9px 9px 0;"
+                                           value="@Model.ProjectLink"
+                                           placeholder="https://github.com/... hoặc link demo trực tiếp" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Section 3 — Actions *@
+                    <div class="card section-card">
+                        <div class="card-body p-4">
+                            <div class="alert alert-light border py-2 px-3 small mb-4">
+                                <i class="bi bi-info-circle text-primary me-1"></i>
+                                <strong>Lưu ý:</strong> Bạn có thể lưu nháp nhiều lần trước khi nộp chính thức.
+                                Sau khi nhấn <strong>"Nộp bài"</strong>, bài sẽ <strong>không thể chỉnh sửa</strong>.
+                                Hạn cuối: <strong class="@(Model.IsDeadlinePassed ? "text-danger" : "text-success")">
+                                    @Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-3">
+                                <button type="button" class="btn btn-draft" onclick="doSubmit('draft')">
+                                    <i class="bi bi-floppy me-2"></i>Lưu nháp
+                                </button>
+                                <button type="button" class="btn btn-submit-final" onclick="openConfirm()">
+                                    <i class="bi bi-send-fill me-2"></i>Nộp bài chính thức
+                                </button>
+                                <a href="/Competitions/@Model.CompetitionId" class="btn btn-link text-muted px-0 align-self-center" style="font-size:13px;">
+                                    Huỷ
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            }
+
+        </div><!-- /col-8 -->
+
+        <!-- ── Right: Sidebar ────────────────────────────────── -->
+        <div class="col-lg-4">
+
+            @* Competition info *@
+            <div class="sidebar-card card">
+                <div class="card-header"><i class="bi bi-trophy-fill me-2 text-warning"></i>Thông tin cuộc thi</div>
+                <div class="card-body p-3">
+                    <div class="info-item">
+                        <i class="bi bi-calendar2-event info-item-icon"></i>
+                        <div>
+                            <div class="info-label">Hạn nộp bài</div>
+                            <div class="info-value @(Model.IsDeadlinePassed ? "text-danger" : "text-success")">
+                                @Model.SubmissionDeadline.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                @if (Model.IsDeadlinePassed)
+                                {
+                                    <span class="badge bg-danger ms-1" style="font-size:10px;">Hết hạn</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Category))
+                    {
+                        <div class="info-item">
+                            <i class="bi bi-tag info-item-icon"></i>
+                            <div>
+                                <div class="info-label">Lĩnh vực</div>
+                                <div class="info-value">@Model.Category</div>
+                            </div>
+                        </div>
+                    }
+                    <div class="info-item">
+                        <i class="bi bi-people info-item-icon"></i>
+                        <div>
+                            <div class="info-label">Hình thức</div>
+                            <div class="info-value">@(Model.IsTeamBased ? "Thi theo nhóm" : "Thi cá nhân")</div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="/Competitions/@Model.CompetitionId" class="btn btn-sm btn-outline-secondary w-100 rounded-pill" style="font-size:13px;">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại cuộc thi
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @* Registration info *@
+            <div class="sidebar-card card">
+                <div class="card-header"><i class="bi bi-person-check-fill me-2 text-success"></i>Thông tin đăng ký</div>
+                <div class="card-body p-3">
+                    <div class="info-item">
+                        <i class="bi bi-person info-item-icon"></i>
+                        <div>
+                            <div class="info-label">Họ và tên</div>
+                            <div class="info-value">@Model.UserFullName</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.StudentId))
+                    {
+                        <div class="info-item">
+                            <i class="bi bi-credit-card info-item-icon"></i>
+                            <div>
+                                <div class="info-label">MSSV</div>
+                                <div class="info-value">@Model.StudentId</div>
+                            </div>
+                        </div>
+                    }
+                    <div class="info-item">
+                        <i class="bi bi-patch-check info-item-icon"></i>
+                        <div>
+                            <div class="info-label">Trạng thái đăng ký</div>
+                            <span class="badge @regBadgeClass" style="font-size:11px;">@regText</span>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.TeamName))
+                    {
+                        <div class="info-item">
+                            <i class="bi bi-people info-item-icon"></i>
+                            <div>
+                                <div class="info-label">Nhóm</div>
+                                <div class="info-value fw-bold">@Model.TeamName</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* Team members *@
+            @if (Model.IsTeamBased && Model.TeamMembers.Any())
+            {
+                <div class="sidebar-card card">
+                    <div class="card-header">
+                        <i class="bi bi-people-fill me-2 text-primary"></i>Thành viên nhóm
+                        <span class="badge bg-secondary ms-1" style="font-size:10px;">@Model.TeamMembers.Count</span>
+                    </div>
+                    <div class="card-body p-3">
+                        @foreach (var m in Model.TeamMembers)
+                        {
+                            var initials = string.Concat(
+                                m.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w[0])
+                            ).ToUpper();
+                            initials = initials.Length > 2 ? initials[..2] : initials;
+                            <div class="member-row">
+                                <div class="member-avatar">@initials</div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate" style="font-size:13px;">@m.FullName</div>
+                                    <div class="text-muted" style="font-size:11px;">
+                                        @if (!string.IsNullOrEmpty(m.StudentId))
+                                        {
+                                            <span>@m.StudentId · </span>
+                                        }
+                                        <span class="@(m.Role == "Leader" ? "text-danger fw-semibold" : "")">
+                                            @(m.Role == "Leader" ? "Trưởng nhóm" : "Thành viên")
+                                        </span>
+                                    </div>
+                                </div>
+                                @if (m.Role == "Leader")
+                                {
+                                    <i class="bi bi-star-fill leader-star" title="Trưởng nhóm"></i>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @* Available rounds *@
+            @if (Model.AvailableRounds.Any())
+            {
+                <div class="sidebar-card card">
+                    <div class="card-header"><i class="bi bi-layers me-2 text-warning"></i>Các vòng thi</div>
+                    <div class="card-body p-3">
+                        @foreach (var r in Model.AvailableRounds)
+                        {
+                            var dotColor = r.Status == "Active" ? "text-success" :
+                                           r.Status == "Upcoming" ? "text-info" : "text-secondary";
+                            <div class="d-flex align-items-start gap-2 mb-2 p-2 rounded"
+                                 style="background:#f9fafb;font-size:12px;">
+                                <i class="bi bi-circle-fill @dotColor mt-1" style="font-size:7px;"></i>
+                                <div>
+                                    <div class="fw-semibold">Vòng @r.RoundOrder — @r.RoundName</div>
+                                    @if (r.SubmissionDeadline.HasValue)
+                                    {
+                                        <div class="text-muted">
+                                            Hạn nộp: @r.SubmissionDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy")
+                                        </div>
+                                    }
+                                    <span class="badge @(r.Status == "Active" ? "bg-success" : r.Status == "Upcoming" ? "bg-info text-dark" : "bg-secondary") mt-1"
+                                          style="font-size:10px;">
+                                        @(r.Status == "Active" ? "Đang diễn ra" : r.Status == "Upcoming" ? "Sắp mở" : "Đã kết thúc")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+        </div><!-- /col-4 -->
+    </div>
+</div>
+
+<!-- ─── Confirm Submit Modal ────────────────────────────────── -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg overflow-hidden">
+            <div class="modal-header bg-danger text-white border-0 pb-2">
+                <h6 class="modal-title fw-bold mb-0">
+                    <i class="bi bi-send-fill me-2"></i>Xác nhận nộp bài
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pt-4 pb-3 text-center">
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size:2.5rem;"></i>
+                <p class="fw-semibold mt-3 mb-2">Bạn chắc chắn muốn nộp bài?</p>
+                <div class="alert alert-warning py-2 px-3 text-start small">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    Sau khi nộp, bài <strong>không thể chỉnh sửa</strong>. Hãy kiểm tra kỹ trước khi xác nhận.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill flex-grow-1 btn-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left me-1"></i>Kiểm tra lại
+                </button>
+                <button type="button" class="btn btn-danger rounded-pill flex-grow-1 btn-sm fw-bold" onclick="doSubmit('submit')">
+                    <i class="bi bi-send-fill me-2"></i>Xác nhận nộp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // ── Countdown ─────────────────────────────────────────────
+    (function () {
+        const deadline = new Date('@Model.SubmissionDeadline.ToString("yyyy-MM-ddTHH:mm:ss")Z');
+        const el = document.getElementById('countdown-display');
+        if (!el) return;
+
+        function tick() {
+            const diff = deadline - Date.now();
+            if (diff <= 0) {
+                el.textContent = '⏰ Đã hết hạn';
+                el.className = 'danger';
+                return;
+            }
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+
+            el.textContent = d > 0 ? `Còn ${d} ngày ${h} giờ ${m} phút`
+                           : h > 0 ? `Còn ${h} giờ ${m} phút ${s} giây`
+                           :         `Còn ${m} phút ${s} giây`;
+
+            el.className = diff > 3 * 86400000 ? 'safe' : diff < 3600000 ? 'danger' : '';
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+
+    // ── File dropzone ──────────────────────────────────────────
+    (function () {
+        const zone = document.getElementById('dropzone');
+        const inp  = document.getElementById('SubmissionFile');
+        if (!zone || !inp) return;
+
+        zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            if (e.dataTransfer.files[0]) {
+                inp.files = e.dataTransfer.files;
+                showFile(e.dataTransfer.files[0]);
+            }
+        });
+        inp.addEventListener('change', e => { if (e.target.files[0]) showFile(e.target.files[0]); });
+
+        function showFile(f) {
+            const size = f.size > 1048576
+                ? (f.size / 1048576).toFixed(2) + ' MB'
+                : Math.round(f.size / 1024) + ' KB';
+            zone.classList.add('file-selected');
+            zone.querySelector('.drop-icon').className = 'drop-icon bi bi-file-earmark-check-fill';
+            document.getElementById('drop-main').innerHTML =
+                `<span class="text-success">${escHtml(f.name)}</span>`;
+            document.getElementById('drop-sub').textContent =
+                `Kích thước: ${size} — Click để đổi file`;
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+    })();
+
+    // ── Form submission ────────────────────────────────────────
+    function doSubmit(action) {
+        document.getElementById('hiddenAction').value = action;
+        // Close modal if open
+        const m = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        if (m) m.hide();
+        document.getElementById('submissionForm').submit();
+    }
+
+    function openConfirm() {
+        const title = (document.getElementById('Title')?.value || '').trim();
+        if (!title) {
+            const el = document.getElementById('Title');
+            if (el) { el.classList.add('is-invalid'); el.focus(); }
+            return;
+        }
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    }
+</script>
 }

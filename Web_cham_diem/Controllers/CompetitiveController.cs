@@ -552,6 +552,228 @@ public class CompetitiveController : Controller
         return Ok(new { message = "Đã xóa task." });
     }
 
+    // GET: /Competitions/{id}/Submit
+    [Authorize(Roles = "Student,Lecturer")]
+    [HttpGet("/Competitions/{id:int}/Submit")]
+    public async Task<IActionResult> Submit(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return RedirectToAction("Index", "Login");
+
+        var currentUserId = int.Parse(userId);
+        var isLecturer = User.IsInRole("Lecturer");
+
+        var competition = await _context.Competitions
+            .Include(c => c.CompetitionRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == id);
+
+        if (competition == null) return NotFound("Cuộc thi không tồn tại.");
+
+        var registration = await _context.Registrations
+            .Include(r => r.Team).ThenInclude(t => t!.TeamMembers).ThenInclude(tm => tm.User)
+            .FirstOrDefaultAsync(r => r.CompetitionId == id
+                && r.Status != "Withdrawn"
+                && (isLecturer
+                    ? r.AdvisorId == currentUserId
+                    : r.UserId == currentUserId
+                      || (r.TeamId != null && r.Team!.TeamMembers.Any(tm => tm.UserId == currentUserId))));
+
+        if (registration == null)
+        {
+            TempData["ErrorMessage"] = "Bạn chưa đăng ký cuộc thi này.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+        var existing = await FindSubmissionAsync(id, registration);
+        var vm = BuildSubmissionViewModel(competition, registration, currentUser!, existing);
+        return View("~/Views/Pages/Submissions.cshtml", vm);
+    }
+
+    // POST: /Competitions/{id}/Submit
+    [Authorize(Roles = "Student,Lecturer")]
+    [HttpPost("/Competitions/{id:int}/Submit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Submit(int id, SubmissionViewModel model)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId)) return RedirectToAction("Index", "Login");
+
+        var currentUserId = int.Parse(userId);
+        var isLecturer = User.IsInRole("Lecturer");
+
+        var competition = await _context.Competitions
+            .Include(c => c.CompetitionRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == id);
+
+        if (competition == null) return NotFound("Cuộc thi không tồn tại.");
+
+        var registration = await _context.Registrations
+            .Include(r => r.Team).ThenInclude(t => t!.TeamMembers).ThenInclude(tm => tm.User)
+            .FirstOrDefaultAsync(r => r.CompetitionId == id
+                && r.Status != "Withdrawn"
+                && (isLecturer
+                    ? r.AdvisorId == currentUserId
+                    : r.UserId == currentUserId
+                      || (r.TeamId != null && r.Team!.TeamMembers.Any(tm => tm.UserId == currentUserId))));
+
+        var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+
+        if (registration == null || registration.Status != "Approved")
+        {
+            TempData["ErrorMessage"] = "Đăng ký chưa được duyệt hoặc không hợp lệ.";
+            return RedirectToAction("Submit", new { id });
+        }
+
+        if (DateTime.UtcNow > competition.SubmissionDeadline)
+        {
+            TempData["ErrorMessage"] = "Đã hết hạn nộp bài.";
+            return RedirectToAction("Submit", new { id });
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Title))
+            ModelState.AddModelError(nameof(model.Title), "Tiêu đề sản phẩm không được để trống.");
+
+        if (!ModelState.IsValid)
+        {
+            var existing0 = await FindSubmissionAsync(id, registration);
+            var vm0 = BuildSubmissionViewModel(competition, registration, currentUser!, existing0);
+            vm0.Title = model.Title;
+            vm0.Description = model.Description;
+            vm0.SelectedRoundId = model.SelectedRoundId;
+            vm0.VideoUrl = model.VideoUrl;
+            vm0.ProjectLink = model.ProjectLink;
+            return View("~/Views/Pages/Submissions.cshtml", vm0);
+        }
+
+        var existing = await FindSubmissionAsync(id, registration);
+        string? fileUrl = existing?.FileUrl;
+
+        if (model.SubmissionFile != null && model.SubmissionFile.Length > 0)
+        {
+            var ext = Path.GetExtension(model.SubmissionFile.FileName).ToLowerInvariant();
+            var allowed = new[] { ".pdf", ".doc", ".docx", ".zip", ".rar" };
+            if (!allowed.Contains(ext))
+            {
+                ModelState.AddModelError(nameof(model.SubmissionFile), "File không hợp lệ. Chỉ hỗ trợ PDF, DOC, DOCX, ZIP, RAR.");
+                var vm1 = BuildSubmissionViewModel(competition, registration, currentUser!, existing);
+                vm1.Title = model.Title;
+                vm1.Description = model.Description;
+                return View("~/Views/Pages/Submissions.cshtml", vm1);
+            }
+
+            var uploadDir = Path.Combine(_environment.WebRootPath, "uploads", "submissions", $"competition-{id}");
+            Directory.CreateDirectory(uploadDir);
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            await using var stream = new FileStream(Path.Combine(uploadDir, fileName), FileMode.Create);
+            await model.SubmissionFile.CopyToAsync(stream);
+            fileUrl = $"/uploads/submissions/competition-{id}/{fileName}";
+        }
+
+        var newStatus = model.SubmitAction == "submit" ? "Submitted" : "Draft";
+
+        if (existing != null)
+        {
+            if (existing.Status is "Submitted" or "Under Review" or "Evaluated")
+            {
+                TempData["ErrorMessage"] = "Bài đã nộp, không thể chỉnh sửa.";
+                return RedirectToAction("Submit", new { id });
+            }
+
+            existing.Title = model.Title.Trim();
+            existing.Description = model.Description?.Trim();
+            existing.FileUrl = fileUrl;
+            existing.VideoUrl = string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim();
+            existing.ProjectLink = string.IsNullOrWhiteSpace(model.ProjectLink) ? null : model.ProjectLink.Trim();
+            existing.CompetitionRoundId = model.SelectedRoundId;
+            existing.Status = newStatus;
+            existing.UpdatedAt = DateTime.UtcNow;
+            if (newStatus == "Submitted") existing.SubmissionDate = DateTime.UtcNow;
+        }
+        else
+        {
+            var submission = new Submissions
+            {
+                CompetitionId = id,
+                RegistrationId = registration.TeamId.HasValue ? null : registration.RegistrationId,
+                TeamId = registration.TeamId,
+                CompetitionRoundId = model.SelectedRoundId,
+                Title = model.Title.Trim(),
+                Description = model.Description?.Trim(),
+                FileUrl = fileUrl,
+                VideoUrl = string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim(),
+                ProjectLink = string.IsNullOrWhiteSpace(model.ProjectLink) ? null : model.ProjectLink.Trim(),
+                Status = newStatus,
+                SubmissionDate = DateTime.UtcNow
+            };
+            _context.Submissions.Add(submission);
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = newStatus == "Submitted" ? "Nộp bài thành công!" : "Đã lưu nháp thành công!";
+        return RedirectToAction("Submit", new { id });
+    }
+
+    private async Task<Submissions?> FindSubmissionAsync(int competitionId, Registrations registration)
+    {
+        if (registration.TeamId.HasValue)
+            return await _context.Submissions.FirstOrDefaultAsync(s =>
+                s.CompetitionId == competitionId && s.TeamId == registration.TeamId);
+        return await _context.Submissions.FirstOrDefaultAsync(s =>
+            s.CompetitionId == competitionId && s.RegistrationId == registration.RegistrationId);
+    }
+
+    private SubmissionViewModel BuildSubmissionViewModel(
+        Competitions competition, Registrations registration, Users user, Submissions? existing)
+    {
+        var rounds = competition.CompetitionRounds
+            .OrderBy(r => r.RoundOrder)
+            .Select(r => new SubmissionRoundDto
+            {
+                RoundId = r.RoundId,
+                RoundName = r.RoundName,
+                SubmissionDeadline = r.SubmissionDeadline,
+                Status = r.Status,
+                RoundOrder = r.RoundOrder
+            }).ToList();
+
+        var members = registration.Team?.TeamMembers
+            .Select(tm => new SubmissionTeamMemberDto
+            {
+                UserId = tm.UserId,
+                FullName = tm.User?.FullName ?? "N/A",
+                StudentId = tm.User?.StudentId,
+                Role = tm.Role
+            }).ToList() ?? new();
+
+        return new SubmissionViewModel
+        {
+            CompetitionId = competition.CompetitionId,
+            CompetitionName = competition.CompetitionName,
+            Category = competition.Category,
+            SubmissionDeadline = competition.SubmissionDeadline,
+            IsTeamBased = competition.IsTeamBased,
+            RegistrationId = registration.RegistrationId,
+            RegistrationStatus = registration.Status,
+            TeamName = registration.Team?.TeamName,
+            TeamId = registration.TeamId,
+            TeamMembers = members,
+            AvailableRounds = rounds,
+            ExistingSubmissionId = existing?.SubmissionId,
+            ExistingStatus = existing?.Status,
+            ExistingSubmissionDate = existing?.SubmissionDate,
+            ExistingFileUrl = existing?.FileUrl,
+            Title = existing?.Title ?? string.Empty,
+            Description = existing?.Description,
+            SelectedRoundId = existing?.CompetitionRoundId,
+            VideoUrl = existing?.VideoUrl,
+            ProjectLink = existing?.ProjectLink,
+            UserFullName = user.FullName,
+            StudentId = user.StudentId ?? string.Empty
+        };
+    }
+
     private CompetitionRegistrationViewModel BuildRegistrationViewModel(Competitions competition, Users user)
     {
         var latestDeadline = competition.RegistrationRounds.Any()

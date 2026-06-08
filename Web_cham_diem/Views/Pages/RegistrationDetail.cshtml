@@ -90,6 +90,45 @@
                     </span>
                 </div>
 
+                @* Nút nộp sản phẩm — hiện khi cuộc thi đã bắt đầu *@
+                @if (Model.Competition.StartDate <= DateTime.UtcNow)
+                {
+                    var deadlinePassed = DateTime.UtcNow > Model.Competition.SubmissionDeadline;
+                    var approvedAndOpen = Model.Status == "Approved" && !deadlinePassed;
+
+                    <div class="alert @(approvedAndOpen ? "alert-success" : "alert-secondary") d-flex align-items-center justify-content-between gap-3 py-2 px-3 mb-3"
+                         style="border-radius:.75rem;">
+                        <div class="small">
+                            @if (deadlinePassed)
+                            {
+                                <i class="bi bi-calendar-x me-2"></i>
+                                <strong>Đã hết hạn nộp bài</strong>
+                                <span class="ms-1 text-muted">(@TimeZoneInfo.ConvertTimeFromUtc(Model.Competition.SubmissionDeadline, tz).ToString("dd/MM/yyyy HH:mm"))</span>
+                            }
+                            else if (Model.Status == "Approved")
+                            {
+                                <i class="bi bi-play-circle-fill me-2"></i>
+                                <strong>Cuộc thi đã bắt đầu!</strong>
+                                <span class="ms-1">Bạn có thể nộp sản phẩm ngay bây giờ.</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-hourglass-split me-2"></i>
+                                <strong>Cuộc thi đã bắt đầu</strong>
+                                <span class="ms-1">— Đăng ký cần được duyệt trước khi nộp bài.</span>
+                            }
+                        </div>
+                        @if (!deadlinePassed)
+                        {
+                            <a href="/Competitions/@Model.Competition.CompetitionId/Submit"
+                               class="btn btn-sm @(approvedAndOpen ? "btn-success" : "btn-outline-secondary disabled") rounded-pill flex-shrink-0"
+                               style="white-space:nowrap;">
+                                <i class="bi bi-upload me-1"></i>Nộp sản phẩm
+                            </a>
+                        }
+                    </div>
+                }
+
                 <!-- Cuộc thi -->
                 <div class="mb-4">
                     <p class="section-heading"><i class="bi bi-trophy me-1"></i>Thông tin cuộc thi</p>
