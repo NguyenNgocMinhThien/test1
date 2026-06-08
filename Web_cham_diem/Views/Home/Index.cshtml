@@ -1,301 +1,712 @@
 @{
-
     ViewData["Title"] = "Trang chủ - Hệ thống Quản lý Cuộc thi Sinh viên";
 }
 
-<section class="banner-section position-relative rounded-4 overflow-hidden mb-5 text-white shadow-lg"
-         style="background: linear-gradient(135deg, #0d6efd 0%, #0a429b 100%); min-height: 400px;">
-    <div class="position-absolute top-0 end-0 bottom-0 start-0 opacity-25"
-         style="background-image:   url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200'); background-size: cover; background-position: center; mix-blend-mode: overlay;">
-    </div>
+<!-- ============================================================
+     1. HERO BANNER
+     ============================================================ -->
+<section class="hero-section position-relative rounded-4 overflow-hidden mb-5 text-white shadow-lg"
+         style="background: linear-gradient(135deg, #b91c1c 0%, #dc3545 45%, #7f1d1d 100%); min-height: 420px;">
+    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10"
+         style="background-image: url('~/images/uef-students.png'); background-size: cover; background-position: center;"></div>
 
-    <div class="container position-relative h-100 py-5 px-4 px-md-5 d-flex align-items-center">
-        <div class="row w-100 align-items-center g-4">
+    <!-- Decorative circles -->
+    <div class="position-absolute rounded-circle opacity-10"
+         style="width:350px;height:350px;background:#fff;top:-80px;right:-80px;"></div>
+    <div class="position-absolute rounded-circle opacity-5"
+         style="width:200px;height:200px;background:#fff;bottom:-50px;left:10%;"></div>
+
+    <div class="container position-relative py-5 px-4 px-md-5">
+        <div class="row align-items-center g-4">
             <div class="col-12 col-lg-7 text-center text-lg-start">
-                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-3 text-uppercase shadow-sm font-monospace animate-pulse">
-                    Năm học 2024 - 2025
+                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-3 d-inline-block animate-pulse">
+                    <i class="bi bi-calendar-event me-1"></i>NĂM HỌC 2024 – 2025
                 </span>
-                <h1 class="display-4 fw-black text-white mb-3 lh-sm" style="letter-spacing: -0.5px;">
-                    PHÁT ĐỘNG CUỘC THI <br><span class="text-warning">SINH VIÊN NCKH</span> CẤP TRƯỜNG
+                <h1 class="display-4 fw-black text-white mb-3 lh-sm">
+                    HỆ THỐNG QUẢN LÝ<br>
+                    <span class="text-warning">CUỘC THI SINH VIÊN</span><br>
+                    <span style="font-size:0.65em;" class="text-white-75">CẤP TRƯỜNG TRỰC TUYẾN</span>
                 </h1>
-                <p class="lead text-white-50 mb-4 fs-5 d-none d-md-block">
-                    Sân chơi khoa học trực tuyến đỉnh cao dành cho cộng đồng sinh viên đam mê sáng tạo, nghiên cứu và khẳng định năng lực số. Đăng ký ngay để khẳng định bản thân!
+                <p class="lead text-white-75 mb-4 d-none d-md-block" style="font-size:1rem; line-height:1.7;">
+                    Nền tảng số hóa toàn bộ quy trình tổ chức cuộc thi — từ đăng ký, nộp bài đến chấm điểm
+                    và công bố kết quả, giúp sinh viên thể hiện tài năng và khẳng định bản thân.
                 </p>
                 <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
                     <a href="/Competitions" class="btn btn-warning text-dark fw-bold px-4 py-3 rounded-pill shadow">
-                        <i class="bi bi-rocket-takeoff-fill me-2"></i>Tham Gia Ngay
+                        <i class="bi bi-trophy-fill me-2"></i>Xem Cuộc Thi Ngay
                     </a>
-                    <a href="#huong-dan" class="btn btn-outline-light fw-semibold px-4 py-3 rounded-pill">
-                        <i class="bi bi-play-circle me-2"></i>Xem Hướng Dẫn
+                    <a href="/HuongDan" class="btn btn-outline-light fw-semibold px-4 py-3 rounded-pill">
+                        <i class="bi bi-play-circle me-2"></i>Hướng Dẫn Tham Gia
                     </a>
                 </div>
+                <div class="d-flex flex-wrap gap-4 mt-4 justify-content-center justify-content-lg-start text-white-75" style="font-size:13px;">
+                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Đăng ký miễn phí</span>
+                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Nộp bài trực tuyến 24/7</span>
+                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Kết quả minh bạch</span>
+                </div>
             </div>
-
-            <div class="col-12 col-lg-5 text-center position-relative">
+            <div class="col-12 col-lg-5 text-center d-none d-lg-block">
                 <div class="position-relative d-inline-block">
-                    <div class="position-absolute top-50 start-50 translate-middle bg-warning rounded-circle opacity-25 blur-lg" style="width: 300px; height: 300px; filter: blur(50px);"></div>
-                    <img src="~/images/uef-students.png"
-                         alt="Sinh viên UEF phát động cuộc thi" class="img-fluid position-relative float-animation" style="max-height: 380px;">
+                    <div class="position-absolute top-50 start-50 translate-middle rounded-circle opacity-20"
+                         style="width:320px;height:320px;background:#ffc107;filter:blur(60px);"></div>
+                    <img src="~/images/uef-students.png" alt="Sinh viên tham gia cuộc thi"
+                         class="img-fluid position-relative float-animation" style="max-height:360px;"
+                         onerror="this.style.display='none'">
                 </div>
             </div>
-        </div>  
+        </div>
     </div>
 </section>
 
 
-<section id="huong-dan" class="guidelines-section mb-5 scroll-margin">
+<!-- ============================================================
+     2. GIỚI THIỆU HỆ THỐNG
+     ============================================================ -->
+<section class="intro-section mb-5">
     <div class="text-center mb-4">
-        <h2 class="fw-bold text-dark position-relative d-inline-block pb-2 text-uppercase">
-            CÔNG BỐ KẾT QUẢ & BÁO CÁO
-            <span class="position-absolute bottom-0 start-50 translate-middle-x bg-danger rounded-pill" style="width: 60px; height: 4px;"></span>
-        </h2>
-        <p class="text-secondary small mt-2">Hệ thống hỗ trợ các chức năng cốt lõi cho việc minh bạch kết quả và báo cáo.</p>
+        <span class="badge bg-danger-subtle text-danger fw-semibold px-3 py-2 rounded-pill mb-2">Về hệ thống</span>
+        <h2 class="fw-bold text-dark section-title">HỆ THỐNG LÀM ĐƯỢC GÌ CHO BẠN?</h2>
+        <p class="text-secondary small mt-2 mx-auto" style="max-width:560px;">
+            Một nền tảng duy nhất phục vụ toàn bộ hành trình tham gia cuộc thi từ khi đăng ký đến khi nhận kết quả.
+        </p>
     </div>
 
     <div class="row g-4">
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-danger-subtle text-danger mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-point-aggregator fs-3"></i>
+        <div class="col-12 col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center card-hover-effect">
+                <div class="icon-circle bg-danger-subtle text-danger mx-auto mb-3">
+                    <i class="bi bi-person-plus-fill fs-3"></i>
                 </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Tổng Hợp Điểm</h5>
-                <p class="text-secondary small mb-0">Tự động thu thập và tích hợp điểm chi tiết từ hội đồng giám khảo.</p>
+                <h5 class="fw-bold mb-2">Đăng Ký Dễ Dàng</h5>
+                <p class="text-secondary small mb-0">
+                    Đăng ký tài khoản và nộp hồ sơ tham gia cuộc thi hoàn toàn trực tuyến, không cần đến trực tiếp.
+                    Theo dõi trạng thái hồ sơ theo thời gian thực.
+                </p>
             </div>
         </div>
-
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-primary-subtle text-primary mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-podium-medals fs-3"></i>
+        <div class="col-12 col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center card-hover-effect">
+                <div class="icon-circle bg-primary-subtle text-primary mx-auto mb-3">
+                    <i class="bi bi-cloud-arrow-up-fill fs-3"></i>
                 </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Xếp Hạng</h5>
-                <p class="text-secondary small mb-0">Lập bảng xếp hạng sinh viên/đội thi minh bạch theo nhiều tiêu chí.</p>
+                <h5 class="fw-bold mb-2">Nộp Bài Trực Tuyến</h5>
+                <p class="text-secondary small mb-0">
+                    Tải lên bài thi, đề tài nghiên cứu hoặc sản phẩm dự thi mọi lúc, mọi nơi.
+                    Hỗ trợ đa định dạng tệp và quản lý phiên bản nộp bài.
+                </p>
             </div>
         </div>
-
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-success-subtle text-success mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-megaphone-official fs-3"></i>
+        <div class="col-12 col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center card-hover-effect">
+                <div class="icon-circle bg-success-subtle text-success mx-auto mb-3">
+                    <i class="bi bi-patch-check-fill fs-3"></i>
                 </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Công Bố Kết Quả</h5>
-                <p class="text-secondary small mb-0">Cập nhật và công bố kết quả các vòng thi chính thức trên hệ thống.</p>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-info-subtle text-info mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-dashboard-chart fs-3"></i>
-                </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Dashboard Thống Kê</h5>
-                <p class="text-secondary small mb-0">Trực quan hóa dữ liệu thi chi tiết qua các dashboard chuyên nghiệp.</p>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-warning-subtle text-warning-emphasis mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-file-earmark-standard fs-3"></i>
-                </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Xuất PDF/Excel</h5>
-                <p class="text-secondary small mb-0">Kết xuất báo cáo kết quả thi dưới dạng chuẩn PDF/Excel.</p>
-            </div>
-        </div>
-
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm text-center p-4 rounded-4 card-hover-effect">
-                <div class="icon-box bg-secondary-subtle text-secondary mx-auto rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 65px; height: 65px;">
-                    <i class="bi bi-comms-hub fs-3"></i>
-                </div>
-                <h5 class="fw-bold fs-6 mb-2 text-dark">Gửi Notification/Email</h5>
-                <p class="text-secondary small mb-0">Gửi thông báo kết quả và cập nhật kịp thời qua email và hệ thống.</p>
+                <h5 class="fw-bold mb-2">Kết Quả Minh Bạch</h5>
+                <p class="text-secondary small mb-0">
+                    Hệ thống chấm điểm từ hội đồng giám khảo được số hóa, công khai và có thể tra cứu
+                    bất cứ lúc nào sau khi công bố.
+                </p>
             </div>
         </div>
     </div>
 </section>
 
 
-<section class="leaderboard-section mb-5">
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4 gap-3">
-            <div>
-                <h3 class="fw-bold text-dark mb-1 d-flex align-items-center text-uppercase">
-                    <i class="bi bi-award-fill text-warning me-2 fs-2"></i>
-                    VINH DANH THỦ KHOA, SINH VIÊN ĐIỂM CAO HỆ THỐNG
-                </h3>
-                <p class="text-secondary small mb-0">Dữ liệu kết quả cập nhật thời gian thực từ hội đồng giám khảo chấm thi trực tuyến.</p>
+<!-- ============================================================
+     3. THỐNG KÊ TỔNG QUAN
+     ============================================================ -->
+<section class="stats-section mb-5">
+    <div class="rounded-4 overflow-hidden shadow-sm"
+         style="background: linear-gradient(135deg, #1e3a5f 0%, #dc3545 100%);">
+        <div class="row g-0 text-white text-center">
+            <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
+                <div class="fs-1 fw-black">15+</div>
+                <div class="small mt-1 text-white-75">Cuộc thi đang diễn ra</div>
+                <i class="bi bi-trophy-fill text-warning mt-2 fs-5"></i>
             </div>
-            <div class="d-flex flex-wrap gap-2 font-monospace" style="font-size: 13px;">
-                <button class="btn btn-danger btn-sm rounded-pill px-3 fw-bold active">ĐGNL Hà Nội</button>
-                <button class="btn btn-light btn-sm text-secondary rounded-pill px-3 fw-semibold">ĐGNL TP.HCM</button>
-                <button class="btn btn-light btn-sm text-secondary rounded-pill px-3 fw-semibold">ĐGTD Bách Khoa</button>
+            <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
+                <div class="fs-1 fw-black">2.800+</div>
+                <div class="small mt-1 text-white-75">Sinh viên tham gia</div>
+                <i class="bi bi-people-fill text-info mt-2 fs-5"></i>
+            </div>
+            <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
+                <div class="fs-1 fw-black">18</div>
+                <div class="small mt-1 text-white-75">Khoa / Đơn vị</div>
+                <i class="bi bi-building-fill text-warning mt-2 fs-5"></i>
+            </div>
+            <div class="col-6 col-md-3 p-4">
+                <div class="fs-1 fw-black">420+</div>
+                <div class="small mt-1 text-white-75">Giải thưởng đã trao</div>
+                <i class="bi bi-award-fill text-success mt-2 fs-5"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     4. CUỘC THI ĐANG MỞ ĐĂNG KÝ
+     ============================================================ -->
+<section class="open-competitions-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-success-subtle text-success fw-semibold px-3 py-2 rounded-pill mb-1">Đang mở đăng ký</span>
+            <h2 class="fw-bold text-dark mb-0 section-title">CUỘC THI NỔI BẬT</h2>
+        </div>
+        <a href="/Competitions" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-semibold d-none d-md-inline-flex align-items-center gap-1">
+            Xem tất cả <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
+                <div class="card-header-custom bg-danger text-white p-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="badge bg-white text-danger fw-semibold">Lập trình</span>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 14 ngày</span>
+                    </div>
+                    <h5 class="fw-bold mt-2 mb-0">Cuộc Thi Lập Trình Sáng Tạo 2025</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary small mb-3">
+                        Sân chơi lập trình dành cho sinh viên đam mê công nghệ. Các đội thi sẽ xây dựng
+                        sản phẩm giải quyết bài toán thực tế trong 48 giờ.
+                    </p>
+                    <ul class="list-unstyled small text-secondary mb-3">
+                        <li class="mb-1"><i class="bi bi-people me-2 text-danger"></i>Tất cả khoa, tối đa 3 thành viên/đội</li>
+                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-danger"></i>Hạn đăng ký: <strong>30/06/2025</strong></li>
+                        <li><i class="bi bi-gift me-2 text-danger"></i>Tổng giải thưởng: <strong class="text-danger">50.000.000đ</strong></li>
+                    </ul>
+                    <a href="/Competitions/Detail/1" class="btn btn-danger btn-sm rounded-pill px-3 w-100">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="table-responsive rounded-3 border">
-            <table class="table table-hover align-middle text-center mb-0" style="min-width: 800px;">
-                <thead class="table-primary text-primary-emphasis border-bottom fw-bold text-uppercase" style="font-size: 13px; background-color: #e2eefd !important;">
-                    <tr>
-                        <th scope="col" style="width: 80px;" class="py-3">STT</th>
-                        <th scope="col" class="text-start py-3 ps-4">Họ và tên</th>
-                        <th scope="col" class="py-3">Tổng điểm</th>
-                        <th scope="col" class="py-3">Định lượng</th>
-                        <th scope="col" class="py-3">Định tính</th>
-                        <th scope="col" class="py-3">Khoa học/Tiếng Anh</th>
-                    </tr>
-                </thead>
-                <tbody class="fw-medium text-secondary" style="font-size: 14px;">
-                    <tr class="table-warning-subtle">
-                        <td class="fw-bold text-dark py-3"><span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-trophy-fill"></i> 3</span></td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Đức Đạt</td>
-                        <td class="text-danger fw-bold fs-5">125</td>
-                        <td>41</td>
-                        <td>42</td>
-                        <td>42</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">4</td>
-                        <td class="text-start text-dark fw-bold ps-4">Phạm Minh Tuấn</td>
-                        <td class="text-primary fw-bold">125</td>
-                        <td>44</td>
-                        <td>35</td>
-                        <td>46</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">5</td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Ngọc Khánh Nhi</td>
-                        <td class="text-primary fw-bold">122</td>
-                        <td>42</td>
-                        <td>37</td>
-                        <td>43</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">6</td>
-                        <td class="text-start text-dark fw-bold ps-4">Lê Khắc Hùng</td>
-                        <td class="text-primary fw-bold">122</td>
-                        <td>43</td>
-                        <td>43</td>
-                        <td>36</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">7</td>
-                        <td class="text-start text-dark fw-bold ps-4">Trần Long Hưng</td>
-                        <td class="text-primary fw-bold">122</td>
-                        <td>46</td>
-                        <td>39</td>
-                        <td>37</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">8</td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Thuỳ Linh</td>
-                        <td class="text-primary fw-bold">121</td>
-                        <td>45</td>
-                        <td>37</td>
-                        <td>39</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">9</td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Trí Thanh</td>
-                        <td class="text-primary fw-bold">120</td>
-                        <td>38</td>
-                        <td>38</td>
-                        <td>44</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">10</td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Thị Xuân Mai</td>
-                        <td class="text-primary fw-bold">119</td>
-                        <td>34</td>
-                        <td>42</td>
-                        <td>43</td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold text-dark py-3">11</td>
-                        <td class="text-start text-dark fw-bold ps-4">Lê Huy Hoàng</td>
-                        <td class="text-primary fw-bold">119</td>
-                        <td>40</td>
-                        <td>37</td>
-                        <td>42</td>
-                    </tr>
-                    <tr class="border-0">
-                        <td class="fw-bold text-dark py-3">12</td>
-                        <td class="text-start text-dark fw-bold ps-4">Nguyễn Thu Hiền</td>
-                        <td class="text-primary fw-bold">118</td>
-                        <td>34</td>
-                        <td>36</td>
-                        <td>48</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
+                <div class="card-header-custom p-3" style="background: linear-gradient(135deg,#0d6efd,#0a58ca);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="badge bg-white text-primary fw-semibold">Khởi nghiệp</span>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 30 ngày</span>
+                    </div>
+                    <h5 class="fw-bold mt-2 mb-0 text-white">Ý Tưởng Khởi Nghiệp Đổi Mới 2025</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary small mb-3">
+                        Cuộc thi ý tưởng kinh doanh và đổi mới sáng tạo dành cho sinh viên toàn trường,
+                        kết nối với các doanh nghiệp và nhà đầu tư tiềm năng.
+                    </p>
+                    <ul class="list-unstyled small text-secondary mb-3">
+                        <li class="mb-1"><i class="bi bi-people me-2 text-primary"></i>Khoa Kinh tế & các khoa liên quan</li>
+                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-primary"></i>Hạn đăng ký: <strong>15/07/2025</strong></li>
+                        <li><i class="bi bi-gift me-2 text-primary"></i>Tổng giải thưởng: <strong class="text-primary">80.000.000đ</strong></li>
+                    </ul>
+                    <a href="/Competitions/Detail/2" class="btn btn-primary btn-sm rounded-pill px-3 w-100">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-            <span class="text-secondary small">Hiển thị 10/120 sinh viên điểm cao nhất</span>
-            <a href="/Scores" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
-                Xem bảng xếp hạng đầy đủ <i class="bi bi-arrow-right ms-1"></i>
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
+                <div class="card-header-custom p-3" style="background: linear-gradient(135deg,#198754,#157347);">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="badge bg-white text-success fw-semibold">Nghiên cứu KH</span>
+                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 45 ngày</span>
+                    </div>
+                    <h5 class="fw-bold mt-2 mb-0 text-white">NCKH Sinh Viên Cấp Trường 2025</h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary small mb-3">
+                        Cuộc thi nghiên cứu khoa học sinh viên thường niên cấp trường, cơ hội để
+                        công bố và bảo vệ công trình nghiên cứu trước hội đồng khoa học.
+                    </p>
+                    <ul class="list-unstyled small text-secondary mb-3">
+                        <li class="mb-1"><i class="bi bi-people me-2 text-success"></i>Toàn thể sinh viên các khoa</li>
+                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-success"></i>Hạn đăng ký: <strong>31/07/2025</strong></li>
+                        <li><i class="bi bi-gift me-2 text-success"></i>Tổng giải thưởng: <strong class="text-success">100.000.000đ</strong></li>
+                    </ul>
+                    <a href="/Competitions/Detail/3" class="btn btn-success btn-sm rounded-pill px-3 w-100">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-3 d-md-none">
+        <a href="/Competitions" class="btn btn-outline-danger btn-sm rounded-pill px-4 fw-semibold">
+            Xem tất cả cuộc thi <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     5. QUY TRÌNH THAM GIA
+     ============================================================ -->
+<section class="process-section mb-5">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-white">
+        <div class="text-center mb-5">
+            <span class="badge bg-warning-subtle text-warning-emphasis fw-semibold px-3 py-2 rounded-pill mb-2">Hướng dẫn</span>
+            <h2 class="fw-bold text-dark section-title">QUY TRÌNH THAM GIA THI</h2>
+            <p class="text-secondary small mt-2">Chỉ cần 5 bước đơn giản để tham gia bất kỳ cuộc thi nào trên hệ thống.</p>
+        </div>
+
+        <div class="row g-4 align-items-start">
+            <div class="col-6 col-md-4 col-lg text-center">
+                <div class="process-step">
+                    <div class="step-number bg-danger text-white mx-auto mb-3">1</div>
+                    <div class="step-icon mb-2"><i class="bi bi-person-check-fill fs-2 text-danger"></i></div>
+                    <h6 class="fw-bold mb-1" style="font-size:13px;">Tạo tài khoản</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Đăng ký & xác thực email sinh viên</p>
+                </div>
+            </div>
+            <div class="col d-none d-lg-flex align-items-center justify-content-center" style="max-width:40px;">
+                <i class="bi bi-chevron-right text-muted fs-4"></i>
+            </div>
+            <div class="col-6 col-md-4 col-lg text-center">
+                <div class="process-step">
+                    <div class="step-number bg-danger text-white mx-auto mb-3">2</div>
+                    <div class="step-icon mb-2"><i class="bi bi-search fs-2 text-danger"></i></div>
+                    <h6 class="fw-bold mb-1" style="font-size:13px;">Chọn cuộc thi</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Tìm cuộc thi phù hợp & đọc thể lệ</p>
+                </div>
+            </div>
+            <div class="col d-none d-lg-flex align-items-center justify-content-center" style="max-width:40px;">
+                <i class="bi bi-chevron-right text-muted fs-4"></i>
+            </div>
+            <div class="col-6 col-md-4 col-lg text-center">
+                <div class="process-step">
+                    <div class="step-number bg-danger text-white mx-auto mb-3">3</div>
+                    <div class="step-icon mb-2"><i class="bi bi-file-earmark-plus-fill fs-2 text-danger"></i></div>
+                    <h6 class="fw-bold mb-1" style="font-size:13px;">Đăng ký & Nộp bài</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Điền hồ sơ & tải lên bài thi</p>
+                </div>
+            </div>
+            <div class="col d-none d-lg-flex align-items-center justify-content-center" style="max-width:40px;">
+                <i class="bi bi-chevron-right text-muted fs-4"></i>
+            </div>
+            <div class="col-6 col-md-4 col-lg text-center">
+                <div class="process-step">
+                    <div class="step-number bg-danger text-white mx-auto mb-3">4</div>
+                    <div class="step-icon mb-2"><i class="bi bi-clipboard2-check-fill fs-2 text-danger"></i></div>
+                    <h6 class="fw-bold mb-1" style="font-size:13px;">Chấm điểm</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Hội đồng giám khảo chấm điểm online</p>
+                </div>
+            </div>
+            <div class="col d-none d-lg-flex align-items-center justify-content-center" style="max-width:40px;">
+                <i class="bi bi-chevron-right text-muted fs-4"></i>
+            </div>
+            <div class="col-6 col-md-4 col-lg text-center">
+                <div class="process-step">
+                    <div class="step-number bg-warning text-dark mx-auto mb-3">5</div>
+                    <div class="step-icon mb-2"><i class="bi bi-trophy-fill fs-2 text-warning"></i></div>
+                    <h6 class="fw-bold mb-1" style="font-size:13px;">Nhận kết quả</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Xem điểm & nhận giải thưởng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     6. CHỨC NĂNG NỔI BẬT
+     ============================================================ -->
+<section class="features-section mb-5">
+    <div class="text-center mb-4">
+        <span class="badge bg-primary-subtle text-primary fw-semibold px-3 py-2 rounded-pill mb-2">Tính năng</span>
+        <h2 class="fw-bold text-dark section-title">CHỨC NĂNG NỔI BẬT</h2>
+        <p class="text-secondary small mt-2 mx-auto" style="max-width:520px;">
+            Hệ thống tích hợp đầy đủ các công cụ phục vụ mọi vai trò: sinh viên, ban tổ chức và giám khảo.
+        </p>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-danger-subtle text-danger flex-shrink-0">
+                    <i class="bi bi-ui-checks-grid fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Quản Lý Cuộc Thi Toàn Diện</h6>
+                    <p class="text-secondary small mb-0">Ban tổ chức tạo và cấu hình cuộc thi, quản lý vòng thi, tiêu chí và thời hạn nộp bài.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-primary-subtle text-primary flex-shrink-0">
+                    <i class="bi bi-cloud-upload-fill fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Nộp Bài Trực Tuyến</h6>
+                    <p class="text-secondary small mb-0">Hỗ trợ tải lên bài thi, báo cáo, file PDF/DOCX và theo dõi trạng thái bài nộp.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-success-subtle text-success flex-shrink-0">
+                    <i class="bi bi-star-half fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Chấm Điểm Nhiều Giám Khảo</h6>
+                    <p class="text-secondary small mb-0">Tự động tổng hợp điểm từ nhiều giám khảo, giảm thiểu sai sót và đảm bảo tính khách quan.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-info-subtle text-info flex-shrink-0">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Thông Báo Tức Thời</h6>
+                    <p class="text-secondary small mb-0">Nhận thông báo ngay khi có cập nhật về cuộc thi, kết quả chấm điểm và thông tin quan trọng.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-warning-subtle text-warning-emphasis flex-shrink-0">
+                    <i class="bi bi-file-earmark-bar-graph-fill fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Báo Cáo & Thống Kê</h6>
+                    <p class="text-secondary small mb-0">Kết xuất báo cáo kết quả theo nhiều định dạng PDF/Excel, dashboard phân tích trực quan.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 card-hover-effect d-flex flex-row gap-3 align-items-start">
+                <div class="icon-circle-sm bg-secondary-subtle text-secondary flex-shrink-0">
+                    <i class="bi bi-shield-lock-fill fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Phân Quyền Đa Vai Trò</h6>
+                    <p class="text-secondary small mb-0">Quản lý phân quyền riêng biệt cho sinh viên, ban tổ chức và hội đồng giám khảo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     7. KẾT QUẢ NỔI BẬT
+     ============================================================ -->
+<section class="results-section mb-5">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center p-4 border-bottom">
+                <div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis fw-semibold px-3 py-2 rounded-pill mb-1">Vinh danh</span>
+                    <h3 class="fw-bold text-dark mb-1 d-flex align-items-center">
+                        <i class="bi bi-award-fill text-warning me-2 fs-4"></i>KẾT QUẢ NỔI BẬT GẦN ĐÂY
+                    </h3>
+                    <p class="text-secondary small mb-0">Những sinh viên/nhóm đã xuất sắc giành giải trong các cuộc thi vừa qua.</p>
+                </div>
+                <a href="/Results" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold mt-3 mt-md-0">
+                    Xem đầy đủ <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="row g-0">
+                <div class="col-12 col-md-4 p-4 border-end-md">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-warning text-dark px-2 py-2 rounded-3 fs-6">
+                                <i class="bi bi-trophy-fill"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Nguyễn Minh Tuấn</div>
+                            <div class="small text-success fw-semibold">Giải Nhất — Cuộc thi Lập trình 2024</div>
+                            <div class="small text-secondary">Khoa Công nghệ Thông tin</div>
+                            <div class="small text-muted mt-1">Điểm: <strong>98.5/100</strong></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 p-4 border-end-md border-top border-md-top-0">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-secondary text-white px-2 py-2 rounded-3 fs-6">
+                                <i class="bi bi-trophy-fill"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Nhóm InnoVate (5 SV)</div>
+                            <div class="small text-success fw-semibold">Giải Nhất — Khởi nghiệp 2024</div>
+                            <div class="small text-secondary">Khoa Quản trị Kinh doanh</div>
+                            <div class="small text-muted mt-1">Điểm: <strong>96.0/100</strong></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4 p-4 border-top border-md-top-0">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0">
+                            <span class="badge bg-danger text-white px-2 py-2 rounded-3 fs-6">
+                                <i class="bi bi-trophy-fill"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">Trần Thị Lan</div>
+                            <div class="small text-success fw-semibold">Giải Nhất — NCKH Sinh viên 2024</div>
+                            <div class="small text-secondary">Khoa Kỹ thuật & Công nghệ</div>
+                            <div class="small text-muted mt-1">Điểm: <strong>94.5/100</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     8. THÔNG BÁO MỚI NHẤT
+     ============================================================ -->
+<section class="news-section mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <span class="badge bg-info-subtle text-info fw-semibold px-3 py-2 rounded-pill mb-1">Cập nhật</span>
+            <h2 class="fw-bold text-dark mb-0 section-title">THÔNG BÁO MỚI NHẤT</h2>
+        </div>
+        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold d-none d-md-inline-flex align-items-center gap-1">
+            Tất cả thông báo <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <a href="/Notifications/1" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0 icon-circle-sm bg-danger-subtle text-danger">
+                            <i class="bi bi-megaphone-fill"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-danger-subtle text-danger small mb-1">Quan trọng</span>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
+                                Công bố danh sách vào vòng chung kết Cuộc thi Lập trình 2025
+                            </h6>
+                            <p class="text-secondary small mb-1">Ban tổ chức thông báo 24 đội thi đã vượt qua vòng sơ loại và đủ điều kiện tham dự chung kết...</p>
+                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>02/06/2025</span>
+                        </div>
+                    </div>
+                </div>
             </a>
+        </div>
+        <div class="col-12 col-md-6">
+            <a href="/Notifications/2" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0 icon-circle-sm bg-warning-subtle text-warning-emphasis">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-warning-subtle text-warning-emphasis small mb-1">Thay đổi</span>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
+                                Gia hạn nộp hồ sơ Cuộc thi Khởi nghiệp đến 20/07/2025
+                            </h6>
+                            <p class="text-secondary small mb-1">Nhằm tạo điều kiện cho nhiều sinh viên được tham dự, Ban tổ chức quyết định kéo dài thời hạn...</p>
+                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>28/05/2025</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6">
+            <a href="/Notifications/3" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0 icon-circle-sm bg-success-subtle text-success">
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-success-subtle text-success small mb-1">Cập nhật</span>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
+                                Thể lệ Cuộc thi NCKH Sinh viên 2025 đã được cập nhật
+                            </h6>
+                            <p class="text-secondary small mb-1">Phiên bản mới bổ sung hướng dẫn về định dạng báo cáo, tiêu chí chấm điểm và lịch bảo vệ...</p>
+                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>25/05/2025</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6">
+            <a href="/Notifications/4" class="text-decoration-none">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="flex-shrink-0 icon-circle-sm bg-primary-subtle text-primary">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary-subtle text-primary small mb-1">Mới</span>
+                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
+                                Mở đăng ký Cuộc thi Thiết kế Đồ họa Sinh viên lần 3
+                            </h6>
+                            <p class="text-secondary small mb-1">Cuộc thi thiết kế đồ họa dành cho sinh viên yêu thích nghệ thuật số chính thức mở đăng ký...</p>
+                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>20/05/2025</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="text-center mt-3 d-md-none">
+        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-semibold">
+            Xem tất cả thông báo <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     9. NHÀ TÀI TRỢ
+     ============================================================ -->
+<section class="sponsors-section mb-2">
+    <div class="text-center mb-4">
+        <h5 class="fw-bold text-secondary text-uppercase" style="font-size:13px; letter-spacing:1px;">
+            <i class="bi bi-building me-2"></i>ĐƠN VỊ ĐỒNG HÀNH & TÀI TRỢ
+        </h5>
+    </div>
+    <div class="card border-0 bg-white shadow-sm rounded-4 p-4">
+        <div class="row g-4 align-items-center justify-content-center">
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-building-fill-check text-primary fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Phòng KHCN</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-bank2 text-danger fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Ban Giám hiệu</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-microsoft-teams text-success fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Đoàn Thanh niên</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-briefcase-fill text-warning fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Hội Sinh viên</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-laptop-fill text-info fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Trung tâm CNTT</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 col-lg-2 text-center">
+                <div class="sponsor-card p-3 rounded-3">
+                    <i class="bi bi-graph-up-arrow text-secondary fs-1"></i>
+                    <div class="small fw-semibold text-secondary mt-2">Quỹ Đổi mới ST</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
 
 <style>
-    /* Hiệu ứng di chuột nhẹ nhàng qua các thẻ hướng dẫn */
+    .fw-black { font-weight: 900; }
+    .text-white-75 { color: rgba(255,255,255,0.75); }
+
+    .section-title {
+        font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+        letter-spacing: 0.3px;
+    }
+
+    /* Icon circles */
+    .icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-circle-sm {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* Card hover */
     .card-hover-effect {
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+    }
+    .card-hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.75rem 2rem rgba(0,0,0,.12) !important;
     }
 
-        .card-hover-effect:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 1rem 3rem rgba(0,0,0,.125) !important;
-        }
+    /* Competition card header */
+    .card-header-custom {
+        color: white;
+        min-height: 90px;
+    }
 
-    /* Hiệu ứng nhịp tim đập nhẹ cho nhãn Năm học */
+    /* Process step */
+    .step-number {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    /* Sponsor card */
+    .sponsor-card {
+        transition: background 0.2s ease;
+        cursor: default;
+    }
+    .sponsor-card:hover {
+        background: #f8f9fa;
+    }
+
+    /* Animations */
     .animate-pulse {
-        animation: pulse-animation 2s infinite;
+        animation: pulse-anim 2.2s ease-in-out infinite;
+    }
+    @@keyframes pulse-anim {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
     }
 
-    @@keyframes pulse-animation {
-        0% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.04);
-        }
-
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    /* Hiệu ứng hình ảnh trôi nổi mượt mà ở góc phải banner */
     .float-animation {
         animation: float-cycle 4s ease-in-out infinite;
     }
-
     @@keyframes float-cycle {
-        0% {
-            transform: translateY(0px);
-        }
-
-        50% {
-            transform: translateY(-12px);
-        }
-
-        100% {
-            transform: translateY(0px);
-        }
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-14px); }
     }
 
-    /* Đảm bảo căn chỉnh khoảng cách khi click anchor link điều hướng */
-    .scroll-margin {
-        scroll-margin-top: 30px;
-    }
-
-    /* Cấu trúc font chữ hiển thị nét đậm cao cấp */
-    .fw-black {
-        font-weight: 900;
+    /* Responsive border helper */
+    @@media (min-width: 768px) {
+        .border-end-md { border-right: 1px solid #dee2e6 !important; }
+        .border-md-top-0 { border-top: none !important; }
     }
 </style>
