@@ -23,6 +23,7 @@
         public string? SearchQuery { get; set; }
         public string? StatusFilter { get; set; }
         public string? DepartmentFilter { get; set; }
+        public string? RegistrationTypeFilter { get; set; }
         public List<CompetitionBasicDto> Competitions { get; set; } = new();
     }
 

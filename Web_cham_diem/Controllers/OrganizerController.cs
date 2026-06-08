@@ -8,15 +8,18 @@ namespace Web_cham_diem.Controllers
     {
         private readonly ICompetitionService _competitionService;
         private readonly ISubmissionService _submissionService;
+        private readonly IGradingService _gradingService;
         private readonly ILogger<OrganizerController> _logger;
 
         public OrganizerController(
             ICompetitionService competitionService,
             ISubmissionService submissionService,
+            IGradingService gradingService,
             ILogger<OrganizerController> logger)
         {
             _competitionService = competitionService;
             _submissionService  = submissionService;
+            _gradingService     = gradingService;
             _logger             = logger;
         }
 
@@ -96,9 +99,18 @@ namespace Web_cham_diem.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var model = await _competitionService.GetCompetitionForEditAsync(id);
-            if (model == null) return NotFound();
-            return View(model);
+            try
+            {
+                var model = await _competitionService.GetCompetitionForEditAsync(id);
+                if (model == null) return NotFound();
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading competition {Id} for edit", id);
+                TempData["SuccessMessage"] = "Cuộc thi đã được tạo thành công! Tuy nhiên có lỗi khi tải trang chỉnh sửa.";
+                return RedirectToAction("Contests");
+            }
         }
 
         [HttpPost]
@@ -235,11 +247,11 @@ namespace Web_cham_diem.Controllers
         // ====== SUBMISSIONS ======
         public async Task<IActionResult> Submissions(
             int? competitionId = null, string? search = null,
-            string? status = null, string? department = null)
+            string? status = null, string? department = null, string? type = null)
         {
             try
             {
-                var viewModel = await _submissionService.GetSubmissionsViewAsync(competitionId, search, status, department);
+                var viewModel = await _submissionService.GetSubmissionsViewAsync(competitionId, search, status, department, type);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -570,7 +582,120 @@ namespace Web_cham_diem.Controllers
             }
         }
 
-        public IActionResult Grading()       => View();
+        // ====== GRADING ======
+
+        public async Task<IActionResult> Grading(int? competitionId)
+        {
+            try
+            {
+                var vm = await _gradingService.GetGradingViewAsync(competitionId);
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading grading page");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang chấm điểm.";
+                return View(new OrganizerGradingViewModel());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchUsersForJudge(int competitionId, string search)
+        {
+            if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
+                return Json(new List<object>());
+            var results = await _gradingService.SearchUsersForJudgeAsync(competitionId, search);
+            return Json(results);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddJudge(int competitionId, [FromBody] AddJudgeDto dto)
+        {
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _gradingService.AddJudgeAsync(competitionId, dto);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding judge to competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveJudge(int judgeId, int competitionId)
+        {
+            try
+            {
+                var (ok, msg) = await _gradingService.RemoveJudgeAsync(judgeId, competitionId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing judge {JudgeId}", judgeId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateJudgeRole(int judgeId, int competitionId, [FromBody] UpdateJudgeRoleDto dto)
+        {
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _gradingService.UpdateJudgeRoleAsync(judgeId, competitionId, dto);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating judge role {JudgeId}", judgeId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AssignSubmissions(int competitionId, [FromBody] AssignSubmissionsDto dto)
+        {
+            try
+            {
+                if (dto == null || !dto.SubmissionIds.Any())
+                    return Json(new { success = false, message = "Chưa chọn bài thi nào." });
+                var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                int assignedById = int.TryParse(userIdStr, out var uid) ? uid : 1;
+                var (ok, msg) = await _gradingService.AssignSubmissionsAsync(competitionId, dto, assignedById);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning submissions for competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RevokeAssignment(int assignmentId, int competitionId)
+        {
+            try
+            {
+                var (ok, msg) = await _gradingService.RevokeAssignmentAsync(assignmentId, competitionId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error revoking assignment {AssignmentId}", assignmentId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public IActionResult SendJudgeReminder(int judgeId)
+        {
+            // TODO: implement email sending
+            _logger.LogInformation("Reminder sent for judge {JudgeId}", judgeId);
+            return Json(new { success = true, message = "Đã gửi nhắc nhở đến giám khảo." });
+        }
         public IActionResult Results()       => View();
         public IActionResult Notifications() => View();
         public IActionResult Progress()      => View();

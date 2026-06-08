@@ -95,7 +95,6 @@ namespace Web_cham_diem.Models.ViewModels
 
     public class SponsorCreateDto
     {
-        [Required(ErrorMessage = "Tên nhà tài trợ là bắt buộc.")]
         public string SponsorName { get; set; } = string.Empty;
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }

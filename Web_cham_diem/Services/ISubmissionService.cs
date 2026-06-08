@@ -11,7 +11,8 @@ public interface ISubmissionService
         int? competitionId = null,
         string? searchQuery = null,
         string? statusFilter = null,
-        string? departmentFilter = null);
+        string? departmentFilter = null,
+        string? registrationTypeFilter = null);
 
     /// <summary>
     /// Duyệt hồ sơ đăng ký

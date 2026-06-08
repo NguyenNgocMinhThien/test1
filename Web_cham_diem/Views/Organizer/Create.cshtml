@@ -579,10 +579,10 @@
                 </div>
 
                 <!-- Form Content -->
-                <form method="post" id="createForm" class="form-card">
+                <form method="post" asp-action="Create" asp-controller="Organizer" id="createForm" class="form-card">
                     @if (!ViewData.ModelState.IsValid)
                     {
-                        <div class="validation-errors">
+                        <div class="validation-errors" id="serverErrors">
                             <strong>⚠️ Vui lòng kiểm tra các lỗi sau:</strong>
                             <ul>
                                 @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
@@ -1879,10 +1879,25 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Khôi phục bước khi POST thất bại
+            const serverErrors = document.getElementById('serverErrors');
+            if (serverErrors) {
+                const savedStep = parseInt(localStorage.getItem('createFormStep') || '1');
+                if (savedStep > 1 && savedStep <= totalSteps) {
+                    currentStep = savedStep;
+                }
+                localStorage.removeItem('createFormStep');
+            }
+
             updateStepDisplay();
             updateTotalWeight();
             updateHiddenWeightValues();
             toggleTeamSizeField();
+
+            // Cuộn đến lỗi nếu có
+            if (serverErrors) {
+                serverErrors.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
 
             // Gắn event listener cho checkbox IsTeamBased
             document.querySelector('[name="IsTeamBased"]').addEventListener('change', toggleTeamSizeField);
@@ -1904,6 +1919,8 @@
         });
 
         document.getElementById('createForm').addEventListener('submit', (e) => {
+            // Lưu bước hiện tại để khôi phục nếu POST thất bại
+            localStorage.setItem('createFormStep', currentStep);
             updateHiddenWeightValues();
 
             const form = document.getElementById('createForm');
