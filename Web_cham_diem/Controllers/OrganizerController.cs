@@ -600,12 +600,68 @@ namespace Web_cham_diem.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SearchUsersForJudge(int competitionId, string search)
+        public async Task<IActionResult> SearchUsersForJudge(int competitionId, string search, int? roundId = null)
         {
             if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
                 return Json(new List<object>());
-            var results = await _gradingService.SearchUsersForJudgeAsync(competitionId, search);
+            var results = await _gradingService.SearchUsersForJudgeAsync(competitionId, search, roundId);
             return Json(results);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchUsersForJudgePool(string search)
+        {
+            if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
+                return Json(new List<object>());
+            var results = await _gradingService.SearchUsersForJudgePoolAsync(search);
+            return Json(results);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchJudgesForRound(int competitionId, int roundId, string search)
+        {
+            if (string.IsNullOrWhiteSpace(search) || search.Length < 2)
+                return Json(new List<object>());
+            var results = await _gradingService.SearchJudgesForRoundAsync(competitionId, roundId, search);
+            return Json(results);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckJudgeConflict(int judgeUserId, int roundId)
+        {
+            var conflicts = await _gradingService.CheckTimeConflictsAsync(judgeUserId, roundId);
+            return Json(conflicts);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddUserToJudgePool([FromBody] AddToJudgePoolDto dto)
+        {
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _gradingService.AddUserToJudgePoolAsync(dto.UserId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding user {UserId} to judge pool", dto?.UserId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveUserFromJudgePool(int userId)
+        {
+            try
+            {
+                var (ok, msg) = await _gradingService.RemoveUserFromJudgePoolAsync(userId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing user {UserId} from judge pool", userId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
         }
 
         [HttpPost]

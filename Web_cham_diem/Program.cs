@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Web_cham_diem.Data;
 using Web_cham_diem.Models;
 using Web_cham_diem.Services;
 using System.Globalization;
@@ -99,5 +100,7 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+await DbSeeder.SeedAsync(app);
 
 app.Run();

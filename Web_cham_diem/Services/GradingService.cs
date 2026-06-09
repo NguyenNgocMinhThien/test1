@@ -38,9 +38,26 @@ public class GradingService : IGradingService
         if (!competitionId.HasValue) return vm;
         var cid = competitionId.Value;
 
-        // Load judges
+        // Load competition rounds
+        var rounds = await _context.CompetitionRounds
+            .Where(r => r.CompetitionId == cid)
+            .OrderBy(r => r.RoundOrder)
+            .Select(r => new CompetitionRoundBasicDto
+            {
+                RoundId    = r.RoundId,
+                RoundName  = r.RoundName,
+                RoundOrder = r.RoundOrder,
+                StartDate  = r.StartDate,
+                EndDate    = r.EndDate,
+                Status     = r.Status
+            })
+            .ToListAsync();
+        vm.CompetitionRounds = rounds;
+
+        // Load judges (kèm round để lấy tên vòng)
         var judges = await _context.Judges
             .Include(j => j.User)
+            .Include(j => j.Round)
             .Where(j => j.CompetitionId == cid)
             .ToListAsync();
 
@@ -83,10 +100,14 @@ public class GradingService : IGradingService
                 TotalAssigned  = total,
                 Completed      = done,
                 InProgress     = s?.InProgress ?? 0,
-                CompletionRate = total > 0 ? Math.Round(done * 100.0 / total, 1) : 0
+                CompletionRate = total > 0 ? Math.Round(done * 100.0 / total, 1) : 0,
+                RoundId        = j.RoundId,
+                RoundName      = j.Round?.RoundName,
+                RoundOrder     = j.Round?.RoundOrder ?? int.MaxValue
             };
         })
-        .OrderBy(j => j.JudgeRole == "HeadJudge" ? 0 : j.JudgeRole == "ViceHead" ? 1 : 2)
+        .OrderBy(j => j.RoundOrder)
+        .ThenBy(j => j.JudgeRole == "HeadJudge" ? 0 : j.JudgeRole == "ViceHead" ? 1 : 2)
         .ThenBy(j => j.FullName)
         .ToList();
 
@@ -186,6 +207,9 @@ public class GradingService : IGradingService
             .OrderBy(a => a.HoursUntilDeadline)
             .ToList();
 
+        // Judge pool (global, independent of competition)
+        vm.JudgePool = await GetJudgePoolAsync();
+
         // Overall stats
         vm.ActiveJudges         = vm.Judges.Count(j => j.Status == "Active");
         vm.TotalAssignments     = activeAssigns.Count;
@@ -197,12 +221,13 @@ public class GradingService : IGradingService
         return vm;
     }
 
-    public async Task<List<UserSearchDto>> SearchUsersForJudgeAsync(int competitionId, string search)
+    public async Task<List<UserSearchDto>> SearchUsersForJudgeAsync(int competitionId, string search, int? roundId = null)
     {
-        var existingIds = await _context.Judges
-            .Where(j => j.CompetitionId == competitionId)
-            .Select(j => j.UserId)
-            .ToListAsync();
+        // Chỉ loại trừ user đã là giám khảo trong cùng vòng thi đó
+        var existingQuery = _context.Judges.Where(j => j.CompetitionId == competitionId);
+        if (roundId.HasValue)
+            existingQuery = existingQuery.Where(j => j.RoundId == roundId.Value);
+        var existingIds = await existingQuery.Select(j => j.UserId).ToListAsync();
 
         return await _context.Users
             .Where(u => u.IsActive
@@ -227,24 +252,56 @@ public class GradingService : IGradingService
         var user = await _context.Users.FindAsync(dto.UserId);
         if (user == null) return (false, "Người dùng không tìm thấy.");
 
-        if (await _context.Judges.AnyAsync(j => j.CompetitionId == competitionId && j.UserId == dto.UserId))
-            return (false, "Người này đã là giám khảo của cuộc thi.");
+        // Kiểm tra nếu có RoundId thì round phải thuộc cuộc thi này
+        if (dto.RoundId.HasValue)
+        {
+            bool roundExists = await _context.CompetitionRounds
+                .AnyAsync(r => r.RoundId == dto.RoundId.Value && r.CompetitionId == competitionId);
+            if (!roundExists) return (false, "Vòng thi không thuộc cuộc thi này.");
+        }
 
-        if (dto.Role == "HeadJudge"
-            && await _context.Judges.AnyAsync(j => j.CompetitionId == competitionId && j.JudgeRole == "HeadJudge" && j.Status == "Active"))
-            return (false, "Đã có Trưởng ban. Mỗi cuộc thi chỉ 1 Trưởng ban.");
+        // Không cho thêm cùng người vào cùng vòng 2 lần (nếu không có vòng: không cho thêm 2 lần vào cùng cuộc thi)
+        bool duplicate = dto.RoundId.HasValue
+            ? await _context.Judges.AnyAsync(j => j.CompetitionId == competitionId && j.UserId == dto.UserId && j.RoundId == dto.RoundId)
+            : await _context.Judges.AnyAsync(j => j.CompetitionId == competitionId && j.UserId == dto.UserId && j.RoundId == null);
+        if (duplicate)
+        {
+            string where = dto.RoundId.HasValue ? "vòng thi này" : "cuộc thi (không gán vòng)";
+            return (false, $"Người này đã là giám khảo trong {where}.");
+        }
+
+        // Mỗi vòng chỉ có 1 Trưởng ban
+        if (dto.Role == "HeadJudge")
+        {
+            var headQuery = _context.Judges
+                .Where(j => j.CompetitionId == competitionId && j.JudgeRole == "HeadJudge" && j.Status == "Active");
+            headQuery = dto.RoundId.HasValue
+                ? headQuery.Where(j => j.RoundId == dto.RoundId)
+                : headQuery.Where(j => j.RoundId == null);
+            if (await headQuery.AnyAsync())
+            {
+                string where = dto.RoundId.HasValue ? "Vòng thi này" : "Cuộc thi (chưa gán vòng)";
+                return (false, $"{where} đã có Trưởng ban. Mỗi vòng chỉ 1 Trưởng ban.");
+            }
+        }
 
         _context.Judges.Add(new Judges
         {
             UserId        = dto.UserId,
             CompetitionId = competitionId,
+            RoundId       = dto.RoundId,
             JudgeRole     = dto.Role,
             Expertise     = dto.Expertise,
             Status        = "Active",
             AssignedDate  = DateTime.UtcNow
         });
         await _context.SaveChangesAsync();
-        return (true, $"Đã thêm {user.FullName} vào ban giám khảo ({RoleText(dto.Role)}).");
+
+        string roundLabel = dto.RoundId.HasValue
+            ? (await _context.CompetitionRounds.Where(r => r.RoundId == dto.RoundId).Select(r => r.RoundName).FirstOrDefaultAsync() ?? "")
+            : "";
+        string suffix = string.IsNullOrEmpty(roundLabel) ? "" : $" — vòng {roundLabel}";
+        return (true, $"Đã thêm {user.FullName} ({RoleText(dto.Role)}){suffix}.");
     }
 
     public async Task<(bool success, string message)> RemoveJudgeAsync(int judgeId, int competitionId)
@@ -268,10 +325,17 @@ public class GradingService : IGradingService
             .FirstOrDefaultAsync(j => j.JudgeId == judgeId && j.CompetitionId == competitionId);
         if (judge == null) return (false, "Giám khảo không tìm thấy.");
 
-        if (dto.Role == "HeadJudge"
-            && await _context.Judges.AnyAsync(j => j.CompetitionId == competitionId && j.JudgeRole == "HeadJudge"
-                                                   && j.JudgeId != judgeId && j.Status == "Active"))
-            return (false, "Đã có Trưởng ban. Không thể đặt thêm.");
+        if (dto.Role == "HeadJudge")
+        {
+            var headQuery = _context.Judges
+                .Where(j => j.CompetitionId == competitionId && j.JudgeId != judgeId
+                            && j.JudgeRole == "HeadJudge" && j.Status == "Active");
+            headQuery = judge.RoundId.HasValue
+                ? headQuery.Where(j => j.RoundId == judge.RoundId)
+                : headQuery.Where(j => j.RoundId == null);
+            if (await headQuery.AnyAsync())
+                return (false, "Vòng thi này đã có Trưởng ban. Không thể đặt thêm.");
+        }
 
         judge.JudgeRole  = dto.Role;
         judge.Expertise  = dto.Expertise;
@@ -321,6 +385,162 @@ public class GradingService : IGradingService
         a.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         return (true, "Đã thu hồi phân công.");
+    }
+
+    public async Task<List<JudgePoolItemDto>> GetJudgePoolAsync()
+    {
+        var judgeIds = await _context.UserRoles
+            .Where(ur => ur.RoleId == 4)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        var users = await _context.Users
+            .Where(u => judgeIds.Contains(u.UserId) && u.IsActive)
+            .OrderBy(u => u.FullName)
+            .ToListAsync();
+
+        var allJudges = await _context.Judges
+            .Include(j => j.Competition)
+            .Include(j => j.Round)
+            .Where(j => judgeIds.Contains(j.UserId))
+            .ToListAsync();
+
+        return users.Select(u =>
+        {
+            var assignments = allJudges
+                .Where(j => j.UserId == u.UserId && j.RoundId.HasValue && j.Round != null)
+                .OrderBy(j => j.Round!.StartDate)
+                .Select(j => new JudgeRoundSummaryDto
+                {
+                    JudgeId         = j.JudgeId,
+                    CompetitionId   = j.CompetitionId,
+                    CompetitionName = j.Competition?.CompetitionName ?? "",
+                    RoundId         = j.RoundId!.Value,
+                    RoundName       = j.Round!.RoundName,
+                    JudgeRole       = j.JudgeRole,
+                    StartDate       = j.Round!.StartDate,
+                    EndDate         = j.Round!.EndDate
+                }).ToList();
+
+            return new JudgePoolItemDto
+            {
+                UserId             = u.UserId,
+                FullName           = u.FullName,
+                Email              = u.Email,
+                StudentId          = u.StudentId,
+                TotalRoundsAssigned = assignments.Count,
+                RoundAssignments   = assignments
+            };
+        }).ToList();
+    }
+
+    public async Task<(bool success, string message)> AddUserToJudgePoolAsync(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return (false, "Người dùng không tìm thấy.");
+
+        bool already = await _context.UserRoles.AnyAsync(ur => ur.UserId == userId && ur.RoleId == 4);
+        if (already) return (false, $"{user.FullName} đã là giám khảo.");
+
+        _context.UserRoles.Add(new UserRoles { UserId = userId, RoleId = 4 });
+        await _context.SaveChangesAsync();
+        return (true, $"Đã thêm {user.FullName} vào danh sách giám khảo.");
+    }
+
+    public async Task<(bool success, string message)> RemoveUserFromJudgePoolAsync(int userId)
+    {
+        var ur = await _context.UserRoles
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.RoleId == 4);
+        if (ur == null) return (false, "Người dùng không phải giám khảo.");
+
+        bool hasRoundAssignments = await _context.Judges.AnyAsync(j => j.UserId == userId);
+        if (hasRoundAssignments)
+            return (false, "Giám khảo này vẫn đang được phân công vào các vòng thi. Hãy xóa khỏi vòng thi trước.");
+
+        _context.UserRoles.Remove(ur);
+        await _context.SaveChangesAsync();
+
+        var user = await _context.Users.FindAsync(userId);
+        return (true, $"Đã xóa {user?.FullName ?? "người dùng"} khỏi danh sách giám khảo.");
+    }
+
+    public async Task<List<UserSearchDto>> SearchUsersForJudgePoolAsync(string search)
+    {
+        var existingJudgeIds = await _context.UserRoles
+            .Where(ur => ur.RoleId == 4)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        return await _context.Users
+            .Where(u => u.IsActive
+                && !existingJudgeIds.Contains(u.UserId)
+                && (u.FullName.Contains(search) || u.Email.Contains(search)))
+            .OrderBy(u => u.FullName)
+            .Take(8)
+            .Select(u => new UserSearchDto
+            {
+                UserId    = u.UserId,
+                FullName  = u.FullName,
+                Email     = u.Email,
+                StudentId = u.StudentId
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<UserSearchDto>> SearchJudgesForRoundAsync(int competitionId, int roundId, string search)
+    {
+        var poolIds = await _context.UserRoles
+            .Where(ur => ur.RoleId == 4)
+            .Select(ur => ur.UserId)
+            .ToListAsync();
+
+        var alreadyInRound = await _context.Judges
+            .Where(j => j.CompetitionId == competitionId && j.RoundId == roundId)
+            .Select(j => j.UserId)
+            .ToListAsync();
+
+        return await _context.Users
+            .Where(u => u.IsActive
+                && poolIds.Contains(u.UserId)
+                && !alreadyInRound.Contains(u.UserId)
+                && (u.FullName.Contains(search) || u.Email.Contains(search)))
+            .OrderBy(u => u.FullName)
+            .Take(8)
+            .Select(u => new UserSearchDto
+            {
+                UserId    = u.UserId,
+                FullName  = u.FullName,
+                Email     = u.Email,
+                StudentId = u.StudentId
+            })
+            .ToListAsync();
+    }
+
+    public async Task<List<TimeConflictDto>> CheckTimeConflictsAsync(int judgeUserId, int roundId)
+    {
+        var newRound = await _context.CompetitionRounds.FindAsync(roundId);
+        if (newRound == null) return new();
+
+        var existing = await _context.Judges
+            .Include(j => j.Round).ThenInclude(r => r!.Competition)
+            .Where(j => j.UserId == judgeUserId && j.RoundId.HasValue && j.RoundId != roundId)
+            .ToListAsync();
+
+        return existing
+            .Where(j => j.Round != null
+                && j.Round.StartDate < newRound.EndDate
+                && j.Round.EndDate   > newRound.StartDate)
+            .Select(j => new TimeConflictDto
+            {
+                JudgeUserId             = judgeUserId,
+                ExistingCompetitionName = j.Round!.Competition?.CompetitionName ?? "",
+                ExistingRoundId         = j.Round.RoundId,
+                ExistingRoundName       = j.Round.RoundName,
+                ExistingStartDate       = j.Round.StartDate,
+                ExistingEndDate         = j.Round.EndDate,
+                ExistingRole            = j.JudgeRole
+            })
+            .ToList();
     }
 
     private static string RoleText(string role) => role switch
