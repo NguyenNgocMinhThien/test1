@@ -164,8 +164,9 @@ public class CompetitionService : ICompetitionService
         return await _context.Competitions
             .Include(c => c.Registrations)
             .Include(c => c.Teams)
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
+            .Include(c => c.CompetitionRounds)
+                .ThenInclude(r => r.ScoringCriteria)
             .FirstOrDefaultAsync(c => c.CompetitionId == id);
     }
 
@@ -252,11 +253,12 @@ public class CompetitionService : ICompetitionService
     public async Task<CompetitionDetailViewModel> GetCompetitionDetailAsync(int competitionId)
     {
         var competition = await _context.Competitions
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
+            .Include(c => c.CompetitionRounds)
+                .ThenInclude(r => r.ScoringCriteria)
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
@@ -320,6 +322,36 @@ public class CompetitionService : ICompetitionService
 
         var evaluatedCount = competition.Submissions.Count(s => s.Status == "Evaluated");
 
+        var compRoundDtos = competition.CompetitionRounds
+            .OrderBy(r => r.RoundOrder)
+            .Select(r => new CompetitionRoundDetailDto
+            {
+                RoundId              = r.RoundId,
+                RoundName            = r.RoundName,
+                RoundOrder           = r.RoundOrder,
+                StartDate            = r.StartDate,
+                EndDate              = r.EndDate,
+                SubmissionDeadline   = r.SubmissionDeadline,
+                MaxAdvancing         = r.MaxAdvancing,
+                Status               = r.Status,
+                RequiresFile         = r.RequiresFile,
+                RequiresVideo        = r.RequiresVideo,
+                RequiresOtherLink    = r.RequiresOtherLink,
+                IsOnline             = r.IsOnline,
+                MeetingLink          = r.MeetingLink,
+                MeetingTime          = r.MeetingTime,
+                Location             = r.Location,
+                ScoringCriteria      = r.ScoringCriteria
+                    .OrderBy(sc => sc.Order)
+                    .Select(sc => new ScoringCriteriaDto
+                    {
+                        CriteriaId   = sc.CriteriaId,
+                        CriteriaName = sc.CriteriaName,
+                        Weight       = sc.Weight,
+                        MaxScore     = sc.MaxScore
+                    }).ToList()
+            }).ToList();
+
         return new CompetitionDetailViewModel
         {
             CompetitionId      = competition.CompetitionId,
@@ -343,13 +375,7 @@ public class CompetitionService : ICompetitionService
             TotalSubmissions      = competition.Submissions.Count,
             EvaluatedSubmissions  = evaluatedCount,
             BannerImageUrl        = bannerUrl,
-            ScoringCriteria    = competition.ScoringCriteria.OrderBy(sc => sc.Order).Select(sc => new ScoringCriteriaDto
-            {
-                CriteriaId   = sc.CriteriaId,
-                CriteriaName = sc.CriteriaName,
-                Weight       = sc.Weight,
-                MaxScore     = sc.MaxScore
-            }).ToList(),
+            CompetitionRounds  = compRoundDtos,
             RegistrationRounds = roundDtos,
             Images             = images,
             Documents          = documents,
@@ -389,19 +415,20 @@ public class CompetitionService : ICompetitionService
         // Validate vòng thi (thời gian phải theo thứ tự: hạn nộp bài → vòng 1 → vòng 2 → ... → kết thúc)
         ValidateCompetitionRounds(model.CompetitionRounds, submissionDeadline, endDate);
 
-        // Validate scoring criteria
-        if (model.ScoringCriteria == null || model.ScoringCriteria.Count == 0)
-            throw new InvalidOperationException("Phải có ít nhất một tiêu chí chấm điểm.");
-
-        foreach (var criteria in model.ScoringCriteria)
+        // Validate tiêu chí từng vòng thi
+        if (model.CompetitionRounds != null)
         {
-            if (criteria.Weight > 1m)
-                criteria.Weight = criteria.Weight > 100m ? criteria.Weight / 10000m : criteria.Weight / 100m;
+            foreach (var round in model.CompetitionRounds)
+            {
+                if (round.ScoringCriteria == null || round.ScoringCriteria.Count == 0) continue;
+                foreach (var c in round.ScoringCriteria)
+                    if (c.Weight > 1m)
+                        c.Weight = c.Weight > 100m ? c.Weight / 10000m : c.Weight / 100m;
+                var totalWeight = round.ScoringCriteria.Sum(s => s.Weight);
+                if (Math.Abs(totalWeight - 1.0m) > 0.01m)
+                    throw new InvalidOperationException($"Tổng trọng số của vòng \"{round.RoundName}\" phải bằng 100%, hiện tại là {totalWeight * 100:F1}%.");
+            }
         }
-
-        var totalWeight = model.ScoringCriteria.Sum(s => s.Weight);
-        if (Math.Abs(totalWeight - 1.0m) > 0.01m)
-            throw new InvalidOperationException($"Tổng trọng số phải bằng 100%, hiện tại là {totalWeight * 100:F1}%.");
 
         // Tạo cuộc thi
         var competition = new Competitions
@@ -438,39 +465,50 @@ public class CompetitionService : ICompetitionService
             });
         }
 
-        // Tạo các vòng thi
+        // Tạo các vòng thi và tiêu chí chấm điểm theo từng vòng
         if (model.CompetitionRounds != null && model.CompetitionRounds.Any())
         {
             int order = 1;
-            foreach (var round in model.CompetitionRounds.OrderBy(r => r.RoundOrder))
+            foreach (var roundDto in model.CompetitionRounds.OrderBy(r => r.RoundOrder))
             {
-                _context.CompetitionRounds.Add(new CompetitionRounds
+                var round = new CompetitionRounds
                 {
-                    CompetitionId  = competition.CompetitionId,
-                    RoundName      = round.RoundName,
-                    RoundOrder     = order++,
-                    StartDate      = ToUtc(round.StartDate),
-                    EndDate        = ToUtc(round.EndDate),
-                    MaxAdvancing   = round.MaxAdvancing,
-                    Status         = "Upcoming",
-                    CreatedAt      = DateTime.UtcNow
-                });
-            }
-        }
+                    CompetitionId     = competition.CompetitionId,
+                    RoundName         = roundDto.RoundName,
+                    RoundOrder        = order++,
+                    Description       = roundDto.Description,
+                    StartDate         = ToUtc(roundDto.StartDate),
+                    EndDate           = ToUtc(roundDto.EndDate),
+                    SubmissionDeadline = roundDto.SubmissionDeadline.HasValue ? ToUtc(roundDto.SubmissionDeadline.Value) : null,
+                    MaxAdvancing      = roundDto.MaxAdvancing,
+                    RequiresFile      = roundDto.RequiresFile,
+                    RequiresVideo     = roundDto.RequiresVideo,
+                    RequiresOtherLink = roundDto.RequiresOtherLink,
+                    IsOnline          = roundDto.IsOnline,
+                    MeetingLink       = roundDto.MeetingLink,
+                    MeetingTime       = roundDto.MeetingTime.HasValue ? ToUtc(roundDto.MeetingTime.Value) : null,
+                    Location          = roundDto.Location,
+                    Status            = "Upcoming",
+                    CreatedAt         = DateTime.UtcNow
+                };
+                _context.CompetitionRounds.Add(round);
+                await _context.SaveChangesAsync();
 
-        // Tạo tiêu chí chấm điểm
-        foreach (var criteria in model.ScoringCriteria)
-        {
-            _context.ScoringCriteria.Add(new ScoringCriteria
-            {
-                CompetitionId = competition.CompetitionId,
-                CriteriaName  = criteria.CriteriaName,
-                Description   = criteria.Description,
-                MaxScore      = criteria.MaxScore,
-                Weight        = criteria.Weight,
-                Order         = criteria.Order,
-                CreatedAt     = DateTime.UtcNow
-            });
+                if (roundDto.ScoringCriteria != null)
+                {
+                    foreach (var c in roundDto.ScoringCriteria)
+                        _context.ScoringCriteria.Add(new ScoringCriteria
+                        {
+                            RoundId      = round.RoundId,
+                            CriteriaName = c.CriteriaName,
+                            Description  = c.Description,
+                            MaxScore     = c.MaxScore,
+                            Weight       = c.Weight,
+                            Order        = c.Order,
+                            CreatedAt    = DateTime.UtcNow
+                        });
+                }
+            }
         }
 
         await _context.SaveChangesAsync();
@@ -603,10 +641,10 @@ public class CompetitionService : ICompetitionService
     public async Task<EditCompetitionViewModel> GetCompetitionForEditAsync(int competitionId)
     {
         var competition = await _context.Competitions
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
             .Include(c => c.CompetitionRounds)
+                .ThenInclude(r => r.ScoringCriteria)
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
@@ -632,16 +670,6 @@ public class CompetitionService : ICompetitionService
                 RegistrationCount = r.Registrations.Count
             }).ToList();
 
-        var scoringCriteria = competition.ScoringCriteria
-            .OrderBy(sc => sc.Order)
-            .Select(sc => new ScoringCriteriaCreateDto
-            {
-                CriteriaName = sc.CriteriaName,
-                Description  = sc.Description,
-                MaxScore     = sc.MaxScore,
-                Weight       = sc.Weight,
-                Order        = sc.Order
-            }).ToList();
 
         var images = competition.CompetitionImages
             .OrderByDescending(i => i.IsThumbnail)
@@ -695,19 +723,35 @@ public class CompetitionService : ICompetitionService
             MaxParticipants    = competition.MaxParticipants,
             MaxTeamSize        = competition.MaxTeamSize,
             IsTeamBased        = competition.IsTeamBased,
-            ScoringCriteria    = scoringCriteria,
             ExistingRounds     = existingRounds,
             ExistingCompetitionRounds = competition.CompetitionRounds
                 .OrderBy(r => r.RoundOrder)
                 .Select(r => new CompetitionRoundReadDto
                 {
-                    RoundId      = r.RoundId,
-                    RoundName    = r.RoundName,
-                    RoundOrder   = r.RoundOrder,
-                    StartDate    = r.StartDate,
-                    EndDate      = r.EndDate,
-                    MaxAdvancing = r.MaxAdvancing,
-                    Status       = r.Status
+                    RoundId           = r.RoundId,
+                    RoundName         = r.RoundName,
+                    RoundOrder        = r.RoundOrder,
+                    Description       = r.Description,
+                    StartDate         = r.StartDate,
+                    EndDate           = r.EndDate,
+                    SubmissionDeadline = r.SubmissionDeadline,
+                    MaxAdvancing      = r.MaxAdvancing,
+                    Status            = r.Status,
+                    RequiresFile      = r.RequiresFile,
+                    RequiresVideo     = r.RequiresVideo,
+                    RequiresOtherLink = r.RequiresOtherLink,
+                    IsOnline          = r.IsOnline,
+                    MeetingLink       = r.MeetingLink,
+                    MeetingTime       = r.MeetingTime,
+                    Location          = r.Location,
+                    ScoringCriteria   = r.ScoringCriteria.OrderBy(sc => sc.Order).Select(sc => new ScoringCriteriaCreateDto
+                    {
+                        CriteriaName = sc.CriteriaName,
+                        Description  = sc.Description,
+                        MaxScore     = sc.MaxScore,
+                        Weight       = sc.Weight,
+                        Order        = sc.Order
+                    }).ToList()
                 }).ToList(),
             RegistrationCount  = totalRegistrations,
             SubmissionCount    = submissionCount,
@@ -724,7 +768,6 @@ public class CompetitionService : ICompetitionService
     public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model)
     {
         var competition = await _context.Competitions
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
             .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
@@ -777,25 +820,7 @@ public class CompetitionService : ICompetitionService
                 competition.MaxTeamSize        = model.IsTeamBased ? model.MaxTeamSize : 1;
                 competition.IsTeamBased        = model.IsTeamBased;
 
-                // Rounds được quản lý hoàn toàn qua AJAX (AddRegistrationRound / DeleteRound)
-                // — không xóa/tạo lại tại đây để tránh mất dữ liệu khi form submit
-
-                // Cập nhật ScoringCriteria
-                if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
-                {
-                    _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                    foreach (var c in model.ScoringCriteria)
-                        _context.ScoringCriteria.Add(new ScoringCriteria
-                        {
-                            CompetitionId = competitionId,
-                            CriteriaName  = c.CriteriaName,
-                            Description   = c.Description,
-                            MaxScore      = c.MaxScore,
-                            Weight        = c.Weight,
-                            Order         = c.Order,
-                            CreatedAt     = now
-                        });
-                }
+                // Rounds và tiêu chí chấm điểm được quản lý qua AJAX
             }
             // ────────────────────────────────────────────────────────────────────
             // Đã có đăng ký
@@ -807,22 +832,7 @@ public class CompetitionService : ICompetitionService
             }
             else if (hasStarted)
             {
-                // CASE 3: Đã bắt đầu, chưa có bài nộp — cập nhật criteria được
-                if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
-                {
-                    _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                    foreach (var c in model.ScoringCriteria)
-                        _context.ScoringCriteria.Add(new ScoringCriteria
-                        {
-                            CompetitionId = competitionId,
-                            CriteriaName  = c.CriteriaName,
-                            Description   = c.Description,
-                            MaxScore      = c.MaxScore,
-                            Weight        = c.Weight,
-                            Order         = c.Order,
-                            CreatedAt     = now
-                        });
-                }
+                // CASE 3: Đã bắt đầu, chưa có bài nộp — tiêu chí quản lý qua AJAX theo từng vòng
             }
             else
             {
@@ -862,24 +872,7 @@ public class CompetitionService : ICompetitionService
                 competition.SubmissionDeadline = newSubmissionDeadline;
                 competition.MaxParticipants    = model.MaxParticipants;
 
-                // Cập nhật ScoringCriteria (chưa có bài nộp nên được phép)
-                if (model.ScoringCriteria != null && model.ScoringCriteria.Any())
-                {
-                    _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
-                    foreach (var c in model.ScoringCriteria)
-                        _context.ScoringCriteria.Add(new ScoringCriteria
-                        {
-                            CompetitionId = competitionId,
-                            CriteriaName  = c.CriteriaName,
-                            Description   = c.Description,
-                            MaxScore      = c.MaxScore,
-                            Weight        = c.Weight,
-                            Order         = c.Order,
-                            CreatedAt     = now
-                        });
-                }
-
-                // Rounds: quản lý qua AJAX (AddRegistrationRound / DeleteRound)
+                // Rounds và tiêu chí chấm điểm được quản lý qua AJAX theo từng vòng
             }
 
             await _context.SaveChangesAsync();
@@ -942,7 +935,6 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.Registrations)
             .Include(c => c.Teams)
             .Include(c => c.Submissions)
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.RegistrationRounds)
             .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
 
@@ -957,7 +949,6 @@ public class CompetitionService : ICompetitionService
         if (competition.Teams.Count > 0)
             throw new InvalidOperationException("Không thể xóa cuộc thi đã có đội nhóm tham gia.");
 
-        _context.ScoringCriteria.RemoveRange(competition.ScoringCriteria);
         _context.RegistrationRounds.RemoveRange(competition.RegistrationRounds);
         _context.Competitions.Remove(competition);
         await _context.SaveChangesAsync();
@@ -1669,18 +1660,44 @@ public class CompetitionService : ICompetitionService
         var nextOrder = competition.CompetitionRounds.Any()
             ? competition.CompetitionRounds.Max(r => r.RoundOrder) + 1 : 1;
 
-        _context.CompetitionRounds.Add(new CompetitionRounds
+        var round = new CompetitionRounds
         {
-            CompetitionId = competitionId,
-            RoundName     = dto.RoundName,
-            RoundOrder    = nextOrder,
-            StartDate     = startDate,
-            EndDate       = endDate,
-            MaxAdvancing  = dto.MaxAdvancing,
-            Status        = "Upcoming",
-            CreatedAt     = DateTime.UtcNow
-        });
+            CompetitionId     = competitionId,
+            RoundName         = dto.RoundName,
+            RoundOrder        = nextOrder,
+            Description       = dto.Description,
+            StartDate         = startDate,
+            EndDate           = endDate,
+            SubmissionDeadline = dto.SubmissionDeadline.HasValue ? ToUtc(dto.SubmissionDeadline.Value) : null,
+            MaxAdvancing      = dto.MaxAdvancing,
+            RequiresFile      = dto.RequiresFile,
+            RequiresVideo     = dto.RequiresVideo,
+            RequiresOtherLink = dto.RequiresOtherLink,
+            IsOnline          = dto.IsOnline,
+            MeetingLink       = dto.MeetingLink,
+            MeetingTime       = dto.MeetingTime.HasValue ? ToUtc(dto.MeetingTime.Value) : null,
+            Location          = dto.Location,
+            Status            = "Upcoming",
+            CreatedAt         = DateTime.UtcNow
+        };
+        _context.CompetitionRounds.Add(round);
         await _context.SaveChangesAsync();
+
+        if (dto.ScoringCriteria != null)
+        {
+            foreach (var c in dto.ScoringCriteria)
+                _context.ScoringCriteria.Add(new ScoringCriteria
+                {
+                    RoundId      = round.RoundId,
+                    CriteriaName = c.CriteriaName,
+                    Description  = c.Description,
+                    MaxScore     = c.MaxScore,
+                    Weight       = c.Weight,
+                    Order        = c.Order,
+                    CreatedAt    = DateTime.UtcNow
+                });
+            await _context.SaveChangesAsync();
+        }
         return true;
     }
 
@@ -1704,11 +1721,38 @@ public class CompetitionService : ICompetitionService
         if (endDate > competition.EndDate)
             throw new InvalidOperationException("Vòng thi phải kết thúc trước ngày kết thúc cuộc thi.");
 
-        round.RoundName    = dto.RoundName;
-        round.StartDate    = startDate;
-        round.EndDate      = endDate;
-        round.MaxAdvancing = dto.MaxAdvancing;
-        round.UpdatedAt    = DateTime.UtcNow;
+        round.RoundName         = dto.RoundName;
+        round.Description       = dto.Description;
+        round.StartDate         = startDate;
+        round.EndDate           = endDate;
+        round.SubmissionDeadline = dto.SubmissionDeadline.HasValue ? ToUtc(dto.SubmissionDeadline.Value) : null;
+        round.MaxAdvancing      = dto.MaxAdvancing;
+        round.RequiresFile      = dto.RequiresFile;
+        round.RequiresVideo     = dto.RequiresVideo;
+        round.RequiresOtherLink = dto.RequiresOtherLink;
+        round.IsOnline          = dto.IsOnline;
+        round.MeetingLink       = dto.MeetingLink;
+        round.MeetingTime       = dto.MeetingTime.HasValue ? ToUtc(dto.MeetingTime.Value) : null;
+        round.Location          = dto.Location;
+        round.UpdatedAt         = DateTime.UtcNow;
+
+        // Cập nhật tiêu chí chấm điểm nếu được gửi kèm
+        if (dto.ScoringCriteria != null && dto.ScoringCriteria.Any())
+        {
+            var existing = await _context.ScoringCriteria.Where(sc => sc.RoundId == roundId).ToListAsync();
+            _context.ScoringCriteria.RemoveRange(existing);
+            foreach (var c in dto.ScoringCriteria)
+                _context.ScoringCriteria.Add(new ScoringCriteria
+                {
+                    RoundId      = roundId,
+                    CriteriaName = c.CriteriaName,
+                    Description  = c.Description,
+                    MaxScore     = c.MaxScore,
+                    Weight       = c.Weight,
+                    Order        = c.Order,
+                    CreatedAt    = DateTime.UtcNow
+                });
+        }
 
         await _context.SaveChangesAsync();
         return true;

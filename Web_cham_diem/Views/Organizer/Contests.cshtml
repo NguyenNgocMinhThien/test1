@@ -507,7 +507,7 @@
                                     <i class="bi bi-clock-history"></i>
                                     <strong>Hạn đăng ký:</strong> @(regLocal.HasValue ? regLocal.Value.ToString("dd/MM/yyyy HH:mm") : "—")
                                     &nbsp;|&nbsp;
-                                    <strong>Hạn nộp:</strong> @subLocal.ToString("dd/MM/yyyy HH:mm")
+                                    <strong>Hạn nộp chung:</strong> @subLocal.ToString("dd/MM/yyyy HH:mm")
                                 </div>
 
                                 <!-- Progress Bar -->
@@ -686,20 +686,92 @@
             const s3Done = now > subDL;
             const s4Done = now > endDT;
 
+            const compRoundsTimeline = (d.competitionRounds||[]).map((r, i) => {
+                const rDone   = now > new Date(r.endDate);
+                const rActive = !rDone && now >= new Date(r.startDate);
+                return tlStep(4 + i, r.roundName,
+                    fmtDT(r.startDate) + ' → ' + fmtDT(r.endDate), rDone, rActive);
+            }).join('');
+
             const timelineHtml = `<div class="timeline-box">
                 ${tlStep(1,'Mở Cổng Đăng ký', fmtDT(d.startDate), s1Done, !s1Done)}
-                ${tlStep(2,'Xét duyệt Hồ sơ', latestReg ? fmtDT(d.latestRegistrationDeadline) : '—', s2Done, s1Done && !s2Done)}
-                ${tlStep(3,'Nhận Bài Dự Thi',  fmtDT(d.submissionDeadline), s3Done, s2Done && !s3Done)}
-                ${tlStep(4,'Giám khảo Chấm điểm', 'Dự kiến: '+fmtDate(d.endDate), s4Done, s3Done && !s4Done)}
+                ${tlStep(2,'Hạn Đăng ký (đợt cuối)', latestReg ? fmtDT(d.latestRegistrationDeadline) : '—', s2Done, s1Done && !s2Done)}
+                ${tlStep(3,'Hạn Nộp Bài chung', fmtDT(d.submissionDeadline), s3Done, s2Done && !s3Done)}
+                ${compRoundsTimeline}
+                ${tlStep(4 + (d.competitionRounds||[]).length, 'Kết thúc & Công bố', fmtDT(d.endDate), s4Done, s3Done && !s4Done)}
             </div>`;
 
-            // ── 7. Tiêu chí ───────────────────────────────────────────────────
-            const criteriaRows = (d.scoringCriteria||[]).map(c => `
-                <tr>
-                    <td class="py-1">${c.criteriaName}</td>
-                    <td class="py-1 text-center">${c.maxScore}</td>
-                    <td class="py-1 text-end"><span class="badge" style="background:#0d6efd;">${(c.weight*100).toFixed(1)}%</span></td>
-                </tr>`).join('');
+            // ── 7. Vòng thi & tiêu chí ────────────────────────────────────────
+            const rStatusLabel = s => s === 'Active' ? 'Đang diễn ra' : s === 'Completed' ? 'Đã kết thúc' : 'Sắp diễn ra';
+            const rStatusColor = s => s === 'Active' ? '#22c55e' : s === 'Completed' ? '#64748b' : '#f59e0b';
+
+            const compRoundsHtml = (d.competitionRounds||[]).length === 0
+                ? '<p class="small text-muted fst-italic mb-0">Chưa cấu hình vòng thi cho cuộc thi này.</p>'
+                : (d.competitionRounds||[]).map((r, i) => {
+                    const reqList = [];
+                    if (r.requiresFile)      reqList.push('📁 File đính kèm');
+                    if (r.requiresVideo)     reqList.push('🎬 Link video');
+                    if (r.requiresOtherLink) reqList.push('🔗 Link khác');
+
+                    const locationHtml = r.isOnline
+                        ? (r.meetingLink
+                            ? `<a href="${r.meetingLink}" target="_blank" style="font-size:.8rem;color:#4f46e5;">🔗 Online: ${r.meetingLink}</a>`
+                            : `<span style="font-size:.8rem;color:#4f46e5;">🌐 Tổ chức Online</span>`)
+                        : (r.location
+                            ? `<span style="font-size:.8rem;color:#666;">📍 ${r.location}</span>`
+                            : '');
+
+                    const meetingHtml = r.isOnline && r.meetingTime
+                        ? `<div class="col-sm-6 small"><span class="text-muted">🕐 Giờ thuyết trình:</span> <strong>${fmtDT(r.meetingTime)}</strong></div>`
+                        : '';
+
+                    const criteriaTableHtml = (r.scoringCriteria||[]).length === 0
+                        ? '<p class="small text-muted fst-italic mt-2 mb-0">Chưa có tiêu chí chấm điểm.</p>'
+                        : `<div class="table-responsive mt-2">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light"><tr>
+                                    <th class="py-1">Tiêu chí</th>
+                                    <th class="py-1 text-center">Thang điểm</th>
+                                    <th class="py-1 text-end">Trọng số</th>
+                                </tr></thead>
+                                <tbody>
+                                ${(r.scoringCriteria||[]).map(c => `
+                                    <tr>
+                                        <td class="py-1">${c.criteriaName}</td>
+                                        <td class="py-1 text-center">${c.maxScore}</td>
+                                        <td class="py-1 text-end"><span class="badge" style="background:#0d6efd;">${(c.weight*100).toFixed(1)}%</span></td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                           </div>`;
+
+                    return `<div style="border:1px solid #dce3f0; border-radius:8px; overflow:hidden; margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:linear-gradient(135deg,#f0f4ff,#e8f0fe); border-bottom:1px solid #dce3f0;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1.1rem;">🏆</span>
+                                <strong style="font-size:.95rem;">Vòng ${r.roundOrder}: ${r.roundName}</strong>
+                                <span class="badge" style="background:${rStatusColor(r.status)};font-size:.7rem;">${rStatusLabel(r.status)}</span>
+                            </div>
+                            ${r.maxAdvancing ? `<span style="font-size:.75rem;color:#666;background:#fff;padding:2px 8px;border-radius:12px;border:1px solid #dce3f0;">Tiến vòng sau: <strong>${r.maxAdvancing}</strong></span>` : ''}
+                        </div>
+                        <div style="padding:12px 14px;">
+                            <div class="row g-2 mb-2">
+                                <div class="col-sm-6 small">
+                                    <span class="text-muted">📅 Bắt đầu:</span> <strong>${fmtDT(r.startDate)}</strong>
+                                </div>
+                                <div class="col-sm-6 small">
+                                    <span class="text-muted">📅 Kết thúc:</span> <strong>${fmtDT(r.endDate)}</strong>
+                                </div>
+                                ${r.submissionDeadline ? `<div class="col-sm-6 small"><span class="text-muted">⏰ Hạn nộp vòng này:</span> <strong>${fmtDT(r.submissionDeadline)}</strong></div>` : ''}
+                                ${meetingHtml}
+                                ${locationHtml ? `<div class="col-sm-6 small">${locationHtml}</div>` : ''}
+                            </div>
+                            ${reqList.length > 0 ? `<div style="font-size:.8rem;margin-bottom:8px;"><span class="text-muted fw-semibold">Yêu cầu nộp bài:</span> ${reqList.join(' &nbsp;·&nbsp; ')}</div>` : ''}
+                            <div style="font-size:.82rem;font-weight:700;color:#333;margin-bottom:2px;">⭐ Tiêu chí chấm điểm:</div>
+                            ${criteriaTableHtml}
+                        </div>
+                    </div>`;
+                }).join('');
 
             // ── 8. Đợt đăng ký ────────────────────────────────────────────────
             const roundsHtml = (d.registrationRounds||[]).length === 0
@@ -834,19 +906,8 @@
                         : '<p class="small text-muted fst-italic mb-0">Chưa có thông tin giải thưởng.</p>'
                 )}
 
-                <!-- 7. Tiêu chí chấm điểm -->
-                ${sec('bar-chart','Tiêu chí Chấm điểm','#0d6efd',
-                    (d.scoringCriteria||[]).length === 0
-                        ? '<p class="small text-muted fst-italic mb-0">Chưa có tiêu chí.</p>'
-                        : `<div class="table-responsive"><table class="table table-sm mb-0">
-                            <thead class="table-light"><tr>
-                                <th class="py-1">Tiêu chí</th>
-                                <th class="py-1 text-center">Thang điểm</th>
-                                <th class="py-1 text-end">Trọng số</th>
-                            </tr></thead>
-                            <tbody>${criteriaRows}</tbody>
-                           </table></div>`
-                )}
+                <!-- 7. Vòng thi & Tiêu chí chấm điểm -->
+                ${sec('trophy','Vòng thi & Tiêu chí Chấm điểm','#0d6efd', compRoundsHtml)}
 
                 <!-- 8. Đợt đăng ký -->
                 ${sec('calendar3','Danh sách Đợt Đăng ký','#059669', roundsHtml)}

@@ -967,12 +967,13 @@ public class CompetitiveController : Controller
     public async Task<IActionResult> Details(int id)
     {
         var competition = await _context.Competitions
-            .Include(c => c.ScoringCriteria)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.RegistrationRounds)
+            .Include(c => c.CompetitionRounds)
+                .ThenInclude(r => r.ScoringCriteria)
             .Include(c => c.Teams)
                 .ThenInclude(t => t.Registrations)
             .Include(c => c.Teams)

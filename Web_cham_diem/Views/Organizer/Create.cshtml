@@ -1,4 +1,4 @@
-﻿@model Web_cham_diem.Models.ViewModels.CreateCompetitionViewModel
+@model Web_cham_diem.Models.ViewModels.CreateCompetitionViewModel
 @{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Tạo Cuộc Thi Mới";
@@ -83,13 +83,8 @@
             font-weight: bold;
         }
 
-        .form-section {
-            display: none;
-        }
-
-            .form-section.active {
-                display: block;
-            }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
 
         .section-title {
             font-size: 1.5rem;
@@ -106,9 +101,7 @@
             font-size: 0.95rem;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
 
         .form-label {
             font-weight: 600;
@@ -117,9 +110,7 @@
             display: block;
         }
 
-            .form-label .required {
-                color: #e53e3e;
-            }
+            .form-label .required { color: #e53e3e; }
 
         .form-control, .form-select {
             border: 1px solid #d0d0d0;
@@ -140,13 +131,7 @@
             margin-top: 5px;
         }
 
-        /* Criteria Section */
-        .criteria-list {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
+        /* Registration round rows */
         .criteria-item {
             background: white;
             border: 1px solid #e0e0e0;
@@ -159,9 +144,7 @@
             align-items: end;
         }
 
-            .criteria-item:last-child {
-                margin-bottom: 0;
-            }
+            .criteria-item:last-child { margin-bottom: 0; }
 
         .remove-criteria-btn {
             background: #fee;
@@ -174,9 +157,7 @@
             transition: all 0.2s;
         }
 
-            .remove-criteria-btn:hover {
-                background: #fdd;
-            }
+            .remove-criteria-btn:hover { background: #fdd; }
 
         .add-criteria-btn {
             background: #e8f5e9;
@@ -190,9 +171,74 @@
             width: 100%;
         }
 
-            .add-criteria-btn:hover {
-                background: #d4f1d4;
-            }
+            .add-criteria-btn:hover { background: #d4f1d4; }
+
+        /* Competition round cards */
+        .comp-round-card {
+            background: white;
+            border: 1px solid #dce3f0;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+        }
+
+        .comp-round-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+            border-bottom: 1px solid #dce3f0;
+        }
+
+        .comp-round-body { padding: 20px; }
+
+        .round-sub-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            border: 1px solid #eee;
+        }
+
+        .round-sub-section-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .round-criteria-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .round-add-criteria-btn {
+            background: #e8f5e9;
+            color: #22c55e;
+            border: 2px dashed #22c55e;
+            border-radius: 6px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+            .round-add-criteria-btn:hover { background: #d4f1d4; }
 
         /* Summary */
         .summary-section {
@@ -210,15 +256,8 @@
             font-size: 0.95rem;
         }
 
-            .summary-item .label {
-                color: #666;
-                font-weight: 500;
-            }
-
-            .summary-item .value {
-                color: var(--text-dark);
-                font-weight: 600;
-            }
+            .summary-item .label { color: #666; font-weight: 500; }
+            .summary-item .value { color: var(--text-dark); font-weight: 600; }
 
         .validation-errors {
             background: #fee;
@@ -229,14 +268,8 @@
             margin-bottom: 20px;
         }
 
-            .validation-errors ul {
-                margin: 0;
-                padding-left: 20px;
-            }
-
-            .validation-errors li {
-                margin: 5px 0;
-            }
+            .validation-errors ul { margin: 0; padding-left: 20px; }
+            .validation-errors li { margin: 5px 0; }
 
         .btn-container {
             display: flex;
@@ -257,51 +290,18 @@
             transition: all 0.3s;
         }
 
-        .btn-prev {
-            background: #e0e0e0;
-            color: #333;
-        }
+        .btn-prev { background: #e0e0e0; color: #333; }
+            .btn-prev:hover { background: #d0d0d0; }
 
-            .btn-prev:hover {
-                background: #d0d0d0;
-            }
-
-        .btn-next, .btn-submit {
-            background: var(--organizer-accent);
-            color: white;
-        }
-
+        .btn-next, .btn-submit { background: var(--organizer-accent); color: white; }
             .btn-next:hover, .btn-submit:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 16px rgba(var(--organizer-accent-rgb), 0.3);
             }
 
-        .weight-indicator {
-            font-size: 0.85rem;
-            color: #666;
-            text-align: center;
-        }
+        .text-danger { color: #e53e3e; }
 
-        .weight-bar {
-            width: 100%;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-
-        .weight-fill {
-            height: 100%;
-            background: var(--organizer-accent);
-            transition: width 0.3s;
-        }
-
-        .text-danger {
-            color: #e53e3e;
-        }
-
-        /* Upload File Styles */
+        /* File upload */
         .file-upload-area {
             border: 2px dashed #d0d0d0;
             border-radius: 8px;
@@ -312,25 +312,12 @@
             background: #f9f9f9;
         }
 
-            .file-upload-area:hover {
-                border-color: var(--organizer-accent);
-                background: rgba(var(--organizer-accent-rgb), 0.05);
-            }
+            .file-upload-area:hover { border-color: var(--organizer-accent); background: rgba(var(--organizer-accent-rgb), 0.05); }
+            .file-upload-area.dragover { border-color: var(--organizer-accent); background: rgba(var(--organizer-accent-rgb), 0.1); }
 
-            .file-upload-area.dragover {
-                border-color: var(--organizer-accent);
-                background: rgba(var(--organizer-accent-rgb), 0.1);
-            }
+        .file-upload-icon { font-size: 2.5rem; color: var(--organizer-accent); margin-bottom: 10px; }
 
-        .file-upload-icon {
-            font-size: 2.5rem;
-            color: var(--organizer-accent);
-            margin-bottom: 10px;
-        }
-
-        .file-list {
-            margin-top: 20px;
-        }
+        .file-list { margin-top: 20px; }
 
         .file-item {
             background: #f8f9fa;
@@ -343,16 +330,8 @@
             margin-bottom: 10px;
         }
 
-            .file-item .file-info {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .file-item .file-icon {
-                font-size: 1.5rem;
-            }
-
+            .file-item .file-info { display: flex; align-items: center; gap: 10px; }
+            .file-item .file-icon { font-size: 1.5rem; }
             .file-item .file-remove {
                 background: #fee;
                 color: #e53e3e;
@@ -361,21 +340,6 @@
                 padding: 5px 10px;
                 cursor: pointer;
                 font-size: 0.85rem;
-            }
-
-        /* Alert Styles */
-        .alert-warning-custom {
-            background: #fef3c7;
-            border: 1px solid #fbbf24;
-            border-radius: 8px;
-            padding: 12px;
-            color: #92400e;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-            .alert-warning-custom.show {
-                display: block;
             }
 
         .alert-danger-custom {
@@ -388,23 +352,7 @@
             display: none;
         }
 
-            .alert-danger-custom.show {
-                display: block;
-            }
-
-        /* Team Size Section */
-        .team-size-section {
-            display: none;
-            background: #f8f9fa;
-            border-left: 4px solid var(--organizer-accent);
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-            .team-size-section.show {
-                display: block;
-            }
+            .alert-danger-custom.show { display: block; }
 
         .image-preview-grid {
             display: grid;
@@ -420,11 +368,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-            .image-preview-item img {
-                width: 100%;
-                height: 120px;
-                object-fit: cover;
-            }
+            .image-preview-item img { width: 100%; height: 120px; object-fit: cover; }
 
             .image-preview-item .preview-actions {
                 position: absolute;
@@ -445,19 +389,7 @@
                 font-size: 0.8rem;
             }
 
-            .image-preview-item .thumbnail-badge {
-                position: absolute;
-                bottom: 8px;
-                left: 8px;
-                background: var(--organizer-accent);
-                color: white;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 0.75rem;
-                font-weight: bold;
-            }
-
-        /* Sponsor Styles */
+        /* Sponsor */
         .sponsor-item {
             background: white;
             border: 1px solid #e0e0e0;
@@ -476,25 +408,7 @@
             border-bottom: 1px solid #f0f0f0;
         }
 
-        .sponsor-card-title {
-            font-weight: 700;
-            color: var(--text-dark);
-            margin: 0;
-            font-size: 1rem;
-        }
-
-        .sponsor-level-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .level-gold { background: #fef3c7; color: #92400e; }
-        .level-silver { background: #f1f5f9; color: #475569; }
-        .level-bronze { background: #fdf4e8; color: #92480f; }
-        .level-general { background: #ede9fe; color: #5b21b6; }
+        .sponsor-card-title { font-weight: 700; color: var(--text-dark); margin: 0; font-size: 1rem; }
 
         .remove-sponsor-btn {
             background: #fee;
@@ -507,9 +421,7 @@
             transition: all 0.2s;
         }
 
-            .remove-sponsor-btn:hover {
-                background: #fdd;
-            }
+            .remove-sponsor-btn:hover { background: #fdd; }
 
         .add-sponsor-btn {
             background: #eef2ff;
@@ -523,9 +435,7 @@
             width: 100%;
         }
 
-            .add-sponsor-btn:hover {
-                background: #e0e7ff;
-            }
+            .add-sponsor-btn:hover { background: #e0e7ff; }
 
         .sponsor-empty-state {
             text-align: center;
@@ -537,10 +447,7 @@
             margin-bottom: 20px;
         }
 
-        .sponsor-empty-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
+        .sponsor-empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
     </style>
 }
 
@@ -557,29 +464,25 @@
                         </div>
                         <div class="step-item" id="step2-indicator">
                             <div class="step-circle">2</div>
-                            <div class="step-text">Lịch trình</div>
+                            <div class="step-text">Lịch trình & Vòng thi</div>
                         </div>
                         <div class="step-item" id="step3-indicator">
                             <div class="step-circle">3</div>
-                            <div class="step-text">Tiêu chí chấm</div>
+                            <div class="step-text">Ảnh & Tài liệu</div>
                         </div>
                         <div class="step-item" id="step4-indicator">
                             <div class="step-circle">4</div>
-                            <div class="step-text">Ảnh & Tài liệu</div>
+                            <div class="step-text">Nhà tài trợ</div>
                         </div>
                         <div class="step-item" id="step5-indicator">
                             <div class="step-circle">5</div>
-                            <div class="step-text">Nhà tài trợ</div>
-                        </div>
-                        <div class="step-item" id="step6-indicator">
-                            <div class="step-circle">6</div>
                             <div class="step-text">Xác nhận</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Form Content -->
-                <form method="post" asp-action="Create" asp-controller="Organizer" id="createForm" class="form-card">
+                <form method="post" asp-action="Create" asp-controller="Organizer" id="createForm" class="form-card" novalidate>
                     @if (!ViewData.ModelState.IsValid)
                     {
                         <div class="validation-errors" id="serverErrors">
@@ -601,9 +504,7 @@
                         <p class="section-description">Nhập tên, mô tả và thông tin chung về cuộc thi</p>
 
                         <div class="form-group">
-                            <label class="form-label">
-                                Tên cuộc thi <span class="required">*</span>
-                            </label>
+                            <label class="form-label">Tên cuộc thi <span class="required">*</span></label>
                             <input type="text" asp-for="CompetitionName" class="form-control"
                                    placeholder="VD: Hackathon Sinh viên 2026" required>
                             <span asp-validation-for="CompetitionName" class="text-danger"></span>
@@ -613,13 +514,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label">Lĩnh vực <span class="required">*</span></label>
-                                    <select asp-for="Category" class="form-select" required>
-                                        <option value="">-- Chọn lĩnh vực --</option>
-                                        <option value="Học thuật / NCKH">Học thuật / NCKH</option>
-                                        <option value="Công nghệ Thông tin">Công nghệ Thông tin</option>
-                                        <option value="Kỹ năng Mềm">Kỹ năng Mềm</option>
-                                        <option value="Khác">Khác</option>
-                                    </select>
+                                    <input type="text" asp-for="Category" class="form-control"
+                                           placeholder="VD: Công nghệ Thông tin, Học thuật, Kỹ năng mềm...">
                                     <span asp-validation-for="Category" class="text-danger"></span>
                                 </div>
                             </div>
@@ -655,14 +551,13 @@
                         </div>
                     </div>
 
-                    <!-- STEP 2: Lịch trình & Hạn chế -->
+                    <!-- STEP 2: Lịch trình & Vòng thi -->
                     <div class="form-section" id="step2">
                         <div class="section-title">
-                            <i class="bi bi-calendar3 me-2"></i>Lịch trình & Giới hạn tham gia
+                            <i class="bi bi-calendar3 me-2"></i>Lịch trình & Vòng thi
                         </div>
-                        <p class="section-description">Cấu hình các mốc thời gian và số lượng tham gia</p>
+                        <p class="section-description">Cấu hình thời gian tổng, đợt đăng ký và các vòng thi (mỗi vòng có tiêu chí chấm điểm riêng)</p>
 
-                        <!-- Cảnh báo Validation -->
                         <div class="alert-danger-custom" id="step2-error"></div>
 
                         <div class="row">
@@ -687,10 +582,10 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label">Hạn nộp bài <span class="required">*</span></label>
+                                    <label class="form-label">Hạn nộp bài chung <span class="required">*</span></label>
                                     <input type="datetime-local" asp-for="SubmissionDeadline" class="form-control" required onchange="validateDateRange()">
                                     <span asp-validation-for="SubmissionDeadline" class="text-danger"></span>
-                                    <small class="form-text">Hạn cuối để nộp bài (phải ≤ ngày kết thúc)</small>
+                                    <small class="form-text">Hạn nộp bài mặc định (phải ≤ ngày kết thúc)</small>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -762,130 +657,222 @@
 
                         <!-- VÒNG THI -->
                         <div class="section-title" style="font-size:1.1rem; border-bottom-width:2px;">
-                            <i class="bi bi-trophy me-2"></i>Vòng thi <span style="color:#999; font-size:0.85rem; font-weight:400;">(Tùy chọn)</span>
+                            <i class="bi bi-trophy me-2"></i>Vòng thi
+                            <span style="color:#999; font-size:0.85rem; font-weight:400;">(Tùy chọn)</span>
                         </div>
                         <p class="section-description">
-                            Thêm các vòng thi (Sơ khảo, Bán kết, Chung kết). Thứ tự thời gian bắt buộc:
-                            <strong>Hạn nộp bài → Sơ khảo → Bán kết → Chung kết → Ngày kết thúc</strong>
+                            Mỗi vòng thi có hạn nộp bài, yêu cầu nộp bài, hình thức tổ chức và tiêu chí chấm điểm riêng.<br>
+                            Thứ tự thời gian: <strong>Hạn nộp bài chung → Sơ khảo → Bán kết → Chung kết → Ngày kết thúc</strong>
                         </p>
 
                         <div id="compRoundsContainer">
                             @for (int i = 0; i < Model.CompetitionRounds.Count; i++)
                             {
-                                <div class="comp-round-item" data-index="@i"
-                                     style="background:white; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:12px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
-                                    <div>
-                                        <label class="form-label" style="font-size:0.85rem;">Tên vòng</label>
-                                        <input type="hidden" name="CompetitionRounds[@i].RoundOrder" value="@(i+1)">
-                                        <select name="CompetitionRounds[@i].RoundName"
-                                                class="form-select comp-round-name"
-                                                data-value="@Model.CompetitionRounds[i].RoundName" required>
-                                            <option value="Sơ khảo">Sơ khảo</option>
-                                            <option value="Bán kết">Bán kết</option>
-                                            <option value="Chung kết">Chung kết</option>
-                                            <option value="Vòng khác">Vòng khác</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu</label>
-                                        <input type="datetime-local" name="CompetitionRounds[@i].StartDate"
-                                               class="form-control comp-round-start"
-                                               value="@Model.CompetitionRounds[i].StartDate.ToString("yyyy-MM-ddTHH:mm")" required>
-                                    </div>
-                                    <div>
-                                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc</label>
-                                        <input type="datetime-local" name="CompetitionRounds[@i].EndDate"
-                                               class="form-control comp-round-end"
-                                               value="@Model.CompetitionRounds[i].EndDate.ToString("yyyy-MM-ddTHH:mm")" required>
-                                    </div>
-                                    <div>
-                                        <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh được nhận</label>
-                                        <input type="number" name="CompetitionRounds[@i].MaxAdvancing"
-                                               class="form-control" min="1"
-                                               value="@Model.CompetitionRounds[i].MaxAdvancing"
-                                               placeholder="Không giới hạn">
-                                    </div>
-                                    <div style="display:flex; align-items:flex-end;">
+                                var round = Model.CompetitionRounds[i];
+                                <div class="comp-round-item comp-round-card" data-index="@i">
+                                    <!-- Header -->
+                                    <div class="comp-round-header">
+                                        <div style="display:flex; align-items:center; gap:12px;">
+                                            <input type="hidden" name="CompetitionRounds[@i].RoundOrder" value="@(i+1)">
+                                            <i class="bi bi-trophy-fill" style="color:#4f46e5; font-size:1.1rem;"></i>
+                                            <select name="CompetitionRounds[@i].RoundName" class="form-select comp-round-name"
+                                                    style="width:200px; font-weight:600;" data-value="@round.RoundName" required>
+                                                <option value="Sơ khảo">Sơ khảo</option>
+                                                <option value="Bán kết">Bán kết</option>
+                                                <option value="Chung kết">Chung kết</option>
+                                                <option value="Vòng khác">Vòng khác</option>
+                                            </select>
+                                        </div>
                                         <button type="button" class="remove-criteria-btn" onclick="removeCompRound(this)">
-                                            <i class="bi bi-trash"></i>
+                                            <i class="bi bi-trash"></i> Xóa vòng
                                         </button>
+                                    </div>
+
+                                    <div class="comp-round-body">
+                                        <!-- Thời gian -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu <span class="required">*</span></label>
+                                                <input type="datetime-local" name="CompetitionRounds[@i].StartDate"
+                                                       class="form-control comp-round-start"
+                                                       value="@round.StartDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc <span class="required">*</span></label>
+                                                <input type="datetime-local" name="CompetitionRounds[@i].EndDate"
+                                                       class="form-control comp-round-end"
+                                                       value="@round.EndDate.ToString("yyyy-MM-ddTHH:mm")" required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size:0.85rem;">Hạn nộp bài vòng này</label>
+                                                <input type="datetime-local" name="CompetitionRounds[@i].SubmissionDeadline"
+                                                       class="form-control comp-round-sub-deadline"
+                                                       value="@(round.SubmissionDeadline?.ToString("yyyy-MM-ddTHH:mm") ?? "")">
+                                                <small class="form-text">Để trống = dùng hạn chung</small>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh vào vòng sau</label>
+                                                <input type="number" name="CompetitionRounds[@i].MaxAdvancing"
+                                                       class="form-control" min="1"
+                                                       value="@round.MaxAdvancing"
+                                                       placeholder="Không giới hạn">
+                                            </div>
+                                        </div>
+
+                                        <!-- Yêu cầu nộp bài -->
+                                        <div class="round-sub-section">
+                                            <div class="round-sub-section-title">📋 Yêu cầu nộp bài của thí sinh:</div>
+                                            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                                                <div class="form-check">
+                                                    <input type="hidden" name="CompetitionRounds[@i].RequiresFile" value="false">
+                                                    <input type="checkbox" name="CompetitionRounds[@i].RequiresFile"
+                                                           class="form-check-input" value="true" @(round.RequiresFile ? "checked" : "")>
+                                                    <label class="form-check-label" style="font-size:0.9rem;">📁 File đính kèm</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input type="hidden" name="CompetitionRounds[@i].RequiresVideo" value="false">
+                                                    <input type="checkbox" name="CompetitionRounds[@i].RequiresVideo"
+                                                           class="form-check-input" value="true" @(round.RequiresVideo ? "checked" : "")>
+                                                    <label class="form-check-label" style="font-size:0.9rem;">🎬 Link video</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input type="hidden" name="CompetitionRounds[@i].RequiresOtherLink" value="false">
+                                                    <input type="checkbox" name="CompetitionRounds[@i].RequiresOtherLink"
+                                                           class="form-check-input" value="true" @(round.RequiresOtherLink ? "checked" : "")>
+                                                    <label class="form-check-label" style="font-size:0.9rem;">🔗 Link khác</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Hình thức tổ chức -->
+                                        <div class="round-sub-section" style="background:#f0f4ff; border-color:#dce3f0;">
+                                            <div style="display:flex; align-items:center; gap:14px; margin-bottom:10px;">
+                                                <span class="round-sub-section-title" style="margin-bottom:0;">📍 Hình thức tổ chức:</span>
+                                                <div class="form-check form-switch mb-0">
+                                                    <input type="hidden" name="CompetitionRounds[@i].IsOnline" value="false">
+                                                    <input type="checkbox" name="CompetitionRounds[@i].IsOnline"
+                                                           class="form-check-input comp-round-isonline" value="true"
+                                                           @(round.IsOnline ? "checked" : "")
+                                                           onchange="toggleRoundOnline(this)">
+                                                    <label class="form-check-label" style="font-size:0.9rem; font-weight:600;">Thi / thuyết trình online</label>
+                                                </div>
+                                            </div>
+                                            <div class="round-online-section" style="@(round.IsOnline ? "" : "display:none;")">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label" style="font-size:0.85rem;">🔗 Link tham dự (Zoom / Meet...)</label>
+                                                        <input type="text" name="CompetitionRounds[@i].MeetingLink"
+                                                               class="form-control" placeholder="https://meet.google.com/..."
+                                                               value="@round.MeetingLink">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label" style="font-size:0.85rem;">🕐 Thời gian họp / thuyết trình</label>
+                                                        <input type="datetime-local" name="CompetitionRounds[@i].MeetingTime"
+                                                               class="form-control"
+                                                               value="@(round.MeetingTime?.ToString("yyyy-MM-ddTHH:mm") ?? "")">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="round-offline-section" style="@(round.IsOnline ? "display:none;" : "")">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label" style="font-size:0.85rem;">🏢 Địa điểm thi (offline)</label>
+                                                        <input type="text" name="CompetitionRounds[@i].Location"
+                                                               class="form-control" placeholder="VD: Hội trường A, Tòa nhà B, Trường ĐH..."
+                                                               value="@round.Location">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tiêu chí chấm điểm -->
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                                <strong style="font-size:0.9rem; color:var(--text-dark);">⭐ Tiêu chí chấm điểm của vòng này:</strong>
+                                                <div style="font-size:0.82rem; color:#666;">
+                                                    Tổng trọng số: <span class="round-weight-display fw-bold">
+                                                        @{
+                                                            var tw = round.ScoringCriteria.Any() ? (double)round.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+                                                        }
+                                                        @tw.ToString("0.0")
+                                                    </span>%
+                                                    <span class="round-weight-status ms-1">
+                                                        @if (round.ScoringCriteria.Any())
+                                                        {
+                                                            if (Math.Abs(tw - 100.0) <= 0.1)
+                                                            {
+                                                                <span style="color:#22c55e;">✓ Đúng</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span style="color:#ef4444;">❌ Sai</span>
+                                                            }
+                                                        }
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="round-criteria-container" style="background:#f8f9fa; border-radius:6px; padding:12px; min-height:48px;">
+                                                @for (int j = 0; j < round.ScoringCriteria.Count; j++)
+                                                {
+                                                    var crit = round.ScoringCriteria[j];
+                                                    <div class="round-criteria-item">
+                                                        <div>
+                                                            <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Tên tiêu chí</label>
+                                                            <input type="hidden" name="CompetitionRounds[@i].ScoringCriteria[@j].Order" value="@(j+1)">
+                                                            <input type="text" name="CompetitionRounds[@i].ScoringCriteria[@j].CriteriaName"
+                                                                   class="form-control" placeholder="VD: Sáng tạo, Kỹ thuật..."
+                                                                   value="@crit.CriteriaName" style="font-size:0.9rem;">
+                                                        </div>
+                                                        <div>
+                                                            <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Điểm tối đa</label>
+                                                            <input type="number" name="CompetitionRounds[@i].ScoringCriteria[@j].MaxScore"
+                                                                   class="form-control" min="1" step="0.1"
+                                                                   value="@crit.MaxScore" style="font-size:0.9rem;">
+                                                        </div>
+                                                        <div>
+                                                            <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Trọng số (%)</label>
+                                                            <div class="input-group">
+                                                                <input type="number" class="form-control round-criteria-weight-input"
+                                                                       value="@((crit.Weight * 100).ToString("0.0"))" min="0" max="100" step="0.1"
+                                                                       onchange="updateRoundWeight(this.closest('.comp-round-item'))"
+                                                                       oninput="updateRoundWeight(this.closest('.comp-round-item'))"
+                                                                       style="font-size:0.9rem;">
+                                                                <input type="hidden" name="CompetitionRounds[@i].ScoringCriteria[@j].Weight"
+                                                                       class="round-criteria-weight-value" value="@crit.Weight">
+                                                                <span class="input-group-text" style="font-size:0.85rem;">%</span>
+                                                            </div>
+                                                        </div>
+                                                        <div style="display:flex; align-items:flex-end;">
+                                                            <button type="button" class="remove-criteria-btn" onclick="removeRoundCriteria(this)">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <button type="button" class="round-add-criteria-btn" onclick="addRoundCriteria(this)">
+                                                <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí chấm điểm
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             }
                         </div>
 
-                        <button type="button" class="add-criteria-btn mt-2" id="addCompRoundBtn" onclick="addCompRound()" style="background:#e8f4ff; color:#0d6efd; border-color:#0d6efd;">
+                        <button type="button" class="add-criteria-btn mt-2" id="addCompRoundBtn" onclick="addCompRound()"
+                                style="background:#e8f4ff; color:#0d6efd; border-color:#0d6efd;">
                             <i class="bi bi-plus-circle me-2"></i>Thêm vòng thi
                         </button>
                         <small class="form-text d-block mt-2">Tối đa 3 vòng: Sơ khảo → Bán kết → Chung kết</small>
                     </div>
 
-                    <!-- STEP 3: Tiêu chí chấm điểm -->
+                    <!-- STEP 3: Ảnh & Tài liệu -->
                     <div class="form-section" id="step3">
-                        <div class="section-title">
-                            <i class="bi bi-bar-chart me-2"></i>Tiêu chí chấm điểm
-                        </div>
-                        <p class="section-description">Cấu hình các tiêu chí đánh giá (Tổng trọng số phải = 100%)</p>
-
-                        <div class="criteria-list" id="criteriaContainer">
-                            @for (int i = 0; i < Model.ScoringCriteria.Count; i++)
-                            {
-                                <div class="criteria-item" data-index="@i">
-                                    <div>
-                                        <input type="hidden" name="ScoringCriteria[@i].Order" value="@Model.ScoringCriteria[i].Order">
-                                        <input type="text" name="ScoringCriteria[@i].CriteriaName" class="form-control criteria-name"
-                                               placeholder="VD: Ý tưởng" value="@Model.ScoringCriteria[i].CriteriaName" required>
-                                    </div>
-                                    <div>
-                                        <input type="number" name="ScoringCriteria[@i].MaxScore" class="form-control criteria-score"
-                                               placeholder="Điểm tối đa" value="@Model.ScoringCriteria[i].MaxScore" min="1" step="0.1" required>
-                                    </div>
-                                    <div>
-                                        <div class="input-group">
-                                            <!-- Input hiển thị % cho người dùng nhập -->
-                                            <input type="number" class="form-control criteria-weight-input"
-                                                   placeholder="%" value="@((Model.ScoringCriteria[i].Weight * 100).ToString(System.Globalization.CultureInfo.InvariantCulture))"
-                                                   min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                            <!-- Hidden input để lưu giá trị decimal (0.0-1.0) -->
-                                            <input type="hidden"
-                                                   name="ScoringCriteria[@i].Weight"
-                                                   class="criteria-weight-value"
-                                                   value="@Model.ScoringCriteria[i].Weight.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                                            <span class="input-group-text">%</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
-                                            <i class="bi bi-trash"></i> Xóa
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-
-                        <button type="button" class="add-criteria-btn mt-3" onclick="addCriteria()">
-                            <i class="bi bi-plus-circle me-2"></i>Thêm tiêu chí
-                        </button>
-
-                        <div class="mt-3">
-                            <div class="weight-indicator">
-                                Tổng trọng số: <strong id="totalWeight">100</strong>%
-                                <span id="weightStatus" style="margin-left: 10px; font-weight: bold;"></span>
-                            </div>
-                            <div class="weight-bar">
-                                <div class="weight-fill" id="weightFill"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- STEP 4: Ảnh & Tài liệu -->
-                    <div class="form-section" id="step4">
                         <div class="section-title">
                             <i class="bi bi-images me-2"></i>Ảnh & Tài liệu cuộc thi
                         </div>
                         <p class="section-description">Thêm banner, ảnh, và tài liệu (Không bắt buộc - có thể thêm sau)</p>
 
-                        <!-- PHẦN 1: ẢNH CUỘC THI -->
                         <div class="mt-4">
                             <h5 class="fw-bold mb-3">📸 Ảnh Cuộc Thi</h5>
                             <div class="file-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
@@ -894,46 +881,33 @@
                                 <small style="color: #999;">Hỗ trợ: JPG, PNG, GIF (Max 5MB)</small>
                                 <input type="file" id="imageInput" accept="image/*" style="display:none" multiple onchange="handleImageSelect()">
                             </div>
-                            <small class="form-text d-block mt-2">
-                                💡 Mẹo: Hình ảnh đầu tiên sẽ được đặt làm ảnh đại diện (thumbnail)
-                            </small>
-
-                            <!-- Xem trước ảnh -->
-                            <div class="image-preview-grid" id="imagePreviewGrid" style="display:none;">
-                            </div>
-
-                            <!-- Danh sách ảnh đã chọn -->
+                            <small class="form-text d-block mt-2">💡 Hình ảnh đầu tiên sẽ được đặt làm ảnh đại diện (thumbnail)</small>
+                            <div class="image-preview-grid" id="imagePreviewGrid" style="display:none;"></div>
                             <div class="file-list" id="imageFileList"></div>
                         </div>
 
                         <hr class="my-4">
 
-                        <!-- PHẦN 2: TÀI LIỆU LUẬT LỆ & THỂ LỆ -->
                         <div class="mt-4">
                             <h5 class="fw-bold mb-3">📄 Tài Liệu Luật Lệ (Không bắt buộc)</h5>
-                            <p style="color: #666; font-size: 0.9rem;">
-                                Cho phép ban tổ chức tải lên file PDF hoặc tài liệu khác để chia sẻ thể lệ, quy định với thí sinh
-                            </p>
-
+                            <p style="color: #666; font-size: 0.9rem;">Cho phép ban tổ chức tải lên file PDF hoặc tài liệu để chia sẻ thể lệ với thí sinh</p>
                             <div class="file-upload-area" id="documentUploadArea" onclick="document.getElementById('documentInput').click()">
                                 <div class="file-upload-icon">📋</div>
                                 <p><strong>Kéo thả file hoặc nhấp để chọn</strong></p>
                                 <small style="color: #999;">Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 10MB)</small>
                                 <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none" multiple onchange="handleDocumentSelect()">
                             </div>
-
-                            <!-- Danh sách tài liệu đã chọn -->
                             <div class="file-list" id="documentFileList" style="margin-top: 20px;"></div>
                         </div>
 
                         <div class="alert alert-info mt-4">
                             <i class="bi bi-info-circle me-2"></i>
-                            <strong>Lưu ý:</strong> Ảnh và tài liệu được thêm ở đây sẽ được tải lên sau khi cuộc thi được tạo. Bạn cũng có thể thêm chúng sau đó bằng chế độ chỉnh sửa.
+                            <strong>Lưu ý:</strong> Ảnh và tài liệu sẽ được tải lên sau khi cuộc thi được tạo. Bạn cũng có thể thêm sau trong chế độ chỉnh sửa.
                         </div>
                     </div>
 
-                    <!-- STEP 5: Nhà tài trợ -->
-                    <div class="form-section" id="step5">
+                    <!-- STEP 4: Nhà tài trợ -->
+                    <div class="form-section" id="step4">
                         <div class="section-title">
                             <i class="bi bi-building me-2"></i>Nhà tài trợ
                         </div>
@@ -1051,12 +1025,11 @@
                         <div class="alert alert-info mt-4">
                             <i class="bi bi-info-circle me-2"></i>
                             Nhà tài trợ được thêm ở đây sẽ được liên kết với cuộc thi ngay khi tạo.
-                            Bạn cũng có thể thêm hoặc sửa sau trong chế độ chỉnh sửa.
                         </div>
                     </div>
 
-                    <!-- STEP 6: Xác nhận -->
-                    <div class="form-section" id="step6">
+                    <!-- STEP 5: Xác nhận -->
+                    <div class="form-section" id="step5">
                         <div class="section-title">
                             <i class="bi bi-check-circle me-2"></i>Xác nhận thông tin
                         </div>
@@ -1093,29 +1066,29 @@
                                 <span class="value" id="summary-reg-deadline">-</span>
                             </div>
                             <div class="summary-item">
-                                <span class="label">Hạn nộp bài:</span>
+                                <span class="label">Hạn nộp bài chung:</span>
                                 <span class="value" id="summary-sub-deadline">-</span>
                             </div>
                         </div>
 
                         <div class="summary-section">
-                            <h6 class="fw-bold mb-3">Tiêu chí chấm điểm</h6>
-                            <div id="summary-criteria">
-                                <!-- Sẽ được điền bởi JavaScript -->
+                            <h6 class="fw-bold mb-3">Vòng thi & Tiêu chí chấm điểm</h6>
+                            <div id="summary-rounds">
+                                <!-- Điền bởi JavaScript -->
                             </div>
                         </div>
 
                         <div class="summary-section">
                             <h6 class="fw-bold mb-3">Nhà tài trợ</h6>
                             <div id="summary-sponsors">
-                                <!-- Sẽ được điền bởi JavaScript -->
+                                <!-- Điền bởi JavaScript -->
                             </div>
                         </div>
 
                         <div class="alert alert-info mt-3">
                             <i class="bi bi-info-circle me-2"></i>
                             Cuộc thi sẽ được tạo ở trạng thái <strong>Nháp (Draft)</strong>.
-                            Bạn có thể chỉnh sửa thông tin sau khi tạo và kích hoạt cuộc thi bất cứ lúc nào.
+                            Bạn có thể chỉnh sửa và kích hoạt bất cứ lúc nào.
                         </div>
                     </div>
 
@@ -1140,22 +1113,14 @@
 @section Scripts {
     <script>
         let currentStep = 1;
-        const totalSteps = 6;
+        const totalSteps = 5;
         let selectedImages = [];
         let selectedDocuments = [];
-        let sponsorCount = 0;
 
+        // ===== ĐIỀU HƯỚNG BƯỚC =====
         function changeStep(direction) {
-            // Validate current step before moving
-            if (direction > 0 && !validateStep(currentStep)) {
-                return;
-            }
-
-            // Cập nhật giá trị hidden fields trước khi chuyển bước
-            if (currentStep === 3) {
-                updateHiddenWeightValues();
-            }
-
+            if (direction > 0 && !validateStep(currentStep)) return;
+            if (currentStep === 2 && direction > 0) updateAllRoundHiddenWeights();
             currentStep += direction;
             updateStepDisplay();
             updateSummary();
@@ -1163,31 +1128,22 @@
         }
 
         function updateStepDisplay() {
-            // Hide all sections
             document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
-
-            // Show current section
             document.getElementById(`step${currentStep}`).classList.add('active');
 
-            // Update indicators
             document.querySelectorAll('.step-item').forEach((el, idx) => {
-                const stepNum = idx + 1;
                 el.classList.remove('active', 'completed');
-                if (stepNum < currentStep) {
-                    el.classList.add('completed');
-                } else if (stepNum === currentStep) {
-                    el.classList.add('active');
-                }
+                const stepNum = idx + 1;
+                if (stepNum < currentStep) el.classList.add('completed');
+                else if (stepNum === currentStep) el.classList.add('active');
             });
 
-            // Update buttons
             document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'block';
             document.getElementById('nextBtn').style.display = currentStep === totalSteps ? 'none' : 'block';
             document.getElementById('submitBtn').style.display = currentStep === totalSteps ? 'block' : 'none';
         }
 
         function validateStep(step) {
-            const form = document.getElementById('createForm');
             if (step === 1) {
                 const name = document.querySelector('[name="CompetitionName"]').value;
                 const category = document.querySelector('[name="Category"]').value;
@@ -1197,18 +1153,30 @@
                 }
             }
             if (step === 2) {
-                return validateDateRange();
-            }
-            if (step === 3) {
-                const totalWeight = parseFloat(document.getElementById('totalWeight').textContent);
-                if (Math.abs(totalWeight - 100) > 0.1) {
-                    alert('❌ Tổng trọng số phải bằng 100%');
-                    return false;
+                if (!validateDateRange()) return false;
+
+                // Kiểm tra trọng số tiêu chí mỗi vòng
+                const roundWeightIssues = [];
+                document.querySelectorAll('#compRoundsContainer .comp-round-item').forEach((roundCard, i) => {
+                    const container = roundCard.querySelector('.round-criteria-container');
+                    if (!container) return;
+                    const criteriaItems = container.querySelectorAll('.round-criteria-item');
+                    if (criteriaItems.length === 0) return;
+                    const totalW = Array.from(container.querySelectorAll('.round-criteria-weight-input'))
+                        .map(el => parseFloat(el.value) || 0).reduce((a, b) => a + b, 0);
+                    const roundName = roundCard.querySelector('.comp-round-name')?.value || `Vòng ${i + 1}`;
+                    if (Math.abs(totalW - 100) > 0.1)
+                        roundWeightIssues.push(`Vòng "${roundName}": Tổng = ${totalW.toFixed(1)}% (cần 100%)`);
+                });
+                if (roundWeightIssues.length > 0) {
+                    const msg = '⚠️ Tổng trọng số tiêu chí chưa đúng:\n' + roundWeightIssues.join('\n') + '\n\nBạn có muốn tiếp tục?';
+                    if (!confirm(msg)) return false;
                 }
             }
             return true;
         }
 
+        // ===== VALIDATE THỜI GIAN =====
         function validateDateRange() {
             const errorDiv = document.getElementById('step2-error');
             errorDiv.classList.remove('show');
@@ -1217,24 +1185,20 @@
             const startVal = document.querySelector('[name="StartDate"]').value;
             const endVal   = document.querySelector('[name="EndDate"]').value;
             const subVal   = document.querySelector('[name="SubmissionDeadline"]').value;
-
-            const errors = [];
+            const errors   = [];
             let start, end, sub;
 
             if (!startVal || !endVal || !subVal) {
-                errors.push('Vui lòng điền đầy đủ: Ngày bắt đầu, Ngày kết thúc, Hạn nộp bài');
+                errors.push('Vui lòng điền đầy đủ: Ngày bắt đầu, Ngày kết thúc, Hạn nộp bài chung');
             } else {
                 start = new Date(startVal);
                 end   = new Date(endVal);
                 sub   = new Date(subVal);
-
-                if (end <= start)
-                    errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
-                if (sub > end)
-                    errors.push('❌ Hạn nộp bài phải trước hoặc bằng ngày kết thúc');
+                if (end <= start) errors.push('❌ Ngày kết thúc phải sau ngày bắt đầu');
+                if (sub > end)    errors.push('❌ Hạn nộp bài chung phải trước hoặc bằng ngày kết thúc');
             }
 
-            // Validate đợt đăng ký
+            // Đợt đăng ký
             const roundRows = document.querySelectorAll('#roundsContainer .criteria-item');
             if (roundRows.length === 0) {
                 errors.push('❌ Phải có ít nhất một đợt đăng ký');
@@ -1242,92 +1206,67 @@
                 roundRows.forEach((row, i) => {
                     const rStart = row.querySelector('.round-start').value;
                     const rEnd   = row.querySelector('.round-end').value;
-                    const rName  = row.querySelector('[name$=".RoundName"]').value || `Đợt ${i+1}`;
+                    const rName  = row.querySelector('[name$=".RoundName"]').value || `Đợt ${i + 1}`;
                     if (!rStart || !rEnd) {
                         errors.push(`❌ ${rName}: Vui lòng điền đầy đủ ngày`);
                     } else {
-                        const rs = new Date(rStart);
-                        const re = new Date(rEnd);
-                        if (re <= rs)
-                            errors.push(`❌ ${rName}: Ngày kết thúc phải sau ngày bắt đầu`);
-                        if (start && re > start)
-                            errors.push(`❌ ${rName}: Hạn đăng ký phải trước ngày bắt đầu cuộc thi`);
+                        const rs = new Date(rStart), re = new Date(rEnd);
+                        if (re <= rs) errors.push(`❌ ${rName}: Ngày kết thúc phải sau ngày bắt đầu`);
+                        if (start && re > start) errors.push(`❌ ${rName}: Hạn đăng ký phải trước ngày bắt đầu cuộc thi`);
                     }
                 });
-
-                const regTimes = Array.from(roundRows).map(row => ({
-                    name:  row.querySelector('[name$=".RoundName"]').value,
-                    start: new Date(row.querySelector('.round-start').value),
-                    end:   new Date(row.querySelector('.round-end').value)
-                })).filter(r => r.start && r.end).sort((a, b) => a.start - b.start);
-
+                const regTimes = Array.from(roundRows)
+                    .map(row => ({ name: row.querySelector('[name$=".RoundName"]').value, start: new Date(row.querySelector('.round-start').value), end: new Date(row.querySelector('.round-end').value) }))
+                    .filter(r => !isNaN(r.start) && !isNaN(r.end)).sort((a, b) => a.start - b.start);
                 for (let i = 1; i < regTimes.length; i++) {
-                    if (regTimes[i].start <= regTimes[i-1].end)
-                        errors.push(`❌ Đợt "${regTimes[i].name}" chồng chéo với "${regTimes[i-1].name}"`);
+                    if (regTimes[i].start <= regTimes[i - 1].end)
+                        errors.push(`❌ Đợt "${regTimes[i].name}" chồng chéo với "${regTimes[i - 1].name}"`);
                 }
             }
 
-            // Validate vòng thi (nếu có)
+            // Vòng thi
             const compRoundRows = document.querySelectorAll('#compRoundsContainer .comp-round-item');
             if (compRoundRows.length > 0 && sub && end) {
                 const crTimes = Array.from(compRoundRows).map((row, i) => ({
-                    name:  row.querySelector('.comp-round-name')?.value || `Vòng ${i+1}`,
+                    name:  row.querySelector('.comp-round-name')?.value || `Vòng ${i + 1}`,
                     start: new Date(row.querySelector('.comp-round-start').value),
                     end:   new Date(row.querySelector('.comp-round-end').value)
-                })).filter(r => r.start && r.end).sort((a, b) => a.start - b.start);
+                })).filter(r => !isNaN(r.start) && !isNaN(r.end)).sort((a, b) => a.start - b.start);
 
                 crTimes.forEach(r => {
-                    if (isNaN(r.start) || isNaN(r.end))
-                        errors.push(`❌ Vòng "${r.name}": Vui lòng điền đầy đủ ngày`);
-                    else if (r.end <= r.start)
-                        errors.push(`❌ Vòng "${r.name}": Ngày kết thúc phải sau ngày bắt đầu`);
+                    if (r.end <= r.start) errors.push(`❌ Vòng "${r.name}": Ngày kết thúc phải sau ngày bắt đầu`);
                 });
-
-                if (crTimes.length > 0 && !isNaN(crTimes[0].start)) {
-                    if (crTimes[0].start < sub)
-                        errors.push(`❌ Vòng "${crTimes[0].name}": Phải bắt đầu sau hạn nộp bài`);
-                }
-
+                if (crTimes.length > 0 && !isNaN(crTimes[0].start) && crTimes[0].start < sub)
+                    errors.push(`❌ Vòng "${crTimes[0].name}": Phải bắt đầu sau hạn nộp bài chung`);
                 for (let i = 1; i < crTimes.length; i++) {
-                    if (!isNaN(crTimes[i].start) && !isNaN(crTimes[i-1].end)) {
-                        if (crTimes[i].start < crTimes[i-1].end)
-                            errors.push(`❌ Vòng "${crTimes[i].name}": Phải bắt đầu sau khi vòng "${crTimes[i-1].name}" kết thúc`);
-                    }
+                    if (crTimes[i].start < crTimes[i - 1].end)
+                        errors.push(`❌ Vòng "${crTimes[i].name}": Phải bắt đầu sau khi vòng "${crTimes[i - 1].name}" kết thúc`);
                 }
-
                 const lastRound = crTimes[crTimes.length - 1];
-                if (lastRound && !isNaN(lastRound.end) && lastRound.end > end)
+                if (lastRound && lastRound.end > end)
                     errors.push(`❌ Vòng "${lastRound.name}": Phải kết thúc trước ngày kết thúc cuộc thi`);
             }
 
             if (errors.length > 0) {
-                errorDiv.innerHTML = '<strong>⚠️ Lỗi thời gian:</strong><ul>' +
-                    errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                errorDiv.innerHTML = '<strong>⚠️ Lỗi thời gian:</strong><ul>' + errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
                 errorDiv.classList.add('show');
                 return false;
             }
-
             return true;
         }
 
+        // ===== SUMMARY =====
         function updateSummary() {
             if (currentStep !== totalSteps) return;
+            updateAllRoundHiddenWeights();
 
-            updateHiddenWeightValues();
+            document.getElementById('summary-name').textContent     = document.querySelector('[name="CompetitionName"]').value;
+            document.getElementById('summary-category').textContent  = document.querySelector('[name="Category"]').value;
+            document.getElementById('summary-type').textContent      = document.querySelector('[name="IsTeamBased"]').checked ? 'Theo đội' : 'Cá nhân';
+            document.getElementById('summary-start').textContent     = new Date(document.querySelector('[name="StartDate"]').value).toLocaleString('vi-VN');
+            document.getElementById('summary-end').textContent       = new Date(document.querySelector('[name="EndDate"]').value).toLocaleString('vi-VN');
+            document.getElementById('summary-sub-deadline').textContent = new Date(document.querySelector('[name="SubmissionDeadline"]').value).toLocaleString('vi-VN');
 
-            document.getElementById('summary-name').textContent = document.querySelector('[name="CompetitionName"]').value;
-            document.getElementById('summary-category').textContent = document.querySelector('[name="Category"]').value;
-            document.getElementById('summary-type').textContent = document.querySelector('[name="IsTeamBased"]').checked ? 'Theo đội' : 'Cá nhân';
-
-            const startDate   = new Date(document.querySelector('[name="StartDate"]').value);
-            const endDate     = new Date(document.querySelector('[name="EndDate"]').value);
-            const subDeadline = new Date(document.querySelector('[name="SubmissionDeadline"]').value);
-
-            document.getElementById('summary-start').textContent = startDate.toLocaleString('vi-VN');
-            document.getElementById('summary-end').textContent = endDate.toLocaleString('vi-VN');
-            document.getElementById('summary-sub-deadline').textContent = subDeadline.toLocaleString('vi-VN');
-
-            // Đợt đăng ký
             const roundRows = document.querySelectorAll('#roundsContainer .criteria-item');
             let regDeadlineText = '—';
             if (roundRows.length > 0) {
@@ -1337,124 +1276,58 @@
             }
             document.getElementById('summary-reg-deadline').textContent = regDeadlineText;
 
-            // Tiêu chí chấm điểm
-            const criteriaHtml = Array.from(document.querySelectorAll('#criteriaContainer .criteria-item')).map((item) => {
-                const name     = item.querySelector('.criteria-name')?.value || '';
-                const maxScore = item.querySelector('.criteria-score')?.value || '';
-                const weight   = item.querySelector('.criteria-weight-input')?.value || '';
-                return `<div class="summary-item">
-                    <span class="label">${name}:</span>
-                    <span class="value">${maxScore} điểm (${weight}%)</span>
-                </div>`;
-            }).join('');
+            // Vòng thi + tiêu chí
+            const compRounds = document.querySelectorAll('#compRoundsContainer .comp-round-item');
+            let roundsHtml = '';
+            if (compRounds.length === 0) {
+                roundsHtml = '<p class="text-muted mb-0" style="font-size:0.9rem;">Không có vòng thi</p>';
+            } else {
+                compRounds.forEach((roundCard, i) => {
+                    const roundName = roundCard.querySelector('.comp-round-name')?.value || `Vòng ${i + 1}`;
+                    const startEl   = roundCard.querySelector('.comp-round-start');
+                    const endEl     = roundCard.querySelector('.comp-round-end');
+                    const isOnline  = roundCard.querySelector('.comp-round-isonline')?.checked;
+                    const location  = roundCard.querySelector('[name$=".Location"]')?.value;
+                    const meetLink  = roundCard.querySelector('[name$=".MeetingLink"]')?.value;
+                    const container = roundCard.querySelector('.round-criteria-container');
+                    const criteriaItems = container?.querySelectorAll('.round-criteria-item') || [];
 
-            document.getElementById('summary-criteria').innerHTML = criteriaHtml;
+                    roundsHtml += `<div style="margin-bottom:14px; padding:12px; background:white; border-radius:6px; border:1px solid #e0e0e0;">`;
+                    roundsHtml += `<div style="font-weight:700; color:var(--text-dark); margin-bottom:6px;">🏆 ${roundName}</div>`;
+                    if (startEl?.value) roundsHtml += `<div style="font-size:0.85rem; color:#666; margin-bottom:4px;">📅 ${new Date(startEl.value).toLocaleString('vi-VN')} → ${new Date(endEl.value).toLocaleString('vi-VN')}</div>`;
+                    if (isOnline && meetLink) roundsHtml += `<div style="font-size:0.85rem; color:#4f46e5; margin-bottom:4px;">🔗 Online: ${meetLink}</div>`;
+                    if (!isOnline && location) roundsHtml += `<div style="font-size:0.85rem; color:#666; margin-bottom:4px;">📍 ${location}</div>`;
+
+                    if (criteriaItems.length === 0) {
+                        roundsHtml += `<div style="font-size:0.85rem; color:#999; font-style:italic;">Chưa có tiêu chí chấm điểm</div>`;
+                    } else {
+                        criteriaItems.forEach(item => {
+                            const name     = item.querySelector('[name$=".CriteriaName"]')?.value || '';
+                            const maxScore = item.querySelector('[name$=".MaxScore"]')?.value || '';
+                            const weight   = item.querySelector('.round-criteria-weight-input')?.value || '0';
+                            roundsHtml += `<div style="font-size:0.85rem; display:flex; justify-content:space-between; padding:3px 0; border-top:1px solid #f0f0f0;">
+                                <span style="color:#666;">${name}</span>
+                                <span style="font-weight:600;">${maxScore} điểm (${weight}%)</span>
+                            </div>`;
+                        });
+                    }
+                    roundsHtml += `</div>`;
+                });
+            }
+            document.getElementById('summary-rounds').innerHTML = roundsHtml;
 
             // Nhà tài trợ
             const sponsorItems = document.querySelectorAll('#sponsorContainer .sponsor-item');
             const levelLabels = { Gold: 'Vàng', Silver: 'Bạc', Bronze: 'Đồng', General: 'Đồng hành' };
             if (sponsorItems.length > 0) {
-                const sponsorHtml = Array.from(sponsorItems).map((item, idx) => {
+                document.getElementById('summary-sponsors').innerHTML = Array.from(sponsorItems).map((item, idx) => {
                     const name = item.querySelector('.sponsor-name').value || '(Chưa có tên)';
                     const level = item.querySelector('.sponsor-level').value;
-                    return `<div class="summary-item">
-                        <span class="label">Nhà tài trợ ${idx + 1}:</span>
-                        <span class="value">${name} &mdash; <em>${levelLabels[level] || level}</em></span>
-                    </div>`;
+                    return `<div class="summary-item"><span class="label">Nhà tài trợ ${idx + 1}:</span><span class="value">${name} — <em>${levelLabels[level] || level}</em></span></div>`;
                 }).join('');
-                document.getElementById('summary-sponsors').innerHTML = sponsorHtml;
             } else {
-                document.getElementById('summary-sponsors').innerHTML =
-                    '<p class="text-muted mb-0" style="font-size:0.9rem;">Không có nhà tài trợ</p>';
+                document.getElementById('summary-sponsors').innerHTML = '<p class="text-muted mb-0" style="font-size:0.9rem;">Không có nhà tài trợ</p>';
             }
-        }
-
-        function addCriteria() {
-            const container = document.getElementById('criteriaContainer');
-            const index = container.children.length;
-
-            const html = `
-                <div class="criteria-item" data-index="${index}">
-                    <div>
-                        <input type="hidden" name="ScoringCriteria[${index}].Order" value="${index + 1}">
-                        <input type="text" name="ScoringCriteria[${index}].CriteriaName" class="form-control criteria-name"
-                               placeholder="Tên tiêu chí" required>
-                    </div>
-                    <div>
-                        <input type="number" name="ScoringCriteria[${index}].MaxScore" class="form-control criteria-score"
-                               placeholder="Điểm" value="100" min="1" step="0.1" required>
-                    </div>
-                    <div>
-                        <div class="input-group">
-                            <input type="number" class="form-control criteria-weight-input"
-                                   placeholder="%" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                            <input type="hidden" name="ScoringCriteria[${index}].Weight" class="criteria-weight-value">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
-                    <div>
-                        <button type="button" class="remove-criteria-btn" onclick="removeCriteria(this)">
-                            <i class="bi bi-trash"></i> Xóa
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            container.insertAdjacentHTML('beforeend', html);
-            updateTotalWeight();
-        }
-
-        function removeCriteria(btn) {
-            btn.closest('.criteria-item').remove();
-            reindexCriteria();
-            updateTotalWeight();
-        }
-
-        function updateTotalWeight() {
-            // Lấy giá trị từ các input hiển thị (%)
-            const weights = Array.from(document.querySelectorAll('.criteria-weight-input'))
-                .map(el => parseFloat(el.value) || 0)
-                .reduce((a, b) => a + b, 0);
-
-            // Hiển thị tổng %
-            document.getElementById('totalWeight').textContent = weights.toFixed(1);
-
-            // Cập nhật thanh progress
-            const percentage = Math.min(100, Math.max(0, weights));
-            document.getElementById('weightFill').style.width = percentage + '%';
-
-            // Đổi màu dựa trên đúng/sai
-            const fillElement = document.getElementById('weightFill');
-            const statusElement = document.getElementById('weightStatus');
-
-            if (Math.abs(weights - 100) > 0.1) {
-                fillElement.style.background = '#ef4444'; // Đỏ nếu sai
-                statusElement.textContent = '❌ Sai';
-                statusElement.style.color = '#ef4444';
-            } else {
-                fillElement.style.background = 'var(--organizer-accent)'; // Xanh nếu đúng
-                statusElement.textContent = '✓ Đúng';
-                statusElement.style.color = '#22c55e';
-            }
-        }
-
-        function updateHiddenWeightValues() {
-            document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item) => {
-                const inputDisplay = item.querySelector('.criteria-weight-input');
-                const inputHidden  = item.querySelector('.criteria-weight-value');
-                if (!inputDisplay || !inputHidden) return;
-                inputHidden.value = (parseFloat(inputDisplay.value) / 100 || 0).toFixed(4);
-            });
-        }
-
-        function reindexCriteria() {
-            document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item, index) => {
-                item.dataset.index = index;
-                item.querySelector('[name$=".Order"]').name       = `ScoringCriteria[${index}].Order`;
-                item.querySelector('[name$=".CriteriaName"]').name = `ScoringCriteria[${index}].CriteriaName`;
-                item.querySelector('[name$=".MaxScore"]').name    = `ScoringCriteria[${index}].MaxScore`;
-                item.querySelector('[name$=".Weight"]').name      = `ScoringCriteria[${index}].Weight`;
-            });
         }
 
         // ===== QUẢN LÝ ĐỢT ĐĂNG KÝ =====
@@ -1462,32 +1335,25 @@
             const container = document.getElementById('roundsContainer');
             const index = container.querySelectorAll('.criteria-item').length;
             const now = new Date();
-            const defaultStart = new Date(now.getTime() + (index + 1) * 5 * 24 * 60 * 60 * 1000);
-            const defaultEnd   = new Date(defaultStart.getTime() + 5 * 24 * 60 * 60 * 1000);
-
+            const defaultStart = new Date(now.getTime() + (index + 1) * 5 * 86400000);
+            const defaultEnd   = new Date(defaultStart.getTime() + 5 * 86400000);
             const fmt = d => d.toISOString().slice(0, 16);
             const html = `
                 <div class="criteria-item" data-index="${index}" style="grid-template-columns: 1fr 1fr 1fr auto;">
                     <div>
                         <label class="form-label" style="font-size:0.85rem;">Tên đợt</label>
-                        <input type="text" name="RegistrationRounds[${index}].RoundName"
-                               class="form-control" placeholder="VD: Đợt ${index + 1}"
-                               value="Đợt ${index + 1}" required>
+                        <input type="text" name="RegistrationRounds[${index}].RoundName" class="form-control" placeholder="VD: Đợt ${index + 1}" value="Đợt ${index + 1}" required>
                     </div>
                     <div>
                         <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu đợt</label>
-                        <input type="datetime-local" name="RegistrationRounds[${index}].StartDate"
-                               class="form-control round-start" value="${fmt(defaultStart)}" required>
+                        <input type="datetime-local" name="RegistrationRounds[${index}].StartDate" class="form-control round-start" value="${fmt(defaultStart)}" required>
                     </div>
                     <div>
                         <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc đợt</label>
-                        <input type="datetime-local" name="RegistrationRounds[${index}].EndDate"
-                               class="form-control round-end" value="${fmt(defaultEnd)}" required>
+                        <input type="datetime-local" name="RegistrationRounds[${index}].EndDate" class="form-control round-end" value="${fmt(defaultEnd)}" required>
                     </div>
                     <div style="display:flex; align-items:flex-end;">
-                        <button type="button" class="remove-criteria-btn" onclick="removeRound(this)">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <button type="button" class="remove-criteria-btn" onclick="removeRound(this)"><i class="bi bi-trash"></i></button>
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
@@ -1500,7 +1366,6 @@
                 return;
             }
             btn.closest('.criteria-item').remove();
-            // Reindex rounds
             container.querySelectorAll('.criteria-item').forEach((item, i) => {
                 item.dataset.index = i;
                 item.querySelectorAll('input').forEach(el => {
@@ -1509,316 +1374,126 @@
             });
         }
 
-        // 🖼️ XỬ LÝ UPLOAD ẢNH
-        function handleImageSelect() {
-            const input = document.getElementById('imageInput');
-            const files = input.files;
-
-            for (let file of files) {
-                if (file.size > 5 * 1024 * 1024) {
-                    alert(`❌ File ${file.name} vượt quá 5MB`);
-                    continue;
-                }
-
-                if (!file.type.startsWith('image/')) {
-                    alert(`❌ ${file.name} không phải là file ảnh`);
-                    continue;
-                }
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    selectedImages.push({
-                        name: file.name,
-                        data: e.target.result,
-                        file: file
-                    });
-                    updateImagePreview();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function updateImagePreview() {
-            const fileList = document.getElementById('imageFileList');
-            fileList.innerHTML = '';
-
-            if (selectedImages.length > 0) {
-                document.getElementById('imagePreviewGrid').style.display = 'grid';
-
-                selectedImages.forEach((img, idx) => {
-                    const item = document.createElement('div');
-                    item.className = 'file-item';
-                    item.innerHTML = `
-                        <div class="file-info">
-                            <span class="file-icon">🖼️</span>
-                            <span>${img.name}</span>
-                        </div>
-                        <button type="button" class="file-remove" onclick="removeImage(${idx})">Xóa</button>
-                    `;
-                    fileList.appendChild(item);
-                });
-            } else {
-                document.getElementById('imagePreviewGrid').style.display = 'none';
-            }
-        }
-
-        function removeImage(index) {
-            selectedImages.splice(index, 1);
-            updateImagePreview();
-        }
-
-        // 📄 XỬ LÝ UPLOAD TÀI LIỆU
-        function handleDocumentSelect() {
-            const input = document.getElementById('documentInput');
-            const files = input.files;
-
-            for (let file of files) {
-                if (file.size > 10 * 1024 * 1024) {
-                    alert(`❌ File ${file.name} vượt quá 10MB`);
-                    continue;
-                }
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    selectedDocuments.push({
-                        name: file.name,
-                        data: e.target.result,
-                        type: file.name.split('.').pop().toLowerCase()
-                    });
-                    updateDocumentList();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function updateDocumentList() {
-            const fileList = document.getElementById('documentFileList');
-            fileList.innerHTML = '';
-
-            selectedDocuments.forEach((doc, idx) => {
-                const item = document.createElement('div');
-                item.className = 'file-item';
-
-                let icon = '📄';
-                if (doc.type === 'pdf') icon = '📕';
-                else if (['doc', 'docx'].includes(doc.type)) icon = '📗';
-                else if (['xls', 'xlsx'].includes(doc.type)) icon = '📊';
-                else if (['ppt', 'pptx'].includes(doc.type)) icon = '📊';
-
-                item.innerHTML = `
-                    <div class="file-info">
-                        <span class="file-icon">${icon}</span>
-                        <span>${doc.name}</span>
-                    </div>
-                    <button type="button" class="file-remove" onclick="removeDocument(${idx})">Xóa</button>
-                `;
-                fileList.appendChild(item);
-            });
-        }
-
-        function removeDocument(index) {
-            selectedDocuments.splice(index, 1);
-            updateDocumentList();
-        }
-
-        // 🏢 QUẢN LÝ NHÀ TÀI TRỢ
-        function addSponsor() {
-            const container = document.getElementById('sponsorContainer');
-            const emptyState = document.getElementById('sponsorEmptyState');
-            if (emptyState) emptyState.style.display = 'none';
-
-            const index = container.querySelectorAll('.sponsor-item').length;
-
-            const html = `
-                <div class="sponsor-item" data-index="${index}">
-                    <div class="sponsor-card-header">
-                        <h6 class="sponsor-card-title">🏢 Nhà tài trợ #${index + 1}</h6>
-                        <button type="button" class="remove-sponsor-btn" onclick="removeSponsor(this)">
-                            <i class="bi bi-trash"></i> Xóa
-                        </button>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Tên nhà tài trợ <span class="required">*</span></label>
-                                <input type="text" name="Sponsors[${index}].SponsorName" class="form-control sponsor-name"
-                                       placeholder="VD: Công ty ABC">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Mức tài trợ</label>
-                                <select name="Sponsors[${index}].SponsorshipLevel" class="form-select sponsor-level" onchange="updateSponsorBadge(this)">
-                                    <option value="Gold">Vàng (Gold)</option>
-                                    <option value="Silver">Bạc (Silver)</option>
-                                    <option value="Bronze">Đồng (Bronze)</option>
-                                    <option value="General" selected>Đồng hành (General)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Email liên hệ</label>
-                                <input type="email" name="Sponsors[${index}].Email" class="form-control"
-                                       placeholder="contact@sponsor.com">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Website</label>
-                                <input type="text" name="Sponsors[${index}].Website" class="form-control"
-                                       placeholder="https://sponsor.com">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Số tiền tài trợ</label>
-                                <input type="number" name="Sponsors[${index}].ContributionAmount" class="form-control"
-                                       value="0" min="0" step="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Đơn vị tiền tệ</label>
-                                <select name="Sponsors[${index}].Currency" class="form-select">
-                                    <option value="VND" selected>VND</option>
-                                    <option value="USD">USD</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="form-label">Thứ tự hiển thị</label>
-                                <input type="number" name="Sponsors[${index}].DisplayOrder" class="form-control"
-                                       value="${index}" min="0">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-9">
-                            <div class="form-group">
-                                <label class="form-label">Ghi chú</label>
-                                <input type="text" name="Sponsors[${index}].Notes" class="form-control"
-                                       placeholder="Ghi chú về nhà tài trợ...">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-label d-block">&nbsp;</label>
-                                <div class="form-check mt-2">
-                                    <input type="hidden" name="Sponsors[${index}].IsDisplayed" value="false">
-                                    <input type="checkbox" name="Sponsors[${index}].IsDisplayed" class="form-check-input"
-                                           value="true" checked>
-                                    <label class="form-check-label">Hiển thị công khai</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            container.insertAdjacentHTML('beforeend', html);
-        }
-
-        function removeSponsor(btn) {
-            btn.closest('.sponsor-item').remove();
-            reindexSponsors();
-            const container = document.getElementById('sponsorContainer');
-            if (container.querySelectorAll('.sponsor-item').length === 0) {
-                const emptyState = document.getElementById('sponsorEmptyState');
-                if (emptyState) emptyState.style.display = '';
-            }
-        }
-
-        function reindexSponsors() {
-            document.querySelectorAll('#sponsorContainer .sponsor-item').forEach((item, index) => {
-                item.dataset.index = index;
-                item.querySelector('.sponsor-card-title').textContent = `🏢 Nhà tài trợ #${index + 1}`;
-                item.querySelectorAll('input, select').forEach(el => {
-                    if (el.name) {
-                        el.name = el.name.replace(/Sponsors\[\d+\]/, `Sponsors[${index}]`);
-                    }
-                });
-            });
-        }
-
-        function updateSponsorBadge(select) {
-            // Có thể mở rộng sau để cập nhật badge màu theo level
-        }
-
-        // 🎫 HIỂN/ẨN PHẦN TEAM SIZE ĐỘNG + đổi label MaxParticipants
-        function toggleTeamSizeField() {
-            const isTeamBased = document.querySelector('[name="IsTeamBased"]').checked;
-            const groupTeam   = document.getElementById('maxTeamSizeGroup');
-            const labelMax    = document.getElementById('labelMaxParticipants');
-
-            if (isTeamBased) {
-                groupTeam.style.display = 'block';
-                labelMax.innerHTML = 'Số đội tối đa <span class="required">*</span>';
-            } else {
-                groupTeam.style.display = 'none';
-                labelMax.innerHTML = 'Số thí sinh tối đa <span class="required">*</span>';
-            }
-        }
-
-        // 🏆 QUẢN LÝ VÒNG THI
+        // ===== VÒNG THI =====
         const COMP_ROUND_NAMES = ['Sơ khảo', 'Bán kết', 'Chung kết', 'Vòng khác'];
 
         function addCompRound() {
             const container = document.getElementById('compRoundsContainer');
             const existing  = container.querySelectorAll('.comp-round-item').length;
-            if (existing >= 3) {
-                alert('❌ Tối đa 3 vòng thi (Sơ khảo, Bán kết, Chung kết)');
-                return;
-            }
+            if (existing >= 3) { alert('❌ Tối đa 3 vòng thi (Sơ khảo, Bán kết, Chung kết)'); return; }
 
             const index = existing;
             const subVal = document.querySelector('[name="SubmissionDeadline"]').value;
             const defaultStart = subVal ? new Date(new Date(subVal).getTime() + (index + 1) * 7 * 86400000) : new Date();
             const defaultEnd   = new Date(defaultStart.getTime() + 5 * 86400000);
+            const defaultSubDL = new Date(defaultStart.getTime() - 86400000);
             const fmt = d => d.toISOString().slice(0, 16);
 
-            // Mặc định gợi ý tên vòng theo thứ tự
             const suggestedNames = ['Sơ khảo', 'Bán kết', 'Chung kết'];
             const defaultName = suggestedNames[index] || 'Vòng khác';
-
-            const optionsHtml = COMP_ROUND_NAMES.map(n =>
-                `<option value="${n}" ${n === defaultName ? 'selected' : ''}>${n}</option>`
-            ).join('');
+            const optionsHtml = COMP_ROUND_NAMES.map(n => `<option value="${n}" ${n === defaultName ? 'selected' : ''}>${n}</option>`).join('');
 
             const html = `
-                <div class="comp-round-item" data-index="${index}"
-                     style="background:white; border:1px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:12px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
-                    <div>
-                        <label class="form-label" style="font-size:0.85rem;">Tên vòng</label>
-                        <input type="hidden" name="CompetitionRounds[${index}].RoundOrder" value="${index + 1}">
-                        <select name="CompetitionRounds[${index}].RoundName" class="form-select comp-round-name" required>
-                            ${optionsHtml}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu</label>
-                        <input type="datetime-local" name="CompetitionRounds[${index}].StartDate"
-                               class="form-control comp-round-start" value="${fmt(defaultStart)}" required>
-                    </div>
-                    <div>
-                        <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc</label>
-                        <input type="datetime-local" name="CompetitionRounds[${index}].EndDate"
-                               class="form-control comp-round-end" value="${fmt(defaultEnd)}" required>
-                    </div>
-                    <div>
-                        <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh được nhận</label>
-                        <input type="number" name="CompetitionRounds[${index}].MaxAdvancing"
-                               class="form-control" min="1" placeholder="Không giới hạn">
-                    </div>
-                    <div style="display:flex; align-items:flex-end;">
+                <div class="comp-round-item comp-round-card" data-index="${index}">
+                    <div class="comp-round-header">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="hidden" name="CompetitionRounds[${index}].RoundOrder" value="${index + 1}">
+                            <i class="bi bi-trophy-fill" style="color:#4f46e5; font-size:1.1rem;"></i>
+                            <select name="CompetitionRounds[${index}].RoundName" class="form-select comp-round-name" style="width:200px; font-weight:600;" required>
+                                ${optionsHtml}
+                            </select>
+                        </div>
                         <button type="button" class="remove-criteria-btn" onclick="removeCompRound(this)">
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-trash"></i> Xóa vòng
                         </button>
+                    </div>
+                    <div class="comp-round-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:0.85rem;">Ngày bắt đầu <span class="required">*</span></label>
+                                <input type="datetime-local" name="CompetitionRounds[${index}].StartDate" class="form-control comp-round-start" value="${fmt(defaultStart)}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:0.85rem;">Ngày kết thúc <span class="required">*</span></label>
+                                <input type="datetime-local" name="CompetitionRounds[${index}].EndDate" class="form-control comp-round-end" value="${fmt(defaultEnd)}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:0.85rem;">Hạn nộp bài vòng này</label>
+                                <input type="datetime-local" name="CompetitionRounds[${index}].SubmissionDeadline" class="form-control comp-round-sub-deadline" value="${fmt(defaultSubDL)}">
+                                <small class="form-text">Để trống = dùng hạn chung</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size:0.85rem;">Số đội/thí sinh vào vòng sau</label>
+                                <input type="number" name="CompetitionRounds[${index}].MaxAdvancing" class="form-control" min="1" placeholder="Không giới hạn">
+                            </div>
+                        </div>
+
+                        <div class="round-sub-section">
+                            <div class="round-sub-section-title">📋 Yêu cầu nộp bài của thí sinh:</div>
+                            <div style="display:flex; gap:24px; flex-wrap:wrap;">
+                                <div class="form-check">
+                                    <input type="hidden" name="CompetitionRounds[${index}].RequiresFile" value="false">
+                                    <input type="checkbox" name="CompetitionRounds[${index}].RequiresFile" class="form-check-input" value="true" checked>
+                                    <label class="form-check-label" style="font-size:0.9rem;">📁 File đính kèm</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="hidden" name="CompetitionRounds[${index}].RequiresVideo" value="false">
+                                    <input type="checkbox" name="CompetitionRounds[${index}].RequiresVideo" class="form-check-input" value="true">
+                                    <label class="form-check-label" style="font-size:0.9rem;">🎬 Link video</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="hidden" name="CompetitionRounds[${index}].RequiresOtherLink" value="false">
+                                    <input type="checkbox" name="CompetitionRounds[${index}].RequiresOtherLink" class="form-check-input" value="true">
+                                    <label class="form-check-label" style="font-size:0.9rem;">🔗 Link khác</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="round-sub-section" style="background:#f0f4ff; border-color:#dce3f0;">
+                            <div style="display:flex; align-items:center; gap:14px; margin-bottom:10px;">
+                                <span class="round-sub-section-title" style="margin-bottom:0;">📍 Hình thức tổ chức:</span>
+                                <div class="form-check form-switch mb-0">
+                                    <input type="hidden" name="CompetitionRounds[${index}].IsOnline" value="false">
+                                    <input type="checkbox" name="CompetitionRounds[${index}].IsOnline" class="form-check-input comp-round-isonline" value="true" onchange="toggleRoundOnline(this)">
+                                    <label class="form-check-label" style="font-size:0.9rem; font-weight:600;">Thi / thuyết trình online</label>
+                                </div>
+                            </div>
+                            <div class="round-online-section" style="display:none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label" style="font-size:0.85rem;">🔗 Link tham dự (Zoom / Meet...)</label>
+                                        <input type="text" name="CompetitionRounds[${index}].MeetingLink" class="form-control" placeholder="https://meet.google.com/...">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label" style="font-size:0.85rem;">🕐 Thời gian họp / thuyết trình</label>
+                                        <input type="datetime-local" name="CompetitionRounds[${index}].MeetingTime" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="round-offline-section">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label class="form-label" style="font-size:0.85rem;">🏢 Địa điểm thi (offline)</label>
+                                        <input type="text" name="CompetitionRounds[${index}].Location" class="form-control" placeholder="VD: Hội trường A, Tòa nhà B, Trường ĐH...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="font-size:0.9rem; color:var(--text-dark);">⭐ Tiêu chí chấm điểm của vòng này:</strong>
+                                <div style="font-size:0.82rem; color:#666;">
+                                    Tổng trọng số: <span class="round-weight-display fw-bold">0.0</span>%
+                                    <span class="round-weight-status ms-1"></span>
+                                </div>
+                            </div>
+                            <div class="round-criteria-container" style="background:#f8f9fa; border-radius:6px; padding:12px; min-height:48px;">
+                            </div>
+                            <button type="button" class="round-add-criteria-btn" onclick="addRoundCriteria(this)">
+                                <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí chấm điểm
+                            </button>
+                        </div>
                     </div>
                 </div>`;
 
@@ -1834,118 +1509,342 @@
         function reindexCompRounds() {
             document.querySelectorAll('#compRoundsContainer .comp-round-item').forEach((item, i) => {
                 item.dataset.index = i;
-                item.querySelectorAll('input, select').forEach(el => {
-                    if (el.name) el.name = el.name.replace(/CompetitionRounds\[\d+\]/, `CompetitionRounds[${i}]`);
+                item.querySelectorAll('input[name], select[name]').forEach(el => {
+                    el.name = el.name.replace(/CompetitionRounds\[\d+\]/g, `CompetitionRounds[${i}]`);
                 });
                 const orderInput = item.querySelector('[name$=".RoundOrder"]');
                 if (orderInput) orderInput.value = i + 1;
+                // Reindex criteria order values
+                const critContainer = item.querySelector('.round-criteria-container');
+                if (critContainer) {
+                    critContainer.querySelectorAll('.round-criteria-item').forEach((critItem, cidx) => {
+                        const orderEl = critItem.querySelector('[name$=".Order"]');
+                        if (orderEl) orderEl.value = cidx + 1;
+                    });
+                }
             });
         }
 
-        // Drag and drop cho ảnh
+        // ===== TIÊU CHÍ THEO VÒNG =====
+        function addRoundCriteria(btn) {
+            const roundCard  = btn.closest('.comp-round-item');
+            const roundIdx   = parseInt(roundCard.dataset.index);
+            const container  = roundCard.querySelector('.round-criteria-container');
+            const criteriaIdx = container.querySelectorAll('.round-criteria-item').length;
+
+            const html = `
+                <div class="round-criteria-item">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Tên tiêu chí</label>
+                        <input type="hidden" name="CompetitionRounds[${roundIdx}].ScoringCriteria[${criteriaIdx}].Order" value="${criteriaIdx + 1}">
+                        <input type="text" name="CompetitionRounds[${roundIdx}].ScoringCriteria[${criteriaIdx}].CriteriaName"
+                               class="form-control" placeholder="VD: Sáng tạo, Kỹ thuật..." style="font-size:0.9rem;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Điểm tối đa</label>
+                        <input type="number" name="CompetitionRounds[${roundIdx}].ScoringCriteria[${criteriaIdx}].MaxScore"
+                               class="form-control" value="100" min="1" step="0.1" style="font-size:0.9rem;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Trọng số (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control round-criteria-weight-input"
+                                   value="0" min="0" max="100" step="0.1"
+                                   onchange="updateRoundWeight(this.closest('.comp-round-item'))"
+                                   oninput="updateRoundWeight(this.closest('.comp-round-item'))"
+                                   style="font-size:0.9rem;">
+                            <input type="hidden" name="CompetitionRounds[${roundIdx}].ScoringCriteria[${criteriaIdx}].Weight"
+                                   class="round-criteria-weight-value">
+                            <span class="input-group-text" style="font-size:0.85rem;">%</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:flex-end;">
+                        <button type="button" class="remove-criteria-btn" onclick="removeRoundCriteria(this)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            updateRoundWeight(roundCard);
+        }
+
+        function removeRoundCriteria(btn) {
+            const roundCard = btn.closest('.comp-round-item');
+            btn.closest('.round-criteria-item').remove();
+            const roundIdx  = parseInt(roundCard.dataset.index);
+            const container = roundCard.querySelector('.round-criteria-container');
+            container.querySelectorAll('.round-criteria-item').forEach((item, cidx) => {
+                item.querySelectorAll('input[name]').forEach(el => {
+                    el.name = el.name.replace(/ScoringCriteria\[\d+\]/g, `ScoringCriteria[${cidx}]`);
+                });
+                const orderEl = item.querySelector('[name$=".Order"]');
+                if (orderEl) orderEl.value = cidx + 1;
+            });
+            updateRoundWeight(roundCard);
+        }
+
+        function updateRoundWeight(roundCard) {
+            if (!roundCard) return;
+            const container = roundCard.querySelector('.round-criteria-container');
+            if (!container) return;
+            const weights = Array.from(container.querySelectorAll('.round-criteria-weight-input'))
+                .map(el => parseFloat(el.value) || 0).reduce((a, b) => a + b, 0);
+
+            const weightDisplay = roundCard.querySelector('.round-weight-display');
+            const weightStatus  = roundCard.querySelector('.round-weight-status');
+            if (weightDisplay) weightDisplay.textContent = weights.toFixed(1);
+            if (weightStatus) {
+                const count = container.querySelectorAll('.round-criteria-item').length;
+                if (count === 0) {
+                    weightStatus.innerHTML = '';
+                } else if (Math.abs(weights - 100) > 0.1) {
+                    weightStatus.innerHTML = '<span style="color:#ef4444;">❌ Sai</span>';
+                } else {
+                    weightStatus.innerHTML = '<span style="color:#22c55e;">✓ Đúng</span>';
+                }
+            }
+        }
+
+        function updateAllRoundHiddenWeights() {
+            document.querySelectorAll('.comp-round-item').forEach(roundCard => {
+                roundCard.querySelectorAll('.round-criteria-item').forEach(item => {
+                    const displayInput = item.querySelector('.round-criteria-weight-input');
+                    const hiddenInput  = item.querySelector('.round-criteria-weight-value');
+                    if (!displayInput || !hiddenInput) return;
+                    hiddenInput.value = (parseFloat(displayInput.value) / 100 || 0).toFixed(4);
+                });
+            });
+        }
+
+        // ===== TOGGLE ONLINE/OFFLINE =====
+        function toggleRoundOnline(checkbox) {
+            const roundCard      = checkbox.closest('.comp-round-item');
+            const onlineSection  = roundCard.querySelector('.round-online-section');
+            const offlineSection = roundCard.querySelector('.round-offline-section');
+            if (checkbox.checked) {
+                onlineSection.style.display  = 'block';
+                offlineSection.style.display = 'none';
+            } else {
+                onlineSection.style.display  = 'none';
+                offlineSection.style.display = 'block';
+            }
+        }
+
+        // ===== TEAM SIZE TOGGLE =====
+        function toggleTeamSizeField() {
+            const isTeamBased = document.querySelector('[name="IsTeamBased"]').checked;
+            const groupTeam   = document.getElementById('maxTeamSizeGroup');
+            const labelMax    = document.getElementById('labelMaxParticipants');
+            groupTeam.style.display = isTeamBased ? 'block' : 'none';
+            labelMax.innerHTML = isTeamBased
+                ? 'Số đội tối đa <span class="required">*</span>'
+                : 'Số thí sinh tối đa <span class="required">*</span>';
+        }
+
+        // ===== IMAGE UPLOAD =====
+        function handleImageSelect() {
+            const files = document.getElementById('imageInput').files;
+            for (let file of files) {
+                if (file.size > 5 * 1024 * 1024) { alert(`❌ File ${file.name} vượt quá 5MB`); continue; }
+                if (!file.type.startsWith('image/')) { alert(`❌ ${file.name} không phải là file ảnh`); continue; }
+                const reader = new FileReader();
+                reader.onload = (e) => { selectedImages.push({ name: file.name, data: e.target.result }); updateImagePreview(); };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateImagePreview() {
+            const fileList = document.getElementById('imageFileList');
+            fileList.innerHTML = '';
+            document.getElementById('imagePreviewGrid').style.display = selectedImages.length > 0 ? 'grid' : 'none';
+            selectedImages.forEach((img, idx) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `<div class="file-info"><span class="file-icon">🖼️</span><span>${img.name}</span></div>
+                    <button type="button" class="file-remove" onclick="removeImage(${idx})">Xóa</button>`;
+                fileList.appendChild(item);
+            });
+        }
+
+        function removeImage(index) { selectedImages.splice(index, 1); updateImagePreview(); }
+
+        // ===== DOCUMENT UPLOAD =====
+        function handleDocumentSelect() {
+            const files = document.getElementById('documentInput').files;
+            for (let file of files) {
+                if (file.size > 10 * 1024 * 1024) { alert(`❌ File ${file.name} vượt quá 10MB`); continue; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    selectedDocuments.push({ name: file.name, data: e.target.result, type: file.name.split('.').pop().toLowerCase() });
+                    updateDocumentList();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateDocumentList() {
+            const fileList = document.getElementById('documentFileList');
+            fileList.innerHTML = '';
+            selectedDocuments.forEach((doc, idx) => {
+                const icons = { pdf: '📕', doc: '📗', docx: '📗', xls: '📊', xlsx: '📊', ppt: '📊', pptx: '📊' };
+                const icon = icons[doc.type] || '📄';
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                item.innerHTML = `<div class="file-info"><span class="file-icon">${icon}</span><span>${doc.name}</span></div>
+                    <button type="button" class="file-remove" onclick="removeDocument(${idx})">Xóa</button>`;
+                fileList.appendChild(item);
+            });
+        }
+
+        function removeDocument(index) { selectedDocuments.splice(index, 1); updateDocumentList(); }
+
+        // ===== SPONSOR =====
+        function addSponsor() {
+            const container  = document.getElementById('sponsorContainer');
+            const emptyState = document.getElementById('sponsorEmptyState');
+            if (emptyState) emptyState.style.display = 'none';
+            const index = container.querySelectorAll('.sponsor-item').length;
+            const html = `
+                <div class="sponsor-item" data-index="${index}">
+                    <div class="sponsor-card-header">
+                        <h6 class="sponsor-card-title">🏢 Nhà tài trợ #${index + 1}</h6>
+                        <button type="button" class="remove-sponsor-btn" onclick="removeSponsor(this)"><i class="bi bi-trash"></i> Xóa</button>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><div class="form-group">
+                            <label class="form-label">Tên nhà tài trợ <span class="required">*</span></label>
+                            <input type="text" name="Sponsors[${index}].SponsorName" class="form-control sponsor-name" placeholder="VD: Công ty ABC">
+                        </div></div>
+                        <div class="col-md-6"><div class="form-group">
+                            <label class="form-label">Mức tài trợ</label>
+                            <select name="Sponsors[${index}].SponsorshipLevel" class="form-select sponsor-level" onchange="updateSponsorBadge(this)">
+                                <option value="Gold">Vàng (Gold)</option>
+                                <option value="Silver">Bạc (Silver)</option>
+                                <option value="Bronze">Đồng (Bronze)</option>
+                                <option value="General" selected>Đồng hành (General)</option>
+                            </select>
+                        </div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><div class="form-group">
+                            <label class="form-label">Email liên hệ</label>
+                            <input type="email" name="Sponsors[${index}].Email" class="form-control" placeholder="contact@sponsor.com">
+                        </div></div>
+                        <div class="col-md-6"><div class="form-group">
+                            <label class="form-label">Website</label>
+                            <input type="text" name="Sponsors[${index}].Website" class="form-control" placeholder="https://sponsor.com">
+                        </div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="form-group">
+                            <label class="form-label">Số tiền tài trợ</label>
+                            <input type="number" name="Sponsors[${index}].ContributionAmount" class="form-control" value="0" min="0" step="1000">
+                        </div></div>
+                        <div class="col-md-4"><div class="form-group">
+                            <label class="form-label">Đơn vị tiền tệ</label>
+                            <select name="Sponsors[${index}].Currency" class="form-select">
+                                <option value="VND" selected>VND</option>
+                                <option value="USD">USD</option>
+                            </select>
+                        </div></div>
+                        <div class="col-md-4"><div class="form-group">
+                            <label class="form-label">Thứ tự hiển thị</label>
+                            <input type="number" name="Sponsors[${index}].DisplayOrder" class="form-control" value="${index}" min="0">
+                        </div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-9"><div class="form-group">
+                            <label class="form-label">Ghi chú</label>
+                            <input type="text" name="Sponsors[${index}].Notes" class="form-control" placeholder="Ghi chú về nhà tài trợ...">
+                        </div></div>
+                        <div class="col-md-3"><div class="form-group">
+                            <label class="form-label d-block">&nbsp;</label>
+                            <div class="form-check mt-2">
+                                <input type="hidden" name="Sponsors[${index}].IsDisplayed" value="false">
+                                <input type="checkbox" name="Sponsors[${index}].IsDisplayed" class="form-check-input" value="true" checked>
+                                <label class="form-check-label">Hiển thị công khai</label>
+                            </div>
+                        </div></div>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeSponsor(btn) {
+            btn.closest('.sponsor-item').remove();
+            document.querySelectorAll('#sponsorContainer .sponsor-item').forEach((item, index) => {
+                item.dataset.index = index;
+                item.querySelector('.sponsor-card-title').textContent = `🏢 Nhà tài trợ #${index + 1}`;
+                item.querySelectorAll('input, select').forEach(el => {
+                    if (el.name) el.name = el.name.replace(/Sponsors\[\d+\]/, `Sponsors[${index}]`);
+                });
+            });
+            const container = document.getElementById('sponsorContainer');
+            if (container.querySelectorAll('.sponsor-item').length === 0) {
+                const emptyState = document.getElementById('sponsorEmptyState');
+                if (emptyState) emptyState.style.display = '';
+            }
+        }
+
+        function updateSponsorBadge(select) { /* extensible */ }
+
+        // ===== DRAG & DROP =====
         const imageUploadArea = document.getElementById('imageUploadArea');
         if (imageUploadArea) {
-            imageUploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                imageUploadArea.classList.add('dragover');
-            });
-            imageUploadArea.addEventListener('dragleave', () => {
-                imageUploadArea.classList.remove('dragover');
-            });
-            imageUploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                imageUploadArea.classList.remove('dragover');
-                document.getElementById('imageInput').files = e.dataTransfer.files;
-                handleImageSelect();
+            imageUploadArea.addEventListener('dragover', e => { e.preventDefault(); imageUploadArea.classList.add('dragover'); });
+            imageUploadArea.addEventListener('dragleave', () => imageUploadArea.classList.remove('dragover'));
+            imageUploadArea.addEventListener('drop', e => {
+                e.preventDefault(); imageUploadArea.classList.remove('dragover');
+                document.getElementById('imageInput').files = e.dataTransfer.files; handleImageSelect();
             });
         }
-
-        // Drag and drop cho tài liệu
         const documentUploadArea = document.getElementById('documentUploadArea');
         if (documentUploadArea) {
-            documentUploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                documentUploadArea.classList.add('dragover');
-            });
-            documentUploadArea.addEventListener('dragleave', () => {
-                documentUploadArea.classList.remove('dragover');
-            });
-            documentUploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                documentUploadArea.classList.remove('dragover');
-                document.getElementById('documentInput').files = e.dataTransfer.files;
-                handleDocumentSelect();
+            documentUploadArea.addEventListener('dragover', e => { e.preventDefault(); documentUploadArea.classList.add('dragover'); });
+            documentUploadArea.addEventListener('dragleave', () => documentUploadArea.classList.remove('dragover'));
+            documentUploadArea.addEventListener('drop', e => {
+                e.preventDefault(); documentUploadArea.classList.remove('dragover');
+                document.getElementById('documentInput').files = e.dataTransfer.files; handleDocumentSelect();
             });
         }
 
+        // ===== INIT =====
         document.addEventListener('DOMContentLoaded', () => {
-            // Khôi phục bước khi POST thất bại
             const serverErrors = document.getElementById('serverErrors');
             if (serverErrors) {
                 const savedStep = parseInt(localStorage.getItem('createFormStep') || '1');
-                if (savedStep > 1 && savedStep <= totalSteps) {
-                    currentStep = savedStep;
-                }
+                if (savedStep > 1 && savedStep <= totalSteps) currentStep = savedStep;
                 localStorage.removeItem('createFormStep');
             }
 
             updateStepDisplay();
-            updateTotalWeight();
-            updateHiddenWeightValues();
             toggleTeamSizeField();
 
-            // Cuộn đến lỗi nếu có
-            if (serverErrors) {
-                serverErrors.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-
-            // Gắn event listener cho checkbox IsTeamBased
             document.querySelector('[name="IsTeamBased"]').addEventListener('change', toggleTeamSizeField);
 
-            // Khôi phục giá trị select cho sponsor (server-side re-render khi validation lỗi)
-            document.querySelectorAll('#sponsorContainer select[data-value]').forEach(function (select) {
-                const val = select.dataset.value;
-                if (val) select.value = val;
-            });
+            // Khôi phục select values (khi validation fail server-side)
+            document.querySelectorAll('#sponsorContainer select[data-value]').forEach(sel => { if (sel.dataset.value) sel.value = sel.dataset.value; });
+            document.querySelectorAll('#compRoundsContainer .comp-round-name[data-value]').forEach(sel => { if (sel.dataset.value) sel.value = sel.dataset.value; });
 
-            // Khôi phục giá trị select cho vòng thi (server-side re-render khi validation lỗi)
-            document.querySelectorAll('#compRoundsContainer .comp-round-name[data-value]').forEach(function (select) {
-                const val = select.dataset.value;
-                if (val) select.value = val;
-            });
-
-            // Đếm số sponsor server-side đã render
-            sponsorCount = document.querySelectorAll('#sponsorContainer .sponsor-item').length;
+            if (serverErrors) serverErrors.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
-        document.getElementById('createForm').addEventListener('submit', (e) => {
-            // Lưu bước hiện tại để khôi phục nếu POST thất bại
+        // ===== FORM SUBMIT =====
+        document.getElementById('createForm').addEventListener('submit', () => {
             localStorage.setItem('createFormStep', currentStep);
-            updateHiddenWeightValues();
-
+            updateAllRoundHiddenWeights();
             const form = document.getElementById('createForm');
-
-            // Gửi từng ảnh dưới dạng input riêng lẻ để ASP.NET bind thành List<string>
             selectedImages.forEach(img => {
                 const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'SelectedImageData';
-                input.value = img.data;
+                input.type = 'hidden'; input.name = 'SelectedImageData'; input.value = img.data;
                 form.appendChild(input);
             });
-
-            // Gửi từng tài liệu (base64) dưới dạng input riêng lẻ
             selectedDocuments.forEach(doc => {
                 const dataInput = document.createElement('input');
-                dataInput.type = 'hidden';
-                dataInput.name = 'SelectedDocumentData';
-                dataInput.value = doc.data;
+                dataInput.type = 'hidden'; dataInput.name = 'SelectedDocumentData'; dataInput.value = doc.data;
                 form.appendChild(dataInput);
-
                 const nameInput = document.createElement('input');
-                nameInput.type = 'hidden';
-                nameInput.name = 'DocumentFileNames';
-                nameInput.value = doc.name;
+                nameInput.type = 'hidden'; nameInput.name = 'DocumentFileNames'; nameInput.value = doc.name;
                 form.appendChild(nameInput);
             });
         });

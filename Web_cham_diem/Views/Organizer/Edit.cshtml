@@ -71,6 +71,22 @@
         text-align:center; cursor:pointer; transition:all .25s; background:#fafafa; }
     .upload-area:hover { border-color:var(--organizer-accent); }
     .modal-lg { max-width: 700px; }
+    /* Round cards */
+    .comp-round-card { background:#fff; border:1px solid #dce3f0; border-radius:10px;
+        margin-bottom:18px; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.07); }
+    .comp-round-header { display:flex; justify-content:space-between; align-items:center;
+        padding:12px 18px; background:linear-gradient(135deg,#f0f4ff,#e8f0fe); border-bottom:1px solid #dce3f0; }
+    .comp-round-body { padding:18px; }
+    .round-sub-section { background:#f8f9fa; border-radius:8px; padding:12px 14px;
+        margin-bottom:12px; border:1px solid #eee; }
+    .round-sub-section-title { font-size:.85rem; font-weight:700; color:#333; margin-bottom:8px; }
+    .round-criteria-item { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:10px;
+        align-items:end; background:#fff; border:1px solid #e0e0e0; border-radius:6px;
+        padding:9px; margin-bottom:7px; }
+    .round-add-criteria-btn { background:#e8f5e9; color:#22c55e; border:2px dashed #22c55e;
+        border-radius:6px; padding:7px 14px; cursor:pointer; font-weight:600;
+        font-size:.83rem; transition:all .2s; width:100%; margin-top:6px; }
+    .round-add-criteria-btn:hover { background:#d4f1d4; }
 </style>
 }
 
@@ -157,24 +173,10 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Lĩnh vực *</label>
-                            @if (canEditStructure)
-                            {
-                                <select id="Category" name="Category" class="form-select">
-                                    <option value="">-- Chọn --</option>
-                                    @foreach (var catOpt in new[] { "Học thuật / NCKH", "Công nghệ Thông tin", "Kỹ năng Mềm", "Khác" })
-                                    {
-                                        if (catOpt == Model.Category)
-                                        { <option value="@catOpt" selected>@catOpt</option> }
-                                        else
-                                        { <option value="@catOpt">@catOpt</option> }
-                                    }
-                                </select>
-                            }
-                            else
-                            {
-                                <input type="text" class="form-control" value="@Model.Category" readonly />
-                                <input type="hidden" name="Category" value="@Model.Category" />
-                            }
+                            <input type="text" id="Category" name="Category"
+                                   value="@Model.Category" class="form-control"
+                                   placeholder="VD: Công nghệ Thông tin, Học thuật..."
+                                   @(canEditStructure ? "" : "readonly") />
                         </div>
                         <div class="col-md-12">
                             <div class="form-check">
@@ -338,62 +340,190 @@
                     <div id="compRoundList">
                         @foreach (var r in Model.ExistingCompetitionRounds)
                         {
-                            var rStart = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
-                            var rEnd   = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
-                            <div class="comp-round-row" id="cr-@r.RoundId"
-                                 style="background:#f0f4ff; border:1px solid #c7d7f5; border-radius:8px; padding:14px; margin-bottom:10px;">
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-md-2">
-                                        <label class="form-label" style="font-size:.8rem;">Tên vòng</label>
-                                        <select class="form-select form-select-sm cr-name" id="crName-@r.RoundId">
+                            var rStart  = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rEnd    = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rSubDL  = r.SubmissionDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.SubmissionDeadline.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            var rMtTime = r.MeetingTime.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.MeetingTime.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            string badgeClass = r.IsActive ? "bg-success" : (r.IsPast ? "bg-secondary" : "bg-warning text-dark");
+                            string badgeText  = r.IsActive ? "Đang diễn ra" : (r.IsPast ? "Đã qua" : "Sắp diễn ra");
+                            var totalW = r.ScoringCriteria.Any() ? (double)r.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+
+                            <div class="comp-round-card comp-round-row" id="cr-@r.RoundId">
+                                <!-- Header -->
+                                <div class="comp-round-header">
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <i class="bi bi-trophy-fill" style="color:#4f46e5;"></i>
+                                        <select class="form-select form-select-sm cr-name" id="crName-@r.RoundId" style="width:170px; font-weight:600;">
                                             @foreach (var opt in new[] { "Sơ khảo", "Bán kết", "Chung kết", "Vòng khác" })
                                             {
-                                                if (opt == r.RoundName)
-                                                { <option value="@opt" selected>@opt</option> }
-                                                else
-                                                { <option value="@opt">@opt</option> }
+                                                if (opt == r.RoundName) { <option value="@opt" selected>@opt</option> }
+                                                else { <option value="@opt">@opt</option> }
                                             }
                                         </select>
+                                        <span class="badge @badgeClass" style="font-size:.72rem;">@badgeText</span>
+                                        <span class="text-muted" style="font-size:.75rem;">Thứ tự: @r.RoundOrder</span>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label" style="font-size:.8rem;">Ngày bắt đầu</label>
-                                        <input type="datetime-local" class="form-control form-control-sm cr-start"
-                                               id="crStart-@r.RoundId" value="@rStart">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label" style="font-size:.8rem;">Ngày kết thúc</label>
-                                        <input type="datetime-local" class="form-control form-control-sm cr-end"
-                                               id="crEnd-@r.RoundId" value="@rEnd">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label" style="font-size:.8rem;">Số đội/thí sinh nhận</label>
-                                        <input type="number" class="form-control form-control-sm cr-max"
-                                               id="crMax-@r.RoundId" value="@(r.MaxAdvancing?.ToString() ?? "")"
-                                               min="1" placeholder="Không giới hạn">
-                                    </div>
-                                    <div class="col-md-2 d-flex gap-1">
-                                        <button type="button" class="btn btn-primary btn-sm flex-fill"
-                                                onclick="updateCompRound(@r.RoundId)">
-                                            <i class="bi bi-check2"></i> Lưu
+                                    <div class="d-flex gap-1">
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="updateCompRound(@r.RoundId)">
+                                            <i class="bi bi-check2"></i> Lưu vòng
                                         </button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm"
-                                                onclick="deleteCompRound(@r.RoundId)" title="Xóa vòng này">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteCompRound(@r.RoundId)">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="cr-msg small mt-1" id="crMsg-@r.RoundId"></div>
-                                @{
-                                    string badgeClass = r.IsActive ? "bg-success" : (r.IsPast ? "bg-secondary" : "bg-warning text-dark");
-                                    string badgeText  = r.IsActive ? "Đang diễn ra" : (r.IsPast ? "Đã qua" : "Sắp diễn ra");
-                                }
-                                <div class="mt-2">
-                                    <span class="badge @badgeClass" style="font-size:.72rem;">@badgeText</span>
-                                    <span class="text-muted ms-2" style="font-size:.78rem;">Thứ tự: @r.RoundOrder</span>
-                                    @if (r.MaxAdvancing.HasValue)
-                                    {
-                                        <span class="text-muted ms-2" style="font-size:.78rem;">| Nhận tối đa @r.MaxAdvancing đội/thí sinh</span>
-                                    }
+
+                                <div class="comp-round-body">
+                                    <!-- Thời gian -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size:.82rem;">Ngày bắt đầu *</label>
+                                            <input type="datetime-local" class="form-control form-control-sm cr-start"
+                                                   id="crStart-@r.RoundId" value="@rStart">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size:.82rem;">Ngày kết thúc *</label>
+                                            <input type="datetime-local" class="form-control form-control-sm cr-end"
+                                                   id="crEnd-@r.RoundId" value="@rEnd">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size:.82rem;">Hạn nộp bài vòng này</label>
+                                            <input type="datetime-local" class="form-control form-control-sm cr-subdl"
+                                                   id="crSubDL-@r.RoundId" value="@rSubDL">
+                                            <small class="text-muted" style="font-size:.75rem;">Để trống = dùng hạn chung</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label" style="font-size:.82rem;">Số đội/thí sinh vào vòng sau</label>
+                                            <input type="number" class="form-control form-control-sm cr-max"
+                                                   id="crMax-@r.RoundId" value="@(r.MaxAdvancing?.ToString() ?? "")"
+                                                   min="1" placeholder="Không giới hạn">
+                                        </div>
+                                    </div>
+
+                                    <!-- Yêu cầu nộp bài -->
+                                    <div class="round-sub-section">
+                                        <div class="round-sub-section-title">📋 Yêu cầu nộp bài của thí sinh:</div>
+                                        <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input cr-reqfile" id="crReqFile-@r.RoundId"
+                                                       @(r.RequiresFile ? "checked" : "")>
+                                                <label class="form-check-label" style="font-size:.88rem;">📁 File đính kèm</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input cr-reqvideo" id="crReqVideo-@r.RoundId"
+                                                       @(r.RequiresVideo ? "checked" : "")>
+                                                <label class="form-check-label" style="font-size:.88rem;">🎬 Link video</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input cr-reqother" id="crReqOther-@r.RoundId"
+                                                       @(r.RequiresOtherLink ? "checked" : "")>
+                                                <label class="form-check-label" style="font-size:.88rem;">🔗 Link khác</label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hình thức tổ chức -->
+                                    <div class="round-sub-section" style="background:#f0f4ff; border-color:#dce3f0;">
+                                        <div style="display:flex; align-items:center; gap:14px; margin-bottom:8px;">
+                                            <span class="round-sub-section-title" style="margin-bottom:0;">📍 Hình thức tổ chức:</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input type="checkbox" class="form-check-input cr-isonline" id="crOnline-@r.RoundId"
+                                                       @(r.IsOnline ? "checked" : "") onchange="toggleRoundOnline(this)">
+                                                <label class="form-check-label" style="font-size:.88rem; font-weight:600;">Online</label>
+                                            </div>
+                                        </div>
+                                        <div class="round-online-section" style="@(r.IsOnline ? "" : "display:none;")">
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    <label class="form-label" style="font-size:.82rem;">🔗 Link tham dự</label>
+                                                    <input type="text" class="form-control form-control-sm cr-meetlink"
+                                                           id="crMeetLink-@r.RoundId" value="@r.MeetingLink"
+                                                           placeholder="https://meet.google.com/...">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label" style="font-size:.82rem;">🕐 Thời gian họp</label>
+                                                    <input type="datetime-local" class="form-control form-control-sm cr-meettime"
+                                                           id="crMeetTime-@r.RoundId" value="@rMtTime">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="round-offline-section" style="@(r.IsOnline ? "display:none;" : "")">
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <label class="form-label" style="font-size:.82rem;">🏢 Địa điểm thi (offline)</label>
+                                                    <input type="text" class="form-control form-control-sm cr-location"
+                                                           id="crLocation-@r.RoundId" value="@r.Location"
+                                                           placeholder="VD: Hội trường A, Tòa nhà B...">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tiêu chí chấm điểm -->
+                                    <div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                            <strong style="font-size:.88rem;">⭐ Tiêu chí chấm điểm:</strong>
+                                            <div style="font-size:.8rem; color:#666;">
+                                                Tổng: <span class="round-weight-display fw-bold">@totalW.ToString("0.0")</span>%
+                                                <span class="round-weight-status ms-1">
+                                                    @if (r.ScoringCriteria.Any())
+                                                    {
+                                                        if (Math.Abs(totalW - 100.0) <= 0.1) { <span style="color:#22c55e;">✓</span> }
+                                                        else { <span style="color:#ef4444;">❌</span> }
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="round-criteria-container" style="background:#f8f9fa; border-radius:6px; padding:10px; min-height:40px;"
+                                             id="crCriteria-@r.RoundId">
+                                            @for (int ci = 0; ci < r.ScoringCriteria.Count; ci++)
+                                            {
+                                                var sc = r.ScoringCriteria[ci];
+                                                <div class="round-criteria-item">
+                                                    <div>
+                                                        <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Tên tiêu chí</label>
+                                                        <input type="text" class="form-control form-control-sm cr-crit-name"
+                                                               value="@sc.CriteriaName" placeholder="VD: Sáng tạo...">
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Điểm tối đa</label>
+                                                        <input type="number" class="form-control form-control-sm cr-crit-score"
+                                                               value="@sc.MaxScore" min="1" step="0.1">
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Trọng số</label>
+                                                        <div class="input-group input-group-sm">
+                                                            <input type="number" class="form-control round-criteria-weight-input"
+                                                                   value="@((sc.Weight * 100).ToString("0.0"))" min="0" max="100" step="0.1"
+                                                                   onchange="updateRoundWeight(this.closest('.comp-round-card'))"
+                                                                   oninput="updateRoundWeight(this.closest('.comp-round-card'))">
+                                                            <span class="input-group-text" style="font-size:.8rem;">%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div style="display:flex; align-items:flex-end;">
+                                                        @if (canEditCriteria)
+                                                        {
+                                                            <button type="button" class="btn btn-sm remove-btn" onclick="removeRoundCriteria(this)">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (canEditCriteria)
+                                        {
+                                            <button type="button" class="round-add-criteria-btn" onclick="addRoundCriteria(this)">
+                                                <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted d-block mt-1" style="font-size:.78rem;">🔒 Tiêu chí bị khóa vì đã có bài nộp</small>
+                                        }
+                                    </div>
+
+                                    <div class="cr-msg small mt-2" id="crMsg-@r.RoundId"></div>
                                 </div>
                             </div>
                         }
@@ -402,7 +532,7 @@
                     <!-- Thêm vòng thi mới -->
                     <div class="mt-2 p-3" style="background:#f8f9fa; border:2px dashed #0d6efd33; border-radius:8px;">
                         <div class="fw-semibold mb-2" style="color:#0d6efd;"><i class="bi bi-plus-circle me-1"></i>Thêm vòng thi mới</div>
-                        <div class="row g-2 align-items-end">
+                        <div class="row g-2 mb-2">
                             <div class="col-md-2">
                                 <label class="form-label" style="font-size:.8rem;">Tên vòng</label>
                                 <select id="newCrName" class="form-select form-select-sm">
@@ -412,92 +542,130 @@
                                     <option value="Vòng khác">Vòng khác</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label" style="font-size:.8rem;">Ngày bắt đầu</label>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size:.8rem;">Ngày bắt đầu *</label>
                                 <input type="datetime-local" id="newCrStart" class="form-control form-control-sm">
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label" style="font-size:.8rem;">Ngày kết thúc</label>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size:.8rem;">Ngày kết thúc *</label>
                                 <input type="datetime-local" id="newCrEnd" class="form-control form-control-sm">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label" style="font-size:.8rem;">Số đội/thí sinh nhận</label>
-                                <input type="number" id="newCrMax" class="form-control form-control-sm" min="1" placeholder="Không giới hạn">
+                                <label class="form-label" style="font-size:.8rem;">Hạn nộp bài</label>
+                                <input type="datetime-local" id="newCrSubDL" class="form-control form-control-sm">
                             </div>
                             <div class="col-md-2">
-                                <button type="button" class="btn btn-primary btn-sm w-100" onclick="addCompRoundAjax()">
-                                    <i class="bi bi-plus"></i> Thêm
-                                </button>
+                                <label class="form-label" style="font-size:.8rem;">Số đội/thí sinh tiếp theo</label>
+                                <input type="number" id="newCrMax" class="form-control form-control-sm" min="1" placeholder="Không giới hạn">
                             </div>
                         </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <div class="round-sub-section">
+                                    <div class="round-sub-section-title">📋 Yêu cầu nộp bài:</div>
+                                    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="newCrReqFile" checked>
+                                            <label class="form-check-label" style="font-size:.88rem;">📁 File</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="newCrReqVideo">
+                                            <label class="form-check-label" style="font-size:.88rem;">🎬 Video</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="newCrReqOther">
+                                            <label class="form-check-label" style="font-size:.88rem;">🔗 Link khác</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-12">
+                                <div class="round-sub-section" style="background:#f0f4ff; border-color:#dce3f0;">
+                                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:8px;">
+                                        <span class="round-sub-section-title" style="margin-bottom:0;">📍 Hình thức:</span>
+                                        <div class="form-check form-switch mb-0">
+                                            <input type="checkbox" class="form-check-input" id="newCrIsOnline" onchange="toggleNewRoundOnline(this)">
+                                            <label class="form-check-label" style="font-size:.88rem; font-weight:600;">Online</label>
+                                        </div>
+                                    </div>
+                                    <div id="newCrOnlineSection" style="display:none;">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label" style="font-size:.82rem;">Link tham dự</label>
+                                                <input type="text" id="newCrMeetLink" class="form-control form-control-sm" placeholder="https://meet.google.com/...">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label" style="font-size:.82rem;">Thời gian họp</label>
+                                                <input type="datetime-local" id="newCrMeetTime" class="form-control form-control-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="newCrOfflineSection">
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label" style="font-size:.82rem;">Địa điểm</label>
+                                                <input type="text" id="newCrLocation" class="form-control form-control-sm" placeholder="VD: Hội trường A...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tiêu chí chấm điểm cho vòng mới -->
+                        <div class="mb-2">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <strong style="font-size:.85rem;">⭐ Tiêu chí chấm điểm:</strong>
+                                <div style="font-size:.8rem; color:#666;">
+                                    Tổng: <span id="newCrWeightDisplay">0</span>%
+                                    <span id="newCrWeightStatus" class="ms-1"></span>
+                                </div>
+                            </div>
+                            <div id="newCrCriteria" style="background:#fff; border-radius:6px; padding:8px; min-height:36px; border:1px solid #e0e0e0;"></div>
+                            <button type="button" class="round-add-criteria-btn mt-2" onclick="addNewRoundCriteria()">
+                                <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addCompRoundAjax()">
+                            <i class="bi bi-plus"></i> Thêm vòng thi
+                        </button>
                         <div id="newCrMsg" class="small mt-1"></div>
                     </div>
                 </div>
 
                 <!-- ── TAB 3: Tiêu chí ── -->
                 <div class="tab-pane fade" id="tab-criteria">
-                    @if (!canEditCriteria)
-                    {
-                        <div class="alert alert-warning py-2">
-                            <i class="bi bi-lock-fill me-1"></i> Đã có bài nộp — Tiêu chí chấm điểm bị khóa để đảm bảo tính công bằng.
-                        </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Tiêu chí chấm điểm được quản lý theo từng vòng thi.</strong><br>
+                        Vui lòng chuyển sang tab <strong>"Vòng thi"</strong> để cấu hình tiêu chí riêng cho mỗi vòng (Sơ khảo, Bán kết, Chung kết).
+                    </div>
+                    @{
+                        var roundsWithCrit = Model.ExistingCompetitionRounds?.Where(r => r.ScoringCriteria?.Any() == true).ToList();
                     }
-
-                    <div class="criteria-list" id="criteriaContainer">
-                        @for (int i = 0; i < Model.ScoringCriteria.Count; i++)
+                    @if (roundsWithCrit != null && roundsWithCrit.Any())
+                    {
+                        @foreach (var r in roundsWithCrit)
                         {
-                            <div class="criteria-item" data-index="@i">
-                                <div>
-                                    <input type="hidden" name="ScoringCriteria[@i].Order" value="@Model.ScoringCriteria[i].Order">
-                                    <input type="text" name="ScoringCriteria[@i].CriteriaName"
-                                           class="form-control criteria-name"
-                                           value="@Model.ScoringCriteria[i].CriteriaName"
-                                           @(canEditCriteria ? "" : "readonly") required>
-                                </div>
-                                <div>
-                                    <input type="number" name="ScoringCriteria[@i].MaxScore"
-                                           class="form-control criteria-score"
-                                           value="@Model.ScoringCriteria[i].MaxScore"
-                                           min="1" step="0.1"
-                                           @(canEditCriteria ? "" : "readonly") required>
-                                </div>
-                                <div>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control criteria-weight-input"
-                                               value="@((Model.ScoringCriteria[i].Weight * 100).ToString(System.Globalization.CultureInfo.InvariantCulture))"
-                                               min="0" max="100" step="0.1"
-                                               @(canEditCriteria ? "" : "readonly")
-                                               onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                                        <input type="hidden" name="ScoringCriteria[@i].Weight"
-                                               class="criteria-weight-value"
-                                               value="@Model.ScoringCriteria[i].Weight.ToString(System.Globalization.CultureInfo.InvariantCulture)">
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    @if (canEditCriteria)
-                                    {
-                                        <button type="button" class="remove-btn" onclick="removeCriteria(this)"><i class="bi bi-trash"></i></button>
-                                    }
-                                </div>
+                            <h6 class="fw-bold text-secondary mt-3 mb-2"><i class="bi bi-flag me-1"></i>@r.RoundName</h6>
+                            <div class="table-responsive rounded border mb-2">
+                                <table class="table table-sm mb-0">
+                                    <thead class="table-light"><tr><th>Tiêu chí</th><th class="text-center">Trọng số</th><th class="text-center">Thang điểm</th></tr></thead>
+                                    <tbody>
+                                        @foreach (var sc in r.ScoringCriteria.OrderBy(x => x.Order))
+                                        {
+                                            <tr>
+                                                <td>@sc.CriteriaName <small class="text-muted">@sc.Description</small></td>
+                                                <td class="text-center">@(sc.Weight * 100)%</td>
+                                                <td class="text-center">@sc.MaxScore đ</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
                             </div>
                         }
-                    </div>
-
-                    @if (canEditCriteria)
-                    {
-                        <button type="button" class="add-btn mt-3" onclick="addCriteria()">
-                            <i class="bi bi-plus-circle me-1"></i>Thêm tiêu chí
-                        </button>
                     }
-
-                    <div class="mt-3">
-                        <div style="font-size:.85rem; color:#666;">
-                            Tổng trọng số: <strong id="totalWeight">0</strong>%
-                            <span id="weightStatus" class="fw-bold ms-2"></span>
-                        </div>
-                        <div class="weight-bar"><div class="weight-fill" id="weightFill"></div></div>
-                    </div>
                 </div>
 
                 <!-- ── TAB 4: Ảnh & Tài liệu ── -->
@@ -779,63 +947,127 @@
 <script>
     const CID = @cid;
 
-    // ═══════════════════════════════════ CRITERIA ════════════════════════════
+    // ═══════════════════════════════════ PER-ROUND CRITERIA ════════════════════
 
-    function updateHiddenWeightValues() {
-        document.querySelectorAll('#criteriaContainer .criteria-item').forEach(item => {
-            const inp = item.querySelector('.criteria-weight-input');
-            const hid = item.querySelector('.criteria-weight-value');
-            if (!inp || !hid) return;
-            hid.value = (parseFloat(inp.value) / 100 || 0).toFixed(4);
-        });
-    }
-
-    function updateTotalWeight() {
-        const total = Array.from(document.querySelectorAll('.criteria-weight-input'))
-            .reduce((s, el) => s + (parseFloat(el.value) || 0), 0);
-        document.getElementById('totalWeight').textContent = total.toFixed(1);
-        document.getElementById('weightFill').style.width = Math.min(total, 100) + '%';
-        const ok = Math.abs(total - 100) <= 0.1;
-        document.getElementById('weightFill').style.background = ok ? 'var(--organizer-accent)' : '#ef4444';
-        const st = document.getElementById('weightStatus');
-        st.textContent = ok ? '✓ Đúng' : '❌ Sai';
-        st.style.color  = ok ? '#22c55e' : '#ef4444';
-    }
-
-    function reindexCriteria() {
-        document.querySelectorAll('#criteriaContainer .criteria-item').forEach((item, i) => {
-            item.dataset.index = i;
-            ['Order','CriteriaName','MaxScore','Weight'].forEach(field => {
-                const el = item.querySelector(`[name$=".${field}"]`);
-                if (el) el.name = `ScoringCriteria[${i}].${field}`;
-            });
-        });
-    }
-
-    function addCriteria() {
-        const container = document.getElementById('criteriaContainer');
-        const i = container.children.length;
+    function addRoundCriteria(btn) {
+        const roundCard = btn.closest('.comp-round-card');
+        const container = roundCard.querySelector('.round-criteria-container');
+        const idx = container.querySelectorAll('.round-criteria-item').length;
         container.insertAdjacentHTML('beforeend', `
-            <div class="criteria-item" data-index="${i}">
+            <div class="round-criteria-item">
                 <div>
-                    <input type="hidden" name="ScoringCriteria[${i}].Order" value="${i+1}">
-                    <input type="text" name="ScoringCriteria[${i}].CriteriaName" class="form-control criteria-name" placeholder="Tên tiêu chí" required>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Tên tiêu chí</label>
+                    <input type="text" class="form-control form-control-sm cr-crit-name" placeholder="VD: Sáng tạo...">
                 </div>
-                <div><input type="number" name="ScoringCriteria[${i}].MaxScore" class="form-control criteria-score" value="100" min="1" step="0.1" required></div>
-                <div><div class="input-group">
-                    <input type="number" class="form-control criteria-weight-input" value="0" min="0" max="100" step="0.1" required onchange="updateTotalWeight()" oninput="updateTotalWeight()">
-                    <input type="hidden" name="ScoringCriteria[${i}].Weight" class="criteria-weight-value" value="0">
-                    <span class="input-group-text">%</span>
-                </div></div>
-                <div><button type="button" class="remove-btn" onclick="removeCriteria(this)"><i class="bi bi-trash"></i></button></div>
+                <div>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Điểm tối đa</label>
+                    <input type="number" class="form-control form-control-sm cr-crit-score" value="100" min="1" step="0.1">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Trọng số</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control round-criteria-weight-input" value="0" min="0" max="100" step="0.1"
+                               onchange="updateRoundWeight(this.closest('.comp-round-card'))"
+                               oninput="updateRoundWeight(this.closest('.comp-round-card'))">
+                        <span class="input-group-text" style="font-size:.8rem;">%</span>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button type="button" class="btn btn-sm remove-btn" onclick="removeRoundCriteria(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </div>`);
-        updateTotalWeight();
+        updateRoundWeight(roundCard);
     }
 
-    function removeCriteria(btn) {
-        btn.closest('.criteria-item').remove();
-        reindexCriteria();
-        updateTotalWeight();
+    function removeRoundCriteria(btn) {
+        const roundCard = btn.closest('.comp-round-card');
+        btn.closest('.round-criteria-item').remove();
+        updateRoundWeight(roundCard);
+    }
+
+    function updateRoundWeight(roundCard) {
+        const items = roundCard.querySelectorAll('.round-criteria-item');
+        const total = Array.from(items).reduce((s, item) => {
+            const inp = item.querySelector('.round-criteria-weight-input');
+            return s + (parseFloat(inp?.value) || 0);
+        }, 0);
+        const display = roundCard.querySelector('.round-weight-display');
+        const status  = roundCard.querySelector('.round-weight-status');
+        if (display) display.textContent = total.toFixed(1);
+        if (status) {
+            const ok = items.length > 0 && Math.abs(total - 100) <= 0.1;
+            status.innerHTML = items.length === 0 ? '' : (ok ? '<span style="color:#22c55e;">✓</span>' : '<span style="color:#ef4444;">❌</span>');
+        }
+    }
+
+    function toggleRoundOnline(checkbox) {
+        const roundCard = checkbox.closest('.comp-round-card');
+        const onlineSection  = roundCard.querySelector('.round-online-section');
+        const offlineSection = roundCard.querySelector('.round-offline-section');
+        if (checkbox.checked) {
+            onlineSection.style.display  = '';
+            offlineSection.style.display = 'none';
+        } else {
+            onlineSection.style.display  = 'none';
+            offlineSection.style.display = '';
+        }
+    }
+
+    function toggleNewRoundOnline(checkbox) {
+        document.getElementById('newCrOnlineSection').style.display  = checkbox.checked ? '' : 'none';
+        document.getElementById('newCrOfflineSection').style.display = checkbox.checked ? 'none' : '';
+    }
+
+    function addNewRoundCriteria() {
+        const container = document.getElementById('newCrCriteria');
+        const idx = container.querySelectorAll('.round-criteria-item').length;
+        container.insertAdjacentHTML('beforeend', `
+            <div class="round-criteria-item">
+                <div>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Tên tiêu chí</label>
+                    <input type="text" class="form-control form-control-sm cr-crit-name" placeholder="VD: Sáng tạo...">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Điểm tối đa</label>
+                    <input type="number" class="form-control form-control-sm cr-crit-score" value="100" min="1" step="0.1">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:.75rem; margin-bottom:2px;">Trọng số</label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control round-criteria-weight-input" value="0" min="0" max="100" step="0.1"
+                               onchange="updateNewRoundWeight()" oninput="updateNewRoundWeight()">
+                        <span class="input-group-text" style="font-size:.8rem;">%</span>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button type="button" class="btn btn-sm remove-btn" onclick="this.closest('.round-criteria-item').remove(); updateNewRoundWeight();">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>`);
+        updateNewRoundWeight();
+    }
+
+    function updateNewRoundWeight() {
+        const items = document.querySelectorAll('#newCrCriteria .round-criteria-item');
+        const total = Array.from(items).reduce((s, item) => {
+            return s + (parseFloat(item.querySelector('.round-criteria-weight-input')?.value) || 0);
+        }, 0);
+        document.getElementById('newCrWeightDisplay').textContent = total.toFixed(1);
+        const ok = items.length > 0 && Math.abs(total - 100) <= 0.1;
+        document.getElementById('newCrWeightStatus').innerHTML = items.length === 0 ? '' :
+            (ok ? '<span style="color:#22c55e;">✓</span>' : '<span style="color:#ef4444;">❌</span>');
+    }
+
+    function collectRoundCriteria(container) {
+        return Array.from(container.querySelectorAll('.round-criteria-item')).map((item, i) => ({
+            criteriaName: item.querySelector('.cr-crit-name')?.value?.trim() || '',
+            maxScore: parseFloat(item.querySelector('.cr-crit-score')?.value) || 100,
+            weight: (parseFloat(item.querySelector('.round-criteria-weight-input')?.value) || 0) / 100,
+            order: i + 1
+        })).filter(c => c.criteriaName);
     }
 
     // ═══════════════════════════════════ ROUNDS ══════════════════════════════
@@ -896,11 +1128,20 @@
     }
 
     async function updateCompRound(roundId) {
+        const roundCard = document.getElementById(`cr-${roundId}`);
         const name  = document.getElementById(`crName-${roundId}`)?.value;
         const start = document.getElementById(`crStart-${roundId}`)?.value;
         const end   = document.getElementById(`crEnd-${roundId}`)?.value;
+        const subDL = document.getElementById(`crSubDL-${roundId}`)?.value;
         const maxV  = document.getElementById(`crMax-${roundId}`)?.value;
-        const msg   = document.getElementById(`crMsg-${roundId}`);
+        const reqFile  = document.getElementById(`crReqFile-${roundId}`)?.checked ?? true;
+        const reqVideo = document.getElementById(`crReqVideo-${roundId}`)?.checked ?? false;
+        const reqOther = document.getElementById(`crReqOther-${roundId}`)?.checked ?? false;
+        const isOnline = document.getElementById(`crOnline-${roundId}`)?.checked ?? false;
+        const meetLink = document.getElementById(`crMeetLink-${roundId}`)?.value || null;
+        const meetTime = document.getElementById(`crMeetTime-${roundId}`)?.value;
+        const location = document.getElementById(`crLocation-${roundId}`)?.value || null;
+        const msg = document.getElementById(`crMsg-${roundId}`);
 
         if (!name || !start || !end) {
             msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ tên vòng, ngày bắt đầu và kết thúc.</span>';
@@ -911,16 +1152,34 @@
             return;
         }
 
+        const criteria = collectRoundCriteria(roundCard.querySelector('.round-criteria-container'));
+        if (criteria.length > 0) {
+            const totalW = criteria.reduce((s, c) => s + c.weight, 0);
+            if (Math.abs(totalW * 100 - 100) > 0.5) {
+                msg.innerHTML = '<span class="text-danger">Tổng trọng số tiêu chí phải bằng 100%.</span>';
+                return;
+            }
+        }
+
         msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
         try {
             const res = await fetch(`/Organizer/UpdateCompetitionRound?roundId=${roundId}&competitionId=${CID}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
                 body: JSON.stringify({
-                    roundName:    name,
-                    startDate:    toUtcIso(start),
-                    endDate:      toUtcIso(end),
-                    maxAdvancing: maxV ? parseInt(maxV) : null
+                    roundName:        name,
+                    startDate:        toUtcIso(start),
+                    endDate:          toUtcIso(end),
+                    submissionDeadline: subDL ? toUtcIso(subDL) : null,
+                    maxAdvancing:     maxV ? parseInt(maxV) : null,
+                    requiresFile:     reqFile,
+                    requiresVideo:    reqVideo,
+                    requiresOtherLink: reqOther,
+                    isOnline:         isOnline,
+                    meetingLink:      isOnline ? meetLink : null,
+                    meetingTime:      isOnline && meetTime ? toUtcIso(meetTime) : null,
+                    location:         !isOnline ? location : null,
+                    scoringCriteria:  criteria
                 })
             });
             const data = await res.json();
@@ -959,11 +1218,19 @@
     }
 
     async function addCompRoundAjax() {
-        const name  = document.getElementById('newCrName').value;
-        const start = document.getElementById('newCrStart').value;
-        const end   = document.getElementById('newCrEnd').value;
-        const maxV  = document.getElementById('newCrMax').value;
-        const msg   = document.getElementById('newCrMsg');
+        const name    = document.getElementById('newCrName').value;
+        const start   = document.getElementById('newCrStart').value;
+        const end     = document.getElementById('newCrEnd').value;
+        const subDL   = document.getElementById('newCrSubDL').value;
+        const maxV    = document.getElementById('newCrMax').value;
+        const reqFile  = document.getElementById('newCrReqFile').checked;
+        const reqVideo = document.getElementById('newCrReqVideo').checked;
+        const reqOther = document.getElementById('newCrReqOther').checked;
+        const isOnline = document.getElementById('newCrIsOnline').checked;
+        const meetLink = document.getElementById('newCrMeetLink').value || null;
+        const meetTime = document.getElementById('newCrMeetTime').value;
+        const location = document.getElementById('newCrLocation').value || null;
+        const msg = document.getElementById('newCrMsg');
 
         if (!name || !start || !end) {
             msg.innerHTML = '<span class="text-danger">Vui lòng chọn tên vòng, ngày bắt đầu và kết thúc.</span>';
@@ -974,16 +1241,34 @@
             return;
         }
 
+        const criteria = collectRoundCriteria(document.getElementById('newCrCriteria'));
+        if (criteria.length > 0) {
+            const totalW = criteria.reduce((s, c) => s + c.weight, 0);
+            if (Math.abs(totalW * 100 - 100) > 0.5) {
+                msg.innerHTML = '<span class="text-danger">Tổng trọng số tiêu chí phải bằng 100%.</span>';
+                return;
+            }
+        }
+
         msg.innerHTML = '<span class="text-secondary">Đang thêm...</span>';
         try {
             const res = await fetch(`/Organizer/AddCompetitionRound?competitionId=${CID}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
                 body: JSON.stringify({
-                    roundName:    name,
-                    startDate:    toUtcIso(start),
-                    endDate:      toUtcIso(end),
-                    maxAdvancing: maxV ? parseInt(maxV) : null
+                    roundName:         name,
+                    startDate:         toUtcIso(start),
+                    endDate:           toUtcIso(end),
+                    submissionDeadline: subDL ? toUtcIso(subDL) : null,
+                    maxAdvancing:      maxV ? parseInt(maxV) : null,
+                    requiresFile:      reqFile,
+                    requiresVideo:     reqVideo,
+                    requiresOtherLink: reqOther,
+                    isOnline:          isOnline,
+                    meetingLink:       isOnline ? meetLink : null,
+                    meetingTime:       isOnline && meetTime ? toUtcIso(meetTime) : null,
+                    location:          !isOnline ? location : null,
+                    scoringCriteria:   criteria
                 })
             });
             const data = await res.json();
@@ -1279,8 +1564,6 @@
     const ACTIVE_TAB_KEY = 'editCompetitionTab_@cid';
 
     document.addEventListener('DOMContentLoaded', () => {
-        updateTotalWeight();
-        updateHiddenWeightValues();
         const chk = document.getElementById('chkTeam');
         syncTeamSizeField(chk ? chk.checked : false);
 
@@ -1308,7 +1591,6 @@
     });
 
     document.getElementById('editForm').addEventListener('submit', () => {
-        updateHiddenWeightValues();
         const chk = document.getElementById('chkTeam');
         syncTeamSizeField(chk ? chk.checked : false);
         // Lưu tab đang active để khôi phục sau reload

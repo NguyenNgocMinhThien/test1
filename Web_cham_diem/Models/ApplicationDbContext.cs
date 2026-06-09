@@ -217,6 +217,14 @@ namespace Web_cham_diem.Models
                 .WithMany(c => c.Judges)
                 .HasForeignKey(j => j.CompetitionId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Judges>()
+                .HasOne(j => j.Round)
+                .WithMany(r => r.Judges)
+                .HasForeignKey(j => j.RoundId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Judges>()
+                .HasIndex(j => new { j.UserId, j.CompetitionId, j.RoundId })
+                .IsUnique();
 
             // Configure ScoringCriteria
             modelBuilder.Entity<ScoringCriteria>()
@@ -232,9 +240,9 @@ namespace Web_cham_diem.Models
                 .Property(sc => sc.Weight)
                 .HasPrecision(18, 2);
             modelBuilder.Entity<ScoringCriteria>()
-                .HasOne(sc => sc.Competition)
-                .WithMany(c => c.ScoringCriteria)
-                .HasForeignKey(sc => sc.CompetitionId)
+                .HasOne(sc => sc.Round)
+                .WithMany(r => r.ScoringCriteria)
+                .HasForeignKey(sc => sc.RoundId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Configure Scores
@@ -323,6 +331,12 @@ namespace Web_cham_diem.Models
             modelBuilder.Entity<CompetitionRounds>()
                 .Property(cr => cr.Status)
                 .HasMaxLength(50);
+            modelBuilder.Entity<CompetitionRounds>()
+                .Property(cr => cr.MeetingLink)
+                .HasMaxLength(500);
+            modelBuilder.Entity<CompetitionRounds>()
+                .Property(cr => cr.Location)
+                .HasMaxLength(300);
             modelBuilder.Entity<CompetitionRounds>()
                 .HasOne(cr => cr.Competition)
                 .WithMany(c => c.CompetitionRounds)

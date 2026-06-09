@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Web_cham_diem.Models;
@@ -11,9 +12,11 @@ using Web_cham_diem.Models;
 namespace Web_cham_diem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608151035_AddRoundBasedScoringAndRoundInfo2")]
+    partial class AddRoundBasedScoringAndRoundInfo2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -363,9 +366,6 @@ namespace Web_cham_diem.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("RoundId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -380,10 +380,7 @@ namespace Web_cham_diem.Migrations
 
                     b.HasIndex("CompetitionId");
 
-                    b.HasIndex("RoundId");
-
-                    b.HasIndex("UserId", "CompetitionId", "RoundId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("Judges");
                 });
@@ -556,35 +553,35 @@ namespace Web_cham_diem.Migrations
                         new
                         {
                             RoleId = 1,
-                            CreatedAt = new DateTime(2026, 6, 8, 15, 30, 57, 23, DateTimeKind.Utc).AddTicks(207),
+                            CreatedAt = new DateTime(2026, 6, 8, 15, 10, 34, 700, DateTimeKind.Utc).AddTicks(6555),
                             Description = "Quản trị viên hệ thống",
                             RoleName = "Admin"
                         },
                         new
                         {
                             RoleId = 2,
-                            CreatedAt = new DateTime(2026, 6, 8, 15, 30, 57, 23, DateTimeKind.Utc).AddTicks(210),
+                            CreatedAt = new DateTime(2026, 6, 8, 15, 10, 34, 700, DateTimeKind.Utc).AddTicks(6558),
                             Description = "Sinh viên tham dự cuộc thi",
                             RoleName = "Student"
                         },
                         new
                         {
                             RoleId = 3,
-                            CreatedAt = new DateTime(2026, 6, 8, 15, 30, 57, 23, DateTimeKind.Utc).AddTicks(212),
+                            CreatedAt = new DateTime(2026, 6, 8, 15, 10, 34, 700, DateTimeKind.Utc).AddTicks(6559),
                             Description = "Ban tổ chức cuộc thi",
                             RoleName = "Organizer"
                         },
                         new
                         {
                             RoleId = 4,
-                            CreatedAt = new DateTime(2026, 6, 8, 15, 30, 57, 23, DateTimeKind.Utc).AddTicks(213),
+                            CreatedAt = new DateTime(2026, 6, 8, 15, 10, 34, 700, DateTimeKind.Utc).AddTicks(6561),
                             Description = "Giám khảo",
                             RoleName = "Judge"
                         },
                         new
                         {
                             RoleId = 5,
-                            CreatedAt = new DateTime(2026, 6, 8, 15, 30, 57, 23, DateTimeKind.Utc).AddTicks(215),
+                            CreatedAt = new DateTime(2026, 6, 8, 15, 10, 34, 700, DateTimeKind.Utc).AddTicks(6563),
                             Description = "Giảng viên hướng dẫn",
                             RoleName = "Lecturer"
                         });
@@ -1141,11 +1138,6 @@ namespace Web_cham_diem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Web_cham_diem.Models.CompetitionRounds", "Round")
-                        .WithMany("Judges")
-                        .HasForeignKey("RoundId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Web_cham_diem.Models.Users", "User")
                         .WithMany("Judges")
                         .HasForeignKey("UserId")
@@ -1153,8 +1145,6 @@ namespace Web_cham_diem.Migrations
                         .IsRequired();
 
                     b.Navigation("Competition");
-
-                    b.Navigation("Round");
 
                     b.Navigation("User");
                 });
@@ -1417,8 +1407,6 @@ namespace Web_cham_diem.Migrations
             modelBuilder.Entity("Web_cham_diem.Models.CompetitionRounds", b =>
                 {
                     b.Navigation("JudgeAssignments");
-
-                    b.Navigation("Judges");
 
                     b.Navigation("ScoringCriteria");
 

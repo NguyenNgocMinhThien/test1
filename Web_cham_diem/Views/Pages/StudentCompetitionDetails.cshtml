@@ -354,35 +354,42 @@
                 }
             </div>
 
-            <!-- 4. TIÊU CHÍ CHẤM ĐIỂM -->
+            <!-- 4. TIÊU CHÍ CHẤM ĐIỂM THEO VÒNG -->
             <div id="criteria-section" class="card-academic card p-4 mb-4 border border-light">
-                <h4 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-ui-checks-grid me-2"></i>Tiêu chí chấm điểm</h4>
-                @if (Model.ScoringCriteria != null && Model.ScoringCriteria.Any())
+                <h4 class="text-academic fw-bold mb-4 border-bottom pb-2"><i class="bi bi-ui-checks-grid me-2"></i>Tiêu chí chấm điểm theo vòng</h4>
+                @{
+                    var roundsWithCriteria = Model.CompetitionRounds?.Where(r => r.ScoringCriteria != null && r.ScoringCriteria.Any()).OrderBy(r => r.RoundOrder).ToList();
+                }
+                @if (roundsWithCriteria != null && roundsWithCriteria.Any())
                 {
-                    <div class="table-responsive rounded-3 border">
-                        <table class="table rubric-table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="py-3 px-4">Tiêu chí đánh giá</th>
-                                    <th class="py-3 text-center">Trọng số</th>
-                                    <th class="py-3 text-center">Thang điểm</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var criteria in Model.ScoringCriteria.OrderBy(c => c.Order))
-                                {
+                    @foreach (var round in roundsWithCriteria)
+                    {
+                        <h6 class="fw-bold text-secondary mt-3 mb-2"><i class="bi bi-flag me-1"></i>@round.RoundName</h6>
+                        <div class="table-responsive rounded-3 border mb-3">
+                            <table class="table rubric-table table-hover mb-0 align-middle">
+                                <thead class="table-light">
                                     <tr>
-                                        <td class="py-3 px-4">
-                                            <div class="fw-bold text-dark">@criteria.CriteriaName</div>
-                                            <small class="text-muted">@criteria.Description</small>
-                                        </td>
-                                        <td class="py-3 text-center fw-semibold text-secondary">@(criteria.Weight * 100)%</td>
-                                        <td class="py-3 text-center fw-bold text-academic">@criteria.MaxScore đ</td>
+                                        <th class="py-3 px-4">Tiêu chí đánh giá</th>
+                                        <th class="py-3 text-center">Trọng số</th>
+                                        <th class="py-3 text-center">Thang điểm</th>
                                     </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @foreach (var criteria in round.ScoringCriteria.OrderBy(c => c.Order))
+                                    {
+                                        <tr>
+                                            <td class="py-3 px-4">
+                                                <div class="fw-bold text-dark">@criteria.CriteriaName</div>
+                                                <small class="text-muted">@criteria.Description</small>
+                                            </td>
+                                            <td class="py-3 text-center fw-semibold text-secondary">@(criteria.Weight * 100)%</td>
+                                            <td class="py-3 text-center fw-bold text-academic">@criteria.MaxScore đ</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
                 }
                 else
                 {
