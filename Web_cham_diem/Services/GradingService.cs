@@ -141,10 +141,11 @@ public class GradingService : IGradingService
         .ThenByDescending(a => a.AssignedDate)
         .ToList();
 
-        // Scoring criteria
+        // Scoring criteria (theo từng vòng thuộc cuộc thi)
         vm.ScoringCriteria = await _context.ScoringCriteria
-            .Where(c => c.CompetitionId == cid)
-            .OrderBy(c => c.Order)
+            .Where(c => c.Round.CompetitionId == cid)
+            .OrderBy(c => c.Round.RoundOrder)
+            .ThenBy(c => c.Order)
             .Select(c => new ScoringCriteriaViewDto
             {
                 CriteriaId   = c.CriteriaId,

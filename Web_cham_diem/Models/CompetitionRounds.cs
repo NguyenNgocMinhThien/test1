@@ -16,6 +16,17 @@ namespace Web_cham_diem.Models
         public int? MaxAdvancing { get; set; }                      // Số người/đội vào vòng tiếp (null = tất cả)
         public string Status { get; set; } = "Upcoming";            // Upcoming | Active | Completed
 
+        // Yêu cầu bài nộp
+        public bool RequiresFile { get; set; } = true;              // Yêu cầu nộp file
+        public bool RequiresVideo { get; set; } = false;            // Yêu cầu link video
+        public bool RequiresOtherLink { get; set; } = false;        // Yêu cầu link khác
+
+        // Thông tin buổi thi / thuyết trình
+        public bool IsOnline { get; set; } = false;                 // Online hay offline
+        public string? MeetingLink { get; set; }                    // Link tham dự online
+        public DateTime? MeetingTime { get; set; }                  // Thời gian cuộc họp / bảo vệ
+        public string? Location { get; set; }                       // Địa điểm (nếu offline)
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
@@ -25,5 +36,7 @@ namespace Web_cham_diem.Models
         // Navigation
         public ICollection<Submissions> Submissions { get; set; } = new List<Submissions>();
         public ICollection<JudgeAssignments> JudgeAssignments { get; set; } = new List<JudgeAssignments>();
+        public ICollection<ScoringCriteria> ScoringCriteria { get; set; } = new List<ScoringCriteria>();
+        public ICollection<Judges> Judges { get; set; } = new List<Judges>();
     }
 }

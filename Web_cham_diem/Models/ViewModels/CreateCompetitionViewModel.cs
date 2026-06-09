@@ -45,16 +45,8 @@ namespace Web_cham_diem.Models.ViewModels
             }
         };
 
-        // Step 2c: Vòng thi (tùy chọn, có thể thêm nhiều vòng)
+        // Step 2c: Vòng thi (tùy chọn, có thể thêm nhiều vòng — mỗi vòng có tiêu chí riêng)
         public List<CompetitionRoundCreateDto> CompetitionRounds { get; set; } = new();
-
-        // Step 3: Tiêu chí chấm điểm (bắt buộc ít nhất 1)
-        public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new()
-        {
-            new ScoringCriteriaCreateDto { CriteriaName = "Ý tưởng", MaxScore = 100, Weight = 0.30m, Order = 1 },
-            new ScoringCriteriaCreateDto { CriteriaName = "Thực hiện", MaxScore = 100, Weight = 0.40m, Order = 2 },
-            new ScoringCriteriaCreateDto { CriteriaName = "Thuyết trình", MaxScore = 100, Weight = 0.30m, Order = 3 }
-        };
 
         // Step 4: Ảnh & Tài liệu (Không bắt buộc)
         public List<string>? SelectedImageData { get; set; } = new();
@@ -77,11 +69,27 @@ namespace Web_cham_diem.Models.ViewModels
 
     public class CompetitionRoundCreateDto
     {
-        public string RoundName { get; set; } = string.Empty;    // "Sơ khảo", "Bán kết", "Chung kết"
+        public string RoundName { get; set; } = string.Empty;
         public int RoundOrder { get; set; } = 1;
+        public string? Description { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public int? MaxAdvancing { get; set; }                   // Số đội/thí sinh được nhận vào vòng này
+        public DateTime? SubmissionDeadline { get; set; }
+        public int? MaxAdvancing { get; set; }
+
+        // Yêu cầu bài nộp
+        public bool RequiresFile { get; set; } = true;
+        public bool RequiresVideo { get; set; } = false;
+        public bool RequiresOtherLink { get; set; } = false;
+
+        // Thông tin buổi thi / thuyết trình
+        public bool IsOnline { get; set; } = false;
+        public string? MeetingLink { get; set; }
+        public DateTime? MeetingTime { get; set; }
+        public string? Location { get; set; }
+
+        // Tiêu chí chấm điểm của vòng này
+        public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new();
     }
 
     public class ScoringCriteriaCreateDto
@@ -203,10 +211,24 @@ namespace Web_cham_diem.Models.ViewModels
         public int RoundId { get; set; }
         public string RoundName { get; set; } = string.Empty;
         public int RoundOrder { get; set; }
+        public string? Description { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime? SubmissionDeadline { get; set; }
         public int? MaxAdvancing { get; set; }
         public string Status { get; set; } = "Upcoming";
+
+        public bool RequiresFile { get; set; } = true;
+        public bool RequiresVideo { get; set; } = false;
+        public bool RequiresOtherLink { get; set; } = false;
+
+        public bool IsOnline { get; set; } = false;
+        public string? MeetingLink { get; set; }
+        public DateTime? MeetingTime { get; set; }
+        public string? Location { get; set; }
+
+        public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new();
+
         public bool IsActive => DateTime.UtcNow >= StartDate && DateTime.UtcNow <= EndDate;
         public bool IsPast => DateTime.UtcNow > EndDate;
     }
@@ -214,8 +236,21 @@ namespace Web_cham_diem.Models.ViewModels
     public class UpdateCompetitionRoundDto
     {
         public string RoundName { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime? SubmissionDeadline { get; set; }
         public int? MaxAdvancing { get; set; }
+
+        public bool RequiresFile { get; set; } = true;
+        public bool RequiresVideo { get; set; } = false;
+        public bool RequiresOtherLink { get; set; } = false;
+
+        public bool IsOnline { get; set; } = false;
+        public string? MeetingLink { get; set; }
+        public DateTime? MeetingTime { get; set; }
+        public string? Location { get; set; }
+
+        public List<ScoringCriteriaCreateDto> ScoringCriteria { get; set; } = new();
     }
 }

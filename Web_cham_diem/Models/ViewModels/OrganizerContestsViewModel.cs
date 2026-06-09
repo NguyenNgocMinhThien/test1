@@ -71,11 +71,31 @@
         public int TotalSubmissions { get; set; }
         public int EvaluatedSubmissions { get; set; }
         public string? BannerImageUrl { get; set; }
-        public List<ScoringCriteriaDto> ScoringCriteria { get; set; } = new();
+        public List<CompetitionRoundDetailDto> CompetitionRounds { get; set; } = new();
         public List<RegistrationRoundReadDto> RegistrationRounds { get; set; } = new();
         public List<ImageReadDto> Images { get; set; } = new();
         public List<DocumentReadDto> Documents { get; set; } = new();
         public List<CompetitionSponsorReadDto> Sponsors { get; set; } = new();
+    }
+
+    public class CompetitionRoundDetailDto
+    {
+        public int RoundId { get; set; }
+        public string RoundName { get; set; } = string.Empty;
+        public int RoundOrder { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public DateTime? SubmissionDeadline { get; set; }
+        public int? MaxAdvancing { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool RequiresFile { get; set; }
+        public bool RequiresVideo { get; set; }
+        public bool RequiresOtherLink { get; set; }
+        public bool IsOnline { get; set; }
+        public string? MeetingLink { get; set; }
+        public DateTime? MeetingTime { get; set; }
+        public string? Location { get; set; }
+        public List<ScoringCriteriaDto> ScoringCriteria { get; set; } = new();
     }
 
     public class ScoringCriteriaDto
