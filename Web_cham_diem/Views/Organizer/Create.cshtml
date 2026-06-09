@@ -1,4 +1,4 @@
-@model Web_cham_diem.Models.ViewModels.CreateCompetitionViewModel
+﻿@model Web_cham_diem.Models.ViewModels.CreateCompetitionViewModel
 @{
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Tạo Cuộc Thi Mới";
@@ -83,8 +83,13 @@
             font-weight: bold;
         }
 
-        .form-section { display: none; }
-        .form-section.active { display: block; }
+        .form-section {
+            display: none;
+        }
+
+            .form-section.active {
+                display: block;
+            }
 
         .section-title {
             font-size: 1.5rem;
@@ -101,7 +106,9 @@
             font-size: 0.95rem;
         }
 
-        .form-group { margin-bottom: 20px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
         .form-label {
             font-weight: 600;
@@ -110,7 +117,9 @@
             display: block;
         }
 
-            .form-label .required { color: #e53e3e; }
+            .form-label .required {
+                color: #e53e3e;
+            }
 
         .form-control, .form-select {
             border: 1px solid #d0d0d0;
@@ -144,7 +153,9 @@
             align-items: end;
         }
 
-            .criteria-item:last-child { margin-bottom: 0; }
+            .criteria-item:last-child {
+                margin-bottom: 0;
+            }
 
         .remove-criteria-btn {
             background: #fee;
@@ -157,7 +168,9 @@
             transition: all 0.2s;
         }
 
-            .remove-criteria-btn:hover { background: #fdd; }
+            .remove-criteria-btn:hover {
+                background: #fdd;
+            }
 
         .add-criteria-btn {
             background: #e8f5e9;
@@ -171,7 +184,9 @@
             width: 100%;
         }
 
-            .add-criteria-btn:hover { background: #d4f1d4; }
+            .add-criteria-btn:hover {
+                background: #d4f1d4;
+            }
 
         /* Competition round cards */
         .comp-round-card {
@@ -192,7 +207,9 @@
             border-bottom: 1px solid #dce3f0;
         }
 
-        .comp-round-body { padding: 20px; }
+        .comp-round-body {
+            padding: 20px;
+        }
 
         .round-sub-section {
             background: #f8f9fa;
@@ -238,7 +255,9 @@
             margin-top: 8px;
         }
 
-            .round-add-criteria-btn:hover { background: #d4f1d4; }
+            .round-add-criteria-btn:hover {
+                background: #d4f1d4;
+            }
 
         /* Summary */
         .summary-section {
@@ -256,8 +275,15 @@
             font-size: 0.95rem;
         }
 
-            .summary-item .label { color: #666; font-weight: 500; }
-            .summary-item .value { color: var(--text-dark); font-weight: 600; }
+            .summary-item .label {
+                color: #666;
+                font-weight: 500;
+            }
+
+            .summary-item .value {
+                color: var(--text-dark);
+                font-weight: 600;
+            }
 
         .validation-errors {
             background: #fee;
@@ -268,8 +294,14 @@
             margin-bottom: 20px;
         }
 
-            .validation-errors ul { margin: 0; padding-left: 20px; }
-            .validation-errors li { margin: 5px 0; }
+            .validation-errors ul {
+                margin: 0;
+                padding-left: 20px;
+            }
+
+            .validation-errors li {
+                margin: 5px 0;
+            }
 
         .btn-container {
             display: flex;
@@ -290,16 +322,28 @@
             transition: all 0.3s;
         }
 
-        .btn-prev { background: #e0e0e0; color: #333; }
-            .btn-prev:hover { background: #d0d0d0; }
+        .btn-prev {
+            background: #e0e0e0;
+            color: #333;
+        }
 
-        .btn-next, .btn-submit { background: var(--organizer-accent); color: white; }
+            .btn-prev:hover {
+                background: #d0d0d0;
+            }
+
+        .btn-next, .btn-submit {
+            background: var(--organizer-accent);
+            color: white;
+        }
+
             .btn-next:hover, .btn-submit:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 16px rgba(var(--organizer-accent-rgb), 0.3);
             }
 
-        .text-danger { color: #e53e3e; }
+        .text-danger {
+            color: #e53e3e;
+        }
 
         /* File upload */
         .file-upload-area {
@@ -312,12 +356,25 @@
             background: #f9f9f9;
         }
 
-            .file-upload-area:hover { border-color: var(--organizer-accent); background: rgba(var(--organizer-accent-rgb), 0.05); }
-            .file-upload-area.dragover { border-color: var(--organizer-accent); background: rgba(var(--organizer-accent-rgb), 0.1); }
+            .file-upload-area:hover {
+                border-color: var(--organizer-accent);
+                background: rgba(var(--organizer-accent-rgb), 0.05);
+            }
 
-        .file-upload-icon { font-size: 2.5rem; color: var(--organizer-accent); margin-bottom: 10px; }
+            .file-upload-area.dragover {
+                border-color: var(--organizer-accent);
+                background: rgba(var(--organizer-accent-rgb), 0.1);
+            }
 
-        .file-list { margin-top: 20px; }
+        .file-upload-icon {
+            font-size: 2.5rem;
+            color: var(--organizer-accent);
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
 
         .file-item {
             background: #f8f9fa;
@@ -330,8 +387,16 @@
             margin-bottom: 10px;
         }
 
-            .file-item .file-info { display: flex; align-items: center; gap: 10px; }
-            .file-item .file-icon { font-size: 1.5rem; }
+            .file-item .file-info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .file-item .file-icon {
+                font-size: 1.5rem;
+            }
+
             .file-item .file-remove {
                 background: #fee;
                 color: #e53e3e;
@@ -352,7 +417,9 @@
             display: none;
         }
 
-            .alert-danger-custom.show { display: block; }
+            .alert-danger-custom.show {
+                display: block;
+            }
 
         .image-preview-grid {
             display: grid;
@@ -368,7 +435,11 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-            .image-preview-item img { width: 100%; height: 120px; object-fit: cover; }
+            .image-preview-item img {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+            }
 
             .image-preview-item .preview-actions {
                 position: absolute;
@@ -379,15 +450,15 @@
                 border-radius: 0 0 0 8px;
             }
 
-            .image-preview-item .preview-actions button {
-                background: #e53e3e;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 4px 8px;
-                cursor: pointer;
-                font-size: 0.8rem;
-            }
+                .image-preview-item .preview-actions button {
+                    background: #e53e3e;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    cursor: pointer;
+                    font-size: 0.8rem;
+                }
 
         /* Sponsor */
         .sponsor-item {
@@ -408,7 +479,12 @@
             border-bottom: 1px solid #f0f0f0;
         }
 
-        .sponsor-card-title { font-weight: 700; color: var(--text-dark); margin: 0; font-size: 1rem; }
+        .sponsor-card-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+            font-size: 1rem;
+        }
 
         .remove-sponsor-btn {
             background: #fee;
@@ -421,7 +497,9 @@
             transition: all 0.2s;
         }
 
-            .remove-sponsor-btn:hover { background: #fdd; }
+            .remove-sponsor-btn:hover {
+                background: #fdd;
+            }
 
         .add-sponsor-btn {
             background: #eef2ff;
@@ -435,7 +513,9 @@
             width: 100%;
         }
 
-            .add-sponsor-btn:hover { background: #e0e7ff; }
+            .add-sponsor-btn:hover {
+                background: #e0e7ff;
+            }
 
         .sponsor-empty-state {
             text-align: center;
@@ -447,7 +527,10 @@
             margin-bottom: 20px;
         }
 
-        .sponsor-empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .sponsor-empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
     </style>
 }
 
@@ -673,7 +756,7 @@
                                     <!-- Header -->
                                     <div class="comp-round-header">
                                         <div style="display:flex; align-items:center; gap:12px;">
-                                            <input type="hidden" name="CompetitionRounds[@i].RoundOrder" value="@(i+1)">
+                                            <input type="hidden" name="CompetitionRounds[@i].RoundOrder" value="@(i + 1)">
                                             <i class="bi bi-trophy-fill" style="color:#4f46e5; font-size:1.1rem;"></i>
                                             <select name="CompetitionRounds[@i].RoundName" class="form-select comp-round-name"
                                                     style="width:200px; font-weight:600;" data-value="@round.RoundName" required>
@@ -818,7 +901,7 @@
                                                     <div class="round-criteria-item">
                                                         <div>
                                                             <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Tên tiêu chí</label>
-                                                            <input type="hidden" name="CompetitionRounds[@i].ScoringCriteria[@j].Order" value="@(j+1)">
+                                                            <input type="hidden" name="CompetitionRounds[@i].ScoringCriteria[@j].Order" value="@(j + 1)">
                                                             <input type="text" name="CompetitionRounds[@i].ScoringCriteria[@j].CriteriaName"
                                                                    class="form-control" placeholder="VD: Sáng tạo, Kỹ thuật..."
                                                                    value="@crit.CriteriaName" style="font-size:0.9rem;">

@@ -3,6 +3,7 @@
     Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
     ViewData["Title"] = "Quản lý Chấm điểm & Phân công";
     var cid = Model.SelectedCompetitionId ?? 0;
+    var firstRound = Model.CompetitionRounds.FirstOrDefault();
 }
 
 @functions {
@@ -11,13 +12,15 @@
     string AssignBadge(string s) => s switch { "Completed" => "bg-success", "InProgress" => "bg-primary", "Reassigned" => "bg-secondary", _ => "bg-warning text-dark" };
     string AssignText(string s)  => s switch { "Completed" => "Hoàn thành", "InProgress" => "Đang chấm", "Reassigned" => "Đã thu hồi", _ => "Chờ chấm" };
     string ProgressColor(double pct) => pct >= 80 ? "bg-success" : pct >= 40 ? "bg-warning" : "bg-danger";
+    string RoundStatusBadge(string s) => s switch { "Active" => "bg-success", "Completed" => "bg-secondary", _ => "bg-info text-dark" };
+    string RoundStatusText(string s)  => s switch { "Active" => "Đang diễn ra", "Completed" => "Hoàn thành", _ => "Sắp diễn ra" };
 }
 
 @section Styles {
 <style>
     .org-grading-wrapper { background-color: var(--primary-bg); min-height: calc(100vh - 70px); }
 
-    .grade-stat-card { background: #fff; padding: 18px 22px; border-radius: 12px; border: 1px solid var(--border-color); position: relative; overflow: hidden; transition: box-shadow .2s; }
+    .grade-stat-card { background: #fff; padding: 18px 22px; border-radius: 12px; border: 1px solid var(--border-color); transition: box-shadow .2s; }
     .grade-stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
     .grade-stat-title { font-size: .73rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
     .grade-stat-val { font-size: 1.9rem; font-weight: 800; color: var(--text-dark); margin-top: 4px; line-height: 1; }
@@ -38,46 +41,39 @@
     .avatar-sm { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
     .avatar-placeholder { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex-shrink: 0; }
 
-    .criteria-card { background: #fff; border: 1px solid var(--border-color); border-left: 4px solid var(--organizer-accent); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
-
-    .sub-check-item { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; transition: background .15s; }
-    .sub-check-item:hover { background: #f8fafc; }
-    .sub-check-item:last-child { border-bottom: none; }
-
     .user-suggestion { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background .15s; }
     .user-suggestion:hover { background: #f0f9ff; }
     .user-suggestion:last-child { border-bottom: none; }
 
     .empty-state { padding: 50px 20px; text-align: center; color: var(--text-muted); }
     .empty-state i { font-size: 2.8rem; opacity: .25; }
+
+    /* Pool table assignment chips */
+    .round-chip { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .68rem; font-weight: 600; margin: 2px; }
+    .round-chip.head { background: #fee2e2; color: #dc2626; }
+    .round-chip.vice { background: #fef3c7; color: #d97706; }
+    .round-chip.member { background: #e5e7eb; color: #374151; }
+
+    /* Round pills in Tab 2 */
+    .round-pills .nav-link { padding: 8px 18px; border-radius: 20px; font-weight: 600; font-size: .85rem; color: var(--text-muted); background: #f1f5f9; border: 1px solid transparent; margin-right: 6px; transition: all .2s; }
+    .round-pills .nav-link:hover { background: #e2e8f0; color: var(--text-dark); }
+    .round-pills .nav-link.active { background: var(--organizer-accent); color: #fff; border-color: var(--organizer-accent); }
+    .round-pills .nav-link .badge { font-size: .6rem; }
+
+    /* Round header card */
+    .round-header-card { background: linear-gradient(135deg,#f0f4ff,#e8f0fe); border: 1px solid #dce3f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; }
+
+    .conflict-badge { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; border-radius: 8px; padding: 8px 12px; font-size: .82rem; }
 </style>
 }
 
 <div class="org-grading-wrapper py-4">
     <div class="container-fluid">
 
-        <!-- Header + Competition Filter -->
-        <div class="d-flex flex-wrap gap-3 justify-content-between align-items-start mb-4">
-            <div>
-                <h3 class="fw-bold mb-1 text-dark">Quản lý Chấm điểm & Phân công</h3>
-                <p class="text-muted small mb-0">Điều phối giám khảo, phân công bài thi và theo dõi tiến độ chấm.</p>
-            </div>
-            @if (Model.Competitions.Any())
-            {
-                <form method="get" asp-action="Grading" asp-controller="Organizer" class="d-flex align-items-center gap-2">
-                    <label class="small fw-bold text-muted mb-0 text-nowrap">Cuộc thi:</label>
-                    <select name="competitionId" class="form-select form-select-sm border-primary" style="min-width:220px"
-                            onchange="this.form.submit()">
-                        @foreach (var c in Model.Competitions)
-                        {
-                            if (Model.SelectedCompetitionId == c.CompetitionId)
-                            { <option value="@c.CompetitionId" selected>@c.CompetitionName</option> }
-                            else
-                            { <option value="@c.CompetitionId">@c.CompetitionName</option> }
-                        }
-                    </select>
-                </form>
-            }
+        <!-- Header -->
+        <div class="mb-4">
+            <h3 class="fw-bold mb-1 text-dark">Quản lý Chấm điểm & Phân công</h3>
+            <p class="text-muted small mb-0">Quản lý danh sách giám khảo và phân công ban giám khảo cho từng vòng thi.</p>
         </div>
 
         @if (TempData["ErrorMessage"] != null)
@@ -92,9 +88,9 @@
         <div class="row g-3 mb-4">
             <div class="col-6 col-md-3">
                 <div class="grade-stat-card border-bottom border-3 border-primary">
-                    <div class="grade-stat-title">Giám khảo hoạt động</div>
-                    <div class="grade-stat-val text-primary">@Model.ActiveJudges</div>
-                    <div class="small text-muted mt-1">@Model.Judges.Count tổng</div>
+                    <div class="grade-stat-title">Giám khảo trong pool</div>
+                    <div class="grade-stat-val text-primary">@Model.JudgePool.Count</div>
+                    <div class="small text-muted mt-1">toàn hệ thống</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
@@ -123,26 +119,19 @@
         <!-- Tabs -->
         <ul class="nav nav-tabs grading-tabs" id="gradingTabs" role="tablist">
             <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-judges" type="button" id="btn-tab-judges">
-                    <i class="bi bi-person-badge me-2"></i>Giám khảo
-                    @if (Model.Judges.Any())
-                    { <span class="badge bg-light text-dark border ms-1">@Model.Judges.Count</span> }
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-pool" type="button" id="btn-tab-pool">
+                    <i class="bi bi-people me-2"></i>Danh sách Giám khảo
+                    @if (Model.JudgePool.Any())
+                    { <span class="badge bg-light text-dark border ms-1">@Model.JudgePool.Count</span> }
                 </button>
             </li>
             <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-assign" type="button" id="btn-tab-assign">
-                    <i class="bi bi-signpost-split me-2"></i>Phân công Chấm
-                    @if (Model.Assignments.Any())
-                    { <span class="badge bg-secondary ms-1">@Model.Assignments.Count</span> }
+                    <i class="bi bi-person-check me-2"></i>Phân công Ban Giám khảo
+                    @if (Model.Judges.Any())
+                    { <span class="badge bg-secondary ms-1">@Model.Judges.Count</span> }
                 </button>
             </li>
-            @* <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rubric" type="button" id="btn-tab-rubric">
-                    <i class="bi bi-sliders me-2"></i>Tiêu chí chấm
-                    @if (Model.ScoringCriteria.Any())
-                    { <span class="badge bg-light text-dark border ms-1">@Model.ScoringCriteria.Count</span> }
-                </button>
-            </li> *@
             <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-monitor" type="button" id="btn-tab-monitor">
                     <i class="bi bi-activity me-2"></i>Theo dõi & Cảnh báo
@@ -154,90 +143,82 @@
 
         <div class="tab-content">
 
-            <!-- ═══ TAB 1: DANH SÁCH GIÁM KHẢO ═══ -->
-            <div class="tab-pane fade show active" id="tab-judges">
+            <!-- ═══ TAB 1: DANH SÁCH GIÁM KHẢO (Pool) ═══ -->
+            <div class="tab-pane fade show active" id="tab-pool">
                 <div class="d-flex justify-content-between align-items-center py-3">
                     <div class="input-group input-group-sm" style="max-width:260px">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                        <input type="text" id="judge-filter-input" class="form-control" placeholder="Lọc tên giám khảo...">
+                        <input type="text" id="pool-filter-input" class="form-control" placeholder="Lọc tên giám khảo...">
                     </div>
-                    <button class="btn btn-sm btn-primary" onclick="openAddJudgeModal()" @(cid == 0 ? "disabled" : "")>
+                    <button class="btn btn-sm btn-primary" onclick="openAddToPoolModal()">
                         <i class="bi bi-person-plus me-1"></i>Thêm Giám khảo
                     </button>
                 </div>
 
                 <div class="grade-table-container shadow-sm">
-                    @if (!Model.Judges.Any())
+                    @if (!Model.JudgePool.Any())
                     {
                         <div class="empty-state">
                             <i class="bi bi-people d-block mb-3"></i>
-                            <p class="fw-bold mb-1">Chưa có giám khảo</p>
-                            <p class="small mb-0">Nhấn "Thêm Giám khảo" để thêm thành viên ban chấm điểm.</p>
+                            <p class="fw-bold mb-1">Chưa có giám khảo nào</p>
+                            <p class="small mb-0">Nhấn "Thêm Giám khảo" để đưa một người dùng vào danh sách giám khảo của hệ thống.</p>
                         </div>
                     }
                     else
                     {
                         <div class="table-responsive">
-                            <table class="table grade-table mb-0" id="judge-table">
+                            <table class="table grade-table mb-0" id="pool-table">
                                 <thead>
                                     <tr>
                                         <th width="28%">Họ tên / Email</th>
-                                        <th width="12%">Vai trò</th>
-                                        <th>Chuyên môn</th>
-                                        <th width="20%">Workload</th>
-                                        <th width="18%">Tiến độ chấm</th>
+                                        <th width="10%" class="text-center">Số vòng</th>
+                                        <th>Cuộc thi & Vòng đang tham gia</th>
                                         <th class="text-center" width="10%">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var j in Model.Judges)
+                                    @foreach (var p in Model.JudgePool)
                                     {
-                                        var initials = string.Concat(j.FullName.Split(' ').TakeLast(2).Select(w => w.Length > 0 ? w[0].ToString() : ""));
-                                        var color = j.JudgeRole == "HeadJudge" ? "#dc3545" : j.JudgeRole == "ViceHead" ? "#f59e0b" : "#6c757d";
-                                        <tr class="judge-row">
+                                        var initials = string.Concat(p.FullName.Split(' ').TakeLast(2).Select(w => w.Length > 0 ? w[0].ToString() : ""));
+                                        <tr class="pool-row">
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <div class="avatar-placeholder text-white" style="background:@color">@initials</div>
+                                                    <div class="avatar-placeholder text-white" style="background:#0ea5e9">@initials</div>
                                                     <div>
-                                                        <div class="fw-bold text-dark">@j.FullName</div>
-                                                        <div class="small text-muted">@j.Email</div>
+                                                        <div class="fw-bold text-dark">@p.FullName</div>
+                                                        <div class="small text-muted">@p.Email</div>
+                                                        @if (!string.IsNullOrEmpty(p.StudentId))
+                                                        { <div class="small text-muted">MSSV: @p.StudentId</div> }
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td><span class="badge @RoleBadge(j.JudgeRole)">@RoleText(j.JudgeRole)</span></td>
+                                            <td class="text-center">
+                                                @if (p.TotalRoundsAssigned > 0)
+                                                { <span class="badge bg-primary">@p.TotalRoundsAssigned vòng</span> }
+                                                else
+                                                { <span class="text-muted small">Chưa phân công</span> }
+                                            </td>
                                             <td>
-                                                @if (!string.IsNullOrEmpty(j.Expertise))
+                                                @if (p.RoundAssignments.Any())
                                                 {
-                                                    <span class="badge bg-light text-dark border">@j.Expertise</span>
+                                                    foreach (var ra in p.RoundAssignments)
+                                                    {
+                                                        var chipClass = ra.JudgeRole == "HeadJudge" ? "head" : ra.JudgeRole == "ViceHead" ? "vice" : "member";
+                                                        <span class="round-chip @chipClass" title="@ra.CompetitionName">
+                                                            @RoleText(ra.JudgeRole) · @ra.RoundName
+                                                        </span>
+                                                    }
                                                 }
                                                 else
                                                 {
                                                     <span class="text-muted small">—</span>
                                                 }
                                             </td>
-                                            <td>
-                                                <div class="fw-bold text-dark">@j.TotalAssigned bài</div>
-                                                <div class="small text-muted">Xong: @j.Completed · Đang: @j.InProgress</div>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex justify-content-between small mb-1">
-                                                    <span class="text-muted">@j.Completed / @j.TotalAssigned</span>
-                                                    <span class="fw-bold">@j.CompletionRate%</span>
-                                                </div>
-                                                <div class="workload-bar">
-                                                    <div class="progress-bar @ProgressColor(j.CompletionRate)" style="width:@j.CompletionRate%;height:100%;border-radius:10px"></div>
-                                                </div>
-                                            </td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-light text-primary"
-                                                        onclick="openEditJudgeModal(@j.JudgeId,'@j.FullName','@j.JudgeRole','@(j.Expertise ?? "")')"
-                                                        title="Chỉnh sửa vai trò">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
                                                 <button class="btn btn-sm btn-light text-danger"
-                                                        onclick="removeJudge(@j.JudgeId,'@j.FullName')"
-                                                        title="Xóa khỏi ban">
-                                                    <i class="bi bi-trash"></i>
+                                                        onclick="removeFromPool(@p.UserId, '@p.FullName.Replace("'", "\\'")')"
+                                                        title="Xóa khỏi danh sách giám khảo">
+                                                    <i class="bi bi-person-dash"></i>
                                                 </button>
                                             </td>
                                         </tr>
@@ -246,298 +227,212 @@
                             </table>
                         </div>
                         <div class="p-3 bg-white border-top">
-                            <small class="text-muted">@Model.Judges.Count giám khảo trong ban</small>
+                            <small class="text-muted">Tổng: @Model.JudgePool.Count giám khảo trong hệ thống</small>
                         </div>
                     }
                 </div>
             </div>
 
-            <!-- ═══ TAB 2: PHÂN CÔNG CHẤM ĐIỂM ═══ -->
+            <!-- ═══ TAB 2: PHÂN CÔNG BAN GIÁM KHẢO (per round) ═══ -->
             <div class="tab-pane fade" id="tab-assign">
-                @if (!Model.Judges.Any())
-                {
-                    <div class="alert alert-warning mt-3">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        Chưa có giám khảo. Thêm giám khảo trước khi phân công.
-                    </div>
-                }
-                else if (!Model.Submissions.Any())
-                {
-                    <div class="alert alert-info mt-3">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        Cuộc thi chưa có bài dự thi nào được nộp.
-                    </div>
-                }
-                else
-                {
-                    <div class="row g-4 mt-0">
-                        <!-- Left: Submissions -->
-                        <div class="col-lg-5">
-                            <div class="bg-white p-4 rounded-3 border shadow-sm">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="fw-bold mb-0">1. Chọn bài thi</h6>
-                                    <div>
-                                        <button class="btn btn-outline-secondary btn-sm me-1" onclick="toggleAll(true)">Tất cả</button>
-                                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Bỏ chọn</button>
-                                    </div>
-                                </div>
 
-                                <div class="mb-2">
-                                    <div class="btn-group btn-group-sm w-100" role="group">
-                                        <button type="button" class="btn btn-outline-secondary active" onclick="filterSubs('all',this)">Tất cả</button>
-                                        <button type="button" class="btn btn-outline-secondary" onclick="filterSubs('unassigned',this)">Chưa phân công</button>
-                                        <button type="button" class="btn btn-outline-secondary" onclick="filterSubs('assigned',this)">Đã phân công</button>
-                                    </div>
-                                </div>
-
-                                <div style="max-height:420px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px" id="submission-list">
-                                    @foreach (var s in Model.Submissions)
-                                    {
-                                        var isAssigned = s.CurrentAssignments.Any();
-                                        <div class="sub-check-item @(isAssigned ? "assigned-item" : "unassigned-item")"
-                                             onclick="toggleSub(this)">
-                                            <input type="checkbox" class="form-check-input sub-checkbox flex-shrink-0 mt-1"
-                                                   value="@s.SubmissionId" onclick="event.stopPropagation()">
-                                            <div class="flex-grow-1">
-                                                <div class="fw-bold small">@s.Title</div>
-                                                <div class="text-muted" style="font-size:.78rem">@s.TeamOrRepresentative</div>
-                                                @if (isAssigned)
-                                                {
-                                                    <div class="mt-1">
-                                                        @foreach (var a in s.CurrentAssignments)
-                                                        {
-                                                            <span class="badge @AssignBadge(a.Status) me-1" style="font-size:.65rem">
-                                                                @a.JudgeName
-                                                            </span>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                            @if (isAssigned)
-                                            {
-                                                <i class="bi bi-check2-circle text-success flex-shrink-0" title="Đã phân công"></i>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                                <div class="mt-2 small fw-bold text-muted">
-                                    Đã chọn: <span id="selected-count" class="text-primary">0</span> bài
-                                </div>
-                            </div>
+                <!-- Bước 1: Chọn cuộc thi -->
+                <div class="bg-white border rounded-3 p-4 mt-3 shadow-sm mb-3">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div>
+                            <div class="fw-bold mb-1"><i class="bi bi-trophy-fill text-warning me-2"></i>Bước 1 — Chọn cuộc thi cần phân công giám khảo</div>
+                            <div class="small text-muted">Sau khi chọn, các vòng thi của cuộc thi đó sẽ hiện ra bên dưới.</div>
                         </div>
-
-                        <!-- Right: Assign panel -->
-                        <div class="col-lg-4">
-                            <div class="bg-white p-4 rounded-3 border shadow-sm">
-                                <h6 class="fw-bold mb-3">2. Phân công cho Giám khảo</h6>
-
-                                <label class="form-label small fw-bold text-muted">Chọn Giám khảo</label>
-                                <select id="assign-judge-select" class="form-select mb-3">
-                                    <option value="">-- Chọn giám khảo --</option>
-                                    @foreach (var j in Model.Judges.Where(j => j.Status == "Active"))
+                        @if (Model.Competitions.Any())
+                        {
+                            <form method="get" asp-action="Grading" asp-controller="Organizer"
+                                  class="d-flex align-items-center gap-2 ms-auto flex-shrink-0">
+                                <input type="hidden" name="activeTab" value="assign" />
+                                <select name="competitionId" class="form-select border-primary" style="min-width:260px"
+                                        onchange="this.form.submit()">
+                                    <option value="">— Chọn cuộc thi —</option>
+                                    @foreach (var c in Model.Competitions)
                                     {
-                                        <option value="@j.JudgeId">@RoleText(j.JudgeRole) · @j.FullName (@j.TotalAssigned bài)</option>
+                                        if (Model.SelectedCompetitionId == c.CompetitionId)
+                                        { <option value="@c.CompetitionId" selected>@c.CompetitionName</option> }
+                                        else
+                                        { <option value="@c.CompetitionId">@c.CompetitionName</option> }
                                     }
                                 </select>
-
-                                <label class="form-label small fw-bold text-muted">Hạn chót chấm (tùy chọn)</label>
-                                <input type="datetime-local" id="assign-deadline" class="form-control mb-4">
-
-                                <button class="btn btn-primary w-100 fw-bold py-2"
-                                        style="background-color:var(--organizer-accent);border-color:var(--organizer-accent)"
-                                        onclick="assignSubmissions()">
-                                    <i class="bi bi-signpost-split me-2"></i>Xác nhận Phân công
-                                </button>
-                            </div>
-                        </div>
+                                @if (cid > 0)
+                                {
+                                    <span class="badge bg-success py-2 px-3 text-nowrap">
+                                        <i class="bi bi-check-circle me-1"></i>Đã chọn
+                                    </span>
+                                }
+                            </form>
+                        }
                     </div>
+                </div>
 
-                    <!-- Assignment list -->
-                    <div class="mt-4">
-                        <h6 class="fw-bold mb-3">Danh sách Phân công hiện tại</h6>
-                        <div class="grade-table-container shadow-sm">
-                            @if (!Model.Assignments.Any())
-                            {
-                                <div class="empty-state">
-                                    <i class="bi bi-clipboard-x d-block mb-3"></i>
-                                    <p class="small mb-0">Chưa có phân công nào.</p>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="table-responsive">
-                                    <table class="table grade-table mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>Bài dự thi</th>
-                                                <th width="20%">Giám khảo</th>
-                                                <th width="15%">Hạn chấm</th>
-                                                <th width="12%" class="text-center">Trạng thái</th>
-                                                <th width="10%" class="text-center">Thao tác</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var a in Model.Assignments)
-                                            {
-                                                <tr @(a.IsOverdue ? "class=table-danger" : "")>
-                                                    <td>
-                                                        <div class="fw-bold">@a.SubmissionTitle</div>
-                                                        <div class="small text-muted">@a.TeamOrRep</div>
-                                                    </td>
-                                                    <td>
-                                                        <div class="fw-bold small">@a.JudgeName</div>
-                                                        <span class="badge @RoleBadge(a.JudgeRole)" style="font-size:.65rem">@RoleText(a.JudgeRole)</span>
-                                                    </td>
-                                                    <td>
-                                                        @if (a.GradingDeadline.HasValue)
-                                                        {
-                                                            <div class="small @(a.IsOverdue ? "text-danger fw-bold" : "")">
-                                                                @a.GradingDeadline.Value.ToString("dd/MM/yyyy HH:mm")
-                                                            </div>
-                                                            @if (a.IsOverdue)
-                                                            {
-                                                                <span class="badge bg-danger" style="font-size:.65rem">Quá hạn</span>
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            <span class="text-muted small">—</span>
-                                                        }
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <span class="badge @AssignBadge(a.Status)">@AssignText(a.Status)</span>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        @if (a.Status != "Completed")
-                                                        {
-                                                            <button class="btn btn-sm btn-outline-danger"
-                                                                    onclick="revokeAssignment(@a.AssignmentId,'@a.JudgeName')"
-                                                                    title="Thu hồi phân công">
-                                                                <i class="bi bi-x-circle"></i>
-                                                            </button>
-                                                        }
-                                                        @if (a.CompletedAt.HasValue)
-                                                        {
-                                                            <small class="text-muted d-block">@a.CompletedAt.Value.ToString("dd/MM")</small>
-                                                        }
-                                                    </td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="p-3 bg-white border-top">
-                                    <small class="text-muted">
-                                        @Model.Assignments.Count tổng ·
-                                        @Model.CompletedAssignments hoàn thành ·
-                                        @Model.Assignments.Count(a => a.IsOverdue) quá hạn
-                                    </small>
-                                </div>
-                            }
-                        </div>
+                @if (cid == 0)
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-trophy" style="font-size:3rem;opacity:.2;"></i>
+                        <p class="mt-3 mb-1 fw-bold">Chưa chọn cuộc thi</p>
+                        <p class="small">Hãy chọn cuộc thi ở bước 1 phía trên để bắt đầu phân công.</p>
                     </div>
                 }
-            </div>
-
-            <!-- ═══ TAB 3: TIÊU CHÍ CHẤM (RUBRIC) ═══ -->
-            <div class="tab-pane fade" id="tab-rubric">
-                @if (!Model.ScoringCriteria.Any())
+                else if (!Model.CompetitionRounds.Any())
                 {
-                    <div class="empty-state mt-3">
-                        <i class="bi bi-sliders d-block mb-3"></i>
-                        <p class="fw-bold mb-1">Chưa có tiêu chí chấm điểm</p>
-                        <p class="small mb-3">Tiêu chí được thiết lập khi tạo/chỉnh sửa cuộc thi.</p>
-                        @if (cid > 0)
-                        {
-                            <a asp-action="Edit" asp-controller="Organizer" asp-route-id="@cid"
-                               class="btn btn-primary btn-sm">
-                                <i class="bi bi-pencil-square me-1"></i>Chỉnh sửa cuộc thi
-                            </a>
-                        }
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Cuộc thi này chưa có vòng thi nào. Hãy tạo vòng thi trước khi phân công giám khảo.
                     </div>
                 }
                 else
                 {
-                    var totalWeight = Model.ScoringCriteria.Sum(c => c.Weight);
-                    var totalMax = Model.ScoringCriteria.Sum(c => c.MaxScore);
-                    <div class="row mt-3">
-                        <div class="col-md-8">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold mb-0">
-                                    Bộ tiêu chí chấm điểm
-                                    <span class="text-muted fw-normal">(@Model.ScoringCriteria.Count tiêu chí · Tổng @totalMax điểm)</span>
-                                </h6>
-                                @if (cid > 0)
+                    <!-- Bước 2: Chọn vòng thi -->
+                    <div class="pt-1 pb-2 d-flex align-items-center gap-3 flex-wrap">
+                        <span class="small fw-bold text-muted text-nowrap"><i class="bi bi-signpost-split me-1"></i>Bước 2 — Chọn vòng thi:</span>
+                        <ul class="nav round-pills flex-wrap mb-0" id="round-pills" role="tablist">
+                            @foreach (var r in Model.CompetitionRounds)
+                            {
+                                var roundJudges = Model.Judges.Where(j => j.RoundId == r.RoundId).ToList();
+                                var hasHead = roundJudges.Any(j => j.JudgeRole == "HeadJudge");
+                                var isFirst = r == Model.CompetitionRounds.First();
+                                <li class="nav-item">
+                                    <button class="nav-link @(isFirst ? "active" : "")"
+                                            data-round-id="@r.RoundId"
+                                            onclick="switchRound(@r.RoundId, this)">
+                                        Vòng @r.RoundOrder: @r.RoundName
+                                        <span class="badge @(hasHead ? "bg-light text-dark border" : "bg-warning text-dark") ms-1">
+                                            @roundJudges.Count
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- Per-Round Panels -->
+                    @foreach (var r in Model.CompetitionRounds)
+                    {
+                        var roundJudges   = Model.Judges.Where(j => j.RoundId == r.RoundId).OrderBy(j => j.JudgeRole == "HeadJudge" ? 0 : j.JudgeRole == "ViceHead" ? 1 : 2).ThenBy(j => j.FullName).ToList();
+                        var hasHead       = roundJudges.Any(j => j.JudgeRole == "HeadJudge");
+                        var isFirst       = r == Model.CompetitionRounds.First();
+                        var localTz       = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                        var startLocal    = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, localTz);
+                        var endLocal      = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, localTz);
+
+                        <div class="round-panel mt-3" id="round-panel-@r.RoundId"
+                             style="@(isFirst ? "" : "display:none")">
+
+                            <!-- Round header -->
+                            <div class="round-header-card d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span style="font-size:1.1rem">🏆</span>
+                                        <strong class="fs-6">Vòng @r.RoundOrder: @r.RoundName</strong>
+                                        <span class="badge @RoundStatusBadge(r.Status)">@RoundStatusText(r.Status)</span>
+                                        @if (!hasHead)
+                                        {
+                                            <span class="badge bg-warning text-dark" style="font-size:.65rem">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Chưa có Trưởng ban
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-calendar2-range me-1"></i>
+                                        @startLocal.ToString("dd/MM/yyyy") – @endLocal.ToString("dd/MM/yyyy")
+                                        <span class="ms-3"><i class="bi bi-people me-1"></i>@roundJudges.Count giám khảo</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-primary"
+                                        onclick="openAddToRoundModal(@r.RoundId, '@r.RoundName.Replace("'", "\\'")')">
+                                    <i class="bi bi-person-plus me-1"></i>Thêm vào vòng này
+                                </button>
+                            </div>
+
+                            <!-- Judge table for this round -->
+                            <div class="grade-table-container shadow-sm" style="border-radius:10px">
+                                @if (!roundJudges.Any())
                                 {
-                                    <a asp-action="Edit" asp-controller="Organizer" asp-route-id="@cid"
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-pencil me-1"></i>Chỉnh sửa
-                                    </a>
+                                    <div class="empty-state" style="padding:35px 20px;">
+                                        <i class="bi bi-person-dash d-block mb-2" style="font-size:2rem;opacity:.25;"></i>
+                                        <p class="small mb-1 fw-bold">Chưa có giám khảo nào trong vòng này</p>
+                                        <p class="small mb-0 text-muted">Nhấn "Thêm vào vòng này" để chỉ định giám khảo từ danh sách.</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table grade-table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th width="28%">Họ tên / Email</th>
+                                                    <th width="13%">Vai trò</th>
+                                                    <th>Chuyên môn</th>
+                                                    <th width="18%">Workload</th>
+                                                    <th width="16%">Tiến độ chấm</th>
+                                                    <th class="text-center" width="10%">Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var j in roundJudges)
+                                                {
+                                                    var initials = string.Concat(j.FullName.Split(' ').TakeLast(2).Select(w => w.Length > 0 ? w[0].ToString() : ""));
+                                                    var clr = j.JudgeRole == "HeadJudge" ? "#dc3545" : j.JudgeRole == "ViceHead" ? "#f59e0b" : "#6c757d";
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <div class="avatar-placeholder text-white" style="background:@clr">@initials</div>
+                                                                <div>
+                                                                    <div class="fw-bold text-dark">@j.FullName</div>
+                                                                    <div class="small text-muted">@j.Email</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td><span class="badge @RoleBadge(j.JudgeRole)">@RoleText(j.JudgeRole)</span></td>
+                                                        <td>
+                                                            @if (!string.IsNullOrEmpty(j.Expertise))
+                                                            { <span class="badge bg-light text-dark border">@j.Expertise</span> }
+                                                            else { <span class="text-muted small">—</span> }
+                                                        </td>
+                                                        <td>
+                                                            <div class="fw-bold">@j.TotalAssigned bài</div>
+                                                            <div class="small text-muted">Xong: @j.Completed · Đang: @j.InProgress</div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="text-muted">@j.Completed / @j.TotalAssigned</span>
+                                                                <span class="fw-bold">@j.CompletionRate%</span>
+                                                            </div>
+                                                            <div class="workload-bar">
+                                                                <div class="progress-bar @ProgressColor(j.CompletionRate)"
+                                                                     style="width:@j.CompletionRate%;height:100%;border-radius:10px"></div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button class="btn btn-sm btn-light text-primary"
+                                                                    onclick="openEditJudgeModal(@j.JudgeId,'@j.FullName.Replace("'","\\'")', '@j.JudgeRole','@(j.Expertise ?? "")')"
+                                                                    title="Chỉnh sửa vai trò">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-light text-danger"
+                                                                    onclick="removeJudge(@j.JudgeId,'@j.FullName.Replace("'","\\'")')"
+                                                                    title="Xóa khỏi vòng">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 }
                             </div>
-
-                            @if (Math.Abs((double)totalWeight - 1.0) >= 0.01 && Math.Abs((double)totalWeight - 100.0) >= 1.0)
-                            {
-                                <div class="alert alert-warning py-2 mb-3">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    Tổng trọng số = <strong>@totalWeight</strong>. Nên = 1.0 (100%).
-                                </div>
-                            }
-
-                            @foreach (var c in Model.ScoringCriteria)
-                            {
-                                var pct = totalWeight > 0 ? (double)c.Weight / (double)totalWeight * 100 : 0;
-                                <div class="criteria-card">
-                                    <div class="d-flex align-items-start justify-content-between gap-3">
-                                        <div class="flex-grow-1">
-                                            <div class="fw-bold">@c.Order. @c.CriteriaName</div>
-                                            @if (!string.IsNullOrEmpty(c.Description))
-                                            {
-                                                <div class="small text-muted mt-1">@c.Description</div>
-                                            }
-                                            <div class="mt-2">
-                                                <div class="d-flex justify-content-between small mb-1">
-                                                    <span class="text-muted">Trọng số: <strong>@c.Weight</strong></span>
-                                                    <span class="fw-bold">@Math.Round(pct, 1)%</span>
-                                                </div>
-                                                <div class="progress" style="height:6px">
-                                                    <div class="progress-bar" style="width:@Math.Round(pct,1)%;background-color:var(--organizer-accent)"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="text-end flex-shrink-0">
-                                            <div class="fw-bold fs-5 text-dark">@c.MaxScore<span style="font-size:.8rem" class="text-muted">đ</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
                         </div>
-
-                        <div class="col-md-4">
-                            <div class="bg-white p-4 rounded-3 border shadow-sm">
-                                <h6 class="fw-bold mb-3">Tổng quan</h6>
-                                <div class="row g-3 text-center">
-                                    <div class="col-6">
-                                        <div class="fw-bold fs-4 text-primary">@Model.ScoringCriteria.Count</div>
-                                        <div class="small text-muted">Tiêu chí</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="fw-bold fs-4" style="color:var(--organizer-accent)">@totalMax</div>
-                                        <div class="small text-muted">Điểm tối đa</div>
-                                    </div>
-                                </div>
-                                <hr>
-                                <div class="small text-muted">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Để thay đổi tiêu chí, vào trang chỉnh sửa cuộc thi.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    }
                 }
             </div>
 
-            <!-- ═══ TAB 4: THEO DÕI & CẢNH BÁO ═══ -->
+            <!-- ═══ TAB 3: THEO DÕI & CẢNH BÁO ═══ -->
             <div class="tab-pane fade" id="tab-monitor">
                 <div class="row g-4 mt-0">
                     <div class="col-lg-5">
@@ -583,11 +478,8 @@
                             <h6 class="fw-bold text-danger mb-3">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>Cảnh báo chậm tiến độ
                                 @if (Model.Alerts.Any())
-                                {
-                                    <span class="badge bg-danger ms-1">@Model.Alerts.Count</span>
-                                }
+                                { <span class="badge bg-danger ms-1">@Model.Alerts.Count</span> }
                             </h6>
-
                             @if (!Model.Alerts.Any())
                             {
                                 <div class="text-center text-muted py-4">
@@ -613,29 +505,17 @@
                                                     {
                                                         <div class="small mt-1">
                                                             @if (alert.IsOverdue)
-                                                            {
-                                                                <span class="text-danger fw-bold">
-                                                                    <i class="bi bi-clock-fill"></i>
-                                                                    Quá hạn @Math.Abs(alert.HoursUntilDeadline) giờ
-                                                                </span>
-                                                            }
+                                                            { <span class="text-danger fw-bold"><i class="bi bi-clock-fill"></i> Quá hạn @Math.Abs(alert.HoursUntilDeadline) giờ</span> }
                                                             else
-                                                            {
-                                                                <span class="text-warning fw-bold">
-                                                                    <i class="bi bi-clock"></i>
-                                                                    Còn @alert.HoursUntilDeadline giờ
-                                                                </span>
-                                                            }
+                                                            { <span class="text-warning fw-bold"><i class="bi bi-clock"></i> Còn @alert.HoursUntilDeadline giờ</span> }
                                                         </div>
                                                     }
                                                 </div>
-                                                <div class="d-flex gap-1 flex-shrink-0">
-                                                    <button class="btn btn-sm btn-warning fw-bold"
-                                                            onclick="sendReminder(@alert.JudgeId,'@alert.JudgeName')"
-                                                            title="Gửi nhắc nhở">
-                                                        <i class="bi bi-envelope-fill"></i>
-                                                    </button>
-                                                </div>
+                                                <button class="btn btn-sm btn-warning fw-bold"
+                                                        onclick="sendReminder(@alert.JudgeId,'@alert.JudgeName')"
+                                                        title="Gửi nhắc nhở">
+                                                    <i class="bi bi-envelope-fill"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     }
@@ -650,54 +530,106 @@
     </div>
 </div>
 
-<!-- Modal: Thêm Giám khảo -->
-<div class="modal fade" id="addJudgeModal" tabindex="-1" aria-hidden="true">
+<!-- ═══ Modal: Thêm vào Pool (Tab 1) ═══ -->
+<div class="modal fade" id="addToPoolModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0" style="border-radius:12px">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2"></i>Thêm Giám khảo</h5>
+            <div class="modal-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2 text-success"></i>Thêm Giám khảo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Tìm người dùng</label>
-                    <input type="text" id="user-search-input" class="form-control"
-                           placeholder="Nhập tên hoặc email..." autocomplete="off">
-                    <div id="user-suggestions" class="border rounded mt-1 d-none"
-                         style="max-height:200px;overflow-y:auto"></div>
-                </div>
-                <div id="selected-user-info" class="alert alert-primary py-2 d-none mb-3">
-                    <i class="bi bi-person-check me-2"></i>
-                    <strong id="selected-user-name"></strong>
-                    <span class="text-muted small ms-1" id="selected-user-email"></span>
-                </div>
-                <input type="hidden" id="selected-user-id" value="0">
+                <p class="small text-muted mb-3">Tìm và chọn người dùng để thêm vào danh sách giám khảo của hệ thống. Sau đó mới phân công vào từng vòng thi.</p>
 
                 <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Vai trò</label>
-                    <select id="add-role-select" class="form-select">
-                        <option value="Member">Thành viên</option>
-                        <option value="ViceHead">Phó ban</option>
-                        <option value="HeadJudge">Trưởng ban (duyệt điểm)</option>
-                    </select>
+                    <label class="form-label small fw-bold text-muted">Tìm người dùng</label>
+                    <input type="text" id="pool-search-input" class="form-control"
+                           placeholder="Nhập tên hoặc email..." autocomplete="off">
+                    <div id="pool-suggestions" class="border rounded mt-1 d-none"
+                         style="max-height:220px;overflow-y:auto"></div>
                 </div>
-                <div class="mb-0">
-                    <label class="form-label small fw-bold text-muted">Chuyên môn / Lĩnh vực</label>
-                    <input type="text" id="add-expertise-input" class="form-control"
-                           placeholder="VD: CNTT, AI, Quản trị Kinh doanh...">
+                <div id="pool-selected-info" class="alert alert-success py-2 d-none mb-0">
+                    <i class="bi bi-person-check me-2"></i>
+                    <strong id="pool-selected-name"></strong>
+                    <span class="text-muted small ms-1" id="pool-selected-email"></span>
                 </div>
+                <input type="hidden" id="pool-selected-id" value="0">
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary fw-bold" onclick="submitAddJudge()">
-                    <i class="bi bi-plus-circle me-1"></i>Thêm vào ban
+                <button type="button" class="btn btn-success fw-bold" onclick="submitAddToPool()">
+                    <i class="bi bi-plus-circle me-1"></i>Thêm vào danh sách
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal: Sửa vai trò Giám khảo -->
+<!-- ═══ Modal: Thêm vào Vòng (Tab 2) ═══ -->
+<div class="modal fade" id="addToRoundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0" style="border-radius:12px">
+            <div class="modal-header" style="background:linear-gradient(135deg,#f0f4ff,#e8f0fe);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-badge me-2"></i>Thêm vào Ban Giám khảo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Round label -->
+                <div class="mb-3 p-3 rounded" style="background:#f0f4ff; border:1px solid #dce3f0;">
+                    <div class="small text-muted mb-1">Vòng thi được phân công:</div>
+                    <div id="round-modal-label" class="fw-bold text-dark">—</div>
+                </div>
+                <input type="hidden" id="round-modal-id" value="">
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Chọn giám khảo từ danh sách</label>
+                    <input type="text" id="round-search-input" class="form-control"
+                           placeholder="Nhập tên hoặc email giám khảo..." autocomplete="off">
+                    <div id="round-suggestions" class="border rounded mt-1 d-none"
+                         style="max-height:200px;overflow-y:auto"></div>
+                </div>
+
+                <div id="round-selected-info" class="alert alert-primary py-2 d-none mb-3">
+                    <i class="bi bi-person-check me-2"></i>
+                    <strong id="round-selected-name"></strong>
+                    <span class="text-muted small ms-1" id="round-selected-email"></span>
+                </div>
+                <input type="hidden" id="round-selected-id" value="0">
+
+                <!-- Time conflict warning (appears dynamically) -->
+                <div id="conflict-warning" class="conflict-badge d-none mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+                    <strong>Cảnh báo trùng lịch!</strong>
+                    <div id="conflict-details" class="mt-1"></div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-7">
+                        <label class="form-label small fw-bold text-muted">Vai trò trong vòng này</label>
+                        <select id="round-role-select" class="form-select">
+                            <option value="Member">👤 Thành viên</option>
+                            <option value="ViceHead">🔶 Phó ban</option>
+                            <option value="HeadJudge">🔴 Trưởng ban (1 người / vòng)</option>
+                        </select>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label small fw-bold text-muted">Chuyên môn</label>
+                        <input type="text" id="round-expertise-input" class="form-control"
+                               placeholder="VD: AI, IoT...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary fw-bold" onclick="submitAddToRound()">
+                    <i class="bi bi-plus-circle me-1"></i>Phân công vào vòng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Modal: Sửa vai trò ═══ -->
 <div class="modal fade" id="editJudgeModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0" style="border-radius:12px">
@@ -708,7 +640,6 @@
             <div class="modal-body p-4">
                 <input type="hidden" id="edit-judge-id">
                 <div class="fw-bold text-dark mb-3" id="edit-judge-name"></div>
-
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">Vai trò</label>
                     <select id="edit-role-select" class="form-select">
@@ -718,7 +649,7 @@
                     </select>
                 </div>
                 <div class="mb-0">
-                    <label class="form-label small fw-bold text-muted">Chuyên môn / Lĩnh vực</label>
+                    <label class="form-label small fw-bold text-muted">Chuyên môn</label>
                     <input type="text" id="edit-expertise-input" class="form-control">
                 </div>
             </div>
@@ -746,102 +677,165 @@
 <script>
     const CID = @cid;
 
-    // ── Toast ──────────────────────────────────────────────
+    // ── Toast ────────────────────────────────────────────────────
     function showToast(msg, type = 'success') {
         const el = document.getElementById('actionToast');
         el.className = `toast align-items-center text-white bg-${type} border-0`;
         document.getElementById('toastMsg').textContent = msg;
-        new bootstrap.Toast(el, { delay: 2800 }).show();
+        new bootstrap.Toast(el, { delay: 3000 }).show();
     }
 
-    // ── Generic AJAX ───────────────────────────────────────
     async function postJson(url, body) {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
-        return res.json();
+        const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        return r.json();
     }
     async function postForm(url, params) {
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams(params).toString()
-        });
-        return res.json();
+        const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams(params).toString() });
+        return r.json();
     }
 
-    // ── Tab 1: Judge filter ────────────────────────────────
-    document.getElementById('judge-filter-input')?.addEventListener('input', function () {
+    // ── Tab 1: Pool filter ───────────────────────────────────────
+    document.getElementById('pool-filter-input')?.addEventListener('input', function () {
         const q = this.value.toLowerCase();
-        document.querySelectorAll('#judge-table tbody tr').forEach(row => {
+        document.querySelectorAll('#pool-table tbody tr.pool-row').forEach(row => {
             row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
     });
 
-    // ── Add Judge Modal ────────────────────────────────────
-    function openAddJudgeModal() {
-        document.getElementById('user-search-input').value = '';
-        document.getElementById('user-suggestions').classList.add('d-none');
-        document.getElementById('selected-user-info').classList.add('d-none');
-        document.getElementById('selected-user-id').value = '0';
-        document.getElementById('add-role-select').value = 'Member';
-        document.getElementById('add-expertise-input').value = '';
-        new bootstrap.Modal(document.getElementById('addJudgeModal')).show();
+    // ── Tab 1: Add to Pool Modal ─────────────────────────────────
+    function openAddToPoolModal() {
+        document.getElementById('pool-search-input').value = '';
+        document.getElementById('pool-suggestions').classList.add('d-none');
+        document.getElementById('pool-selected-info').classList.add('d-none');
+        document.getElementById('pool-selected-id').value = '0';
+        new bootstrap.Modal(document.getElementById('addToPoolModal')).show();
     }
 
-    let searchTimeout;
-    document.getElementById('user-search-input')?.addEventListener('input', function () {
-        clearTimeout(searchTimeout);
+    let poolSearchTimeout;
+    document.getElementById('pool-search-input')?.addEventListener('input', function () {
+        clearTimeout(poolSearchTimeout);
         const q = this.value.trim();
-        if (q.length < 2) {
-            document.getElementById('user-suggestions').classList.add('d-none');
-            return;
-        }
-        searchTimeout = setTimeout(async () => {
-            const res = await fetch(`/Organizer/SearchUsersForJudge?competitionId=${CID}&search=${encodeURIComponent(q)}`);
+        if (q.length < 2) { document.getElementById('pool-suggestions').classList.add('d-none'); return; }
+        poolSearchTimeout = setTimeout(async () => {
+            const res  = await fetch(`/Organizer/SearchUsersForJudgePool?search=${encodeURIComponent(q)}`);
             const users = await res.json();
-            const box = document.getElementById('user-suggestions');
-            box.innerHTML = '';
-            if (!users.length) {
-                box.innerHTML = '<div class="p-3 text-muted small">Không tìm thấy người dùng.</div>';
-                box.classList.remove('d-none');
-                return;
-            }
-            users.forEach(u => {
-                const d = document.createElement('div');
-                d.className = 'user-suggestion';
-                d.innerHTML = `<div class="fw-bold small">${u.fullName}</div><div class="text-muted" style="font-size:.78rem">${u.email}${u.studentId ? ' · MSSV: ' + u.studentId : ''}</div>`;
-                d.onclick = () => selectUser(u);
-                box.appendChild(d);
-            });
-            box.classList.remove('d-none');
+            renderSuggestions('pool-suggestions', users, selectPoolUser);
         }, 300);
     });
 
-    function selectUser(u) {
-        document.getElementById('selected-user-id').value = u.userId;
-        document.getElementById('selected-user-name').textContent = u.fullName;
-        document.getElementById('selected-user-email').textContent = u.email;
-        document.getElementById('selected-user-info').classList.remove('d-none');
-        document.getElementById('user-suggestions').classList.add('d-none');
-        document.getElementById('user-search-input').value = u.fullName;
+    function selectPoolUser(u) {
+        document.getElementById('pool-selected-id').value = u.userId;
+        document.getElementById('pool-selected-name').textContent = u.fullName;
+        document.getElementById('pool-selected-email').textContent = u.email;
+        document.getElementById('pool-selected-info').classList.remove('d-none');
+        document.getElementById('pool-suggestions').classList.add('d-none');
+        document.getElementById('pool-search-input').value = u.fullName;
     }
 
-    async function submitAddJudge() {
-        const userId = parseInt(document.getElementById('selected-user-id').value);
+    async function submitAddToPool() {
+        const userId = parseInt(document.getElementById('pool-selected-id').value);
         if (!userId) { showToast('Vui lòng chọn người dùng.', 'warning'); return; }
+        const data = await postJson('/Organizer/AddUserToJudgePool', { userId });
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addToPoolModal'))?.hide();
+            setTimeout(() => location.reload(), 900);
+        }
+    }
+
+    async function removeFromPool(userId, name) {
+        if (!confirm(`Xóa "${name}" khỏi danh sách giám khảo?\n\nLưu ý: Người này không được phân công vòng thi nào mới hết.`)) return;
+        const data = await postForm('/Organizer/RemoveUserFromJudgePool', { userId });
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) setTimeout(() => location.reload(), 900);
+    }
+
+    // ── Tab 2: Round pill switching ───────────────────────────────
+    function switchRound(roundId, btn) {
+        document.querySelectorAll('#round-pills .nav-link').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.round-panel').forEach(p => {
+            p.style.display = p.id === 'round-panel-' + roundId ? 'block' : 'none';
+        });
+    }
+
+    // ── Tab 2: Add to Round Modal ─────────────────────────────────
+    function openAddToRoundModal(roundId, roundName) {
+        document.getElementById('round-search-input').value = '';
+        document.getElementById('round-suggestions').classList.add('d-none');
+        document.getElementById('round-selected-info').classList.add('d-none');
+        document.getElementById('round-selected-id').value = '0';
+        document.getElementById('round-role-select').value = 'Member';
+        document.getElementById('round-expertise-input').value = '';
+        document.getElementById('conflict-warning').classList.add('d-none');
+        document.getElementById('round-modal-id').value = roundId;
+        document.getElementById('round-modal-label').textContent = '🏆 ' + roundName;
+        new bootstrap.Modal(document.getElementById('addToRoundModal')).show();
+    }
+
+    let roundSearchTimeout;
+    document.getElementById('round-search-input')?.addEventListener('input', function () {
+        clearTimeout(roundSearchTimeout);
+        const q = this.value.trim();
+        if (q.length < 2) { document.getElementById('round-suggestions').classList.add('d-none'); return; }
+        const rid = document.getElementById('round-modal-id').value;
+        roundSearchTimeout = setTimeout(async () => {
+            const res   = await fetch(`/Organizer/SearchJudgesForRound?competitionId=${CID}&roundId=${rid}&search=${encodeURIComponent(q)}`);
+            const users = await res.json();
+            renderSuggestions('round-suggestions', users, selectRoundUser);
+        }, 300);
+    });
+
+    async function selectRoundUser(u) {
+        document.getElementById('round-selected-id').value = u.userId;
+        document.getElementById('round-selected-name').textContent = u.fullName;
+        document.getElementById('round-selected-email').textContent = u.email;
+        document.getElementById('round-selected-info').classList.remove('d-none');
+        document.getElementById('round-suggestions').classList.add('d-none');
+        document.getElementById('round-search-input').value = u.fullName;
+
+        // Live conflict check
+        const rid = document.getElementById('round-modal-id').value;
+        await checkConflicts(u.userId, rid);
+    }
+
+    async function checkConflicts(judgeUserId, roundId) {
+        const res       = await fetch(`/Organizer/CheckJudgeConflict?judgeUserId=${judgeUserId}&roundId=${roundId}`);
+        const conflicts = await res.json();
+        const warningEl = document.getElementById('conflict-warning');
+        const detailEl  = document.getElementById('conflict-details');
+        if (!conflicts.length) { warningEl.classList.add('d-none'); return; }
+
+        let html = '<ul class="mb-0 ps-3">';
+        conflicts.forEach(c => {
+            const s = new Date(c.existingStartDate).toLocaleDateString('vi-VN');
+            const e = new Date(c.existingEndDate).toLocaleDateString('vi-VN');
+            const roleVi = c.existingRole === 'HeadJudge' ? 'Trưởng ban' : c.existingRole === 'ViceHead' ? 'Phó ban' : 'Thành viên';
+            html += `<li class="small"><strong>${c.existingRoundName}</strong> (${c.existingCompetitionName}) — ${s} → ${e} [${roleVi}]</li>`;
+        });
+        html += '</ul>';
+        detailEl.innerHTML = html;
+        warningEl.classList.remove('d-none');
+    }
+
+    async function submitAddToRound() {
+        const userId = parseInt(document.getElementById('round-selected-id').value);
+        if (!userId) { showToast('Vui lòng chọn giám khảo.', 'warning'); return; }
+        const roundId = parseInt(document.getElementById('round-modal-id').value);
         const data = await postJson(`/Organizer/AddJudge?competitionId=${CID}`, {
             userId,
-            role: document.getElementById('add-role-select').value,
-            expertise: document.getElementById('add-expertise-input').value
+            role:      document.getElementById('round-role-select').value,
+            expertise: document.getElementById('round-expertise-input').value,
+            roundId
         });
         showToast(data.message, data.success ? 'success' : 'danger');
-        if (data.success) { bootstrap.Modal.getInstance(document.getElementById('addJudgeModal'))?.hide(); setTimeout(() => location.reload(), 900); }
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addToRoundModal'))?.hide();
+            setTimeout(() => location.reload(), 900);
+        }
     }
 
-    // ── Edit Judge Modal ───────────────────────────────────
+    // ── Edit Judge Modal ─────────────────────────────────────────
     function openEditJudgeModal(judgeId, name, role, expertise) {
         document.getElementById('edit-judge-id').value = judgeId;
         document.getElementById('edit-judge-name').textContent = name;
@@ -853,7 +847,7 @@
     async function submitEditJudge() {
         const judgeId = document.getElementById('edit-judge-id').value;
         const data = await postJson(`/Organizer/UpdateJudgeRole?judgeId=${judgeId}&competitionId=${CID}`, {
-            role: document.getElementById('edit-role-select').value,
+            role:      document.getElementById('edit-role-select').value,
             expertise: document.getElementById('edit-expertise-input').value
         });
         showToast(data.message, data.success ? 'success' : 'danger');
@@ -861,69 +855,39 @@
     }
 
     async function removeJudge(judgeId, name) {
-        if (!confirm(`Xóa "${name}" khỏi ban giám khảo?`)) return;
-        const data = await postForm(`/Organizer/RemoveJudge`, { judgeId, competitionId: CID });
+        if (!confirm(`Xóa "${name}" khỏi vòng thi này?`)) return;
+        const data = await postForm('/Organizer/RemoveJudge', { judgeId, competitionId: CID });
         showToast(data.message, data.success ? 'success' : 'danger');
         if (data.success) setTimeout(() => location.reload(), 900);
     }
 
-    // ── Tab 2: Assignment ──────────────────────────────────
-    function toggleSub(item) {
-        const cb = item.querySelector('.sub-checkbox');
-        cb.checked = !cb.checked;
-        updateSelectedCount();
-    }
-    function toggleAll(state) {
-        document.querySelectorAll('.sub-check-item:not(.d-none) .sub-checkbox').forEach(cb => cb.checked = state);
-        updateSelectedCount();
-    }
-    function updateSelectedCount() {
-        const n = document.querySelectorAll('.sub-checkbox:checked').length;
-        const el = document.getElementById('selected-count');
-        if (el) el.textContent = n;
-    }
-    document.querySelectorAll('.sub-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedCount));
-
-    function filterSubs(type, btn) {
-        document.querySelectorAll('[onclick^="filterSubs"]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.sub-check-item').forEach(item => {
-            const isAssigned = item.classList.contains('assigned-item');
-            item.classList.toggle('d-none',
-                (type === 'unassigned' && isAssigned) ||
-                (type === 'assigned' && !isAssigned));
-        });
-    }
-
-    async function assignSubmissions() {
-        const submissionIds = [...document.querySelectorAll('.sub-checkbox:checked')].map(cb => parseInt(cb.value));
-        if (!submissionIds.length) { showToast('Chưa chọn bài thi nào.', 'warning'); return; }
-        const judgeId = parseInt(document.getElementById('assign-judge-select').value);
-        if (!judgeId) { showToast('Vui lòng chọn giám khảo.', 'warning'); return; }
-        const deadline = document.getElementById('assign-deadline').value || null;
-        const data = await postJson(`/Organizer/AssignSubmissions?competitionId=${CID}`, {
-            submissionIds, judgeId,
-            gradingDeadline: deadline
-        });
-        showToast(data.message, data.success ? 'success' : 'danger');
-        if (data.success) setTimeout(() => location.reload(), 900);
-    }
-
-    async function revokeAssignment(assignmentId, judgeName) {
-        if (!confirm(`Thu hồi phân công của "${judgeName}"?`)) return;
-        const data = await postForm(`/Organizer/RevokeAssignment`, { assignmentId, competitionId: CID });
-        showToast(data.message, data.success ? 'success' : 'danger');
-        if (data.success) setTimeout(() => location.reload(), 900);
-    }
-
-    // ── Tab 4: Reminder ────────────────────────────────────
+    // ── Tab 3: Reminder ────────────────────────────────────────
     async function sendReminder(judgeId, name) {
         if (!confirm(`Gửi nhắc nhở đến "${name}"?`)) return;
-        const data = await postForm(`/Organizer/SendJudgeReminder`, { judgeId });
+        const data = await postForm('/Organizer/SendJudgeReminder', { judgeId });
         showToast(data.message, data.success ? 'success' : 'secondary');
     }
 
-    // ── Chart (init on tab show) ───────────────────────────
+    // ── Shared: render suggestions dropdown ───────────────────
+    function renderSuggestions(containerId, users, onSelect) {
+        const box = document.getElementById(containerId);
+        box.innerHTML = '';
+        if (!users.length) {
+            box.innerHTML = '<div class="p-3 text-muted small">Không tìm thấy kết quả phù hợp.</div>';
+            box.classList.remove('d-none');
+            return;
+        }
+        users.forEach(u => {
+            const d = document.createElement('div');
+            d.className = 'user-suggestion';
+            d.innerHTML = `<div class="fw-bold small">${u.fullName}</div><div class="text-muted" style="font-size:.78rem">${u.email}${u.studentId ? ' · ' + u.studentId : ''}</div>`;
+            d.onclick = () => onSelect(u);
+            box.appendChild(d);
+        });
+        box.classList.remove('d-none');
+    }
+
+    // ── Chart ────────────────────────────────────────────────
     let chartInited = false;
     document.getElementById('btn-tab-monitor')?.addEventListener('shown.bs.tab', () => {
         if (chartInited) return;
@@ -934,34 +898,24 @@
             type: 'pie',
             data: {
                 labels: ['Đã chấm xong', 'Đang chấm', 'Chờ chấm'],
-                datasets: [{
-                    data: [@completed, @inProg, @pending],
-                    backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
-                    borderWidth: 0
-                }]
+                datasets: [{ data: [@completed, @inProg, @pending], backgroundColor: ['#10b981','#3b82f6','#f59e0b'], borderWidth: 0 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => {
-                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                const pct = total > 0 ? Math.round(ctx.parsed * 100 / total) : 0;
-                                return ` ${ctx.label}: ${ctx.parsed} (${pct}%)`;
-                            }
-                        }
-                    }
+                    tooltip: { callbacks: { label: ctx => { const t = ctx.dataset.data.reduce((a,b)=>a+b,0); const p = t > 0 ? Math.round(ctx.parsed*100/t) : 0; return ` ${ctx.label}: ${ctx.parsed} (${p}%)`; } } }
                 }
             }
         });
     });
 
-    // ── Tab persistence ────────────────────────────────────
-    const savedTab = localStorage.getItem('grading-tab');
-    if (savedTab) {
-        const el = document.querySelector(`[data-bs-target="${savedTab}"]`);
+    // ── Tab persistence + activeTab from URL ─────────────────────
+    const urlParams  = new URLSearchParams(window.location.search);
+    const activeTab  = urlParams.get('activeTab');
+    const targetId   = activeTab === 'assign' ? '#tab-assign' : (localStorage.getItem('grading-tab') || null);
+    if (targetId) {
+        const el = document.querySelector(`[data-bs-target="${targetId}"]`);
         if (el) bootstrap.Tab.getOrCreateInstance(el).show();
     }
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(btn => {
