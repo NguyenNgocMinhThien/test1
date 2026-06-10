@@ -28,15 +28,14 @@ public class LoginController : Controller
         // Nếu người dùng đã đăng nhập trước đó rồi thì điều hướng thông minh dựa vào Role của họ
         if (User.Identity?.IsAuthenticated == true)
         {
-            // LƯU Ý: Nếu muốn kỹ hơn, bạn có thể kiểm tra xem cookie cũ còn hiệu lực 
-            // nhưng tài khoản vừa bị Admin khóa ở DB hay không. 
-            // Tuy nhiên, việc check liên tục trong HttpGet Index sẽ làm chậm hệ thống.
-            // Đoạn check chính nằm ở HttpPost xử lý Submit form bên dưới.
-
             if (User.IsInRole("Admin"))
                 return RedirectToAction("Admin", "Account");
+            if (User.IsInRole("Organizer"))
+                return RedirectToAction("Dashboard", "Organizer");
+            if (User.IsInRole("Judge"))
+                return RedirectToAction("Dashboard", "Judge");
 
-            return RedirectToAction("User", "Account");
+            return RedirectToAction("Index", "Competitive");
         }
 
         return View(new LoginViewModel());
@@ -109,13 +108,13 @@ public class LoginController : Controller
 
             // Phân luồng điều hướng khi đăng nhập thành công
             if (roleNames.Contains("Admin"))
-            {
-                return RedirectToAction("Admin", "Account"); // Đẩy tài khoản Admin vào trang quản trị
-            }
-            else
-            {
-                return RedirectToAction("User", "Account");  // Đẩy tài khoản sinh viên vào trang cá nhân
-            }
+                return RedirectToAction("Admin", "Account");
+            if (roleNames.Contains("Organizer"))
+                return RedirectToAction("Dashboard", "Organizer");
+            if (roleNames.Contains("Judge"))
+                return RedirectToAction("Dashboard", "Judge");
+
+            return RedirectToAction("Index", "Competitive");
         }
 
         ModelState.AddModelError(string.Empty, message ?? "Email hoặc mật khẩu không đúng.");

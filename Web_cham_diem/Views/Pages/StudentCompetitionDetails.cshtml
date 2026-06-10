@@ -34,6 +34,10 @@
         .FirstOrDefault(i => i.IsThumbnail)?.ImageUrl
         ?? Model.CompetitionImages?.FirstOrDefault()?.ImageUrl;
 
+    var heroStyle = !string.IsNullOrEmpty(bannerUrl)
+        ? $"background: url('{bannerUrl}') center/cover no-repeat;"
+        : "";
+
     var rulesPdf = Model.CompetitionDocuments?
         .FirstOrDefault(d => d.FileType == "pdf");
 
@@ -255,7 +259,7 @@
     </div> *@
 
     <!-- 1. HERO SECTION -->
-    <div class="hero-section p-4 p-md-5 mb-4 position-relative overflow-hidden shadow-sm">
+    <div class="hero-section p-4 p-md-5 mb-4 position-relative overflow-hidden shadow-sm" style="@heroStyle">
         <div class="row align-items-center position-relative z-1">
             <div class="col-lg-8">
                 <div class="d-flex gap-2 mb-3">
@@ -297,7 +301,10 @@
                 }
             </div>
             <div class="col-lg-4 d-none d-lg-block text-end">
-                <i class="bi bi-mortarboard" style="font-size: 10rem; opacity: 0.15;"></i>
+                @if (string.IsNullOrEmpty(bannerUrl))
+                {
+                    <i class="bi bi-mortarboard" style="font-size: 10rem; opacity: 0.15;"></i>
+                }
             </div>
         </div>
     </div>
