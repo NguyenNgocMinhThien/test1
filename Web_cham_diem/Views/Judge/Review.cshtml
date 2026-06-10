@@ -1,0 +1,429 @@
+@model Web_cham_diem.Models.ViewModels.JudgeReviewViewModel
+
+@{
+    ViewData["Title"] = "Duyệt điểm";
+    Layout = "~/Views/Shared/_JudgeLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        :root { --judge-accent: #7c3aed; --judge-light: #ede9fe; }
+
+        .review-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: none;
+            overflow: hidden;
+        }
+
+        .round-header {
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, #7c3aed10, #a78bfa18);
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .submission-accordion .accordion-button {
+            background: #f8fafc;
+            color: #1e293b;
+            font-weight: 600;
+            border-radius: 0.5rem !important;
+        }
+
+        .submission-accordion .accordion-button:not(.collapsed) {
+            background: var(--judge-light);
+            color: var(--judge-accent);
+            box-shadow: none;
+        }
+
+        .submission-accordion .accordion-button::after {
+            filter: none;
+        }
+
+        .judge-score-block {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .judge-score-header {
+            padding: 0.85rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            background: #f9fafb;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .approval-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: 20px;
+        }
+        .ab-pending  { background: #fef9c3; color: #92400e; }
+        .ab-approved { background: #dcfce7; color: #166534; }
+        .ab-rejected { background: #fee2e2; color: #991b1b; }
+        .ab-notscored{ background: #f3f4f6; color: #6b7280; }
+        .ab-self     { background: #ede9fe; color: #7c3aed; }
+
+        .role-badge {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .rb-head   { background: #fef3c7; color: #92400e; }
+        .rb-vice   { background: #dbeafe; color: #1e40af; }
+        .rb-member { background: #f3f4f6; color: #374151; }
+
+        .score-mini-table th {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .score-mini-table td { font-size: 0.85rem; }
+
+        .progress-sm {
+            height: 5px;
+            border-radius: 3px;
+            background: #e5e7eb;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+        }
+
+        .empty-state {
+            padding: 3.5rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .all-approved-tag {
+            font-size: 0.7rem;
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+    </style>
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold text-dark mb-1">
+        <i class="bi bi-patch-check me-2" style="color:var(--judge-accent);"></i>Duyệt điểm
+    </h4>
+    <p class="text-muted mb-0">Xem và duyệt điểm từ các giám khảo trong vòng thi bạn phụ trách.</p>
+</div>
+
+@if (!Model.Rounds.Any())
+{
+    <div class="review-card">
+        <div class="empty-state">
+            <i class="bi bi-person-badge fs-1 d-block mb-3" style="color:var(--judge-accent); opacity:0.4;"></i>
+            <h6 class="fw-semibold text-dark">Bạn không phải trưởng ban của vòng thi nào</h6>
+            <p class="small text-muted mb-0">Chức năng duyệt điểm chỉ dành cho Trưởng ban giám khảo (HeadJudge).</p>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var round in Model.Rounds)
+    {
+        var approvalPct = round.TotalJudgeScoreGroups > 0
+            ? (int)Math.Round((double)round.ApprovedCount / round.TotalJudgeScoreGroups * 100)
+            : 0;
+
+        <div class="review-card mb-4">
+            <!-- Round header -->
+            <div class="round-header">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-trophy me-2" style="color:var(--judge-accent);"></i>@round.CompetitionName
+                        </h6>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="text-muted small"><i class="bi bi-flag me-1"></i>Vòng: <strong>@round.RoundName</strong></span>
+                            @if (round.PendingApprovalCount > 0)
+                            {
+                                <span class="approval-badge ab-pending">@round.PendingApprovalCount chờ duyệt</span>
+                            }
+                            @if (round.ApprovedCount > 0)
+                            {
+                                <span class="approval-badge ab-approved">@round.ApprovedCount đã duyệt</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="text-end" style="min-width:130px;">
+                        <div class="small text-muted mb-1">Tiến độ duyệt: <strong>@round.ApprovedCount/@round.TotalJudgeScoreGroups</strong></div>
+                        <div class="progress-sm"><div class="progress-fill" style="width:@approvalPct%;"></div></div>
+                        <div class="small text-muted mt-1">@approvalPct%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submissions accordion -->
+            <div class="p-3">
+                @if (!round.Submissions.Any())
+                {
+                    <p class="text-center text-muted small py-3 mb-0">Chưa có bài nộp nào trong vòng thi này.</p>
+                }
+                else
+                {
+                    <div class="accordion submission-accordion" id="accordion-@round.RoundId">
+                        @foreach (var sub in round.Submissions)
+                        {
+                            var subCollapseId = $"sub-{round.RoundId}-{sub.SubmissionId}";
+                            <div class="accordion-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed py-3 px-4 rounded-3"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#@subCollapseId">
+                                        <div class="d-flex align-items-center gap-3 w-100 me-3">
+                                            <div class="flex-grow-1">
+                                                <span class="fw-semibold">@sub.Title</span>
+                                                <span class="text-muted small ms-2">— @sub.TeamOrRep</span>
+                                            </div>
+                                            @if (sub.AllApproved)
+                                            {
+                                                <span class="all-approved-tag">
+                                                    <i class="bi bi-check-all me-1"></i>Tất cả đã duyệt
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                var pendingInSub = sub.JudgeScoreGroups.Count(g => !g.IsCurrentHeadJudge && g.OverallApprovalStatus == "Pending");
+                                                @if (pendingInSub > 0)
+                                                {
+                                                    <span class="approval-badge ab-pending">@pendingInSub chờ duyệt</span>
+                                                }
+                                            }
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="@subCollapseId" class="accordion-collapse collapse"
+                                     data-bs-parent="#accordion-@round.RoundId">
+                                    <div class="accordion-body pt-2 pb-3 px-4">
+                                        <div class="d-flex flex-column gap-3">
+                                            @foreach (var jg in sub.JudgeScoreGroups)
+                                            {
+                                                var roleCss = jg.JudgeRole switch
+                                                {
+                                                    "HeadJudge" => "rb-head",
+                                                    "ViceHead"  => "rb-vice",
+                                                    _           => "rb-member"
+                                                };
+                                                var roleLabel = jg.JudgeRole switch
+                                                {
+                                                    "HeadJudge" => "Trưởng ban",
+                                                    "ViceHead"  => "Phó ban",
+                                                    _           => "Thành viên"
+                                                };
+                                                var statusCss = jg.OverallApprovalStatus switch
+                                                {
+                                                    "Approved"  => "ab-approved",
+                                                    "Rejected"  => "ab-rejected",
+                                                    "Pending"   => jg.IsCurrentHeadJudge ? "ab-self" : "ab-pending",
+                                                    _           => "ab-notscored"
+                                                };
+                                                var statusLabel = jg.OverallApprovalStatus switch
+                                                {
+                                                    "Approved"  => "Đã duyệt",
+                                                    "Rejected"  => "Đã từ chối",
+                                                    "Pending"   => jg.IsCurrentHeadJudge ? "Tự duyệt (Trưởng ban)" : "Chờ duyệt",
+                                                    _           => "Chưa chấm"
+                                                };
+
+                                                <div class="judge-score-block">
+                                                    <div class="judge-score-header">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="role-badge @roleCss">@roleLabel</span>
+                                                            <span class="fw-semibold text-dark">@jg.JudgeName</span>
+                                                            @if (jg.IsCurrentHeadJudge)
+                                                            {
+                                                                <span class="text-muted small">(Bạn)</span>
+                                                            }
+                                                        </div>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="approval-badge @statusCss">@statusLabel</span>
+
+                                                            @if (!jg.IsCurrentHeadJudge && jg.OverallApprovalStatus == "Pending" && jg.Scores.Any())
+                                                            {
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-semibold"
+                                                                        style="font-size:0.78rem;"
+                                                                        onclick="approveScores(@jg.JudgeId, @sub.SubmissionId, this)">
+                                                                    <i class="bi bi-check-lg me-1"></i>Duyệt
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 fw-semibold"
+                                                                        style="font-size:0.78rem;"
+                                                                        onclick="openRejectModal(@jg.JudgeId, @sub.SubmissionId, '@jg.JudgeName')">
+                                                                    <i class="bi bi-x-lg me-1"></i>Từ chối
+                                                                </button>
+                                                            }
+
+                                                            @if (!jg.IsCurrentHeadJudge && jg.OverallApprovalStatus == "Approved")
+                                                            {
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
+                                                                        style="font-size:0.78rem;"
+                                                                        onclick="openRejectModal(@jg.JudgeId, @sub.SubmissionId, '@jg.JudgeName')">
+                                                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Thu hồi
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    </div>
+
+                                                    @if (jg.OverallApprovalStatus == "Rejected" && !string.IsNullOrEmpty(jg.RejectionReason))
+                                                    {
+                                                        <div class="px-4 py-2 bg-danger bg-opacity-10 border-bottom border-danger border-opacity-25">
+                                                            <small class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Lý do từ chối: <strong>@jg.RejectionReason</strong></small>
+                                                        </div>
+                                                    }
+
+                                                    @if (jg.Scores.Any())
+                                                    {
+                                                        <div class="px-3 py-2">
+                                                            <table class="table score-mini-table table-sm mb-0 align-middle">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th class="py-2 px-3">Tiêu chí</th>
+                                                                        <th class="py-2 text-center">Điểm</th>
+                                                                        <th class="py-2 text-center">Trọng số</th>
+                                                                        <th class="py-2">Nhận xét</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach (var s in jg.Scores)
+                                                                    {
+                                                                        <tr>
+                                                                            <td class="py-2 px-3 fw-medium">@s.CriteriaName</td>
+                                                                            <td class="py-2 text-center fw-bold" style="color:var(--judge-accent);">
+                                                                                @s.Score / @s.MaxScore
+                                                                            </td>
+                                                                            <td class="py-2 text-center text-muted">@(s.Weight * 100)%</td>
+                                                                            <td class="py-2 text-muted fst-italic small">
+                                                                                @(string.IsNullOrEmpty(s.Comment) ? "—" : s.Comment)
+                                                                            </td>
+                                                                        </tr>
+                                                                    }
+                                                                    <tr class="border-top" style="background:#f9fafb;">
+                                                                        <td class="py-2 px-3 fw-bold">Tổng điểm (có trọng số)</td>
+                                                                        <td class="py-2 text-center fw-bold" style="color:var(--judge-accent);" colspan="3">
+                                                                            @jg.Scores.Sum(s => s.Score * s.Weight).ToString("0.##")
+                                                                            / @jg.Scores.Sum(s => s.MaxScore * s.Weight).ToString("0.##")
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="px-4 py-3 text-muted small fst-italic">
+                                                            <i class="bi bi-clock me-1"></i>Giám khảo chưa chấm điểm bài này.
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<!-- MODAL: Từ chối / Thu hồi -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold" id="rejectModalTitle">Từ chối điểm</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3" id="rejectModalDesc"></p>
+                <label class="form-label fw-semibold small">Lý do từ chối <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="rejectReason" rows="3"
+                          placeholder="Nhập lý do cụ thể để giám khảo chấm lại..."></textarea>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-semibold" id="confirmRejectBtn">
+                    <i class="bi bi-x-circle me-1"></i>Xác nhận từ chối
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const TOKEN = document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            ?? document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('XSRF-TOKEN'))?.split('=')[1]
+            ?? '';
+
+        let pendingRejectData = null;
+
+        async function approveScores(judgeId, submissionId, btn) {
+            if (!confirm('Xác nhận duyệt điểm của giám khảo này?')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang duyệt...';
+            try {
+                const res = await fetch('/Judge/ApproveScores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': TOKEN },
+                    body: JSON.stringify({ judgeId, submissionId, action: 'Approve', rejectionReason: null })
+                });
+                const data = await res.json();
+                if (res.ok) { location.reload(); }
+                else { alert(data.message || 'Lỗi khi duyệt điểm.'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Duyệt'; }
+            } catch { alert('Lỗi kết nối.'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Duyệt'; }
+        }
+
+        function openRejectModal(judgeId, submissionId, judgeName) {
+            pendingRejectData = { judgeId, submissionId };
+            document.getElementById('rejectModalTitle').textContent = 'Từ chối điểm';
+            document.getElementById('rejectModalDesc').textContent = `Nhập lý do từ chối điểm của ${judgeName}. Giám khảo sẽ cần chấm lại.`;
+            document.getElementById('rejectReason').value = '';
+            new bootstrap.Modal(document.getElementById('rejectModal')).show();
+        }
+
+        document.getElementById('confirmRejectBtn').addEventListener('click', async () => {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) { document.getElementById('rejectReason').classList.add('is-invalid'); return; }
+            document.getElementById('rejectReason').classList.remove('is-invalid');
+
+            const btn = document.getElementById('confirmRejectBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
+            try {
+                const res = await fetch('/Judge/ApproveScores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': TOKEN },
+                    body: JSON.stringify({ ...pendingRejectData, action: 'Reject', rejectionReason: reason })
+                });
+                const data = await res.json();
+                if (res.ok) { location.reload(); }
+                else { alert(data.message || 'Lỗi.'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Xác nhận từ chối'; }
+            } catch { alert('Lỗi kết nối.'); btn.disabled = false; btn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Xác nhận từ chối'; }
+        });
+    </script>
+    @Html.AntiForgeryToken()
+}
