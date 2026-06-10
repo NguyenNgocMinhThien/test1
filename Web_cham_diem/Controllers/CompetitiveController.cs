@@ -946,6 +946,163 @@ public class CompetitiveController : Controller
         return View("~/Views/Pages/ListStudentConpetitions.cshtml", registrations);
     }
 
+    // GET: /Results
+    [HttpGet("/Results")]
+    public async Task<IActionResult> Results(
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? category = null)
+    {
+        var competitionsQuery = _context.Competitions
+            .Include(c => c.CompetitionImages)
+            .Include(c => c.CompetitionRounds.OrderBy(r => r.RoundOrder))
+                .ThenInclude(r => r.ScoringCriteria.OrderBy(sc => sc.Order))
+            .Where(c => c.Status != "Draft");
+
+        if (!string.IsNullOrWhiteSpace(search))
+            competitionsQuery = competitionsQuery.Where(c => c.CompetitionName.Contains(search));
+
+        if (!string.IsNullOrWhiteSpace(status) && status != "all")
+            competitionsQuery = competitionsQuery.Where(c => c.Status == status);
+
+        if (!string.IsNullOrWhiteSpace(category) && category != "all")
+            competitionsQuery = competitionsQuery.Where(c => c.Category == category);
+
+        var competitions = await competitionsQuery
+            .AsSplitQuery()
+            .OrderByDescending(c => c.StartDate)
+            .ToListAsync();
+
+        var competitionIds = competitions.Select(c => c.CompetitionId).ToList();
+
+        // Load submissions có ít nhất 1 điểm chưa bị từ chối, bao gồm cả Under Review
+        var submissions = await _context.Submissions
+            .Include(s => s.Scores.Where(sc => sc.ApprovalStatus != "Rejected"))
+                .ThenInclude(sc => sc.Criteria)
+            .Include(s => s.Team)
+                .ThenInclude(t => t!.Leader)
+            .Include(s => s.Registration)
+                .ThenInclude(r => r!.User)
+            .Where(s => competitionIds.Contains(s.CompetitionId)
+                     && s.Status != "Draft"
+                     && s.CompetitionRoundId != null)
+            .AsSplitQuery()
+            .ToListAsync();
+
+        var submissionsByRound = submissions
+            .GroupBy(s => (s.CompetitionId, s.CompetitionRoundId))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var categories = await _context.Competitions
+            .Where(c => c.Status != "Draft" && c.Category != null)
+            .Select(c => c.Category!)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync();
+
+        var results = competitions.Select(competition =>
+        {
+            var rounds = competition.CompetitionRounds
+                .OrderBy(r => r.RoundOrder)
+                .Select(round =>
+                {
+                    var criteria = round.ScoringCriteria
+                        .OrderBy(c => c.Order)
+                        .Select(c => new ScoringCriteriaResultDto
+                        {
+                            CriteriaId = c.CriteriaId,
+                            CriteriaName = c.CriteriaName,
+                            MaxScore = c.MaxScore,
+                            Weight = c.Weight
+                        }).ToList();
+
+                    var key = (competition.CompetitionId, (int?)round.RoundId);
+                    var roundSubmissions = submissionsByRound.GetValueOrDefault(key, new())
+                        .Where(s => s.Scores.Any())  // chỉ hiện bài có ít nhất 1 điểm
+                        .ToList();
+
+                    var rankings = roundSubmissions.Select(submission =>
+                    {
+                        var approvedScores = submission.Scores.ToList();
+                        var criteriaScores = new Dictionary<int, decimal>();
+                        var criteriaAvg = approvedScores
+                            .GroupBy(s => s.CriteriaId)
+                            .ToDictionary(g => g.Key, g => g.Average(s => s.Score));
+
+                        decimal totalWeighted = 0;
+                        decimal maxPossible = 0;
+                        foreach (var c in criteria)
+                        {
+                            var avg = criteriaAvg.GetValueOrDefault(c.CriteriaId, 0);
+                            criteriaScores[c.CriteriaId] = Math.Round(avg, 2);
+                            totalWeighted += avg * c.Weight;
+                            maxPossible += c.MaxScore * c.Weight;
+                        }
+
+                        return new SubmissionRankingDto
+                        {
+                            SubmissionId = submission.SubmissionId,
+                            Title = submission.Title,
+                            IsTeam = submission.TeamId.HasValue,
+                            ParticipantName = submission.Team?.TeamName
+                                ?? submission.Registration?.User?.FullName
+                                ?? "N/A",
+                            StudentId = submission.Team?.Leader?.StudentId
+                                ?? submission.Registration?.User?.StudentId,
+                            TotalScore = Math.Round(totalWeighted, 2),
+                            MaxPossibleScore = Math.Round(maxPossible, 2),
+                            ScorePercentage = maxPossible > 0 ? Math.Round(totalWeighted / maxPossible * 100, 1) : 0,
+                            CriteriaScores = criteriaScores,
+                            JudgeCount = approvedScores.Select(s => s.JudgeId).Distinct().Count()
+                        };
+                    })
+                    .OrderByDescending(r => r.TotalScore)
+                    .ToList();
+
+                    for (int i = 0; i < rankings.Count; i++)
+                        rankings[i].Rank = i + 1;
+
+                    return new RoundResultDto
+                    {
+                        RoundId = round.RoundId,
+                        RoundName = round.RoundName,
+                        RoundOrder = round.RoundOrder,
+                        Status = round.Status,
+                        Criteria = criteria,
+                        Rankings = rankings
+                    };
+                }).ToList();
+
+            return new CompetitionResultDto
+            {
+                CompetitionId = competition.CompetitionId,
+                CompetitionName = competition.CompetitionName,
+                Category = competition.Category,
+                Status = competition.Status,
+                StartDate = competition.StartDate,
+                EndDate = competition.EndDate,
+                Prize = competition.Prize,
+                ThumbnailUrl = competition.CompetitionImages.FirstOrDefault(i => i.IsThumbnail)?.ImageUrl
+                              ?? competition.CompetitionImages.FirstOrDefault()?.ImageUrl,
+                TotalEvaluatedSubmissions = rounds.Sum(r => r.Rankings.Count),
+                Rounds = rounds
+            };
+        }).ToList();
+
+        var vm = new ResultsPageViewModel
+        {
+            SearchQuery = search,
+            StatusFilter = status,
+            CategoryFilter = category,
+            AvailableCategories = categories,
+            Results = results,
+            TotalCompetitions = competitions.Count,
+            TotalRankedRounds = results.Sum(r => r.Rounds.Count(ro => ro.Rankings.Any()))
+        };
+
+        return View("~/Views/Pages/Results.cshtml", vm);
+    }
+
     // GET: /Competitions
     [HttpGet("/Competitions")]
     public async Task<IActionResult> Index()

@@ -1,0 +1,712 @@
+@model Web_cham_diem.Models.ViewModels.ResultsPageViewModel
+@{
+    ViewData["Title"] = "Kết quả Cuộc thi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string StatusLabel(string s) => s switch
+    {
+        "Active" => "Đang diễn ra",
+        "Completed" => "Đã kết thúc",
+        "Closed" => "Đã đóng",
+        _ => s
+    };
+
+    string StatusBadgeClass(string s) => s switch
+    {
+        "Active" => "bg-success",
+        "Completed" => "bg-secondary",
+        "Closed" => "bg-dark",
+        _ => "bg-light text-dark"
+    };
+
+    string RoundStatusLabel(string s) => s switch
+    {
+        "Upcoming" => "Sắp diễn ra",
+        "Active" => "Đang diễn ra",
+        "Completed" => "Đã kết thúc",
+        _ => s
+    };
+
+    string RoundStatusClass(string s) => s switch
+    {
+        "Upcoming" => "text-warning",
+        "Active" => "text-success",
+        "Completed" => "text-secondary",
+        _ => "text-muted"
+    };
+}
+
+@section Styles {
+<style>
+    .results-hero {
+        background: linear-gradient(135deg, #b71c1c 0%, #dc3545 50%, #e57373 100%);
+        padding: 3rem 0 2rem;
+        color: white;
+    }
+
+    .stat-card {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .stat-card .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-card .stat-label {
+        font-size: 12px;
+        opacity: 0.85;
+        margin-top: 4px;
+    }
+
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+
+    .filter-bar .form-control,
+    .filter-bar .form-select {
+        border-radius: 8px;
+        border: 1.5px solid #dee2e6;
+        font-size: 14px;
+    }
+
+    .filter-bar .form-control:focus,
+    .filter-bar .form-select:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+    }
+
+    .competition-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        overflow: hidden;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .competition-card:hover {
+        box-shadow: 0 6px 24px rgba(220,53,69,0.12);
+    }
+
+    .competition-card-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .competition-card-header:hover {
+        background: #fafafa;
+    }
+
+    .competition-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 4px;
+    }
+
+    .competition-meta {
+        font-size: 12px;
+        color: #6c757d;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .round-tabs {
+        border-bottom: 2px solid #f0f0f0;
+        padding: 0 1.5rem;
+        background: #fafafa;
+    }
+
+    .round-tabs .nav-link {
+        font-size: 13px;
+        font-weight: 500;
+        color: #6c757d;
+        padding: 0.6rem 1rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        margin-bottom: -2px;
+        transition: all 0.2s ease;
+    }
+
+    .round-tabs .nav-link:hover {
+        color: #dc3545;
+        background: transparent;
+    }
+
+    .round-tabs .nav-link.active {
+        color: #dc3545;
+        font-weight: 700;
+        border-bottom-color: #dc3545;
+        background: transparent;
+    }
+
+    .ranking-table th {
+        background: #f8f9fa;
+        font-size: 12px;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+        padding: 10px 14px;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .ranking-table td {
+        font-size: 13px;
+        padding: 10px 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .ranking-table tbody tr:hover {
+        background: #fff8f8;
+    }
+
+    .rank-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .rank-1 { background: #ffd700; color: #7a5700; }
+    .rank-2 { background: #c0c0c0; color: #4a4a4a; }
+    .rank-3 { background: #cd7f32; color: #5a2d00; }
+    .rank-other { background: #f0f0f0; color: #6c757d; }
+
+    .score-bar-wrap {
+        min-width: 80px;
+    }
+
+    .score-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: #f0f0f0;
+        overflow: hidden;
+    }
+
+    .score-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #dc3545, #ff6b6b);
+        transition: width 0.6s ease;
+    }
+
+    .criteria-score-chip {
+        display: inline-block;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 2px 7px;
+        font-size: 11px;
+        color: #495057;
+        white-space: nowrap;
+    }
+
+    .empty-round {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #adb5bd;
+    }
+
+    .empty-round i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        display: block;
+    }
+
+    .toggle-icon {
+        transition: transform 0.25s ease;
+    }
+
+    .toggle-icon.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .prize-badge {
+        background: linear-gradient(135deg, #ffd700, #ffa500);
+        color: #7a3d00;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 5rem 2rem;
+        color: #6c757d;
+    }
+
+    .no-results i { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
+
+    @@media (max-width: 576px) {
+        .results-hero { padding: 2rem 0 1.5rem; }
+        .stat-card .stat-number { font-size: 1.5rem; }
+        .ranking-table th, .ranking-table td { padding: 8px 10px; }
+        .round-tabs { padding: 0 1rem; }
+        .competition-card-header { padding: 1rem; }
+    }
+</style>
+}
+
+<!-- Hero Banner -->
+<div class="results-hero -mt-4" style="margin-top: -1.5rem; margin-left: -12px; margin-right: -12px;">
+    <div class="container">
+        <div class="row align-items-center mb-4">
+            <div class="col">
+                <div class="d-flex align-items-center gap-3 mb-1">
+                    <i class="bi bi-award-fill fs-2"></i>
+                    <div>
+                        <h1 class="fw-bold mb-0" style="font-size: 1.75rem;">Kết quả Cuộc thi</h1>
+                        <p class="mb-0 opacity-75" style="font-size: 14px;">Bảng xếp hạng & điểm số chính thức theo từng vòng</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">@Model.TotalCompetitions</div>
+                    <div class="stat-label"><i class="bi bi-trophy me-1"></i>Cuộc thi</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">@Model.TotalRankedRounds</div>
+                    <div class="stat-label"><i class="bi bi-list-ol me-1"></i>Vòng có kết quả</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">@Model.Results.Sum(r => r.TotalEvaluatedSubmissions)</div>
+                    <div class="stat-label"><i class="bi bi-file-earmark-check me-1"></i>Bài đã chấm</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number">@Model.Results.Count(r => r.Status == "Completed")</div>
+                    <div class="stat-label"><i class="bi bi-check-circle me-1"></i>Đã kết thúc</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <!-- Search & Filter Bar -->
+    <div class="filter-bar mb-4">
+        <form method="get" action="/Results" id="filterForm">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-5">
+                    <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">
+                        <i class="bi bi-search me-1"></i>TÌM KIẾM CUỘC THI
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0 ps-0"
+                               placeholder="Nhập tên cuộc thi..."
+                               value="@Model.SearchQuery"
+                               style="border-left: none !important;" />
+                        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery))
+                        {
+                            <a href="/Results?status=@Model.StatusFilter&category=@Model.CategoryFilter"
+                               class="btn btn-outline-secondary btn-sm" title="Xóa tìm kiếm">
+                                <i class="bi bi-x"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">
+                        <i class="bi bi-funnel me-1"></i>TRẠNG THÁI
+                    </label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" selected="@(string.IsNullOrEmpty(Model.StatusFilter) || Model.StatusFilter == "all")">Tất cả</option>
+                        <option value="Active" selected="@(Model.StatusFilter == "Active")">Đang diễn ra</option>
+                        <option value="Completed" selected="@(Model.StatusFilter == "Completed")">Đã kết thúc</option>
+                        <option value="Closed" selected="@(Model.StatusFilter == "Closed")">Đã đóng</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label fw-semibold text-secondary" style="font-size: 12px;">
+                        <i class="bi bi-tag me-1"></i>LĨNH VỰC
+                    </label>
+                    <select name="category" class="form-select" onchange="this.form.submit()">
+                        <option value="all" selected="@(string.IsNullOrEmpty(Model.CategoryFilter) || Model.CategoryFilter == "all")">Tất cả</option>
+                        @foreach (var cat in Model.AvailableCategories)
+                        {
+                            <option value="@cat" selected="@(Model.CategoryFilter == cat)">@cat</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-danger w-100 rounded-3">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(Model.SearchQuery) || (!string.IsNullOrEmpty(Model.StatusFilter) && Model.StatusFilter != "all") || (!string.IsNullOrEmpty(Model.CategoryFilter) && Model.CategoryFilter != "all"))
+        {
+            <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                <small class="text-muted">Bộ lọc đang áp dụng:</small>
+                @if (!string.IsNullOrWhiteSpace(Model.SearchQuery))
+                {
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill">
+                        <i class="bi bi-search me-1"></i>@Model.SearchQuery
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Model.StatusFilter) && Model.StatusFilter != "all")
+                {
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 7px;"></i>@StatusLabel(Model.StatusFilter)
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Model.CategoryFilter) && Model.CategoryFilter != "all")
+                {
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill">
+                        <i class="bi bi-tag me-1"></i>@Model.CategoryFilter
+                    </span>
+                }
+                <a href="/Results" class="text-decoration-none text-danger" style="font-size: 12px;">
+                    <i class="bi bi-x-circle me-1"></i>Xóa tất cả
+                </a>
+            </div>
+        }
+    </div>
+
+    <!-- Results found count -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <small class="text-muted fw-semibold">
+            Tìm thấy <strong class="text-dark">@Model.Results.Count</strong> cuộc thi
+        </small>
+        <small class="text-muted">
+            <i class="bi bi-info-circle me-1"></i>
+            Chỉ hiển thị bài đã được chấm điểm và phê duyệt
+        </small>
+    </div>
+
+    <!-- Competition List -->
+    @if (!Model.Results.Any())
+    {
+        <div class="no-results">
+            <i class="bi bi-search text-muted"></i>
+            <h5 class="fw-bold text-dark">Không tìm thấy kết quả</h5>
+            <p class="text-muted mb-3">Không có cuộc thi nào phù hợp với bộ lọc của bạn.</p>
+            <a href="/Results" class="btn btn-danger rounded-pill px-4">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Xem tất cả cuộc thi
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-4">
+            @for (int ci = 0; ci < Model.Results.Count; ci++)
+            {
+                var comp = Model.Results[ci];
+                var collapseId = $"comp-body-{comp.CompetitionId}";
+                var firstRoundId = comp.Rounds.FirstOrDefault()?.RoundId;
+                <div class="competition-card" id="card-@comp.CompetitionId">
+
+                    <!-- Card Header (toggles body) -->
+                    <div class="competition-card-header d-flex align-items-start gap-3"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#@collapseId"
+                         aria-expanded="true">
+
+                        @if (!string.IsNullOrEmpty(comp.ThumbnailUrl))
+                        {
+                            <img src="@comp.ThumbnailUrl" alt="thumbnail"
+                                 style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;"
+                                 onerror="this.style.display='none'">
+                        }
+                        else
+                        {
+                            <div style="width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#dc3545,#ff6b6b);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="bi bi-trophy-fill text-white fs-4"></i>
+                            </div>
+                        }
+
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h2 class="competition-title mb-0">@comp.CompetitionName</h2>
+                                <span class="badge @StatusBadgeClass(comp.Status) rounded-pill" style="font-size: 11px;">
+                                    @StatusLabel(comp.Status)
+                                </span>
+                                @if (!string.IsNullOrEmpty(comp.Prize))
+                                {
+                                    <span class="prize-badge"><i class="bi bi-gift-fill me-1"></i>@comp.Prize</span>
+                                }
+                            </div>
+                            <div class="competition-meta">
+                                @if (!string.IsNullOrEmpty(comp.Category))
+                                {
+                                    <span><i class="bi bi-tag me-1"></i>@comp.Category</span>
+                                }
+                                <span><i class="bi bi-calendar3 me-1"></i>@comp.StartDate.ToLocalTime().ToString("dd/MM/yyyy") – @comp.EndDate.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                <span><i class="bi bi-layers me-1"></i>@comp.Rounds.Count vòng thi</span>
+                                <span><i class="bi bi-file-earmark-check me-1"></i>@comp.TotalEvaluatedSubmissions bài đã chấm</span>
+                            </div>
+                        </div>
+
+                        <i class="bi bi-chevron-down toggle-icon text-muted fs-5 flex-shrink-0 mt-1"></i>
+                    </div>
+
+                    <!-- Card Body (collapsible) -->
+                    <div class="collapse show" id="@collapseId">
+                        @if (!comp.Rounds.Any())
+                        {
+                            <div class="empty-round">
+                                <i class="bi bi-layers"></i>
+                                <p class="mb-0 fw-semibold">Chưa có vòng thi nào</p>
+                                <small>Ban tổ chức chưa thiết lập các vòng thi.</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Round Tabs -->
+                            <ul class="nav round-tabs" id="round-tabs-@comp.CompetitionId" role="tablist">
+                                @for (int ri = 0; ri < comp.Rounds.Count; ri++)
+                                {
+                                    var round = comp.Rounds[ri];
+                                    var tabId = $"tab-{comp.CompetitionId}-{round.RoundId}";
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link @(ri == 0 ? "active" : "")"
+                                                id="@tabId-btn"
+                                                data-bs-toggle="tab"
+                                                data-bs-target="#@tabId"
+                                                type="button" role="tab">
+                                            <i class="bi bi-circle-fill me-1 @RoundStatusClass(round.Status)" style="font-size: 7px;"></i>
+                                            @round.RoundName
+                                            @if (round.Rankings.Any())
+                                            {
+                                                <span class="badge bg-danger rounded-pill ms-1" style="font-size: 10px;">@round.Rankings.Count</span>
+                                            }
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <!-- Round Tab Panes -->
+                            <div class="tab-content" id="round-panes-@comp.CompetitionId">
+                                @for (int ri = 0; ri < comp.Rounds.Count; ri++)
+                                {
+                                    var round = comp.Rounds[ri];
+                                    var tabId = $"tab-{comp.CompetitionId}-{round.RoundId}";
+                                    <div class="tab-pane fade @(ri == 0 ? "show active" : "")"
+                                         id="@tabId" role="tabpanel">
+
+                                        @if (!round.Rankings.Any())
+                                        {
+                                            <div class="empty-round">
+                                                <i class="bi bi-hourglass-split"></i>
+                                                <p class="mb-0 fw-semibold">Chưa có kết quả cho vòng này</p>
+                                                <small class="text-muted">
+                                                    Trạng thái vòng: <span class="@RoundStatusClass(round.Status) fw-semibold">@RoundStatusLabel(round.Status)</span>
+                                                </small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <!-- Criteria legend -->
+                                            @if (round.Criteria.Any())
+                                            {
+                                                <div class="px-4 py-2 border-bottom d-flex flex-wrap gap-2 align-items-center" style="background: #fffbfb;">
+                                                    <small class="text-muted fw-semibold me-1">Tiêu chí:</small>
+                                                    @foreach (var c in round.Criteria)
+                                                    {
+                                                        <span class="criteria-score-chip" title="Tối đa @c.MaxScore – Hệ số @c.Weight">
+                                                            @c.CriteriaName
+                                                            <span class="text-muted">(×@c.Weight)</span>
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+
+                                            <!-- Ranking Table -->
+                                            <div class="table-responsive">
+                                                <table class="table ranking-table mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width: 54px;">Hạng</th>
+                                                            <th>Thí sinh / Đội</th>
+                                                            @foreach (var c in round.Criteria)
+                                                            {
+                                                                <th class="text-center d-none d-lg-table-cell"
+                                                                    title="@c.CriteriaName – Tối đa @c.MaxScore – Hệ số @c.Weight">
+                                                                    @(c.CriteriaName.Length > 12 ? c.CriteriaName[..12] + "…" : c.CriteriaName)
+                                                                </th>
+                                                            }
+                                                            <th class="text-end">Tổng điểm</th>
+                                                            <th class="text-center d-none d-sm-table-cell" style="width: 120px;">Tỉ lệ</th>
+                                                            <th class="text-center d-none d-md-table-cell" style="width: 90px;">Giám khảo</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var entry in round.Rankings)
+                                                        {
+                                                            var rankClass = entry.Rank switch { 1 => "rank-1", 2 => "rank-2", 3 => "rank-3", _ => "rank-other" };
+                                                            <tr>
+                                                                <td>
+                                                                    <span class="rank-badge @rankClass">
+                                                                        @if (entry.Rank <= 3)
+                                                                        {
+                                                                            <i class="bi bi-award-fill"></i>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            @entry.Rank
+                                                                        }
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="fw-semibold" style="font-size: 13px;">@entry.ParticipantName</div>
+                                                                    <div class="text-muted" style="font-size: 11px;">
+                                                                        @if (entry.IsTeam)
+                                                                        {
+                                                                            <i class="bi bi-people me-1"></i><span>Đội thi</span>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <i class="bi bi-person me-1"></i>
+                                                                            <span>@(entry.StudentId ?? "Cá nhân")</span>
+                                                                        }
+                                                                    </div>
+                                                                    @if (!string.IsNullOrEmpty(entry.Title))
+                                                                    {
+                                                                        <div class="text-muted fst-italic" style="font-size: 11px; margin-top: 2px;">@entry.Title</div>
+                                                                    }
+                                                                </td>
+                                                                @foreach (var c in round.Criteria)
+                                                                {
+                                                                    var cscore = entry.CriteriaScores.GetValueOrDefault(c.CriteriaId, 0);
+                                                                    var pct = c.MaxScore > 0 ? (double)(cscore / c.MaxScore * 100) : 0;
+                                                                    <td class="text-center d-none d-lg-table-cell">
+                                                                        <span class="fw-semibold" style="font-size: 13px; color: @(pct >= 80 ? "#198754" : pct >= 60 ? "#fd7e14" : "#dc3545");">
+                                                                            @cscore
+                                                                        </span>
+                                                                        <span class="text-muted" style="font-size: 10px;">/@c.MaxScore</span>
+                                                                    </td>
+                                                                }
+                                                                <td class="text-end">
+                                                                    <span class="fw-bold text-danger" style="font-size: 15px;">
+                                                                        @entry.TotalScore
+                                                                    </span>
+                                                                    @if (entry.MaxPossibleScore > 0)
+                                                                    {
+                                                                        <div class="text-muted" style="font-size: 10px;">/@entry.MaxPossibleScore</div>
+                                                                    }
+                                                                </td>
+                                                                <td class="d-none d-sm-table-cell">
+                                                                    <div class="score-bar-wrap">
+                                                                        <div class="d-flex justify-content-between mb-1">
+                                                                            <span style="font-size: 11px; font-weight: 600;">@entry.ScorePercentage%</span>
+                                                                        </div>
+                                                                        <div class="score-bar">
+                                                                            <div class="score-bar-fill" style="width: @entry.ScorePercentage%;"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td class="text-center d-none d-md-table-cell">
+                                                                    <span class="badge bg-light text-dark border" style="font-size: 11px;">
+                                                                        <i class="bi bi-person-check me-1 text-success"></i>@entry.JudgeCount
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <div class="px-4 py-2 d-flex justify-content-between align-items-center border-top"
+                                                 style="background: #fafafa;">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-info-circle me-1"></i>
+                                                    Điểm tổng = trung bình điểm giám khảo × hệ số tiêu chí
+                                                </small>
+                                                <a href="/Competitions/@comp.CompetitionId" class="btn btn-sm btn-outline-danger rounded-pill" style="font-size: 12px;">
+                                                    <i class="bi bi-arrow-right me-1"></i>Chi tiết cuộc thi
+                                                </a>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    // Toggle chevron icon direction when accordion opens/closes
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function (toggle) {
+        var icon = toggle.querySelector('.toggle-icon');
+        if (!icon) return;
+        var target = document.querySelector(toggle.getAttribute('data-bs-target'));
+        if (!target) return;
+
+        target.addEventListener('show.bs.collapse', function () {
+            icon.classList.remove('collapsed');
+        });
+        target.addEventListener('hide.bs.collapse', function () {
+            icon.classList.add('collapsed');
+        });
+    });
+
+    // Auto-submit on select change (already handled via onchange, but backup)
+    document.querySelectorAll('#filterForm select').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+            document.getElementById('filterForm').submit();
+        });
+    });
+
+    // Animate score bars on tab show
+    function animateBarsInPane(pane) {
+        pane.querySelectorAll('.score-bar-fill').forEach(function (bar) {
+            var w = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(function () { bar.style.width = w; }, 50);
+        });
+    }
+
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function (btn) {
+        btn.addEventListener('shown.bs.tab', function (e) {
+            var pane = document.querySelector(e.target.getAttribute('data-bs-target'));
+            if (pane) animateBarsInPane(pane);
+        });
+    });
+
+    // Animate bars in initially visible panes
+    document.querySelectorAll('.tab-pane.active').forEach(animateBarsInPane);
+</script>
+}
