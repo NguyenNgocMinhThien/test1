@@ -53,6 +53,8 @@ namespace Web_cham_diem.Models.ViewModels
 
         public int JudgeId { get; set; }
         public bool AlreadyScored { get; set; }
+        public bool IsRejected { get; set; }
+        public string? RejectionReason { get; set; }
         public List<CriteriaScoreInputDto> Criteria { get; set; } = new();
     }
 
