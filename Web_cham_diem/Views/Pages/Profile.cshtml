@@ -1,0 +1,362 @@
+@model Web_cham_diem.Models.ViewModels.UserProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ cá nhân";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string RoleLabel(string r) => r switch
+    {
+        "Admin"     => "Quản trị viên",
+        "Student"   => "Sinh viên",
+        "Lecturer"  => "Giảng viên",
+        "Organizer" => "Ban tổ chức",
+        "Judge"     => "Giám khảo",
+        _           => r
+    };
+
+    string RoleBadge(string r) => r switch
+    {
+        "Admin"     => "bg-danger",
+        "Student"   => "bg-primary",
+        "Lecturer"  => "bg-success",
+        "Organizer" => "bg-warning text-dark",
+        "Judge"     => "bg-info text-dark",
+        _           => "bg-secondary"
+    };
+
+    var initials = string.Join("", Model.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpper();
+}
+
+@section Styles {
+<style>
+    .profile-hero {
+        background: linear-gradient(135deg, #b71c1c 0%, #dc3545 50%, #e57373 100%);
+        padding: 2.5rem 0 2rem;
+        color: white;
+    }
+
+    .avatar-circle {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.25);
+        border: 3px solid rgba(255,255,255,0.6);
+        font-size: 2rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+
+    .profile-card .card-header-section {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .profile-card .card-header-section i {
+        color: #dc3545;
+        font-size: 1.15rem;
+    }
+
+    .profile-card .card-header-section h6 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .profile-card .card-body-section {
+        padding: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+
+    .form-control, .form-control:focus {
+        border-radius: 8px;
+        border: 1.5px solid #dee2e6;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220,53,69,.12);
+    }
+
+    .form-control[readonly] {
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #dc3545, #b71c1c);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        padding: 0.5rem 1.5rem;
+        font-size: 14px;
+        transition: opacity .2s;
+    }
+
+    .btn-save:hover { opacity: .88; color: white; }
+
+    .btn-outline-danger {
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .meta-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 13px;
+        color: rgba(255,255,255,0.85);
+    }
+
+    .toast-container { z-index: 1090; }
+
+    .password-toggle {
+        cursor: pointer;
+        border-left: none;
+        background: white;
+        border-radius: 0 8px 8px 0;
+        border: 1.5px solid #dee2e6;
+        border-left: none;
+        color: #6c757d;
+    }
+    .input-group .form-control { border-radius: 8px 0 0 8px; }
+</style>
+}
+
+<!-- Hero -->
+<div class="profile-hero">
+    <div class="container">
+        <div class="d-flex align-items-center gap-4">
+            <div class="avatar-circle">@initials</div>
+            <div>
+                <h3 class="fw-bold mb-1">@Model.FullName</h3>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="meta-row">
+                        <i class="bi bi-envelope-fill"></i>
+                        <span>@Model.Email</span>
+                    </div>
+                    <div class="meta-row">
+                        <i class="bi bi-shield-fill"></i>
+                        <span class="badge @RoleBadge(Model.Role)">@RoleLabel(Model.Role)</span>
+                    </div>
+                    @if (Model.LastLogin.HasValue)
+                    {
+                        <div class="meta-row">
+                            <i class="bi bi-clock-fill"></i>
+                            <span>Đăng nhập lần cuối: @Model.LastLogin.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="container py-4">
+    <div class="row g-4">
+
+        <!-- Thông tin cá nhân -->
+        <div class="col-lg-7">
+            <div class="profile-card">
+                <div class="card-header-section">
+                    <i class="bi bi-person-fill"></i>
+                    <h6>Thông tin cá nhân</h6>
+                </div>
+                <div class="card-body-section">
+                    <form id="profileForm">
+                        @Html.AntiForgeryToken()
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="fullName" name="fullName" value="@Model.FullName" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" value="@Model.Email" readonly />
+                                <div class="form-text">Email không thể thay đổi.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" value="@Model.PhoneNumber" placeholder="Nhập số điện thoại" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mã số sinh viên</label>
+                                <input type="text" class="form-control" id="studentId" name="studentId" value="@Model.StudentId" placeholder="Ví dụ: SV001" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Vai trò</label>
+                                <input type="text" class="form-control" value="@RoleLabel(Model.Role)" readonly />
+                            </div>
+                            <div class="col-12 pt-1">
+                                <button type="submit" class="btn btn-save">
+                                    <i class="bi bi-check-lg me-1"></i> Lưu thay đổi
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-5 d-flex flex-column gap-4">
+
+            <!-- Đổi mật khẩu -->
+            <div class="profile-card">
+                <div class="card-header-section">
+                    <i class="bi bi-lock-fill"></i>
+                    <h6>Đổi mật khẩu</h6>
+                </div>
+                <div class="card-body-section">
+                    <form id="passwordForm">
+                        @Html.AntiForgeryToken()
+                        <div class="d-flex flex-column gap-3">
+                            <div>
+                                <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="currentPassword" name="currentPassword" placeholder="Nhập mật khẩu hiện tại" />
+                                    <span class="password-toggle input-group-text" data-target="currentPassword"><i class="bi bi-eye"></i></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="newPassword" name="newPassword" placeholder="Ít nhất 6 ký tự" />
+                                    <span class="password-toggle input-group-text" data-target="newPassword"><i class="bi bi-eye"></i></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" />
+                                    <span class="password-toggle input-group-text" data-target="confirmPassword"><i class="bi bi-eye"></i></span>
+                                </div>
+                            </div>
+                            <div class="pt-1">
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-shield-lock me-1"></i> Đổi mật khẩu
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="profileToast" class="toast align-items-center border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body fw-medium" id="toastMessage"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showToast(message, success) {
+        const toast = document.getElementById('profileToast');
+        toast.className = 'toast align-items-center border-0 text-white ' + (success ? 'bg-success' : 'bg-danger');
+        document.getElementById('toastMessage').textContent = message;
+        bootstrap.Toast.getOrCreateInstance(toast, { delay: 3500 }).show();
+    }
+
+    // Toggle password visibility
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.getElementById(btn.dataset.target);
+            const icon  = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        });
+    });
+
+    // Update profile
+    document.getElementById('profileForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const form = e.target;
+        const btn  = form.querySelector('button[type=submit]');
+        btn.disabled = true;
+
+        const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+        const body  = new URLSearchParams({
+            fullName:    document.getElementById('fullName').value.trim(),
+            phoneNumber: document.getElementById('phoneNumber').value.trim(),
+            studentId:   document.getElementById('studentId').value.trim(),
+            __RequestVerificationToken: token
+        });
+
+        try {
+            const res  = await fetch('/Profile/Update', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+            const data = await res.json();
+            showToast(data.message, data.success);
+        } catch {
+            showToast('Có lỗi xảy ra, vui lòng thử lại.', false);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Change password
+    document.getElementById('passwordForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const form = e.target;
+        const btn  = form.querySelector('button[type=submit]');
+
+        const newPw  = document.getElementById('newPassword').value;
+        const confPw = document.getElementById('confirmPassword').value;
+        if (newPw !== confPw) { showToast('Mật khẩu xác nhận không khớp.', false); return; }
+        if (newPw.length < 6) { showToast('Mật khẩu mới phải có ít nhất 6 ký tự.', false); return; }
+
+        btn.disabled = true;
+        const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+        const body  = new URLSearchParams({
+            currentPassword: document.getElementById('currentPassword').value,
+            newPassword:     newPw,
+            confirmPassword: confPw,
+            __RequestVerificationToken: token
+        });
+
+        try {
+            const res  = await fetch('/Profile/ChangePassword', { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+            const data = await res.json();
+            showToast(data.message, data.success);
+            if (data.success) form.reset();
+        } catch {
+            showToast('Có lỗi xảy ra, vui lòng thử lại.', false);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+</script>
+}

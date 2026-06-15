@@ -1227,6 +1227,123 @@ public class CompetitiveController : Controller
         return View("~/Views/Pages/StudentCompetitionDetails.cshtml", competition);
     }
 
+    // ───────── Profile ─────────
+
+    [HttpGet("/Profile")]
+    [Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return RedirectToAction("Index", "Login");
+
+        var user = await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+
+        if (user == null)
+            return RedirectToAction("Index", "Login");
+
+        var vm = new UserProfileViewModel
+        {
+            UserId    = user.UserId,
+            FullName  = user.FullName,
+            Email     = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            StudentId = user.StudentId,
+            Role      = user.UserRoles.FirstOrDefault()?.Role?.RoleName ?? "Student",
+            CreatedAt = user.CreatedAt,
+            LastLogin = user.LastLogin
+        };
+
+        return View("~/Views/Pages/Profile.cshtml", vm);
+    }
+
+    [HttpPost("/Profile/Update")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateProfile(string fullName, string phoneNumber, string? studentId)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return Json(new { success = false, message = "Phiên đăng nhập không hợp lệ." });
+
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return Json(new { success = false, message = "Không tìm thấy tài khoản." });
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                return Json(new { success = false, message = "Họ tên không được để trống." });
+
+            if (!string.IsNullOrEmpty(studentId))
+            {
+                var idUpper = studentId.ToUpper().Trim();
+                var exists = await _context.Users.AnyAsync(u => u.UserId != userId
+                    && u.StudentId != null
+                    && u.StudentId.ToUpper() == idUpper);
+                if (exists)
+                    return Json(new { success = false, message = "Mã số này đã thuộc về tài khoản khác." });
+                user.StudentId = idUpper;
+            }
+            else
+            {
+                user.StudentId = null;
+            }
+
+            user.FullName    = fullName.Trim();
+            user.PhoneNumber = phoneNumber?.Trim() ?? string.Empty;
+            user.UpdatedAt   = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Cập nhật thông tin thành công!" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UpdateProfile error for user {UserId}", userId);
+            return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+        }
+    }
+
+    [HttpPost("/Profile/ChangePassword")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return Json(new { success = false, message = "Phiên đăng nhập không hợp lệ." });
+
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return Json(new { success = false, message = "Không tìm thấy tài khoản." });
+
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+                return Json(new { success = false, message = "Mật khẩu hiện tại không đúng." });
+
+            if (newPassword != confirmPassword)
+                return Json(new { success = false, message = "Mật khẩu xác nhận không khớp." });
+
+            if (newPassword.Length < 6)
+                return Json(new { success = false, message = "Mật khẩu mới phải có ít nhất 6 ký tự." });
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.UpdatedAt    = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Đổi mật khẩu thành công!" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ChangePassword error for user {UserId}", userId);
+            return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+        }
+    }
+
 
 }
 
