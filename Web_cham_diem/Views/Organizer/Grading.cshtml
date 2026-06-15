@@ -64,6 +64,22 @@
     .round-header-card { background: linear-gradient(135deg,#f0f4ff,#e8f0fe); border: 1px solid #dce3f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; }
 
     .conflict-badge { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; border-radius: 8px; padding: 8px 12px; font-size: .82rem; }
+
+    /* Submission Assignment Section */
+    .submission-assign-section { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 14px 16px; }
+    .submission-assign-header { margin-bottom: 12px; }
+    .submission-empty-state { text-align: center; padding: 28px 16px; color: var(--text-muted); }
+    .submission-empty-state i { font-size: 2rem; opacity: .25; display: block; margin-bottom: 8px; }
+
+    /* Assignment chips */
+    .assign-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px 3px 9px; border-radius: 20px; font-size: .75rem; font-weight: 600; border: 1px solid; }
+    .assign-chip-pending   { background: #fef9c3; border-color: #fbbf24; color: #92400e; }
+    .assign-chip-inprogress{ background: #dbeafe; border-color: #60a5fa; color: #1e40af; }
+    .assign-chip-done      { background: #dcfce7; border-color: #4ade80; color: #166534; }
+    .assign-chip-remove { background: none; border: none; padding: 0; margin-left: 2px; cursor: pointer; font-size: .85rem; line-height: 1; color: inherit; opacity: .6; }
+    .assign-chip-remove:hover { opacity: 1; }
+    .assign-btn { font-size: .78rem; white-space: nowrap; }
+    .sub-row:hover td { background: #f0f4ff !important; }
 </style>
 }
 
@@ -365,12 +381,12 @@
                                         <table class="table grade-table mb-0">
                                             <thead>
                                                 <tr>
-                                                    <th width="28%">Họ tên / Email</th>
-                                                    <th width="13%">Vai trò</th>
+                                                    <th width="26%">Họ tên / Email</th>
+                                                    <th width="12%">Vai trò</th>
                                                     <th>Chuyên môn</th>
-                                                    <th width="18%">Workload</th>
-                                                    <th width="16%">Tiến độ chấm</th>
-                                                    <th class="text-center" width="10%">Thao tác</th>
+                                                    <th width="17%">Workload</th>
+                                                    <th width="15%">Tiến độ chấm</th>
+                                                    <th class="text-center" width="14%">Thao tác</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -414,11 +430,149 @@
                                                                     title="Chỉnh sửa vai trò">
                                                                 <i class="bi bi-pencil"></i>
                                                             </button>
+                                                            <button class="btn btn-sm btn-light text-info"
+                                                                    onclick="openJudgeAssignmentsModal(@j.JudgeId,'@j.FullName.Replace("'","\\'")', '@RoleText(j.JudgeRole)')"
+                                                                    title="Xem & hủy phân công bài">
+                                                                <i class="bi bi-list-task"></i>
+                                                            </button>
                                                             <button class="btn btn-sm btn-light text-danger"
                                                                     onclick="removeJudge(@j.JudgeId,'@j.FullName.Replace("'","\\'")')"
                                                                     title="Xóa khỏi vòng">
                                                                 <i class="bi bi-trash"></i>
                                                             </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+
+                            @{
+                                var submissionsInRound = Model.Submissions
+                                    .Where(s => s.CompetitionRoundId == r.RoundId)
+                                    .OrderBy(s => s.Title)
+                                    .ToList();
+                            }
+
+                            <!-- ── Phân công Bài nộp ─────────────────────────────── -->
+                            <div class="submission-assign-section mt-3">
+                                <div class="submission-assign-header d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-file-earmark-person text-primary"></i>
+                                        <span class="fw-bold text-dark" style="font-size:.9rem;">Phân công Bài nộp</span>
+                                        <span class="badge bg-primary rounded-pill">@submissionsInRound.Count bài</span>
+                                    </div>
+                                    @if (submissionsInRound.Any())
+                                    {
+                                        <div class="position-relative">
+                                            <input type="text"
+                                                   class="form-control form-control-sm sub-filter-input"
+                                                   data-round="@r.RoundId"
+                                                   placeholder="Tìm bài nộp..."
+                                                   style="width:200px; padding-left: 30px;">
+                                            <i class="bi bi-search position-absolute text-muted"
+                                               style="left:9px; top:50%; transform:translateY(-50%); font-size:.75rem; pointer-events:none;"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (!submissionsInRound.Any())
+                                {
+                                    <div class="submission-empty-state">
+                                        <i class="bi bi-inbox"></i>
+                                        <p class="mb-0 fw-semibold">Chưa có bài nộp nào trong vòng này</p>
+                                        <small class="text-muted">Thí sinh chưa nộp bài hoặc bài chưa được gán vào vòng này.</small>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table grade-table mb-0 sub-assign-table" data-round="@r.RoundId">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:30%">Tên bài / Thí sinh</th>
+                                                    <th style="width:12%">Trạng thái</th>
+                                                    <th>Đã phân công cho</th>
+                                                    <th class="text-center" style="width:130px">Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var sub in submissionsInRound)
+                                                {
+                                                    var subStatusBadge = sub.SubmissionStatus switch
+                                                    {
+                                                        "Submitted"    => "bg-primary",
+                                                        "Under Review" => "bg-warning text-dark",
+                                                        "Evaluated"    => "bg-success",
+                                                        "Draft"        => "bg-light text-dark border",
+                                                        _              => "bg-secondary"
+                                                    };
+                                                    var subStatusText = sub.SubmissionStatus switch
+                                                    {
+                                                        "Submitted"    => "Đã nộp",
+                                                        "Under Review" => "Đang chấm",
+                                                        "Evaluated"    => "Đã chấm",
+                                                        "Draft"        => "Nháp",
+                                                        _              => sub.SubmissionStatus
+                                                    };
+                                                    var activeAssigns = sub.CurrentAssignments
+                                                        .Where(a => a.Status != "Reassigned")
+                                                        .ToList();
+                                                    <tr class="sub-row">
+                                                        <td>
+                                                            <div class="fw-bold text-dark" style="font-size:.85rem;">@sub.Title</div>
+                                                            <div class="text-muted" style="font-size:.75rem;">
+                                                                <i class="bi bi-person me-1"></i>@sub.TeamOrRepresentative
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge @subStatusBadge" style="font-size:.7rem;">@subStatusText</span>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                                                @if (!activeAssigns.Any())
+                                                                {
+                                                                    <span class="text-muted small fst-italic">Chưa phân công</span>
+                                                                }
+                                                                else
+                                                                {
+                                                                    @foreach (var a in activeAssigns)
+                                                                    {
+                                                                        var aStatusBadge = a.Status switch
+                                                                        {
+                                                                            "Completed"  => "assign-chip-done",
+                                                                            "InProgress" => "assign-chip-inprogress",
+                                                                            _            => "assign-chip-pending"
+                                                                        };
+                                                                        <span class="assign-chip @aStatusBadge" title="@AssignText(a.Status)">
+                                                                            <i class="bi bi-person-check me-1"></i>@a.JudgeName
+                                                                            @if (a.Status != "Completed")
+                                                                            {
+                                                                                <button type="button"
+                                                                                        class="assign-chip-remove"
+                                                                                        onclick="revokeAssignment(@a.AssignmentId, '@a.JudgeName.Replace("'","\\'")')"
+                                                                                        title="Thu hồi phân công">×</button>
+                                                                            }
+                                                                        </span>
+                                                                    }
+                                                                }
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            @if (!roundJudges.Any())
+                                                            {
+                                                                <span class="text-muted small">Chưa có GK</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <button class="btn btn-sm btn-outline-primary assign-btn"
+                                                                        onclick="openAssignModal(@sub.SubmissionId, '@sub.Title.Replace("'","\\'")', '@sub.TeamOrRepresentative.Replace("'","\\'")', @r.RoundId)"
+                                                                        title="Phân công giám khảo">
+                                                                    <i class="bi bi-person-plus me-1"></i>Phân công
+                                                                </button>
+                                                            }
                                                         </td>
                                                     </tr>
                                                 }
@@ -663,6 +817,110 @@
     </div>
 </div>
 
+<!-- ═══ Modal: Phân công Bài nộp ═══ -->
+<div class="modal fade" id="assignSubmissionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+        <div class="modal-content border-0" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-person me-2 text-primary"></i>Phân công Bài nộp
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+
+                <!-- Submission info -->
+                <div class="mb-4 p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="small text-muted mb-1 fw-semibold text-uppercase" style="font-size:.7rem; letter-spacing:.4px;">Bài nộp được phân công</div>
+                    <div id="assign-modal-title" class="fw-bold text-dark" style="font-size:.95rem;">—</div>
+                    <div id="assign-modal-team" class="text-muted small mt-1"></div>
+                </div>
+
+                <input type="hidden" id="assign-submission-id">
+                <input type="hidden" id="assign-round-id">
+
+                <!-- Judge select -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">
+                        <i class="bi bi-person-badge me-1"></i>Chọn Giám khảo <span class="text-danger">*</span>
+                    </label>
+                    <select id="assign-judge-select" class="form-select">
+                        <option value="">— Chọn giám khảo —</option>
+                    </select>
+                    <div id="assign-judge-workload" class="small text-muted mt-1 d-none">
+                        <i class="bi bi-bar-chart me-1"></i><span id="assign-workload-text"></span>
+                    </div>
+                </div>
+
+                <!-- Deadline -->
+                <div class="mb-1">
+                    <label class="form-label small fw-bold text-muted">
+                        <i class="bi bi-calendar-event me-1"></i>Hạn chấm điểm <span class="text-muted fw-normal">(tùy chọn)</span>
+                    </label>
+                    <input type="datetime-local" id="assign-deadline" class="form-control">
+                    <div class="form-text">Bỏ trống nếu không có hạn cụ thể.</div>
+                </div>
+
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary fw-bold" onclick="submitAssignSubmission()">
+                    <i class="bi bi-person-check me-1"></i>Xác nhận Phân công
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Modal: Quản lý Phân công của Giám khảo ═══ -->
+<div class="modal fade" id="judgeAssignmentsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="max-width:680px">
+        <div class="modal-content border-0" style="border-radius:14px; overflow:hidden;">
+
+            <div class="modal-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7); border-bottom:1px solid #d1fae5;">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0">
+                        <i class="bi bi-list-task me-2 text-success"></i>Phân công của: <span id="jm-judge-name" class="text-success"></span>
+                    </h5>
+                    <small class="text-muted" id="jm-judge-role" style="font-size:.78rem;"></small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-0">
+                <!-- Empty state -->
+                <div id="jm-no-assignments" class="text-center py-5 text-muted d-none">
+                    <i class="bi bi-inbox d-block mb-2" style="font-size:2.5rem;opacity:.25;"></i>
+                    <p class="fw-semibold mb-1">Chưa có phân công nào</p>
+                    <small>Giám khảo này chưa được phân công bài thi nào trong cuộc thi.</small>
+                </div>
+
+                <!-- Assignments table -->
+                <div id="jm-table-wrap" class="d-none">
+                    <div class="table-responsive">
+                        <table class="table grade-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width:38%">Bài nộp / Thí sinh</th>
+                                    <th style="width:14%">Trạng thái</th>
+                                    <th style="width:20%">Hạn chấm</th>
+                                    <th class="text-center" style="width:28%">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jm-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light justify-content-between">
+                <small class="text-muted" id="jm-summary"></small>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
     <div id="actionToast" class="toast align-items-center text-white border-0">
@@ -749,6 +1007,16 @@
         showToast(data.message, data.success ? 'success' : 'danger');
         if (data.success) setTimeout(() => location.reload(), 900);
     }
+
+    // ── Judge data per round (for assign modal) ──────────────────
+    const ROUND_JUDGES = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.CompetitionRounds.ToDictionary(
+            r2 => r2.RoundId.ToString(),
+            r2 => Model.Judges.Where(j => j.RoundId == r2.RoundId)
+                       .Select(j => new { id = j.JudgeId, name = j.FullName, role = j.JudgeRole, assigned = j.TotalAssigned, done = j.Completed })
+                       .ToList()
+        )
+    ));
 
     // ── Tab 2: Round pill switching ───────────────────────────────
     function switchRound(roundId, btn) {
@@ -860,6 +1128,176 @@
         showToast(data.message, data.success ? 'success' : 'danger');
         if (data.success) setTimeout(() => location.reload(), 900);
     }
+
+    // ── Tab 2: Assign Submission Modal ───────────────────────────
+    function openAssignModal(submissionId, title, team, roundId) {
+        document.getElementById('assign-submission-id').value = submissionId;
+        document.getElementById('assign-round-id').value = roundId;
+        document.getElementById('assign-modal-title').textContent = title;
+        document.getElementById('assign-modal-team').textContent = team;
+        document.getElementById('assign-deadline').value = '';
+        document.getElementById('assign-judge-workload').classList.add('d-none');
+
+        const select = document.getElementById('assign-judge-select');
+        select.innerHTML = '<option value="">— Chọn giám khảo —</option>';
+        const judges = ROUND_JUDGES[roundId] || [];
+        const roleLabel = { HeadJudge: 'Trưởng ban', ViceHead: 'Phó ban', Member: 'Thành viên' };
+        judges.forEach(j => {
+            const opt = document.createElement('option');
+            opt.value = j.id;
+            opt.dataset.assigned = j.assigned;
+            opt.dataset.done = j.done;
+            opt.textContent = `${j.name} (${roleLabel[j.role] || j.role}) — ${j.done}/${j.assigned} bài`;
+            select.appendChild(opt);
+        });
+
+        new bootstrap.Modal(document.getElementById('assignSubmissionModal')).show();
+    }
+
+    document.getElementById('assign-judge-select')?.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const wl = document.getElementById('assign-judge-workload');
+        const wt = document.getElementById('assign-workload-text');
+        if (!this.value) { wl.classList.add('d-none'); return; }
+        wt.textContent = `Đã được phân công ${opt.dataset.assigned} bài, hoàn thành ${opt.dataset.done} bài.`;
+        wl.classList.remove('d-none');
+    });
+
+    async function submitAssignSubmission() {
+        const submissionId = parseInt(document.getElementById('assign-submission-id').value);
+        const judgeId      = parseInt(document.getElementById('assign-judge-select').value);
+        const roundId      = parseInt(document.getElementById('assign-round-id').value);
+        const deadlineRaw  = document.getElementById('assign-deadline').value;
+
+        if (!judgeId) { showToast('Vui lòng chọn giám khảo.', 'warning'); return; }
+
+        const body = { submissionIds: [submissionId], judgeId, roundId, gradingDeadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : null };
+        const data = await postJson(`/Organizer/AssignSubmissions?competitionId=${CID}`, body);
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignSubmissionModal'))?.hide();
+            setTimeout(() => location.reload(), 900);
+        }
+    }
+
+    async function revokeAssignment(assignmentId, judgeName) {
+        if (!confirm(`Thu hồi phân công của "${judgeName}"?\n\nGiám khảo sẽ không còn thấy bài này.`)) return;
+        const data = await postForm('/Organizer/RevokeAssignment', { assignmentId, competitionId: CID });
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) setTimeout(() => location.reload(), 900);
+    }
+
+    // ── Judge assignment data (for manage-assignments modal) ─────
+    const JUDGE_ASSIGNMENTS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        Model.Assignments
+            .Where(a => a.Status != "Reassigned")
+            .GroupBy(a => a.JudgeId)
+            .ToDictionary(
+                g => g.Key.ToString(),
+                g => g.OrderBy(a => a.Status == "Completed" ? 1 : 0)
+                       .ThenByDescending(a => a.AssignedDate)
+                       .Select(a => new {
+                           id          = a.AssignmentId,
+                           title       = a.SubmissionTitle,
+                           team        = a.TeamOrRep,
+                           status      = a.Status,
+                           deadline    = a.GradingDeadline.HasValue
+                                         ? a.GradingDeadline.Value.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                                         : (string?)null,
+                           isOverdue   = a.IsOverdue,
+                           completedAt = a.CompletedAt.HasValue
+                                         ? a.CompletedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                         : (string?)null
+                       }).ToList()
+            )
+    ));
+
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function escAttr(s) { return String(s).replace(/'/g,"\\'"); }
+
+    function openJudgeAssignmentsModal(judgeId, judgeName, judgeRole) {
+        document.getElementById('jm-judge-name').textContent = judgeName;
+        document.getElementById('jm-judge-role').textContent = judgeRole;
+
+        const assignments = JUDGE_ASSIGNMENTS[judgeId] || [];
+        const noEl    = document.getElementById('jm-no-assignments');
+        const tblWrap = document.getElementById('jm-table-wrap');
+        const tbody   = document.getElementById('jm-tbody');
+        tbody.innerHTML = '';
+
+        if (!assignments.length) {
+            noEl.classList.remove('d-none');
+            tblWrap.classList.add('d-none');
+            document.getElementById('jm-summary').textContent = '';
+        } else {
+            noEl.classList.add('d-none');
+            tblWrap.classList.remove('d-none');
+
+            const done     = assignments.filter(a => a.status === 'Completed').length;
+            const revokable= assignments.filter(a => a.status !== 'Completed').length;
+            document.getElementById('jm-summary').textContent =
+                `Tổng ${assignments.length} bài · Hoàn thành ${done} · Có thể hủy ${revokable}`;
+
+            const statusMap = {
+                Pending:    { cls: 'bg-warning text-dark', txt: 'Chờ chấm' },
+                InProgress: { cls: 'bg-primary',           txt: 'Đang chấm' },
+                Completed:  { cls: 'bg-success',           txt: 'Đã xong' }
+            };
+
+            assignments.forEach(a => {
+                const st  = statusMap[a.status] || { cls: 'bg-secondary', txt: a.status };
+                const dl  = a.deadline
+                    ? new Date(a.deadline).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                    : '—';
+                const overdueHtml = a.isOverdue
+                    ? '<br><span class="badge bg-danger mt-1" style="font-size:.6rem">Quá hạn!</span>'
+                    : '';
+                const completedHtml = a.completedAt
+                    ? `<br><small class="text-muted">Xong: ${a.completedAt}</small>`
+                    : '';
+                const actionHtml = a.status !== 'Completed'
+                    ? `<button class="btn btn-sm btn-outline-danger"
+                           onclick="revokeFromModal(${a.id},'${escAttr(judgeName)}')">
+                           <i class="bi bi-x-circle me-1"></i>Hủy phân công
+                       </button>`
+                    : `<span class="text-success small"><i class="bi bi-check-circle me-1"></i>Hoàn thành</span>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="fw-bold text-dark" style="font-size:.84rem;">${escHtml(a.title)}</div>
+                        <div class="text-muted" style="font-size:.74rem;"><i class="bi bi-person me-1"></i>${escHtml(a.team)}</div>
+                    </td>
+                    <td><span class="badge ${st.cls}" style="font-size:.7rem;">${st.txt}</span></td>
+                    <td class="small">${dl}${overdueHtml}${completedHtml}</td>
+                    <td class="text-center">${actionHtml}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        new bootstrap.Modal(document.getElementById('judgeAssignmentsModal')).show();
+    }
+
+    async function revokeFromModal(assignmentId, judgeName) {
+        if (!confirm(`Hủy phân công bài này của giám khảo "${judgeName}"?\n\nSau khi hủy, giám khảo sẽ không còn thấy bài này.`)) return;
+        const data = await postForm('/Organizer/RevokeAssignment', { assignmentId, competitionId: CID });
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('judgeAssignmentsModal'))?.hide();
+            setTimeout(() => location.reload(), 900);
+        }
+    }
+
+    // ── Tab 2: Submission search filter ──────────────────────────
+    document.querySelectorAll('.sub-filter-input').forEach(input => {
+        input.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            const roundId = this.dataset.round;
+            document.querySelectorAll(`.sub-assign-table[data-round="${roundId}"] tbody .sub-row`).forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    });
 
     // ── Tab 3: Reminder ────────────────────────────────────────
     async function sendReminder(judgeId, name) {
