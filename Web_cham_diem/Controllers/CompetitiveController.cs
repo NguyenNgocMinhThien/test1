@@ -1008,7 +1008,7 @@ public class CompetitiveController : Controller
                 {
                     var criteria = round.ScoringCriteria
                         .OrderBy(c => c.Order)
-                        .Select(c => new ScoringCriteriaResultDto
+                        .Select(c => new PublicScoringCriteriaDto
                         {
                             CriteriaId = c.CriteriaId,
                             CriteriaName = c.CriteriaName,
@@ -1039,7 +1039,7 @@ public class CompetitiveController : Controller
                             maxPossible += c.MaxScore * c.Weight;
                         }
 
-                        return new SubmissionRankingDto
+                        return new PublicSubmissionRankingDto
                         {
                             SubmissionId = submission.SubmissionId,
                             Title = submission.Title,
@@ -1062,7 +1062,7 @@ public class CompetitiveController : Controller
                     for (int i = 0; i < rankings.Count; i++)
                         rankings[i].Rank = i + 1;
 
-                    return new RoundResultDto
+                    return new PublicRoundResultDto
                     {
                         RoundId = round.RoundId,
                         RoundName = round.RoundName,
@@ -1073,7 +1073,7 @@ public class CompetitiveController : Controller
                     };
                 }).ToList();
 
-            return new CompetitionResultDto
+            return new PublicCompetitionResultDto
             {
                 CompetitionId = competition.CompetitionId,
                 CompetitionName = competition.CompetitionName,
@@ -1089,7 +1089,7 @@ public class CompetitiveController : Controller
             };
         }).ToList();
 
-        var vm = new ResultsPageViewModel
+        var vm = new PublicResultsViewModel
         {
             SearchQuery = search,
             StatusFilter = status,

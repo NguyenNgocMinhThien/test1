@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Web_cham_diem.Services;
 using Web_cham_diem.Models.ViewModels;
+using System.Text;
 
 namespace Web_cham_diem.Controllers
 {
@@ -9,17 +10,20 @@ namespace Web_cham_diem.Controllers
         private readonly ICompetitionService _competitionService;
         private readonly ISubmissionService _submissionService;
         private readonly IGradingService _gradingService;
+        private readonly IResultsService _resultsService;
         private readonly ILogger<OrganizerController> _logger;
 
         public OrganizerController(
             ICompetitionService competitionService,
             ISubmissionService submissionService,
             IGradingService gradingService,
+            IResultsService resultsService,
             ILogger<OrganizerController> logger)
         {
             _competitionService = competitionService;
             _submissionService  = submissionService;
             _gradingService     = gradingService;
+            _resultsService     = resultsService;
             _logger             = logger;
         }
 
@@ -752,7 +756,80 @@ namespace Web_cham_diem.Controllers
             _logger.LogInformation("Reminder sent for judge {JudgeId}", judgeId);
             return Json(new { success = true, message = "Đã gửi nhắc nhở đến giám khảo." });
         }
-        public IActionResult Results()       => View();
+        public async Task<IActionResult> Results(int? competitionId = null)
+        {
+            try
+            {
+                var vm = await _resultsService.GetResultsViewAsync(competitionId);
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading results page");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang kết quả.";
+                return View(new ResultsPageViewModel());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportResultsCsv(int competitionId, int? roundId = null)
+        {
+            try
+            {
+                var vm = await _resultsService.GetResultsViewAsync(competitionId);
+                var detail = vm.SelectedDetail;
+                if (detail == null) return NotFound();
+
+                var rounds = roundId.HasValue
+                    ? detail.Rounds.Where(r => r.RoundId == roundId).ToList()
+                    : detail.Rounds;
+
+                var sb = new StringBuilder();
+                sb.AppendLine($"Báo cáo kết quả: {detail.CompetitionName}");
+                sb.AppendLine($"Xuất ngày: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                sb.AppendLine();
+
+                foreach (var round in rounds)
+                {
+                    sb.AppendLine($"Vòng thi: {round.RoundName}");
+                    var headers = new List<string> { "Hạng", "Giải", "Thí sinh/Đội", "Mã SV", "Tên đề tài" };
+                    headers.AddRange(round.Criteria.Select(c => $"{c.CriteriaName} (/{c.MaxScore})"));
+                    headers.AddRange(new[] { "Tổng điểm", "% Điểm", "Số giám khảo" });
+                    sb.AppendLine(string.Join(",", headers.Select(h => $"\"{h}\"")));
+
+                    foreach (var r in round.Rankings)
+                    {
+                        var row = new List<string>
+                        {
+                            r.Rank.ToString(),
+                            string.IsNullOrEmpty(r.AwardLevel) ? "-" : $"Giải {r.AwardLevel}",
+                            r.ParticipantName,
+                            r.StudentId ?? "",
+                            r.Title
+                        };
+                        foreach (var c in round.Criteria)
+                        {
+                            row.Add(r.CriteriaScores.TryGetValue(c.CriteriaId, out var s) ? s.ToString("F1") : "0");
+                        }
+                        row.Add(r.TotalScore.ToString("F1"));
+                        row.Add($"{r.ScorePercentage}%");
+                        row.Add(r.JudgeCount.ToString());
+                        sb.AppendLine(string.Join(",", row.Select(v => $"\"{v}\"")));
+                    }
+                    sb.AppendLine();
+                }
+
+                var bytes = new byte[] { 0xEF, 0xBB, 0xBF }.Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+                var fileName = $"ketqua_{detail.CompetitionName.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
+                return File(bytes, "text/csv; charset=utf-8", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting results for competition {Id}", competitionId);
+                return StatusCode(500, "Có lỗi xảy ra khi xuất dữ liệu.");
+            }
+        }
+
         public IActionResult Notifications() => View();
         public IActionResult Progress()      => View();
     }

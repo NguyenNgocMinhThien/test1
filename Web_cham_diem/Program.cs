@@ -38,6 +38,7 @@ builder.Services.AddScoped<ICompetitionService, CompetitionService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<IGradingService, GradingService>();
+builder.Services.AddScoped<IResultsService, ResultsService>();
 
 
 
