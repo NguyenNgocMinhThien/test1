@@ -168,6 +168,8 @@ public class JudgeController : Controller
             RoundName       = assignment.Round?.RoundName,
             JudgeId         = assignment.JudgeId,
             AlreadyScored   = existingScores.Any(),
+            IsRejected      = existingScores.Any(s => s.ApprovalStatus == "Rejected"),
+            RejectionReason = existingScores.FirstOrDefault(s => s.ApprovalStatus == "Rejected")?.RejectionReason,
             Criteria        = criteria
         };
 
@@ -220,15 +222,23 @@ public class JudgeController : Controller
 
             if (existing != null)
             {
-                existing.Score          = clampedScore;
-                existing.Comment        = input.Comment?.Trim();
-                existing.UpdatedAt      = now;
-                // Trưởng ban tự duyệt điểm của mình
+                existing.Score     = clampedScore;
+                existing.Comment   = input.Comment?.Trim();
+                existing.UpdatedAt = now;
                 if (isHeadJudge)
                 {
-                    existing.ApprovalStatus = "Approved";
-                    existing.ApprovedBy     = userId;
-                    existing.ApprovedAt     = now;
+                    existing.ApprovalStatus  = "Approved";
+                    existing.ApprovedBy      = userId;
+                    existing.ApprovedAt      = now;
+                    existing.RejectionReason = null;
+                }
+                else
+                {
+                    // Reset về Pending để trưởng ban duyệt lại sau khi giám khảo chấm lại
+                    existing.ApprovalStatus  = "Pending";
+                    existing.RejectionReason = null;
+                    existing.ApprovedBy      = null;
+                    existing.ApprovedAt      = null;
                 }
             }
             else

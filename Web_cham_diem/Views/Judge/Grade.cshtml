@@ -141,6 +141,23 @@
     </div>
 }
 
+@if (Model.IsRejected && !isCompleted)
+{
+    <div class="alert border-0 rounded-3 mb-4" style="background:#fee2e2; color:#991b1b;">
+        <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-x-octagon-fill fs-5 mt-1" style="color:#dc2626;"></i>
+            <div>
+                <div class="fw-semibold">Điểm của bạn đã bị từ chối bởi trưởng ban giám khảo.</div>
+                @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                {
+                    <div class="small mt-1">Lý do: <strong>@Model.RejectionReason</strong></div>
+                }
+                <div class="small mt-1 opacity-75">Vui lòng chấm điểm lại và gửi để trưởng ban duyệt.</div>
+            </div>
+        </div>
+    </div>
+}
+
 @if (isOverdue && !isCompleted)
 {
     <div class="alert alert-warning border-0 rounded-3 mb-4">
