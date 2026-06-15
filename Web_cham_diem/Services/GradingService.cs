@@ -131,6 +131,7 @@ public class GradingService : IGradingService
                 Title                = !string.IsNullOrEmpty(s.Title) ? s.Title : "Bài #" + s.SubmissionId,
                 TeamOrRepresentative = s.Team?.TeamName ?? s.Registration?.User?.FullName ?? "Unknown",
                 SubmissionStatus     = s.Status,
+                CompetitionRoundId   = s.CompetitionRoundId,
                 CurrentAssignments   = assigns?.Select(a => new AssignmentInfoDto
                 {
                     AssignmentId    = a.AssignmentId,
@@ -352,20 +353,37 @@ public class GradingService : IGradingService
         int added = 0, skipped = 0;
         foreach (var subId in dto.SubmissionIds.Distinct())
         {
-            bool exists = await _context.JudgeAssignments
-                .AnyAsync(a => a.JudgeId == dto.JudgeId && a.SubmissionId == subId && a.Status != "Reassigned");
-            if (exists) { skipped++; continue; }
+            var existing = await _context.JudgeAssignments
+                .FirstOrDefaultAsync(a => a.JudgeId == dto.JudgeId && a.SubmissionId == subId);
 
-            _context.JudgeAssignments.Add(new JudgeAssignments
+            if (existing != null)
             {
-                JudgeId          = dto.JudgeId,
-                SubmissionId     = subId,
-                CompetitionId    = competitionId,
-                AssignedByUserId = assignedByUserId > 0 ? assignedByUserId : 1,
-                GradingDeadline  = dto.GradingDeadline?.ToUniversalTime(),
-                Status           = "Pending",
-                AssignedDate     = DateTime.UtcNow
-            });
+                // Đang có phân công active → bỏ qua
+                if (existing.Status != "Reassigned") { skipped++; continue; }
+
+                // Phân công cũ đã bị hủy → kích hoạt lại thay vì INSERT mới (tránh vi phạm unique index)
+                existing.Status           = "Pending";
+                existing.RoundId          = dto.RoundId ?? existing.RoundId;
+                existing.GradingDeadline  = dto.GradingDeadline?.ToUniversalTime();
+                existing.AssignedDate     = DateTime.UtcNow;
+                existing.AssignedByUserId = assignedByUserId > 0 ? assignedByUserId : 1;
+                existing.CompletedAt      = null;
+                existing.UpdatedAt        = DateTime.UtcNow;
+            }
+            else
+            {
+                _context.JudgeAssignments.Add(new JudgeAssignments
+                {
+                    JudgeId          = dto.JudgeId,
+                    SubmissionId     = subId,
+                    CompetitionId    = competitionId,
+                    RoundId          = dto.RoundId,
+                    AssignedByUserId = assignedByUserId > 0 ? assignedByUserId : 1,
+                    GradingDeadline  = dto.GradingDeadline?.ToUniversalTime(),
+                    Status           = "Pending",
+                    AssignedDate     = DateTime.UtcNow
+                });
+            }
             added++;
         }
         await _context.SaveChangesAsync();

@@ -1,0 +1,789 @@
+﻿@{
+    ViewData["Title"] = "Hướng Dẫn Tham Gia Cuộc Thi";
+    Layout = "_Layout";
+}
+
+<!-- ============================================================
+     HERO BANNER
+     ============================================================ -->
+<section class="hd-hero position-relative rounded-4 overflow-hidden mb-5 text-white shadow-lg"
+         style="background: linear-gradient(135deg, #1e3a5f 0%, #0d6efd 60%, #0a58ca 100%); min-height: 300px;">
+    <div class="position-absolute rounded-circle opacity-10"
+         style="width:400px;height:400px;background:#fff;top:-120px;right:-80px;"></div>
+    <div class="position-absolute rounded-circle opacity-10"
+         style="width:200px;height:200px;background:#fff;bottom:-80px;right:15%;"></div>
+
+    <div class="container position-relative py-5 px-4 px-md-5">
+        <div class="row align-items-center g-4">
+            <div class="col-12 col-lg-8">
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb mb-0" style="font-size:13px;">
+                        <li class="breadcrumb-item"><a href="/" class="text-white-75 text-decoration-none">Trang chủ</a></li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">Hướng dẫn tham gia</li>
+                    </ol>
+                </nav>
+                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-3 d-inline-block">
+                    <i class="bi bi-book-half me-1"></i>HƯỚNG DẪN THAM GIA
+                </span>
+                <h1 class="display-5 fw-black text-white mb-3 lh-sm">
+                    HƯỚNG DẪN<br>
+                    <span class="text-warning">ĐĂNG KÝ & NỘP BÀI</span>
+                </h1>
+                <p class="text-white-75 mb-0" style="font-size:1rem; line-height:1.8; max-width:600px;">
+                    Chỉ cần vài bước đơn giản, bạn đã có thể tham gia các cuộc thi sinh viên cấp trường.
+                    Đọc hướng dẫn bên dưới để bắt đầu hành trình chinh phục của mình!
+                </p>
+            </div>
+            <div class="col-12 col-lg-4 text-center d-none d-lg-block">
+                <i class="bi bi-mortarboard-fill text-warning" style="font-size:7rem; opacity:0.85;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     MỤC LỤC NHANH
+     ============================================================ -->
+<section class="mb-5">
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-list-ul text-primary fs-5"></i>
+            <h6 class="fw-bold mb-0">Mục lục nhanh</h6>
+        </div>
+        <div class="row g-2">
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#buoc1" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-primary rounded-circle step-badge">1</span>
+                    <span class="small fw-semibold text-dark">Tạo tài khoản</span>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#buoc2" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-primary rounded-circle step-badge">2</span>
+                    <span class="small fw-semibold text-dark">Tìm & xem cuộc thi</span>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#buoc3" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-primary rounded-circle step-badge">3</span>
+                    <span class="small fw-semibold text-dark">Đăng ký tham gia</span>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#buoc4" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-primary rounded-circle step-badge">4</span>
+                    <span class="small fw-semibold text-dark">Nộp bài dự thi</span>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#buoc5" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-primary rounded-circle step-badge">5</span>
+                    <span class="small fw-semibold text-dark">Theo dõi kết quả</span>
+                </a>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+                <a href="#faq" class="toc-link d-flex align-items-center gap-2 p-2 rounded-3 text-decoration-none">
+                    <span class="badge bg-warning text-dark rounded-circle step-badge"><i class="bi bi-question"></i></span>
+                    <span class="small fw-semibold text-dark">Câu hỏi thường gặp</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     BƯỚC 1: TẠO TÀI KHOẢN
+     ============================================================ -->
+<section id="buoc1" class="mb-5 hd-section">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="step-circle bg-primary text-white">1</div>
+        <div>
+            <h2 class="fw-bold mb-0 hd-section-title">Tạo Tài Khoản</h2>
+            <p class="text-secondary small mb-0">Điều kiện đầu tiên để tham gia bất kỳ cuộc thi nào</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="row g-0">
+            <div class="col-12 col-md-3 d-flex align-items-center justify-content-center p-4"
+                 style="background: linear-gradient(135deg,#0d6efd20,#0d6efd10);">
+                <i class="bi bi-person-plus-fill text-primary" style="font-size:4rem;"></i>
+            </div>
+            <div class="col-12 col-md-9 p-4 p-md-5">
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6">
+                        <div class="substep d-flex gap-3">
+                            <div class="substep-num bg-primary-subtle text-primary">a</div>
+                            <div>
+                                <div class="fw-semibold mb-1">Truy cập trang đăng ký</div>
+                                <p class="text-secondary small mb-0">
+                                    Nhấn nút <strong>"Đăng ký"</strong> ở góc trên phải màn hình hoặc truy cập
+                                    trang <a href="/Account/Register" class="text-primary">/Account/Register</a>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="substep d-flex gap-3">
+                            <div class="substep-num bg-primary-subtle text-primary">b</div>
+                            <div>
+                                <div class="fw-semibold mb-1">Điền thông tin sinh viên</div>
+                                <p class="text-secondary small mb-0">
+                                    Nhập họ tên, <strong>email trường</strong> (@@uef.edu.vn) và mã số sinh viên.
+                                    Đảm bảo thông tin chính xác để tránh sự cố sau này.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="substep d-flex gap-3">
+                            <div class="substep-num bg-primary-subtle text-primary">c</div>
+                            <div>
+                                <div class="fw-semibold mb-1">Xác thực email</div>
+                                <p class="text-secondary small mb-0">
+                                    Hệ thống gửi email xác thực đến hộp thư của bạn. Nhấn link trong email
+                                    để kích hoạt tài khoản (kiểm tra cả mục Spam).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <div class="substep d-flex gap-3">
+                            <div class="substep-num bg-primary-subtle text-primary">d</div>
+                            <div>
+                                <div class="fw-semibold mb-1">Đăng nhập lần đầu</div>
+                                <p class="text-secondary small mb-0">
+                                    Sau khi xác thực, đăng nhập và hoàn thiện hồ sơ cá nhân
+                                    (khoa, chuyên ngành) để sẵn sàng tham gia cuộc thi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-3 mt-4 d-flex gap-2 align-items-start py-2 px-3" style="font-size:13px;">
+                    <i class="bi bi-info-circle-fill text-info mt-1 flex-shrink-0"></i>
+                    <span>
+                        <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo <strong>một tài khoản duy nhất</strong>.
+                        Nếu quên mật khẩu, sử dụng chức năng "Quên mật khẩu" tại trang đăng nhập.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     BƯỚC 2: TÌM & XEM CUỘC THI
+     ============================================================ -->
+<section id="buoc2" class="mb-5 hd-section">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="step-circle bg-success text-white">2</div>
+        <div>
+            <h2 class="fw-bold mb-0 hd-section-title">Tìm & Xem Cuộc Thi</h2>
+            <p class="text-secondary small mb-0">Khám phá các cuộc thi đang mở đăng ký phù hợp với bạn</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 text-center card-hover">
+                <div class="icon-circle bg-success-subtle text-success mx-auto mb-3">
+                    <i class="bi bi-grid-fill fs-3"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Danh sách cuộc thi</h6>
+                <p class="text-secondary small mb-3">
+                    Truy cập <a href="/Competitions" class="text-success">'Cuộc thi'</a> ở thanh menu để xem toàn bộ
+                    các cuộc thi đang mở và sắp diễn ra.
+                </p>
+                <a href="/Competitions" class="btn btn-outline-success btn-sm rounded-pill px-3">
+                    <i class="bi bi-arrow-right me-1"></i>Xem ngay
+                </a>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 text-center card-hover">
+                <div class="icon-circle bg-warning-subtle text-warning-emphasis mx-auto mb-3">
+                    <i class="bi bi-funnel-fill fs-3"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Lọc theo danh mục</h6>
+                <p class="text-secondary small mb-3">
+                    Sử dụng bộ lọc theo danh mục (Lập trình, NCKH, Khởi nghiệp...) và trạng thái
+                    để tìm cuộc thi phù hợp.
+                </p>
+                <span class="badge bg-warning-subtle text-warning-emphasis px-3 py-2 rounded-pill">
+                    <i class="bi bi-check2 me-1"></i>Hỗ trợ tìm kiếm
+                </span>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 p-4 text-center card-hover">
+                <div class="icon-circle bg-info-subtle text-info mx-auto mb-3">
+                    <i class="bi bi-file-earmark-text-fill fs-3"></i>
+                </div>
+                <h6 class="fw-bold mb-2">Đọc thể lệ kỹ</h6>
+                <p class="text-secondary small mb-3">
+                    Nhấn vào tên cuộc thi để xem chi tiết: đối tượng, hình thức thi,
+                    tiêu chí chấm điểm và giải thưởng.
+                </p>
+                <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Quan trọng!
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="card border-0 bg-success-subtle rounded-4 p-4">
+            <h6 class="fw-bold text-success-emphasis mb-3">
+                <i class="bi bi-lightbulb-fill me-2"></i>Các trạng thái cuộc thi bạn cần biết
+            </h6>
+            <div class="row g-2">
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success rounded-pill px-2">Đang mở ĐK</span>
+                        <span class="small text-secondary">Còn nhận hồ sơ</span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary rounded-pill px-2">Đang diễn ra</span>
+                        <span class="small text-secondary">Đang trong giai đoạn thi</span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-warning text-dark rounded-pill px-2">Sắp diễn ra</span>
+                        <span class="small text-secondary">Chưa mở đăng ký</span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary rounded-pill px-2">Đã kết thúc</span>
+                        <span class="small text-secondary">Xem kết quả tại /Results</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     BƯỚC 3: ĐĂNG KÝ THAM GIA
+     ============================================================ -->
+<section id="buoc3" class="mb-5 hd-section">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="step-circle bg-warning text-dark">3</div>
+        <div>
+            <h2 class="fw-bold mb-0 hd-section-title">Đăng Ký Tham Gia</h2>
+            <p class="text-secondary small mb-0">Điền hồ sơ đăng ký cuộc thi cá nhân hoặc theo nhóm</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <!-- Timeline -->
+        <div class="hd-timeline">
+            <div class="hd-timeline-item">
+                <div class="hd-timeline-dot bg-warning"></div>
+                <div class="hd-timeline-content">
+                    <div class="fw-semibold mb-1">Nhấn "Đăng ký tham gia"</div>
+                    <p class="text-secondary small mb-0">
+                        Từ trang chi tiết cuộc thi, nhấn nút <strong>Đăng ký tham gia</strong>.
+                        Bạn cần đã đăng nhập để thực hiện bước này.
+                    </p>
+                </div>
+            </div>
+            <div class="hd-timeline-item">
+                <div class="hd-timeline-dot bg-warning"></div>
+                <div class="hd-timeline-content">
+                    <div class="fw-semibold mb-1">Chọn hình thức: Cá nhân hay Nhóm</div>
+                    <p class="text-secondary small mb-0">
+                        Nếu thi <strong>nhóm</strong>, điền tên nhóm và thêm các thành viên
+                        (tìm qua email hoặc MSSV). Nhóm cần có một trưởng nhóm.
+                    </p>
+                </div>
+            </div>
+            <div class="hd-timeline-item">
+                <div class="hd-timeline-dot bg-warning"></div>
+                <div class="hd-timeline-content">
+                    <div class="fw-semibold mb-1">Xác nhận thông tin & gửi hồ sơ</div>
+                    <p class="text-secondary small mb-0">
+                        Kiểm tra lại thông tin, đọc và đồng ý với điều khoản tham gia,
+                        sau đó nhấn <strong>Xác nhận đăng ký</strong>.
+                    </p>
+                </div>
+            </div>
+            <div class="hd-timeline-item">
+                <div class="hd-timeline-dot bg-success"></div>
+                <div class="hd-timeline-content">
+                    <div class="fw-semibold mb-1 text-success">Chờ duyệt hồ sơ</div>
+                    <p class="text-secondary small mb-0">
+                        Ban tổ chức sẽ xét duyệt hồ sơ. Bạn sẽ nhận được thông báo qua email
+                        và trên hệ thống khi hồ sơ được chấp nhận hoặc từ chối.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-3">
+            <div class="col-12 col-md-6">
+                <div class="alert alert-warning border-0 rounded-3 py-2 px-3 d-flex gap-2 align-items-start mb-0" style="font-size:13px;">
+                    <i class="bi bi-clock-fill text-warning mt-1 flex-shrink-0"></i>
+                    <span>
+                        Chú ý <strong>hạn đăng ký</strong> ghi rõ trên trang cuộc thi.
+                        Hệ thống sẽ tự động đóng đăng ký sau thời hạn.
+                    </span>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="alert alert-danger border-0 rounded-3 py-2 px-3 d-flex gap-2 align-items-start mb-0" style="font-size:13px;">
+                    <i class="bi bi-person-x-fill text-danger mt-1 flex-shrink-0"></i>
+                    <span>
+                        Mỗi sinh viên chỉ được <strong>đăng ký một lần</strong> cho mỗi cuộc thi.
+                        Kiểm tra kỹ trước khi gửi hồ sơ.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     BƯỚC 4: NỘP BÀI DỰ THI
+     ============================================================ -->
+<section id="buoc4" class="mb-5 hd-section">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="step-circle bg-danger text-white">4</div>
+        <div>
+            <h2 class="fw-bold mb-0 hd-section-title">Nộp Bài Dự Thi</h2>
+            <p class="text-secondary small mb-0">Tải lên bài thi sau khi hồ sơ đăng ký được chấp nhận</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h6 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i class="bi bi-cloud-arrow-up-fill text-danger fs-5"></i>Các bước nộp bài
+                </h6>
+
+                <div class="hd-numbered-steps">
+                    <div class="hd-numbered-step">
+                        <span class="num bg-danger text-white">1</span>
+                        <div>
+                            <div class="fw-semibold mb-1">Truy cập trang "Bài nộp của tôi"</div>
+                            <p class="text-secondary small mb-0">
+                                Vào trang chi tiết cuộc thi đã đăng ký và nhấn nộp bài dự thi sau khi đăng nhập.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="hd-numbered-step">
+                        <span class="num bg-danger text-white">2</span>
+                        <div>
+                            <div class="fw-semibold mb-1">Nhấn "Nộp bài" cho cuộc thi đã đăng ký</div>
+                            <p class="text-secondary small mb-0">
+                                Tìm cuộc thi bạn đã đăng ký thành công và nhấn nút
+                                <strong>Nộp bài dự thi</strong>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="hd-numbered-step">
+                        <span class="num bg-danger text-white">3</span>
+                        <div>
+                            <div class="fw-semibold mb-1">Điền thông tin & tải lên tệp bài thi</div>
+                            <p class="text-secondary small mb-0">
+                                Đặt tiêu đề cho bài nộp, thêm mô tả ngắn gọn và tải lên
+                                tệp bài thi theo định dạng quy định của cuộc thi.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="hd-numbered-step">
+                        <span class="num bg-danger text-white">4</span>
+                        <div>
+                            <div class="fw-semibold mb-1">Lưu nháp hoặc Nộp chính thức</div>
+                            <p class="text-secondary small mb-0">
+                                Bạn có thể <strong>Lưu nháp</strong> để chỉnh sửa sau, hoặc
+                                <strong>Nộp chính thức</strong> khi đã hoàn chỉnh.
+                                Sau khi nộp chính thức, bài sẽ chuyển sang trạng thái chờ chấm.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-file-earmark-check-fill text-success fs-5"></i>Định dạng tệp được hỗ trợ
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-filetype-pdf text-danger me-1"></i>PDF
+                    </span>
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-filetype-docx text-primary me-1"></i>DOCX / DOC
+                    </span>
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-filetype-pptx text-warning me-1"></i>PPTX
+                    </span>
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-file-zip-fill text-secondary me-1"></i>ZIP / RAR
+                    </span>
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                        <i class="bi bi-filetype-mp4 text-info me-1"></i>MP4 (video)
+                    </span>
+                </div>
+                <p class="text-secondary small mt-3 mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Giới hạn kích thước tệp: <strong>50 MB</strong> mỗi lần tải lên.
+                    Một số cuộc thi có thể quy định định dạng riêng — xem trong thể lệ.
+                </p>
+            </div>
+
+            <div class="card border-0 bg-danger-subtle rounded-4 p-4">
+                <h6 class="fw-bold text-danger-emphasis mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Lưu ý quan trọng
+                </h6>
+                <ul class="list-unstyled mb-0 small text-secondary">
+                    <li class="mb-2 d-flex gap-2 align-items-start">
+                        <i class="bi bi-x-circle-fill text-danger flex-shrink-0 mt-1"></i>
+                        <span>Không nộp bài sau thời hạn — hệ thống sẽ tự đóng form nộp bài.</span>
+                    </li>
+                    <li class="mb-2 d-flex gap-2 align-items-start">
+                        <i class="bi bi-x-circle-fill text-danger flex-shrink-0 mt-1"></i>
+                        <span>Bài đã nộp chính thức <strong>không thể thu hồi</strong>. Kiểm tra kỹ trước khi xác nhận.</span>
+                    </li>
+                    <li class="mb-2 d-flex gap-2 align-items-start">
+                        <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                        <span>Bài <strong>Lưu nháp</strong> có thể chỉnh sửa nhiều lần trước hạn nộp.</span>
+                    </li>
+                    <li class="d-flex gap-2 align-items-start">
+                        <i class="bi bi-check-circle-fill text-success flex-shrink-0 mt-1"></i>
+                        <span>Đảm bảo kết nối internet ổn định khi tải lên tệp lớn.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     BƯỚC 5: THEO DÕI KẾT QUẢ
+     ============================================================ -->
+<section id="buoc5" class="mb-5 hd-section">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="step-circle bg-info text-white">5</div>
+        <div>
+            <h2 class="fw-bold mb-0 hd-section-title">Theo Dõi Kết Quả</h2>
+            <p class="text-secondary small mb-0">Xem điểm số và thứ hạng sau khi ban giám khảo chấm xong</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+        <div class="row g-4">
+            <div class="col-12 col-md-4 text-center">
+                <div class="card border-0 bg-info-subtle rounded-4 p-4 h-100">
+                    <i class="bi bi-clock-history text-info fs-1 mb-3"></i>
+                    <h6 class="fw-bold mb-2">Chờ kết quả chấm điểm</h6>
+                    <p class="text-secondary small mb-0">
+                        Sau khi nộp bài, bài thi sẽ được ban giám khảo chấm theo tiêu chí
+                        đã công bố. Thời gian chấm điểm tùy theo quy mô cuộc thi.
+                    </p>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 text-center">
+                <div class="card border-0 bg-success-subtle rounded-4 p-4 h-100">
+                    <i class="bi bi-trophy-fill text-success fs-1 mb-3"></i>
+                    <h6 class="fw-bold mb-2">Xem kết quả công khai</h6>
+                    <p class="text-secondary small mb-0">
+                        Sau khi công bố, vào trang
+                        <a href="/Results" class="text-success fw-semibold">/Results</a>
+                        để xem xếp hạng của mình theo từng vòng thi.
+                    </p>
+                </div>
+            </div>
+            <div class="col-12 col-md-4 text-center">
+                <div class="card border-0 bg-warning-subtle rounded-4 p-4 h-100">
+                    <i class="bi bi-award-fill text-warning fs-1 mb-3"></i>
+                    <h6 class="fw-bold mb-2">Nhận giải thưởng</h6>
+                    <p class="text-secondary small mb-0">
+                        Các thí sinh đoạt giải sẽ được ban tổ chức liên hệ qua email
+                        để hướng dẫn thủ tục nhận giải thưởng.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trạng thái bài nộp -->
+        <div class="mt-4">
+            <h6 class="fw-bold mb-3">
+                <i class="bi bi-diagram-3-fill text-info me-2"></i>Vòng đời trạng thái bài nộp của bạn
+            </h6>
+            <div class="status-flow d-flex flex-wrap gap-2 align-items-center">
+                <div class="status-chip bg-secondary-subtle text-secondary">
+                    <i class="bi bi-pencil-square me-1"></i>Nháp
+                </div>
+                <i class="bi bi-arrow-right text-muted"></i>
+                <div class="status-chip bg-primary-subtle text-primary">
+                    <i class="bi bi-send-fill me-1"></i>Đã nộp
+                </div>
+                <i class="bi bi-arrow-right text-muted"></i>
+                <div class="status-chip bg-warning-subtle text-warning-emphasis">
+                    <i class="bi bi-eye-fill me-1"></i>Đang chấm
+                </div>
+                <i class="bi bi-arrow-right text-muted"></i>
+                <div class="status-chip bg-success-subtle text-success">
+                    <i class="bi bi-check2-circle me-1"></i>Đã chấm xong
+                </div>
+            </div>
+            <p class="text-secondary small mt-3 mb-0">
+                <i class="bi bi-bell-fill text-info me-1"></i>
+                Bạn sẽ nhận thông báo qua email khi bài thi chuyển sang từng trạng thái mới.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     CÂU HỎI THƯỜNG GẶP (FAQ)
+     ============================================================ -->
+<section id="faq" class="mb-5">
+    <div class="text-center mb-4">
+        <span class="badge bg-warning-subtle text-warning-emphasis fw-semibold px-3 py-2 rounded-pill mb-2">FAQ</span>
+        <h2 class="fw-bold hd-section-title">Câu Hỏi Thường Gặp</h2>
+    </div>
+
+    <div class="accordion accordion-flush rounded-4 shadow-sm overflow-hidden border" id="faqAccordion">
+        <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Tôi chưa có tài khoản thì có thể xem danh sách cuộc thi không?
+                </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    Có, bạn có thể duyệt danh sách và xem chi tiết tất cả các cuộc thi mà <strong>không cần đăng nhập</strong>.
+                    Tuy nhiên, để đăng ký tham gia và nộp bài, bạn bắt buộc phải có tài khoản và đăng nhập.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Một cuộc thi tôi có thể đăng ký với nhiều nhóm khác nhau không?
+                </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    <strong>Không.</strong> Mỗi sinh viên chỉ được đăng ký <strong>một lần duy nhất</strong> cho mỗi cuộc thi,
+                    dù là cá nhân hay theo nhóm. Nếu đã được chấp nhận vào một nhóm thì bạn không thể đăng ký thêm cho cuộc thi đó.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Tôi có thể sửa bài sau khi đã nộp chính thức không?
+                </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    <strong>Không.</strong> Bài đã được nộp chính thức (trạng thái "Đã nộp") sẽ không thể chỉnh sửa.
+                    Hãy sử dụng chức năng <strong>Lưu nháp</strong> để kiểm tra và hoàn chỉnh bài trước khi nộp chính thức.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Điểm của tôi được tính như thế nào?
+                </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    Mỗi vòng thi có các tiêu chí chấm điểm riêng với trọng số khác nhau.
+                    Ban giám khảo được phân công sẽ chấm điểm từng tiêu chí. Điểm tổng được tính theo công thức:
+                    <div class="bg-light rounded-3 p-3 mt-2 font-monospace text-center" style="font-size:13px;">
+                        Điểm tổng = Σ (Điểm trung bình tiêu chí × Trọng số tiêu chí)
+                    </div>
+                    Chỉ những điểm đã được trưởng ban giám khảo phê duyệt mới được tính vào kết quả chính thức.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-0 border-bottom">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Khi nào kết quả được công bố?
+                </button>
+            </h2>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    Thời gian công bố kết quả do ban tổ chức từng cuộc thi quy định, thường được ghi rõ trong thể lệ.
+                    Bạn sẽ nhận thông báo qua email khi kết quả được công bố. Ngoài ra, có thể tra cứu tại trang
+                    <a href="/Results" class="text-primary">/Results</a>.
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item border-0">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>
+                    Tôi gặp sự cố kỹ thuật thì liên hệ ai?
+                </button>
+            </h2>
+            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-secondary small">
+                    Nếu gặp lỗi kỹ thuật khi sử dụng hệ thống, vui lòng liên hệ:
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Trung tâm CNTT:</strong> cntt.support@uef.edu.vn</li>
+                        <li><strong>Ban tổ chức cuộc thi:</strong> Xem trong phần "Liên hệ" của từng cuộc thi</li>
+                        <li><strong>Phòng Khoa học & Công nghệ:</strong> khcn@uef.edu.vn</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============================================================
+     CTA BOTTOM
+     ============================================================ -->
+<section class="mb-5">
+    <div class="card border-0 rounded-4 overflow-hidden shadow text-center"
+         style="background: linear-gradient(135deg,#b91c1c 0%,#dc3545 50%,#7f1d1d 100%);">
+        <div class="card-body py-5 px-4">
+            <i class="bi bi-rocket-takeoff-fill text-white mb-3" style="font-size:2.5rem;"></i>
+            <h3 class="fw-black text-white mb-2">Sẵn Sàng Tham Gia Chưa?</h3>
+            <p class="text-white-75 mb-4" style="max-width:500px; margin:0 auto;">
+                Hàng chục cuộc thi đang chờ bạn khám phá. Đừng bỏ lỡ cơ hội thể hiện tài năng!
+            </p>
+            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                <a href="/Competitions" class="btn btn-warning text-dark fw-bold px-4 py-2 rounded-pill">
+                    <i class="bi bi-trophy-fill me-2"></i>Xem Cuộc Thi Ngay
+                </a>
+                <a href="/Account/Register" class="btn btn-outline-light fw-semibold px-4 py-2 rounded-pill">
+                    <i class="bi bi-person-plus me-2"></i>Tạo Tài Khoản
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<style>
+    .text-white-75 { color: rgba(255,255,255,0.75); }
+    .fw-black { font-weight: 900; }
+
+    .hd-section-title {
+        font-size: clamp(1.15rem, 2.5vw, 1.5rem);
+    }
+
+    /* Step circle */
+    .step-circle {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    /* TOC */
+    .toc-link { transition: background 0.15s; }
+    .toc-link:hover { background: #f0f4ff; }
+    .step-badge {
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; flex-shrink: 0;
+    }
+
+    /* Icon circles */
+    .icon-circle {
+        width: 70px; height: 70px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Sub-steps (grid) */
+    .substep { margin-bottom: 0.5rem; }
+    .substep-num {
+        width: 28px; height: 28px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* Timeline */
+    .hd-timeline { position: relative; }
+    .hd-timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px; top: 0; bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg,#ffc107,#198754);
+    }
+    .hd-timeline-item {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 1.5rem;
+        padding-left: 0;
+    }
+    .hd-timeline-item:last-child { margin-bottom: 0; }
+    .hd-timeline-dot {
+        width: 22px; height: 22px; border-radius: 50%;
+        flex-shrink: 0; margin-top: 3px;
+        position: relative; z-index: 1;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 2px currentColor;
+    }
+    .hd-timeline-content { flex: 1; }
+
+    /* Numbered steps */
+    .hd-numbered-steps { display: flex; flex-direction: column; gap: 1.25rem; }
+    .hd-numbered-step { display: flex; gap: 14px; align-items: flex-start; }
+    .hd-numbered-step .num {
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+
+    /* Status flow chips */
+    .status-chip {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* Card hover */
+    .card-hover {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 0.75rem 2rem rgba(0,0,0,.1) !important;
+    }
+
+    /* Accordion tweak */
+    .accordion-button:not(.collapsed) {
+        background-color: #f0f4ff;
+        color: #0d6efd;
+        box-shadow: none;
+    }
+    .accordion-button:focus { box-shadow: none; }
+</style>

@@ -975,9 +975,9 @@ public class CompetitiveController : Controller
 
         var competitionIds = competitions.Select(c => c.CompetitionId).ToList();
 
-        // Load submissions có ít nhất 1 điểm chưa bị từ chối, bao gồm cả Under Review
+        // Chỉ tính điểm đã được trưởng ban duyệt (Approved)
         var submissions = await _context.Submissions
-            .Include(s => s.Scores.Where(sc => sc.ApprovalStatus != "Rejected"))
+            .Include(s => s.Scores.Where(sc => sc.ApprovalStatus == "Approved"))
                 .ThenInclude(sc => sc.Criteria)
             .Include(s => s.Team)
                 .ThenInclude(t => t!.Leader)
@@ -1101,6 +1101,13 @@ public class CompetitiveController : Controller
         };
 
         return View("~/Views/Pages/Results.cshtml", vm);
+    }
+
+    // GET: /HuongDan
+    [HttpGet("/HuongDan")]
+    public IActionResult HuongDan()
+    {
+        return View("~/Views/Pages/HuongDan.cshtml");
     }
 
     // GET: /Competitions

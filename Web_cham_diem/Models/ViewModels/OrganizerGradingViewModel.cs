@@ -57,6 +57,7 @@ namespace Web_cham_diem.Models.ViewModels
         public string Title { get; set; } = string.Empty;
         public string TeamOrRepresentative { get; set; } = string.Empty;
         public string SubmissionStatus { get; set; } = string.Empty;
+        public int? CompetitionRoundId { get; set; }
         public List<AssignmentInfoDto> CurrentAssignments { get; set; } = new();
     }
 
@@ -126,6 +127,7 @@ namespace Web_cham_diem.Models.ViewModels
     {
         public List<int> SubmissionIds { get; set; } = new();
         public int JudgeId { get; set; }
+        public int? RoundId { get; set; }
         public DateTime? GradingDeadline { get; set; }
     }
 
