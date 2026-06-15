@@ -11,6 +11,7 @@ namespace Web_cham_diem.Controllers
         private readonly ISubmissionService _submissionService;
         private readonly IGradingService _gradingService;
         private readonly IResultsService _resultsService;
+        private readonly INotificationsService _notificationsService;
         private readonly ILogger<OrganizerController> _logger;
 
         public OrganizerController(
@@ -18,13 +19,15 @@ namespace Web_cham_diem.Controllers
             ISubmissionService submissionService,
             IGradingService gradingService,
             IResultsService resultsService,
+            INotificationsService notificationsService,
             ILogger<OrganizerController> logger)
         {
-            _competitionService = competitionService;
-            _submissionService  = submissionService;
-            _gradingService     = gradingService;
-            _resultsService     = resultsService;
-            _logger             = logger;
+            _competitionService   = competitionService;
+            _submissionService    = submissionService;
+            _gradingService       = gradingService;
+            _resultsService       = resultsService;
+            _notificationsService = notificationsService;
+            _logger               = logger;
         }
 
         public IActionResult Index() => View();
@@ -830,7 +833,35 @@ namespace Web_cham_diem.Controllers
             }
         }
 
-        public IActionResult Notifications() => View();
+        public async Task<IActionResult> Notifications(int? competitionId = null)
+        {
+            try
+            {
+                var vm = await _notificationsService.GetOrganizerViewAsync(competitionId);
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading notifications page");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang thông báo.";
+                return View(new OrganizerNotificationsViewModel());
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendNotification([FromBody] SendNotificationRequest req)
+        {
+            try
+            {
+                var (ok, msg, count) = await _notificationsService.SendNotificationAsync(req);
+                return Json(new { ok, message = msg, count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending notification");
+                return Json(new { ok = false, message = "Lỗi hệ thống khi gửi thông báo." });
+            }
+        }
         public IActionResult Progress()      => View();
     }
 
