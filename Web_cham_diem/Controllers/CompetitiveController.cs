@@ -15,17 +15,82 @@ public class CompetitiveController : Controller
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CompetitiveController> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly INotificationsService _notificationsService;
 
     public CompetitiveController(
         ICompetitionService competitionService,
         ApplicationDbContext context,
         ILogger<CompetitiveController> logger,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        INotificationsService notificationsService)
     {
-        _competitionService = competitionService;
-        _context = context;
-        _logger = logger;
-        _environment = environment;
+        _competitionService   = competitionService;
+        _context              = context;
+        _logger               = logger;
+        _environment          = environment;
+        _notificationsService = notificationsService;
+    }
+
+    // ───────── user notification API ─────────
+
+    [HttpGet("/api/user/notifications")]
+    public async Task<IActionResult> GetUserNotifications([FromQuery] int take = 10)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return Json(new { unread = 0, items = Array.Empty<object>() });
+
+        var unread = await _notificationsService.GetUnreadCountAsync(userId);
+        var items  = await _notificationsService.GetRecentForUserAsync(userId, take);
+        return Json(new { unread, items });
+    }
+
+    [HttpPost("/api/user/notifications/{id:int}/read")]
+    public async Task<IActionResult> MarkNotificationRead(int id)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return Json(new { ok = false });
+
+        var ok = await _notificationsService.MarkReadAsync(id, userId);
+        return Json(new { ok });
+    }
+
+    [HttpPost("/api/user/notifications/read-all")]
+    public async Task<IActionResult> MarkAllRead()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+            return Json(new { ok = false, count = 0 });
+
+        var count = await _notificationsService.MarkAllReadAsync(userId);
+        return Json(new { ok = true, count });
+    }
+
+    // GET: /Notifications
+    [HttpGet("/Notifications")]
+    public async Task<IActionResult> UserNotifications(
+        [FromQuery] string? type = null,
+        [FromQuery] bool unreadOnly = false,
+        [FromQuery] int page = 1)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
+        {
+            // Unauthenticated — redirect to login
+            return Redirect("/Login?returnUrl=/Notifications");
+        }
+
+        try
+        {
+            var vm = await _notificationsService.GetUserNotificationsPageAsync(userId, type, unreadOnly, page, pageSize: 15);
+            return View("~/Views/Pages/Notifications.cshtml", vm);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading user notifications page");
+            return View("~/Views/Pages/Notifications.cshtml", new UserNotificationsPageViewModel());
+        }
     }
 
     // GET: /api/competitions
