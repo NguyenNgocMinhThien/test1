@@ -61,9 +61,7 @@ public class JudgeController : Controller
                 AssignmentId    = ja.AssignmentId,
                 SubmissionId    = ja.SubmissionId,
                 SubmissionTitle = ja.Submission.Title,
-                TeamOrRep       = ja.Submission.Team?.TeamName
-                                  ?? ja.Submission.Registration?.User?.FullName
-                                  ?? "N/A",
+                TeamOrRep       = "",   // Ẩn danh hóa khi chấm điểm
                 Status          = ja.Status,
                 GradingDeadline = ja.GradingDeadline,
                 IsOverdue       = ja.GradingDeadline.HasValue && now > ja.GradingDeadline.Value && ja.Status != "Completed",
@@ -161,8 +159,7 @@ public class JudgeController : Controller
             VideoUrl              = assignment.Submission.VideoUrl,
             ProjectLink           = assignment.Submission.ProjectLink,
             SubmissionStatus      = assignment.Submission.Status,
-            TeamOrRep             = assignment.Submission.Team?.TeamName
-                                    ?? assignment.Submission.Registration?.User?.FullName ?? "N/A",
+            TeamOrRep             = "",   // Ẩn danh hóa khi chấm điểm
             CompetitionId   = assignment.CompetitionId,
             CompetitionName = assignment.Competition.CompetitionName,
             RoundName       = assignment.Round?.RoundName,

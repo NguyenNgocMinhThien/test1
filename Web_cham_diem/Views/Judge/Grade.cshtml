@@ -128,6 +128,14 @@
     </ol>
 </nav>
 
+<div class="alert border-0 rounded-3 mb-3 d-flex align-items-center gap-3"
+     style="background:#f0f9ff;border-left:4px solid #0ea5e9 !important;border-left-style:solid !important;">
+    <i class="bi bi-shield-lock-fill" style="color:#0ea5e9;"></i>
+    <div class="small" style="color:#0284c7;">
+        <strong>Chế độ ẩn danh:</strong> Tên đội / thí sinh được ẩn để đảm bảo tính công bằng trong quá trình chấm điểm.
+    </div>
+</div>
+
 @if (isCompleted)
 {
     <div class="completed-overlay mb-4">
@@ -199,14 +207,17 @@
                     <div class="fw-bold fs-5 text-dark">@Model.SubmissionTitle</div>
                 </div>
 
-                <!-- Đội / thí sinh -->
+                <!-- Đội / thí sinh — ẩn danh hóa -->
                 <div class="mb-3">
                     <div class="info-label mb-1">Đội / Thí sinh</div>
                     <div class="d-flex align-items-center gap-2">
-                        <div style="width:32px;height:32px;border-radius:50%;background:var(--judge-light);display:flex;align-items:center;justify-content:center;">
-                            <i class="bi bi-people-fill" style="color:var(--judge-accent);font-size:0.85rem;"></i>
+                        <div style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
+                            <i class="bi bi-eye-slash-fill" style="color:#94a3b8;font-size:0.85rem;"></i>
                         </div>
-                        <span class="fw-semibold text-dark">@Model.TeamOrRep</span>
+                        <div>
+                            <span class="fw-semibold text-muted fst-italic">Ẩn danh</span>
+                            <div style="font-size:0.7rem;color:#94a3b8;">Được ẩn để đảm bảo tính công bằng</div>
+                        </div>
                     </div>
                 </div>
 
