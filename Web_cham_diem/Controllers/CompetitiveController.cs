@@ -16,19 +16,22 @@ public class CompetitiveController : Controller
     private readonly ILogger<CompetitiveController> _logger;
     private readonly IWebHostEnvironment _environment;
     private readonly INotificationsService _notificationsService;
+    private readonly ISubmissionService _submissionService;
 
     public CompetitiveController(
         ICompetitionService competitionService,
         ApplicationDbContext context,
         ILogger<CompetitiveController> logger,
         IWebHostEnvironment environment,
-        INotificationsService notificationsService)
+        INotificationsService notificationsService,
+        ISubmissionService submissionService)
     {
         _competitionService   = competitionService;
         _context              = context;
         _logger               = logger;
         _environment          = environment;
         _notificationsService = notificationsService;
+        _submissionService    = submissionService;
     }
 
     // ───────── user notification API ─────────
@@ -495,6 +498,7 @@ public class CompetitiveController : Controller
 
         ViewBag.IsLecturerView = isLecturer;
         ViewBag.CurrentUserId  = currentUserId;
+        ViewBag.EditHistory    = await _submissionService.GetRegistrationHistoryAsync(registration.RegistrationId);
         return View("~/Views/Pages/RegistrationDetail.cshtml", registration);
     }
 
@@ -607,8 +611,29 @@ public class CompetitiveController : Controller
         registration.UpdatedAt = nowUtc;
 
         // Reset về Pending nếu đã được duyệt/từ chối để ban tổ chức xem xét lại
+        var previousStatus = registration.Status;
         if (registration.Status is "Approved" or "Rejected")
             registration.Status = "Pending";
+
+        // Tạo tóm tắt thay đổi
+        var changes = new List<string>();
+        if (model.Notes != null) changes.Add("Cập nhật ghi chú");
+        if (model.TeamName != null && registration.Team != null) changes.Add("Đổi tên nhóm");
+        if (model.AdvisorStudentId != null) changes.Add("Cập nhật giảng viên hướng dẫn");
+        if (model.RemoveFiles?.Any() == true) changes.Add($"Xóa {model.RemoveFiles.Count} file");
+        var newFilesCount = new[] { model.NewFile1, model.NewFile2, model.NewFile3 }.Count(f => f != null && f.Length > 0);
+        if (newFilesCount > 0) changes.Add($"Thêm {newFilesCount} file mới");
+
+        _context.RegistrationEditHistories.Add(new Models.RegistrationEditHistory
+        {
+            RegistrationId = registration.RegistrationId,
+            EditedBy = currentUserId,
+            EditedAt = nowUtc,
+            ActionType = "StudentEdit",
+            ChangesSummary = changes.Any() ? string.Join(", ", changes) : "Chỉnh sửa hồ sơ",
+            PreviousStatus = previousStatus,
+            NewStatus = registration.Status
+        });
 
         await _context.SaveChangesAsync();
         return Ok(new { message = "Cập nhật hồ sơ đăng ký thành công!" });

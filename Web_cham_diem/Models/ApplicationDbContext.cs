@@ -29,6 +29,7 @@ namespace Web_cham_diem.Models
         public DbSet<TeamMembers> TeamMembers { get; set; }
         public DbSet<TeamTasks> TeamTasks { get; set; }
         public DbSet<TaskCompletions> TaskCompletions { get; set; }
+        public DbSet<RegistrationEditHistory> RegistrationEditHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -470,6 +471,23 @@ namespace Web_cham_diem.Models
                 .HasOne(tc => tc.VerifiedByUser)
                 .WithMany()
                 .HasForeignKey(tc => tc.VerifiedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure RegistrationEditHistory
+            modelBuilder.Entity<RegistrationEditHistory>()
+                .HasKey(h => h.HistoryId);
+            modelBuilder.Entity<RegistrationEditHistory>()
+                .Property(h => h.ActionType)
+                .HasMaxLength(50);
+            modelBuilder.Entity<RegistrationEditHistory>()
+                .HasOne(h => h.Registration)
+                .WithMany()
+                .HasForeignKey(h => h.RegistrationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RegistrationEditHistory>()
+                .HasOne(h => h.Editor)
+                .WithMany()
+                .HasForeignKey(h => h.EditedBy)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // Seed initial roles

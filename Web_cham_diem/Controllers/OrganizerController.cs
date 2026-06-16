@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Web_cham_diem.Services;
 using Web_cham_diem.Models.ViewModels;
 using System.Text;
+using System.Security.Claims;
 
 namespace Web_cham_diem.Controllers
 {
@@ -274,7 +275,8 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _submissionService.ApproveRegistrationAsync(registrationId, feedback);
+                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                var result = await _submissionService.ApproveRegistrationAsync(registrationId, editorId, feedback);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Duyệt hồ sơ thành công!" });
             }
@@ -290,7 +292,8 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _submissionService.RejectRegistrationAsync(registrationId, reason);
+                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                var result = await _submissionService.RejectRegistrationAsync(registrationId, editorId, reason);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Từ chối hồ sơ thành công!" });
             }
@@ -306,7 +309,8 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _submissionService.RequestSupplementAsync(registrationId, feedback);
+                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+                var result = await _submissionService.RequestSupplementAsync(registrationId, editorId, feedback);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Yêu cầu bổ sung đã gửi!" });
             }
