@@ -19,9 +19,102 @@ public class JudgeController : Controller
         _logger = logger;
     }
 
-    // GET /Judge/Dashboard
+    // GET /Judge/Dashboard — Tổng quan / phân tích chấm điểm
     [HttpGet("/Judge/Dashboard")]
     public async Task<IActionResult> Dashboard()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        var judges = await _context.Judges
+            .Where(j => j.UserId == userId && j.Status == "Active")
+            .ToListAsync();
+
+        var judgeIds = judges.Select(j => j.JudgeId).ToList();
+
+        var assignments = await _context.JudgeAssignments
+            .Include(ja => ja.Submission)
+            .Include(ja => ja.Competition)
+            .Include(ja => ja.Round)
+            .Where(ja => judgeIds.Contains(ja.JudgeId))
+            .AsSplitQuery()
+            .ToListAsync();
+
+        var scores = await _context.Scores
+            .Include(s => s.Criteria)
+            .Where(s => judgeIds.Contains(s.JudgeId))
+            .ToListAsync();
+
+        var totalAssigned   = assignments.Count;
+        var totalCompleted  = assignments.Count(a => a.Status == "Completed");
+        var totalPending    = assignments.Count(a => a.Status == "Pending");
+        var totalInProgress = assignments.Count(a => a.Status == "InProgress");
+        var completionRate  = totalAssigned > 0
+            ? Math.Round((double)totalCompleted / totalAssigned * 100, 1)
+            : 0;
+
+        var criteriaSummaries = scores
+            .GroupBy(s => new { s.CriteriaId, s.Criteria.CriteriaName, s.Criteria.MaxScore })
+            .Select(g => new CriteriaSummaryDto
+            {
+                CriteriaName = g.Key.CriteriaName,
+                MaxScore     = g.Key.MaxScore,
+                AverageScore = Math.Round(g.Average(s => s.Score), 2),
+                ScoredCount  = g.Count(),
+                CommentCount = g.Count(s => !string.IsNullOrWhiteSpace(s.Comment))
+            })
+            .OrderByDescending(c => c.ScoredCount)
+            .ToList();
+
+        var recentGradings = assignments
+            .Where(a => a.Status == "Completed")
+            .OrderByDescending(a => a.CompletedAt)
+            .Take(6)
+            .Select(a =>
+            {
+                var subScores = scores.Where(s => s.JudgeId == a.JudgeId && s.SubmissionId == a.SubmissionId).ToList();
+                var total = subScores.Sum(s => s.Score * s.Criteria.Weight);
+                var max   = subScores.Sum(s => s.Criteria.MaxScore * s.Criteria.Weight);
+                var approvalStatus = !subScores.Any() ? "Pending"
+                    : subScores.All(s => s.ApprovalStatus == "Approved") ? "Approved"
+                    : subScores.Any(s => s.ApprovalStatus == "Rejected") ? "Rejected"
+                    : "Pending";
+
+                return new RecentGradingDto
+                {
+                    AssignmentId    = a.AssignmentId,
+                    SubmissionTitle = a.Submission.Title,
+                    CompetitionName = a.Competition.CompetitionName,
+                    RoundName       = a.Round?.RoundName,
+                    ApprovalStatus  = approvalStatus,
+                    TotalScore      = Math.Round(total, 2),
+                    MaxScore        = Math.Round(max, 2),
+                    JudgeComment    = a.JudgeComment,
+                    CompletedAt     = a.CompletedAt
+                };
+            }).ToList();
+
+        var vm = new JudgeDashboardViewModel
+        {
+            TotalAssigned       = totalAssigned,
+            TotalCompleted      = totalCompleted,
+            TotalPending        = totalPending,
+            TotalInProgress     = totalInProgress,
+            CompletionRate      = completionRate,
+            ApprovedScoresCount = scores.Count(s => s.ApprovalStatus == "Approved"),
+            PendingScoresCount  = scores.Count(s => s.ApprovalStatus == "Pending"),
+            RejectedScoresCount = scores.Count(s => s.ApprovalStatus == "Rejected"),
+            CriteriaSummaries   = criteriaSummaries,
+            RecentGradings      = recentGradings
+        };
+
+        await SetHeadJudgePendingApprovalAsync(userId, judges);
+
+        return View("~/Views/Judge/Dashboard.cshtml", vm);
+    }
+
+    // GET /Judge/Assignments — Danh sách bài được phân công, theo từng cuộc thi
+    [HttpGet("/Judge/Assignments")]
+    public async Task<IActionResult> Assignments()
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -69,7 +162,7 @@ public class JudgeController : Controller
             }).OrderBy(a => a.Status == "Completed").ThenBy(a => a.GradingDeadline).ToList()
         }).ToList();
 
-        var vm = new JudgeDashboardViewModel
+        var vm = new JudgeAssignmentsViewModel
         {
             TotalAssigned     = groups.Sum(g => g.TotalAssigned),
             TotalCompleted    = groups.Sum(g => g.Completed),
@@ -78,7 +171,14 @@ public class JudgeController : Controller
             CompetitionGroups = groups
         };
 
-        // HeadJudge: đếm số điểm chờ duyệt
+        await SetHeadJudgePendingApprovalAsync(userId, judges);
+
+        return View("~/Views/Judge/Assignments.cshtml", vm);
+    }
+
+    // Tính số điểm chờ trưởng ban duyệt (hiển thị badge trên sidebar)
+    private async Task SetHeadJudgePendingApprovalAsync(int userId, List<Judges> judges)
+    {
         var hjCompetitionRoundPairs = judges
             .Where(j => j.JudgeRole == "HeadJudge")
             .Select(j => new { j.CompetitionId, j.RoundId })
@@ -107,8 +207,6 @@ public class JudgeController : Controller
         {
             ViewBag.PendingApprovalCount = 0;
         }
-
-        return View("~/Views/Judge/Dashboard.cshtml", vm);
     }
 
     // GET /Judge/Grade/{assignmentId}
@@ -167,6 +265,7 @@ public class JudgeController : Controller
             AlreadyScored   = existingScores.Any(),
             IsRejected      = existingScores.Any(s => s.ApprovalStatus == "Rejected"),
             RejectionReason = existingScores.FirstOrDefault(s => s.ApprovalStatus == "Rejected")?.RejectionReason,
+            JudgeComment    = assignment.JudgeComment,
             Criteria        = criteria
         };
 
@@ -255,9 +354,10 @@ public class JudgeController : Controller
             }
         }
 
-        assignment.Status      = "Completed";
-        assignment.CompletedAt = now;
-        assignment.UpdatedAt   = now;
+        assignment.Status       = "Completed";
+        assignment.CompletedAt  = now;
+        assignment.UpdatedAt    = now;
+        assignment.JudgeComment = model.JudgeComment?.Trim();
 
         var submission = await _context.Submissions.FindAsync(assignment.SubmissionId);
         if (submission != null && submission.Status == "Submitted")
@@ -271,7 +371,7 @@ public class JudgeController : Controller
         TempData["SuccessMessage"] = isHeadJudge
             ? "Chấm điểm thành công! Điểm của bạn đã được tự động duyệt."
             : "Chấm điểm thành công! Đang chờ trưởng ban duyệt điểm.";
-        return RedirectToAction("Dashboard");
+        return RedirectToAction("Assignments");
     }
 
     // GET /Judge/Review
@@ -385,6 +485,139 @@ public class JudgeController : Controller
         }
 
         return View("~/Views/Judge/Review.cshtml", vm);
+    }
+
+    // GET /Judge/ScoreHistory
+    [HttpGet("/Judge/ScoreHistory")]
+    public async Task<IActionResult> ScoreHistory(
+        [FromQuery] string? competition = null,
+        [FromQuery] string? status      = null)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        // Tất cả bản ghi giám khảo của user này
+        var judges = await _context.Judges
+            .Include(j => j.Competition)
+            .Include(j => j.Round)
+            .Where(j => j.UserId == userId && j.Status == "Active")
+            .ToListAsync();
+
+        var judgeIds = judges.Select(j => j.JudgeId).ToList();
+        if (!judgeIds.Any())
+        {
+            return View("~/Views/Judge/ScoreHistory.cshtml", new JudgeScoreHistoryViewModel());
+        }
+
+        // Assignments (bao gồm cả Pending sau khi bị từ chối)
+        var assignments = await _context.JudgeAssignments
+            .Include(ja => ja.Submission)
+            .Where(ja => judgeIds.Contains(ja.JudgeId))
+            .ToListAsync();
+
+        // Tất cả điểm đã chấm
+        var allScores = await _context.Scores
+            .Include(s => s.Criteria)
+            .Where(s => judgeIds.Contains(s.JudgeId))
+            .ToListAsync();
+
+        var judgeMap = judges.ToDictionary(j => j.JudgeId);
+        var now = DateTime.UtcNow;
+
+        var items = new List<ScoreHistoryItemDto>();
+
+        foreach (var ja in assignments)
+        {
+            var scores = allScores
+                .Where(s => s.JudgeId == ja.JudgeId && s.SubmissionId == ja.SubmissionId)
+                .ToList();
+
+            if (!scores.Any()) continue;   // Chưa chấm → bỏ qua
+
+            if (!judgeMap.TryGetValue(ja.JudgeId, out var judgeRecord)) continue;
+
+            // Trạng thái duyệt tổng hợp
+            string overallStatus;
+            if (scores.All(s => s.ApprovalStatus == "Approved"))
+                overallStatus = "Approved";
+            else if (scores.Any(s => s.ApprovalStatus == "Rejected"))
+                overallStatus = "Rejected";
+            else
+                overallStatus = "Pending";
+
+            // Filter theo trạng thái
+            if (!string.IsNullOrEmpty(status) && status != "all" && overallStatus != status)
+                continue;
+
+            // Filter theo cuộc thi
+            if (!string.IsNullOrEmpty(competition) && judgeRecord.Competition.CompetitionName != competition)
+                continue;
+
+            // Tính điểm tổng
+            decimal totalScore = 0, maxPossible = 0;
+            foreach (var s in scores)
+            {
+                totalScore  += s.Score * s.Criteria.Weight;
+                maxPossible += s.Criteria.MaxScore * s.Criteria.Weight;
+            }
+
+            var criteriaList = scores
+                .OrderBy(s => s.Criteria.Order)
+                .Select(s => new ScoreHistoryCriteriaDto
+                {
+                    CriteriaName   = s.Criteria.CriteriaName,
+                    Score          = s.Score,
+                    MaxScore       = s.Criteria.MaxScore,
+                    Weight         = s.Criteria.Weight,
+                    Comment        = s.Comment,
+                    ApprovalStatus = s.ApprovalStatus
+                }).ToList();
+
+            items.Add(new ScoreHistoryItemDto
+            {
+                AssignmentId         = ja.AssignmentId,
+                SubmissionId         = ja.SubmissionId,
+                SubmissionTitle      = ja.Submission.Title,
+                CompetitionName      = judgeRecord.Competition.CompetitionName,
+                RoundName            = judgeRecord.Round?.RoundName,
+                AssignmentStatus     = ja.Status,
+                OverallApprovalStatus= overallStatus,
+                RejectionReason      = scores.FirstOrDefault(s => !string.IsNullOrEmpty(s.RejectionReason))?.RejectionReason,
+                ScoredDate           = scores.Min(s => (DateTime?)s.ScoredDate),
+                LastUpdatedAt        = scores.Max(s => s.UpdatedAt),
+                GradingDeadline      = ja.GradingDeadline,
+                TotalScore           = Math.Round(totalScore, 2),
+                MaxPossibleScore     = Math.Round(maxPossible, 2),
+                // Có thể chỉnh sửa khi assignment bị từ chối (reset về Pending) và đã có điểm
+                CanEdit              = ja.Status == "Pending" && scores.Any(),
+                Criteria             = criteriaList
+            });
+        }
+
+        // Sắp xếp: Rejected → Pending → Approved, rồi mới nhất trước
+        items = items
+            .OrderBy(i => i.OverallApprovalStatus == "Rejected" ? 0 : i.OverallApprovalStatus == "Pending" ? 1 : 2)
+            .ThenByDescending(i => i.ScoredDate)
+            .ToList();
+
+        var availableCompetitions = judges
+            .Select(j => j.Competition.CompetitionName)
+            .Distinct()
+            .OrderBy(n => n)
+            .ToList();
+
+        var vm = new JudgeScoreHistoryViewModel
+        {
+            TotalScored           = items.Count,
+            ApprovedCount         = items.Count(i => i.OverallApprovalStatus == "Approved"),
+            PendingCount          = items.Count(i => i.OverallApprovalStatus == "Pending"),
+            RejectedCount         = items.Count(i => i.OverallApprovalStatus == "Rejected"),
+            CompetitionFilter     = competition,
+            StatusFilter          = status,
+            AvailableCompetitions = availableCompetitions,
+            Items                 = items
+        };
+
+        return View("~/Views/Judge/ScoreHistory.cshtml", vm);
     }
 
     // POST /Judge/ApproveScores

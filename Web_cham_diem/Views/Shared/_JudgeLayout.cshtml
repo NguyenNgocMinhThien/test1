@@ -243,7 +243,7 @@
             </a>
 
             <div class="nav-section-title">Chấm điểm</div>
-            <a href="/Judge/Dashboard" class="nav-link @(currentAction == "Grade" ? "active" : "")">
+            <a href="/Judge/Assignments" class="nav-link @((currentAction == "Assignments" || currentAction == "Grade") ? "active" : "")">
                 <i class="bi bi-pencil-square"></i> Bài được phân công
             </a>
             <a href="/Judge/Review" class="nav-link @(currentAction == "Review" ? "active" : "")">
@@ -255,6 +255,9 @@
                 {
                     <span class="badge rounded-pill ms-auto" style="background:var(--judge-accent);font-size:0.65rem;">@pendingCount</span>
                 }
+            </a>
+            <a href="/Judge/ScoreHistory" class="nav-link @(currentAction == "ScoreHistory" ? "active" : "")">
+                <i class="bi bi-clock-history"></i> Lịch sử chấm điểm
             </a>
         </div>
 

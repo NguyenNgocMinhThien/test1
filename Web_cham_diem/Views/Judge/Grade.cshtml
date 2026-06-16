@@ -122,7 +122,7 @@
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb mb-0">
         <li class="breadcrumb-item">
-            <a href="/Judge/Dashboard" style="color: var(--judge-accent);">Dashboard</a>
+            <a href="/Judge/Assignments" style="color: var(--judge-accent);">Bài được phân công</a>
         </li>
         <li class="breadcrumb-item active text-muted">Chấm điểm</li>
     </ol>
@@ -354,12 +354,25 @@
                                 </div>
                             </div>
                         }
+
+                        <div class="criteria-row" style="border-style:dashed;">
+                            <div class="fw-semibold text-dark mb-1">
+                                <i class="bi bi-chat-square-text me-1" style="color:var(--judge-accent);"></i>
+                                Nhận xét tổng quát
+                            </div>
+                            <small class="text-muted d-block mb-2">Đánh giá chung về toàn bộ bài dự thi (tùy chọn).</small>
+                            <textarea class="form-control form-control-sm"
+                                      name="JudgeComment"
+                                      rows="3"
+                                      placeholder="Nhận xét tổng quát về bài dự thi..."
+                                      @(isCompleted ? "readonly" : "")>@Model.JudgeComment</textarea>
+                        </div>
                     </div>
 
                     @if (!isCompleted)
                     {
                         <div class="submit-bar d-flex align-items-center justify-content-between gap-3">
-                            <a href="/Judge/Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+                            <a href="/Judge/Assignments" class="btn btn-outline-secondary rounded-pill px-4">
                                 <i class="bi bi-arrow-left me-1"></i>Quay lại
                             </a>
                             <button type="submit" class="btn rounded-pill px-5 fw-semibold text-white"
@@ -371,8 +384,8 @@
                     else
                     {
                         <div class="p-4 pt-0">
-                            <a href="/Judge/Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
-                                <i class="bi bi-arrow-left me-1"></i>Quay lại Dashboard
+                            <a href="/Judge/Assignments" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="bi bi-arrow-left me-1"></i>Quay lại danh sách
                             </a>
                         </div>
                     }

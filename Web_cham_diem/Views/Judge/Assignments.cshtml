@@ -1,0 +1,294 @@
+@model Web_cham_diem.Models.ViewModels.JudgeAssignmentsViewModel
+
+@{
+    ViewData["Title"] = "Bài được phân công";
+    Layout = "~/Views/Shared/_JudgeLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        :root { --judge-accent: #7c3aed; --judge-light: #ede9fe; }
+
+        .stat-card-judge {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+        }
+        .stat-card-judge:hover { transform: translateY(-2px); }
+
+        .stat-icon-lg {
+            width: 56px; height: 56px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .competition-card {
+            background: #fff;
+            border-radius: 1rem;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .competition-card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            background: linear-gradient(135deg, #7c3aed08, #a78bfa10);
+        }
+
+        .badge-role-HeadJudge { background: #fef3c7; color: #92400e; }
+        .badge-role-ViceHead  { background: #dbeafe; color: #1e40af; }
+        .badge-role-Member    { background: #f3f4f6; color: #374151; }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .status-Pending    { background: #fef9c3; color: #854d0e; }
+        .status-InProgress { background: #dbeafe; color: #1e40af; }
+        .status-Completed  { background: #dcfce7; color: #166534; }
+        .status-Reassigned { background: #fee2e2; color: #991b1b; }
+
+        .overdue-badge { background: #fee2e2; color: #dc2626; }
+
+        .assignment-row { transition: background 0.15s; }
+        .assignment-row:hover { background: #fafafa; }
+
+        .progress-bar-judge {
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+        }
+        .progress-fill-judge {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+            transition: width 0.4s ease;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #94a3b8;
+        }
+    </style>
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold text-dark mb-1">Bài được phân công</h4>
+    <p class="text-muted mb-0">Danh sách bài dự thi bạn cần chấm điểm, theo từng cuộc thi.</p>
+</div>
+
+<div class="alert border-0 rounded-3 mb-4 d-flex align-items-center gap-3"
+     style="background:#f0f9ff;border-left:4px solid #0ea5e9 !important;border-left-style:solid !important;">
+    <i class="bi bi-shield-lock-fill fs-5" style="color:#0ea5e9;"></i>
+    <div>
+        <div class="fw-semibold" style="color:#0369a1;">Chế độ chấm điểm ẩn danh đang bật</div>
+        <div class="small" style="color:#0284c7;">Tên đội / thí sinh được ẩn trong quá trình chấm điểm để đảm bảo tính công bằng.</div>
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card-judge">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon-lg" style="background:#ede9fe;">
+                    <i class="bi bi-clipboard2-data" style="color:#7c3aed;"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalAssigned</div>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Tổng bài được giao</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card-judge">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon-lg" style="background:#dcfce7;">
+                    <i class="bi bi-check2-circle" style="color:#16a34a;"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalCompleted</div>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Đã chấm xong</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card-judge">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon-lg" style="background:#fef9c3;">
+                    <i class="bi bi-hourglass-split" style="color:#ca8a04;"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalPending</div>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Chờ chấm</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card-judge">
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon-lg" style="background:#dbeafe;">
+                    <i class="bi bi-pencil-fill" style="color:#2563eb;"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalInProgress</div>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Đang chấm</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- COMPETITION GROUPS -->
+@if (!Model.CompetitionGroups.Any())
+{
+    <div class="competition-card">
+        <div class="empty-state">
+            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+            <h6 class="fw-semibold text-dark">Chưa có bài nào được phân công</h6>
+            <p class="small mb-0">Ban tổ chức chưa phân công bài thi cho bạn. Vui lòng chờ.</p>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var group in Model.CompetitionGroups)
+    {
+        var progressPct = group.TotalAssigned > 0
+            ? (int)Math.Round((double)group.Completed / group.TotalAssigned * 100)
+            : 0;
+
+        <div class="competition-card mb-4">
+            <div class="competition-card-header">
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-trophy me-2" style="color:#7c3aed;"></i>@group.CompetitionName
+                        </h6>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            @{
+                                var roleCss = group.JudgeRole switch
+                                {
+                                    "HeadJudge" => "badge-role-HeadJudge",
+                                    "ViceHead"  => "badge-role-ViceHead",
+                                    _           => "badge-role-Member"
+                                };
+                                var roleLabel = group.JudgeRole switch
+                                {
+                                    "HeadJudge" => "Trưởng ban",
+                                    "ViceHead"  => "Phó ban",
+                                    _           => "Thành viên"
+                                };
+                            }
+                            <span class="badge @roleCss px-2 py-1" style="font-size:0.7rem;">@roleLabel</span>
+                            @if (!string.IsNullOrEmpty(group.RoundName))
+                            {
+                                <span class="text-muted small"><i class="bi bi-flag me-1"></i>@group.RoundName</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted mb-1">Tiến độ: <strong>@group.Completed / @group.TotalAssigned</strong> bài</div>
+                        <div class="progress-bar-judge" style="width:140px;">
+                            <div class="progress-fill-judge" style="width:@progressPct%;"></div>
+                        </div>
+                        <div class="small text-muted mt-1">@progressPct%</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!group.Assignments.Any())
+            {
+                <div class="p-4 text-center text-muted small">Chưa có bài nào được phân công trong cuộc thi này.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr style="background:#f8fafc;">
+                                <th class="py-3 px-4 fw-semibold text-muted" style="font-size:0.75rem;">BÀI DỰ THI</th>
+                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">TRẠNG THÁI</th>
+                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">HẠN CHẤM</th>
+                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">THAO TÁC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in group.Assignments)
+                            {
+                                var statusCss = a.Status switch
+                                {
+                                    "Completed"  => "status-Completed",
+                                    "InProgress" => "status-InProgress",
+                                    "Reassigned" => "status-Reassigned",
+                                    _            => "status-Pending"
+                                };
+                                var statusLabel = a.Status switch
+                                {
+                                    "Completed"  => "Đã chấm",
+                                    "InProgress" => "Đang chấm",
+                                    "Reassigned" => "Phân lại",
+                                    _            => "Chờ chấm"
+                                };
+
+                                <tr class="assignment-row">
+                                    <td class="py-3 px-4">
+                                        <div class="fw-semibold text-dark">@a.SubmissionTitle</div>
+                                        <small class="text-muted">#@a.SubmissionId</small>
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        <span class="status-badge @statusCss">@statusLabel</span>
+                                        @if (a.IsOverdue)
+                                        {
+                                            <span class="status-badge overdue-badge ms-1">Trễ hạn</span>
+                                        }
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        @if (a.GradingDeadline.HasValue)
+                                        {
+                                            <span class="small @(a.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
+                                                @a.GradingDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                    </td>
+                                    <td class="py-3 text-center">
+                                        @if (a.Status == "Completed")
+                                        {
+                                            <a href="/Judge/Grade/@a.AssignmentId"
+                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                <i class="bi bi-eye me-1"></i>Xem lại
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <a href="/Judge/Grade/@a.AssignmentId"
+                                               class="btn btn-sm rounded-pill px-3 fw-semibold text-white"
+                                               style="background: var(--judge-accent);">
+                                                <i class="bi bi-pencil-square me-1"></i>Chấm điểm
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+}
