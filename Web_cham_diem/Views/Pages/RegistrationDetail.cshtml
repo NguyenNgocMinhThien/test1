@@ -1,4 +1,5 @@
 @model Web_cham_diem.Models.Registrations
+@using Web_cham_diem.Services
 
 @{
     ViewData["Title"] = "Hồ sơ đăng ký";
@@ -7,6 +8,7 @@
     var isLecturer    = ViewBag.IsLecturerView as bool? ?? false;
     var currentUserId = ViewBag.CurrentUserId  as int?  ?? 0;
     var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+    var editHistory   = ViewBag.EditHistory as List<RegistrationHistoryItemDto> ?? new();
 
     var statusBadge = Model.Status switch
     {
@@ -69,6 +71,25 @@
         text-transform:uppercase; color:#888; margin-bottom:12px;
     }
     .complete-form { display:none; margin-top:10px; }
+
+    /* ── Timeline lịch sử ── */
+    .history-timeline { position:relative; padding-left:28px; }
+    .history-timeline::before {
+        content:''; position:absolute; left:9px; top:0; bottom:0;
+        width:2px; background:#dee2e6;
+    }
+    .history-item { position:relative; margin-bottom:18px; }
+    .history-dot {
+        position:absolute; left:-28px; top:3px;
+        width:18px; height:18px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        font-size:.65rem; color:#fff; flex-shrink:0;
+    }
+    .dot-edit     { background:#0d6efd; }
+    .dot-approved { background:#198754; }
+    .dot-rejected { background:#dc3545; }
+    .dot-supplement { background:#fd7e14; }
+
     .toast-msg {
         position:fixed; bottom:24px; right:24px;
         padding:10px 20px; border-radius:8px;
@@ -511,6 +532,75 @@
         </div>
 
     </div>
+
+    <!-- ── LỊCH SỬ CHỈNH SỬA ───────────────────────────────────────── -->
+    @if (editHistory.Any())
+    {
+        <div class="row g-4 mt-0">
+            <div class="col-12">
+                <div class="info-card card p-4">
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0">
+                            <i class="bi bi-clock-history me-2 text-secondary"></i>Lịch sử thay đổi hồ sơ
+                        </h6>
+                        <span class="badge bg-secondary rounded-pill">@editHistory.Count lần</span>
+                    </div>
+
+                    <div class="history-timeline">
+                        @foreach (var item in editHistory)
+                        {
+                            var (dotClass, icon, label) = item.ActionType switch
+                            {
+                                "StudentEdit"        => ("dot-edit",       "bi-pencil-fill",    "Thí sinh chỉnh sửa"),
+                                "OrganizerApproved"  => ("dot-approved",   "bi-check-lg",       "Ban tổ chức duyệt"),
+                                "OrganizerRejected"  => ("dot-rejected",   "bi-x-lg",           "Ban tổ chức từ chối"),
+                                "OrganizerSupplement"=> ("dot-supplement", "bi-exclamation-lg", "Yêu cầu bổ sung"),
+                                _                    => ("dot-edit",       "bi-activity",       item.ActionType)
+                            };
+                            var localTime = TimeZoneInfo.ConvertTimeFromUtc(item.EditedAt, tz);
+                            <div class="history-item">
+                                <div class="history-dot @dotClass">
+                                    <i class="bi @icon"></i>
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-1">
+                                    <div>
+                                        <div class="fw-semibold" style="font-size:.88rem;">@label</div>
+                                        @if (!string.IsNullOrEmpty(item.ChangesSummary))
+                                        {
+                                            <div class="text-muted small">@item.ChangesSummary</div>
+                                        }
+                                        @if (item.PreviousStatus != null && item.PreviousStatus != item.NewStatus)
+                                        {
+                                            <div class="small mt-1">
+                                                <span class="badge bg-secondary" style="font-size:.68rem;">@item.PreviousStatus</span>
+                                                <i class="bi bi-arrow-right mx-1 text-muted" style="font-size:.7rem;"></i>
+                                                @{
+                                                    var nbadge = item.NewStatus switch
+                                                    {
+                                                        "Approved" => "bg-success",
+                                                        "Rejected" => "bg-danger",
+                                                        _          => "bg-warning text-dark"
+                                                    };
+                                                }
+                                                <span class="badge @nbadge" style="font-size:.68rem;">@item.NewStatus</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="text-end text-muted" style="font-size:.78rem; white-space:nowrap;">
+                                        <div>@item.EditorName</div>
+                                        <div>@localTime.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+
 </div>
 
 @* ══ MODAL CHỈNH SỬA HỒ SƠ ══════════════════════════════════════════════ *@

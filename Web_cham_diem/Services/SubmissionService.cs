@@ -196,56 +196,108 @@ public class SubmissionService : ISubmissionService
         }
     }
 
-    public async Task<bool> ApproveRegistrationAsync(int registrationId, string? feedback = null)
+    public async Task<bool> ApproveRegistrationAsync(int registrationId, int editorId, string? feedback = null)
     {
         var registration = await _context.Registrations.FindAsync(registrationId);
         if (registration == null)
             return false;
 
+        var previousStatus = registration.Status;
         registration.Status = "Approved";
         registration.ApprovalDate = DateTime.UtcNow;
         registration.UpdatedAt = DateTime.UtcNow;
         registration.Notes = feedback ?? registration.Notes;
 
         _context.Registrations.Update(registration);
+        _context.RegistrationEditHistories.Add(new Models.RegistrationEditHistory
+        {
+            RegistrationId = registrationId,
+            EditedBy = editorId,
+            EditedAt = DateTime.UtcNow,
+            ActionType = "OrganizerApproved",
+            ChangesSummary = string.IsNullOrWhiteSpace(feedback) ? "Duyệt hồ sơ đăng ký" : $"Duyệt hồ sơ. Nhận xét: {feedback}",
+            PreviousStatus = previousStatus,
+            NewStatus = "Approved"
+        });
         await _context.SaveChangesAsync();
 
         _logger.LogInformation($"Registration {registrationId} approved");
         return true;
     }
 
-    public async Task<bool> RejectRegistrationAsync(int registrationId, string reason)
+    public async Task<bool> RejectRegistrationAsync(int registrationId, int editorId, string reason)
     {
         var registration = await _context.Registrations.FindAsync(registrationId);
         if (registration == null)
             return false;
 
+        var previousStatus = registration.Status;
         registration.Status = "Rejected";
         registration.UpdatedAt = DateTime.UtcNow;
         registration.Notes = reason;
 
         _context.Registrations.Update(registration);
+        _context.RegistrationEditHistories.Add(new Models.RegistrationEditHistory
+        {
+            RegistrationId = registrationId,
+            EditedBy = editorId,
+            EditedAt = DateTime.UtcNow,
+            ActionType = "OrganizerRejected",
+            ChangesSummary = $"Từ chối hồ sơ. Lý do: {reason}",
+            PreviousStatus = previousStatus,
+            NewStatus = "Rejected"
+        });
         await _context.SaveChangesAsync();
 
         _logger.LogInformation($"Registration {registrationId} rejected");
         return true;
     }
 
-    public async Task<bool> RequestSupplementAsync(int registrationId, string feedback)
+    public async Task<bool> RequestSupplementAsync(int registrationId, int editorId, string feedback)
     {
         var registration = await _context.Registrations.FindAsync(registrationId);
         if (registration == null)
             return false;
 
-        registration.Status = "Pending"; // Hoặc tạo status riêng "RequestSupplement"
+        var previousStatus = registration.Status;
+        registration.Status = "Pending";
         registration.UpdatedAt = DateTime.UtcNow;
         registration.Notes = feedback;
 
         _context.Registrations.Update(registration);
+        _context.RegistrationEditHistories.Add(new Models.RegistrationEditHistory
+        {
+            RegistrationId = registrationId,
+            EditedBy = editorId,
+            EditedAt = DateTime.UtcNow,
+            ActionType = "OrganizerSupplement",
+            ChangesSummary = $"Yêu cầu bổ sung thông tin: {feedback}",
+            PreviousStatus = previousStatus,
+            NewStatus = "Pending"
+        });
         await _context.SaveChangesAsync();
 
         _logger.LogInformation($"Supplement requested for registration {registrationId}");
         return true;
+    }
+
+    public async Task<List<RegistrationHistoryItemDto>> GetRegistrationHistoryAsync(int registrationId)
+    {
+        return await _context.RegistrationEditHistories
+            .Where(h => h.RegistrationId == registrationId)
+            .Include(h => h.Editor)
+            .OrderByDescending(h => h.EditedAt)
+            .Select(h => new RegistrationHistoryItemDto
+            {
+                HistoryId = h.HistoryId,
+                EditedAt = h.EditedAt,
+                EditorName = h.Editor.FullName,
+                ActionType = h.ActionType,
+                ChangesSummary = h.ChangesSummary,
+                PreviousStatus = h.PreviousStatus,
+                NewStatus = h.NewStatus
+            })
+            .ToListAsync();
     }
 
     public async Task<RegistrationDetailDto> GetRegistrationDetailAsync(int registrationId)
