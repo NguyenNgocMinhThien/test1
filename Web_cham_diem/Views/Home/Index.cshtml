@@ -1,3 +1,4 @@
+@model Web_cham_diem.Models.ViewModels.HomeViewModel
 @{
     ViewData["Title"] = "Trang chủ - Hệ thống Quản lý Cuộc thi Sinh viên";
 }
@@ -120,23 +121,23 @@
          style="background: linear-gradient(135deg, #1e3a5f 0%, #dc3545 100%);">
         <div class="row g-0 text-white text-center">
             <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
-                <div class="fs-1 fw-black">15+</div>
+                <div class="fs-1 fw-black">@(Model.ActiveCompetitionsCount > 0 ? Model.ActiveCompetitionsCount + "+" : "0")</div>
                 <div class="small mt-1 text-white-75">Cuộc thi đang diễn ra</div>
                 <i class="bi bi-trophy-fill text-warning mt-2 fs-5"></i>
             </div>
             <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
-                <div class="fs-1 fw-black">2.800+</div>
+                <div class="fs-1 fw-black">@(Model.TotalParticipantsCount > 0 ? Model.TotalParticipantsCount.ToString("N0") + "+" : "0")</div>
                 <div class="small mt-1 text-white-75">Sinh viên tham gia</div>
                 <i class="bi bi-people-fill text-info mt-2 fs-5"></i>
             </div>
             <div class="col-6 col-md-3 p-4 border-end border-white border-opacity-25">
-                <div class="fs-1 fw-black">18</div>
-                <div class="small mt-1 text-white-75">Khoa / Đơn vị</div>
+                <div class="fs-1 fw-black">@Model.TotalCategoriesCount</div>
+                <div class="small mt-1 text-white-75">Lĩnh vực thi đấu</div>
                 <i class="bi bi-building-fill text-warning mt-2 fs-5"></i>
             </div>
             <div class="col-6 col-md-3 p-4">
-                <div class="fs-1 fw-black">420+</div>
-                <div class="small mt-1 text-white-75">Giải thưởng đã trao</div>
+                <div class="fs-1 fw-black">@(Model.TotalEvaluatedCount > 0 ? Model.TotalEvaluatedCount + "+" : "0")</div>
+                <div class="small mt-1 text-white-75">Bài thi đã chấm điểm</div>
                 <i class="bi bi-award-fill text-success mt-2 fs-5"></i>
             </div>
         </div>
@@ -158,84 +159,86 @@
         </a>
     </div>
 
+    @{
+        string[] _compGradients = {
+            "background: linear-gradient(135deg,#b91c1c,#dc3545);",
+            "background: linear-gradient(135deg,#0d6efd,#0a58ca);",
+            "background: linear-gradient(135deg,#198754,#157347);"
+        };
+        string[] _compBadgeColors  = { "text-danger",  "text-primary",  "text-success" };
+        string[] _compBtnStyles    = { "btn-danger",   "btn-primary",   "btn-success"  };
+    }
     <div class="row g-4">
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
-                <div class="card-header-custom bg-danger text-white p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span class="badge bg-white text-danger fw-semibold">Lập trình</span>
-                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 14 ngày</span>
-                    </div>
-                    <h5 class="fw-bold mt-2 mb-0">Cuộc Thi Lập Trình Sáng Tạo 2025</h5>
-                </div>
-                <div class="card-body p-4">
-                    <p class="text-secondary small mb-3">
-                        Sân chơi lập trình dành cho sinh viên đam mê công nghệ. Các đội thi sẽ xây dựng
-                        sản phẩm giải quyết bài toán thực tế trong 48 giờ.
-                    </p>
-                    <ul class="list-unstyled small text-secondary mb-3">
-                        <li class="mb-1"><i class="bi bi-people me-2 text-danger"></i>Tất cả khoa, tối đa 3 thành viên/đội</li>
-                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-danger"></i>Hạn đăng ký: <strong>30/06/2025</strong></li>
-                        <li><i class="bi bi-gift me-2 text-danger"></i>Tổng giải thưởng: <strong class="text-danger">50.000.000đ</strong></li>
-                    </ul>
-                    <a href="/Competitions/Detail/1" class="btn btn-danger btn-sm rounded-pill px-3 w-100">
-                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
-                    </a>
-                </div>
+        @if (!Model.FeaturedCompetitions.Any())
+        {
+            <div class="col-12 py-5 text-center text-secondary">
+                <i class="bi bi-hourglass fs-1 d-block mb-2 opacity-50"></i>
+                Hiện chưa có cuộc thi nào đang diễn ra.
             </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
-                <div class="card-header-custom p-3" style="background: linear-gradient(135deg,#0d6efd,#0a58ca);">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span class="badge bg-white text-primary fw-semibold">Khởi nghiệp</span>
-                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 30 ngày</span>
+        }
+        else
+        {
+            for (int _ci = 0; _ci < Model.FeaturedCompetitions.Count; _ci++)
+            {
+                var _comp    = Model.FeaturedCompetitions[_ci];
+                var _idx     = _ci % 3;
+                var _grad    = _compGradients[_idx];
+                var _badge   = _compBadgeColors[_idx];
+                var _btn     = _compBtnStyles[_idx];
+                var _desc    = _comp.Description != null && _comp.Description.Length > 120
+                                ? _comp.Description[..120] + "…"
+                                : (_comp.Description ?? "Chưa có mô tả.");
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
+                        <div class="card-header-custom p-3" style="@_grad">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <span class="badge bg-white @_badge fw-semibold">@(_comp.Category ?? "Chung")</span>
+                                @if (_comp.DaysRemaining >= 0)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock me-1"></i>Còn @_comp.DaysRemaining ngày
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success text-white">Đang diễn ra</span>
+                                }
+                            </div>
+                            <h5 class="fw-bold mt-2 mb-0 text-white">@_comp.CompetitionName</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <p class="text-secondary small mb-3">@_desc</p>
+                            <ul class="list-unstyled small text-secondary mb-3">
+                                <li class="mb-1">
+                                    <i class="bi bi-people me-2 @_badge"></i>
+                                    @(_comp.IsTeamBased
+                                        ? $"Thi theo đội, tối đa {_comp.MaxTeamSize} thành viên"
+                                        : "Thi cá nhân")
+                                </li>
+                                @if (_comp.RegistrationDeadline.HasValue)
+                                {
+                                    <li class="mb-1">
+                                        <i class="bi bi-calendar-check me-2 @_badge"></i>
+                                        Hạn đăng ký: <strong>@_comp.RegistrationDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy")</strong>
+                                    </li>
+                                }
+                                @if (!string.IsNullOrEmpty(_comp.Prize))
+                                {
+                                    <li>
+                                        <i class="bi bi-gift me-2 @_badge"></i>
+                                        Giải thưởng: <strong class="@_badge">@_comp.Prize</strong>
+                                    </li>
+                                }
+                            </ul>
+                            <a href="/Competitions/Detail/@_comp.CompetitionId"
+                               class="btn @_btn btn-sm rounded-pill px-3 w-100">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Xem & Đăng ký
+                            </a>
+                        </div>
                     </div>
-                    <h5 class="fw-bold mt-2 mb-0 text-white">Ý Tưởng Khởi Nghiệp Đổi Mới 2025</h5>
                 </div>
-                <div class="card-body p-4">
-                    <p class="text-secondary small mb-3">
-                        Cuộc thi ý tưởng kinh doanh và đổi mới sáng tạo dành cho sinh viên toàn trường,
-                        kết nối với các doanh nghiệp và nhà đầu tư tiềm năng.
-                    </p>
-                    <ul class="list-unstyled small text-secondary mb-3">
-                        <li class="mb-1"><i class="bi bi-people me-2 text-primary"></i>Khoa Kinh tế & các khoa liên quan</li>
-                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-primary"></i>Hạn đăng ký: <strong>15/07/2025</strong></li>
-                        <li><i class="bi bi-gift me-2 text-primary"></i>Tổng giải thưởng: <strong class="text-primary">80.000.000đ</strong></li>
-                    </ul>
-                    <a href="/Competitions/Detail/2" class="btn btn-primary btn-sm rounded-pill px-3 w-100">
-                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
-                <div class="card-header-custom p-3" style="background: linear-gradient(135deg,#198754,#157347);">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span class="badge bg-white text-success fw-semibold">Nghiên cứu KH</span>
-                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Còn 45 ngày</span>
-                    </div>
-                    <h5 class="fw-bold mt-2 mb-0 text-white">NCKH Sinh Viên Cấp Trường 2025</h5>
-                </div>
-                <div class="card-body p-4">
-                    <p class="text-secondary small mb-3">
-                        Cuộc thi nghiên cứu khoa học sinh viên thường niên cấp trường, cơ hội để
-                        công bố và bảo vệ công trình nghiên cứu trước hội đồng khoa học.
-                    </p>
-                    <ul class="list-unstyled small text-secondary mb-3">
-                        <li class="mb-1"><i class="bi bi-people me-2 text-success"></i>Toàn thể sinh viên các khoa</li>
-                        <li class="mb-1"><i class="bi bi-calendar-check me-2 text-success"></i>Hạn đăng ký: <strong>31/07/2025</strong></li>
-                        <li><i class="bi bi-gift me-2 text-success"></i>Tổng giải thưởng: <strong class="text-success">100.000.000đ</strong></li>
-                    </ul>
-                    <a href="/Competitions/Detail/3" class="btn btn-success btn-sm rounded-pill px-3 w-100">
-                        <i class="bi bi-arrow-right-circle me-1"></i>Đăng ký tham gia
-                    </a>
-                </div>
-            </div>
-        </div>
+            }
+        }
     </div>
 
     <div class="text-center mt-3 d-md-none">
@@ -418,51 +421,42 @@
             </div>
 
             <div class="row g-0">
-                <div class="col-12 col-md-4 p-4 border-end-md">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0">
-                            <span class="badge bg-warning text-dark px-2 py-2 rounded-3 fs-6">
-                                <i class="bi bi-trophy-fill"></i>
-                            </span>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-dark">Nguyễn Minh Tuấn</div>
-                            <div class="small text-success fw-semibold">Giải Nhất — Cuộc thi Lập trình 2024</div>
-                            <div class="small text-secondary">Khoa Công nghệ Thông tin</div>
-                            <div class="small text-muted mt-1">Điểm: <strong>98.5/100</strong></div>
-                        </div>
+                @{
+                    string[] _trophyBadge = { "bg-warning text-dark", "bg-secondary text-white", "bg-danger text-white" };
+                }
+                @if (!Model.TopResults.Any())
+                {
+                    <div class="col-12 py-5 text-center text-secondary">
+                        <i class="bi bi-hourglass-split fs-2 d-block mb-2 opacity-50"></i>
+                        Chưa có kết quả nổi bật. Kết quả sẽ được cập nhật sau khi các cuộc thi kết thúc.
                     </div>
-                </div>
-                <div class="col-12 col-md-4 p-4 border-end-md border-top border-md-top-0">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0">
-                            <span class="badge bg-secondary text-white px-2 py-2 rounded-3 fs-6">
-                                <i class="bi bi-trophy-fill"></i>
-                            </span>
+                }
+                else
+                {
+                    for (int _ri = 0; _ri < Model.TopResults.Count; _ri++)
+                    {
+                        var _r = Model.TopResults[_ri];
+                        var _isFirst = _ri == 0;
+                        var _isLast  = _ri == Model.TopResults.Count - 1;
+                        var _borderCls = (!_isLast ? "border-end-md" : "") + (_ri > 0 ? " border-top border-md-top-0" : "");
+                        <div class="col-12 col-md-4 p-4 @_borderCls">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="flex-shrink-0">
+                                    <span class="badge @_trophyBadge[_ri % 3] px-2 py-2 rounded-3 fs-6">
+                                        <i class="bi bi-trophy-fill"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">@_r.ParticipantName</div>
+                                    <div class="small text-success fw-semibold">
+                                        Giải @_r.AwardLevel — @_r.CompetitionName
+                                    </div>
+                                    <div class="small text-muted mt-1">Điểm: <strong>@_r.TotalScore.ToString("F1")</strong></div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="fw-bold text-dark">Nhóm InnoVate (5 SV)</div>
-                            <div class="small text-success fw-semibold">Giải Nhất — Khởi nghiệp 2024</div>
-                            <div class="small text-secondary">Khoa Quản trị Kinh doanh</div>
-                            <div class="small text-muted mt-1">Điểm: <strong>96.0/100</strong></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-12 col-md-4 p-4 border-top border-md-top-0">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0">
-                            <span class="badge bg-danger text-white px-2 py-2 rounded-3 fs-6">
-                                <i class="bi bi-trophy-fill"></i>
-                            </span>
-                        </div>
-                        <div>
-                            <div class="fw-bold text-dark">Trần Thị Lan</div>
-                            <div class="small text-success fw-semibold">Giải Nhất — NCKH Sinh viên 2024</div>
-                            <div class="small text-secondary">Khoa Kỹ thuật & Công nghệ</div>
-                            <div class="small text-muted mt-1">Điểm: <strong>94.5/100</strong></div>
-                        </div>
-                    </div>
-                </div>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -483,83 +477,66 @@
         </a>
     </div>
 
+    @{
+        var _notifIcon = new Dictionary<string, string> {
+            { "Error",   "bi-megaphone-fill" },
+            { "Warning", "bi-info-circle-fill" },
+            { "Success", "bi-file-earmark-check-fill" },
+            { "Info",    "bi-star-fill" }
+        };
+        var _notifIconBg = new Dictionary<string, string> {
+            { "Error",   "bg-danger-subtle text-danger" },
+            { "Warning", "bg-warning-subtle text-warning-emphasis" },
+            { "Success", "bg-success-subtle text-success" },
+            { "Info",    "bg-primary-subtle text-primary" }
+        };
+        var _notifBadge = new Dictionary<string, string> {
+            { "Error",   "bg-danger-subtle text-danger" },
+            { "Warning", "bg-warning-subtle text-warning-emphasis" },
+            { "Success", "bg-success-subtle text-success" },
+            { "Info",    "bg-primary-subtle text-primary" }
+        };
+    }
     <div class="row g-3">
-        <div class="col-12 col-md-6">
-            <a href="/Notifications/1" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0 icon-circle-sm bg-danger-subtle text-danger">
-                            <i class="bi bi-megaphone-fill"></i>
+        @if (!Model.LatestNotifications.Any())
+        {
+            <div class="col-12 py-5 text-center text-secondary">
+                <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-50"></i>
+                Chưa có thông báo nào.
+            </div>
+        }
+        else
+        {
+            foreach (var _n in Model.LatestNotifications)
+            {
+                var _icon    = _notifIcon.GetValueOrDefault(_n.Type, "bi-info-circle-fill");
+                var _iconBg  = _notifIconBg.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
+                var _bdg     = _notifBadge.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
+                var _href    = _n.RelatedEntityId.HasValue
+                                ? $"/Competitions/Detail/{_n.RelatedEntityId}"
+                                : "#";
+                var _msg     = _n.Message.Length > 110 ? _n.Message[..110] + "…" : _n.Message;
+                <div class="col-12 col-md-6">
+                    <a href="@_href" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="flex-shrink-0 icon-circle-sm @_iconBg">
+                                    <i class="bi @_icon"></i>
+                                </div>
+                                <div>
+                                    <span class="badge @_bdg small mb-1">@_n.CategoryLabel</span>
+                                    <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">@_n.Title</h6>
+                                    <p class="text-secondary small mb-1">@_msg</p>
+                                    <span class="text-muted" style="font-size:11px;">
+                                        <i class="bi bi-clock me-1"></i>@_n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <span class="badge bg-danger-subtle text-danger small mb-1">Quan trọng</span>
-                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
-                                Công bố danh sách vào vòng chung kết Cuộc thi Lập trình 2025
-                            </h6>
-                            <p class="text-secondary small mb-1">Ban tổ chức thông báo 24 đội thi đã vượt qua vòng sơ loại và đủ điều kiện tham dự chung kết...</p>
-                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>02/06/2025</span>
-                        </div>
-                    </div>
+                    </a>
                 </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6">
-            <a href="/Notifications/2" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0 icon-circle-sm bg-warning-subtle text-warning-emphasis">
-                            <i class="bi bi-info-circle-fill"></i>
-                        </div>
-                        <div>
-                            <span class="badge bg-warning-subtle text-warning-emphasis small mb-1">Thay đổi</span>
-                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
-                                Gia hạn nộp hồ sơ Cuộc thi Khởi nghiệp đến 20/07/2025
-                            </h6>
-                            <p class="text-secondary small mb-1">Nhằm tạo điều kiện cho nhiều sinh viên được tham dự, Ban tổ chức quyết định kéo dài thời hạn...</p>
-                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>28/05/2025</span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6">
-            <a href="/Notifications/3" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0 icon-circle-sm bg-success-subtle text-success">
-                            <i class="bi bi-file-earmark-check-fill"></i>
-                        </div>
-                        <div>
-                            <span class="badge bg-success-subtle text-success small mb-1">Cập nhật</span>
-                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
-                                Thể lệ Cuộc thi NCKH Sinh viên 2025 đã được cập nhật
-                            </h6>
-                            <p class="text-secondary small mb-1">Phiên bản mới bổ sung hướng dẫn về định dạng báo cáo, tiêu chí chấm điểm và lịch bảo vệ...</p>
-                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>25/05/2025</span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6">
-            <a href="/Notifications/4" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                    <div class="d-flex gap-3 align-items-start">
-                        <div class="flex-shrink-0 icon-circle-sm bg-primary-subtle text-primary">
-                            <i class="bi bi-star-fill"></i>
-                        </div>
-                        <div>
-                            <span class="badge bg-primary-subtle text-primary small mb-1">Mới</span>
-                            <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">
-                                Mở đăng ký Cuộc thi Thiết kế Đồ họa Sinh viên lần 3
-                            </h6>
-                            <p class="text-secondary small mb-1">Cuộc thi thiết kế đồ họa dành cho sinh viên yêu thích nghệ thuật số chính thức mở đăng ký...</p>
-                            <span class="text-muted" style="font-size:11px;"><i class="bi bi-clock me-1"></i>20/05/2025</span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
+            }
+        }
     </div>
 
     <div class="text-center mt-3 d-md-none">
