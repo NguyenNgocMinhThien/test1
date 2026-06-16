@@ -14,6 +14,7 @@ namespace Web_cham_diem.Models
 
         public string Status { get; set; } = "Pending"; // Pending | InProgress | Completed | Reassigned
         public string? Notes { get; set; }              // Ghi chú của BTC khi phân công
+        public string? JudgeComment { get; set; }       // Nhận xét tổng quát của giám khảo về bài thi
 
         public DateTime? CompletedAt { get; set; }      // Thời điểm giám khảo chấm xong
         public DateTime? UpdatedAt { get; set; }

@@ -26,7 +26,7 @@
             font-size: 1.6rem;
         }
 
-        .competition-card {
+        .dash-card {
             background: #fff;
             border-radius: 1rem;
             border: none;
@@ -34,15 +34,60 @@
             overflow: hidden;
         }
 
-        .competition-card-header {
+        .dash-card-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid #f1f5f9;
-            background: linear-gradient(135deg, #7c3aed08, #a78bfa10);
         }
 
-        .badge-role-HeadJudge { background: #fef3c7; color: #92400e; }
-        .badge-role-ViceHead  { background: #dbeafe; color: #1e40af; }
-        .badge-role-Member    { background: #f3f4f6; color: #374151; }
+        .progress-ring-wrap {
+            position: relative;
+            width: 130px;
+            height: 130px;
+            margin: 0 auto;
+        }
+        .progress-ring-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .approval-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+        .approval-pill:last-child { margin-bottom: 0; }
+        .pill-approved { background: #dcfce7; }
+        .pill-pending  { background: #fef9c3; }
+        .pill-rejected { background: #fee2e2; }
+
+        .criteria-bar-track {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            overflow: hidden;
+        }
+        .criteria-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #7c3aed, #a78bfa);
+        }
+
+        .recent-item {
+            border: 1px solid #f1f5f9;
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            transition: box-shadow 0.15s;
+        }
+        .recent-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .recent-item:last-child { margin-bottom: 0; }
 
         .status-badge {
             font-size: 0.7rem;
@@ -50,48 +95,36 @@
             padding: 3px 10px;
             border-radius: 20px;
         }
-        .status-Pending    { background: #fef9c3; color: #854d0e; }
-        .status-InProgress { background: #dbeafe; color: #1e40af; }
-        .status-Completed  { background: #dcfce7; color: #166534; }
-        .status-Reassigned { background: #fee2e2; color: #991b1b; }
-
-        .overdue-badge { background: #fee2e2; color: #dc2626; }
-
-        .assignment-row { transition: background 0.15s; }
-        .assignment-row:hover { background: #fafafa; }
-
-        .progress-bar-judge {
-            height: 6px;
-            border-radius: 3px;
-            background: #e5e7eb;
-        }
-        .progress-fill-judge {
-            height: 100%;
-            border-radius: 3px;
-            background: linear-gradient(90deg, #7c3aed, #a78bfa);
-            transition: width 0.4s ease;
-        }
+        .status-Approved { background: #dcfce7; color: #166534; }
+        .status-Pending  { background: #fef9c3; color: #854d0e; }
+        .status-Rejected { background: #fee2e2; color: #991b1b; }
 
         .empty-state {
             padding: 3rem;
             text-align: center;
             color: #94a3b8;
         }
+
+        .judge-comment-box {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.83rem;
+            color: #475569;
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
     </style>
 }
 
-<div class="mb-4">
-    <h4 class="fw-bold text-dark mb-1">Xin chào, Giám Khảo!</h4>
-    <p class="text-muted mb-0">Theo dõi tiến độ chấm điểm của bạn tại đây.</p>
-</div>
-
-<div class="alert border-0 rounded-3 mb-4 d-flex align-items-center gap-3"
-     style="background:#f0f9ff;border-left:4px solid #0ea5e9 !important;border-left-style:solid !important;">
-    <i class="bi bi-shield-lock-fill fs-5" style="color:#0ea5e9;"></i>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <div class="fw-semibold" style="color:#0369a1;">Chế độ chấm điểm ẩn danh đang bật</div>
-        <div class="small" style="color:#0284c7;">Tên đội / thí sinh được ẩn trong quá trình chấm điểm để đảm bảo tính công bằng.</div>
+        <h4 class="fw-bold text-dark mb-1">Xin chào, Giám Khảo!</h4>
+        <p class="text-muted mb-0">Tổng quan tiến độ và chất lượng chấm điểm của bạn.</p>
     </div>
+    <a href="/Judge/Assignments" class="btn rounded-pill px-4 fw-semibold text-white" style="background: var(--judge-accent);">
+        <i class="bi bi-pencil-square me-1"></i>Đến trang chấm điểm
+    </a>
 </div>
 
 <!-- STATS -->
@@ -100,11 +133,11 @@
         <div class="stat-card-judge">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon-lg" style="background:#ede9fe;">
-                    <i class="bi bi-clipboard2-data" style="color:#7c3aed;"></i>
+                    <i class="bi bi-file-earmark-text" style="color:#7c3aed;"></i>
                 </div>
                 <div>
                     <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalAssigned</div>
-                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Tổng bài được giao</small>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Bài đã nộp</small>
                 </div>
             </div>
         </div>
@@ -117,7 +150,7 @@
                 </div>
                 <div>
                     <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalCompleted</div>
-                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Đã chấm xong</small>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Bài đã chấm</small>
                 </div>
             </div>
         </div>
@@ -139,156 +172,172 @@
         <div class="stat-card-judge">
             <div class="d-flex align-items-center gap-3">
                 <div class="stat-icon-lg" style="background:#dbeafe;">
-                    <i class="bi bi-pencil-fill" style="color:#2563eb;"></i>
+                    <i class="bi bi-graph-up" style="color:#2563eb;"></i>
                 </div>
                 <div>
-                    <div class="fs-2 fw-bold text-dark lh-1">@Model.TotalInProgress</div>
-                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Đang chấm</small>
+                    <div class="fs-2 fw-bold text-dark lh-1">@Model.CompletionRate.ToString("0.#")%</div>
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:0.7rem;">Tỷ lệ hoàn thành</small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- COMPETITION GROUPS -->
-@if (!Model.CompetitionGroups.Any())
-{
-    <div class="competition-card">
-        <div class="empty-state">
-            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-            <h6 class="fw-semibold text-dark">Chưa có bài nào được phân công</h6>
-            <p class="small mb-0">Ban tổ chức chưa phân công bài thi cho bạn. Vui lòng chờ.</p>
-        </div>
-    </div>
-}
-else
-{
-    @foreach (var group in Model.CompetitionGroups)
-    {
-        var progressPct = group.TotalAssigned > 0
-            ? (int)Math.Round((double)group.Completed / group.TotalAssigned * 100)
-            : 0;
+<div class="row g-4 mb-4">
+    <!-- Tỷ lệ hoàn thành (ring) + trạng thái duyệt điểm -->
+    <div class="col-lg-4">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-pie-chart me-2" style="color:var(--judge-accent);"></i>Tiến độ chấm thi
+                </h6>
+            </div>
+            <div class="p-4">
+                @{
+                    var pct = Math.Clamp(Model.CompletionRate, 0, 100);
+                    var circumference = 2 * Math.PI * 54;
+                    var offset = circumference * (1 - pct / 100);
+                }
+                <div class="progress-ring-wrap">
+                    <svg width="130" height="130" viewBox="0 0 130 130">
+                        <circle cx="65" cy="65" r="54" fill="none" stroke="#e5e7eb" stroke-width="12" />
+                        <circle cx="65" cy="65" r="54" fill="none" stroke="#7c3aed" stroke-width="12"
+                                stroke-dasharray="@circumference.ToString("0.##")"
+                                stroke-dashoffset="@offset.ToString("0.##")"
+                                stroke-linecap="round"
+                                transform="rotate(-90 65 65)" />
+                    </svg>
+                    <div class="progress-ring-text">
+                        <div class="fs-4 fw-bold text-dark">@pct.ToString("0.#")%</div>
+                        <div class="text-muted" style="font-size:0.68rem;">hoàn thành</div>
+                    </div>
+                </div>
+                <div class="text-center text-muted small mt-3">
+                    @Model.TotalCompleted / @Model.TotalAssigned bài đã chấm xong
+                </div>
 
-        <div class="competition-card mb-4">
-            <div class="competition-card-header">
-                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
-                    <div>
-                        <h6 class="fw-bold text-dark mb-1">
-                            <i class="bi bi-trophy me-2" style="color:#7c3aed;"></i>@group.CompetitionName
-                        </h6>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            @{
-                                var roleCss = group.JudgeRole switch
-                                {
-                                    "HeadJudge" => "badge-role-HeadJudge",
-                                    "ViceHead"  => "badge-role-ViceHead",
-                                    _           => "badge-role-Member"
-                                };
-                                var roleLabel = group.JudgeRole switch
-                                {
-                                    "HeadJudge" => "Trưởng ban",
-                                    "ViceHead"  => "Phó ban",
-                                    _           => "Thành viên"
-                                };
-                            }
-                            <span class="badge @roleCss px-2 py-1" style="font-size:0.7rem;">@roleLabel</span>
-                            @if (!string.IsNullOrEmpty(group.RoundName))
-                            {
-                                <span class="text-muted small"><i class="bi bi-flag me-1"></i>@group.RoundName</span>
-                            }
-                        </div>
-                    </div>
-                    <div class="text-end">
-                        <div class="small text-muted mb-1">Tiến độ: <strong>@group.Completed / @group.TotalAssigned</strong> bài</div>
-                        <div class="progress-bar-judge" style="width:140px;">
-                            <div class="progress-fill-judge" style="width:@progressPct%;"></div>
-                        </div>
-                        <div class="small text-muted mt-1">@progressPct%</div>
-                    </div>
+                <hr class="my-4" />
+
+                <div class="fw-semibold text-dark mb-2" style="font-size:0.85rem;">Trạng thái duyệt điểm</div>
+                <div class="approval-pill pill-approved">
+                    <span class="small fw-semibold" style="color:#166534;"><i class="bi bi-check-circle-fill me-1"></i>Đã duyệt</span>
+                    <span class="fw-bold" style="color:#166534;">@Model.ApprovedScoresCount</span>
+                </div>
+                <div class="approval-pill pill-pending">
+                    <span class="small fw-semibold" style="color:#854d0e;"><i class="bi bi-hourglass-split me-1"></i>Chờ duyệt</span>
+                    <span class="fw-bold" style="color:#854d0e;">@Model.PendingScoresCount</span>
+                </div>
+                <div class="approval-pill pill-rejected">
+                    <span class="small fw-semibold" style="color:#991b1b;"><i class="bi bi-x-circle-fill me-1"></i>Bị từ chối</span>
+                    <span class="fw-bold" style="color:#991b1b;">@Model.RejectedScoresCount</span>
                 </div>
             </div>
+        </div>
+    </div>
 
-            @if (!group.Assignments.Any())
-            {
-                <div class="p-4 text-center text-muted small">Chưa có bài nào được phân công trong cuộc thi này.</div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr style="background:#f8fafc;">
-                                <th class="py-3 px-4 fw-semibold text-muted" style="font-size:0.75rem;">BÀI DỰ THI</th>
-                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">TRẠNG THÁI</th>
-                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">HẠN CHẤM</th>
-                                <th class="py-3 fw-semibold text-muted text-center" style="font-size:0.75rem;">THAO TÁC</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var a in group.Assignments)
-                            {
-                                var statusCss = a.Status switch
-                                {
-                                    "Completed"  => "status-Completed",
-                                    "InProgress" => "status-InProgress",
-                                    "Reassigned" => "status-Reassigned",
-                                    _            => "status-Pending"
-                                };
-                                var statusLabel = a.Status switch
-                                {
-                                    "Completed"  => "Đã chấm",
-                                    "InProgress" => "Đang chấm",
-                                    "Reassigned" => "Phân lại",
-                                    _            => "Chờ chấm"
-                                };
+    <!-- Nhận xét theo từng tiêu chí -->
+    <div class="col-lg-8">
+        <div class="dash-card h-100">
+            <div class="dash-card-header">
+                <h6 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-ui-checks-grid me-2" style="color:var(--judge-accent);"></i>Nhận xét theo từng tiêu chí
+                </h6>
+            </div>
+            <div class="p-4">
+                @if (!Model.CriteriaSummaries.Any())
+                {
+                    <div class="empty-state py-4">
+                        <i class="bi bi-clipboard-data fs-1 d-block mb-2"></i>
+                        <p class="small mb-0">Chưa có dữ liệu chấm điểm theo tiêu chí.</p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var c in Model.CriteriaSummaries)
+                    {
+                        var barPct = c.MaxScore > 0 ? (double)(c.AverageScore / c.MaxScore) * 100 : 0;
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold text-dark small">@c.CriteriaName</span>
+                                <span class="small text-muted">
+                                    Điểm TB: <strong class="text-dark">@c.AverageScore.ToString("0.##")</strong> / @c.MaxScore.ToString("0.##")
+                                </span>
+                            </div>
+                            <div class="criteria-bar-track mb-1">
+                                <div class="criteria-bar-fill" style="width:@barPct.ToString("0.##")%;"></div>
+                            </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-clipboard-check me-1"></i>@c.ScoredCount bài đã chấm
+                                <span class="ms-2"><i class="bi bi-chat-left-text me-1"></i>@c.CommentCount nhận xét</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
 
-                                <tr class="assignment-row">
-                                    <td class="py-3 px-4">
-                                        <div class="fw-semibold text-dark">@a.SubmissionTitle</div>
-                                        <small class="text-muted">#@a.SubmissionId</small>
-                                    </td>
-                                    <td class="py-3 text-center">
-                                        <span class="status-badge @statusCss">@statusLabel</span>
-                                        @if (a.IsOverdue)
-                                        {
-                                            <span class="status-badge overdue-badge ms-1">Trễ hạn</span>
-                                        }
-                                    </td>
-                                    <td class="py-3 text-center">
-                                        @if (a.GradingDeadline.HasValue)
-                                        {
-                                            <span class="small @(a.IsOverdue ? "text-danger fw-semibold" : "text-muted")">
-                                                @a.GradingDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">—</span>
-                                        }
-                                    </td>
-                                    <td class="py-3 text-center">
-                                        @if (a.Status == "Completed")
-                                        {
-                                            <a href="/Judge/Grade/@a.AssignmentId"
-                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                                                <i class="bi bi-eye me-1"></i>Xem lại
-                                            </a>
-                                        }
-                                        else
-                                        {
-                                            <a href="/Judge/Grade/@a.AssignmentId"
-                                               class="btn btn-sm rounded-pill px-3 fw-semibold text-white"
-                                               style="background: var(--judge-accent);">
-                                                <i class="bi bi-pencil-square me-1"></i>Chấm điểm
-                                            </a>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+<!-- Nhận xét tổng quát gần đây -->
+<div class="dash-card">
+    <div class="dash-card-header">
+        <h6 class="fw-bold text-dark mb-0">
+            <i class="bi bi-chat-square-text me-2" style="color:var(--judge-accent);"></i>Nhận xét tổng quát gần đây
+        </h6>
+    </div>
+    <div class="p-4">
+        @if (!Model.RecentGradings.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                <h6 class="fw-semibold text-dark">Chưa có bài nào được chấm xong</h6>
+                <p class="small mb-0">Hãy đến trang "Bài được phân công" để bắt đầu chấm điểm.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var r in Model.RecentGradings)
+            {
+                var statusLabel = r.ApprovalStatus switch
+                {
+                    "Approved" => "Đã duyệt",
+                    "Rejected" => "Bị từ chối",
+                    _          => "Chờ duyệt"
+                };
+                <div class="recent-item">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <div class="fw-semibold text-dark">@r.SubmissionTitle</div>
+                            <div class="small text-muted">
+                                @r.CompetitionName
+                                @if (!string.IsNullOrEmpty(r.RoundName))
+                                {
+                                    <span> · @r.RoundName</span>
+                                }
+                                @if (r.CompletedAt.HasValue)
+                                {
+                                    <span> · @r.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <span class="status-badge status-@r.ApprovalStatus">@statusLabel</span>
+                            <div class="fw-bold text-dark mt-1">@r.TotalScore.ToString("0.##") / @r.MaxScore.ToString("0.##")</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(r.JudgeComment))
+                    {
+                        <div class="judge-comment-box">
+                            <i class="bi bi-quote me-1"></i>@r.JudgeComment
+                        </div>
+                    }
+                    <div class="mt-2">
+                        <a href="/Judge/Grade/@r.AssignmentId" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            <i class="bi bi-eye me-1"></i>Xem chi tiết
+                        </a>
+                    </div>
                 </div>
             }
-        </div>
-    }
-}
+        }
+    </div>
+</div>
