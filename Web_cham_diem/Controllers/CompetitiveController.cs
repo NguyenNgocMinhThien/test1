@@ -406,6 +406,9 @@ public class CompetitiveController : Controller
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();
 
+            // Sinh mã đội thi sau khi có TeamId
+            team.TeamCode = GenerateTeamCode(team.TeamId);
+
             // Thêm đội trưởng vào TeamMembers
             _context.TeamMembers.Add(new TeamMembers
             {
@@ -450,7 +453,11 @@ public class CompetitiveController : Controller
         _context.Registrations.Add(registration);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đăng ký thành công! Vui lòng chờ xét duyệt.";
+        // Sinh mã số dự thi sau khi có RegistrationId
+        registration.RegistrationCode = GenerateRegistrationCode(registration.RegistrationId);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Đăng ký thành công! Mã số dự thi của bạn: {registration.RegistrationCode}";
         return RedirectToAction("RegistrationDetail", new { id = competition.CompetitionId });
     }
 
@@ -980,6 +987,12 @@ public class CompetitiveController : Controller
             StudentId = user.StudentId ?? string.Empty
         };
     }
+
+    private static string GenerateRegistrationCode(int registrationId)
+        => $"TS-{DateTime.UtcNow.Year}-{registrationId:D5}";
+
+    private static string GenerateTeamCode(int teamId)
+        => $"DT-{DateTime.UtcNow.Year}-{teamId:D5}";
 
     private CompetitionRegistrationViewModel BuildRegistrationViewModel(Competitions competition, Users user)
     {
