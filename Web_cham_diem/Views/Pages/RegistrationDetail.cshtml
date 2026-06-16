@@ -221,6 +221,43 @@
                 <!-- Đăng ký -->
                 <div class="mb-4">
                     <p class="section-heading"><i class="bi bi-person-lines-fill me-1"></i>Thông tin đăng ký</p>
+                    @* Mã số dự thi / mã đội — hiện nổi bật ở đầu section *@
+                    @if (!string.IsNullOrEmpty(Model.RegistrationCode) || !string.IsNullOrEmpty(Model.Team?.TeamCode))
+                    {
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            @if (!string.IsNullOrEmpty(Model.RegistrationCode))
+                            {
+                                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3"
+                                     style="background:#eef2ff; border:1.5px solid #c7d5f5;">
+                                    <i class="bi bi-person-badge-fill text-primary" style="font-size:1rem;"></i>
+                                    <div>
+                                        <div style="font-size:.68rem; color:#666; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Mã số dự thi</div>
+                                        <div class="fw-bold text-primary" style="font-size:1.05rem; letter-spacing:.04em;" id="regCodeText">@Model.RegistrationCode</div>
+                                    </div>
+                                    <button type="button" class="btn btn-xs ms-1 p-1 text-muted"
+                                            onclick="copyCode('regCodeText', this)" title="Sao chép mã">
+                                        <i class="bi bi-clipboard" style="font-size:.85rem;"></i>
+                                    </button>
+                                </div>
+                            }
+                            @if (Model.Team != null && !string.IsNullOrEmpty(Model.Team.TeamCode))
+                            {
+                                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-3"
+                                     style="background:#fff3cd; border:1.5px solid #ffc107;">
+                                    <i class="bi bi-people-fill text-warning" style="font-size:1rem;"></i>
+                                    <div>
+                                        <div style="font-size:.68rem; color:#666; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Mã đội thi</div>
+                                        <div class="fw-bold text-warning" style="font-size:1.05rem; letter-spacing:.04em;" id="teamCodeText">@Model.Team.TeamCode</div>
+                                    </div>
+                                    <button type="button" class="btn btn-xs ms-1 p-1 text-muted"
+                                            onclick="copyCode('teamCodeText', this)" title="Sao chép mã">
+                                        <i class="bi bi-clipboard" style="font-size:.85rem;"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+
                     <div class="row g-2">
                         <div class="col-sm-6">
                             <div class="small text-muted">Thí sinh chính</div>
@@ -762,6 +799,17 @@
 @section Scripts {
 <script>
     const TEAM_ID = @(Model.Team?.TeamId.ToString() ?? "0");
+
+    // Sao chép mã vào clipboard
+    function copyCode(elementId, btn) {
+        const text = document.getElementById(elementId)?.textContent?.trim();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const icon = btn.querySelector('i');
+            icon.className = 'bi bi-clipboard-check text-success';
+            setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 1800);
+        });
+    }
 
     function getToken() {
         return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';

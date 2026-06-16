@@ -7,6 +7,7 @@
         public int CompetitionId { get; set; }
         public int LeaderId { get; set; } // UserId của trưởng đội
         public string? Description { get; set; }
+        public string? TeamCode { get; set; }           // Mã đội thi, VD: DT-2026-00015
         public string Status { get; set; } = "Active"; // Active, Disbanded
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

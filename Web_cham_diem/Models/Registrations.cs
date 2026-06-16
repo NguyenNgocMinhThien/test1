@@ -12,6 +12,7 @@
         public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Withdrawn
         public string? SubmissionDocument { get; set; } // Tài liệu hồ sơ
         public string? Notes { get; set; }
+        public string? RegistrationCode { get; set; }   // Mã số dự thi, VD: TS-2026-00042
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
         public DateTime? ApprovalDate { get; set; }
         public DateTime? UpdatedAt { get; set; }

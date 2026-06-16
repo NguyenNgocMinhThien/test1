@@ -134,6 +134,13 @@ namespace Web_cham_diem.Models
             modelBuilder.Entity<Registrations>()
                 .HasKey(r => r.RegistrationId);
             modelBuilder.Entity<Registrations>()
+                .Property(r => r.RegistrationCode)
+                .HasMaxLength(20);
+            modelBuilder.Entity<Registrations>()
+                .HasIndex(r => r.RegistrationCode)
+                .IsUnique()
+                .HasFilter("\"RegistrationCode\" IS NOT NULL");
+            modelBuilder.Entity<Registrations>()
                 .HasOne(r => r.User)
                 .WithMany(u => u.Registrations)
                 .HasForeignKey(r => r.UserId)
@@ -166,6 +173,13 @@ namespace Web_cham_diem.Models
                 .Property(t => t.TeamName)
                 .IsRequired()
                 .HasMaxLength(200);
+            modelBuilder.Entity<Teams>()
+                .Property(t => t.TeamCode)
+                .HasMaxLength(20);
+            modelBuilder.Entity<Teams>()
+                .HasIndex(t => t.TeamCode)
+                .IsUnique()
+                .HasFilter("\"TeamCode\" IS NOT NULL");
             modelBuilder.Entity<Teams>()
                 .HasOne(t => t.Competition)
                 .WithMany(c => c.Teams)
