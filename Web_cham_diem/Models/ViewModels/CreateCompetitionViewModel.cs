@@ -206,6 +206,13 @@ namespace Web_cham_diem.Models.ViewModels
         public bool IsPast => DateTime.Now > EndDate;
     }
 
+    public class RegistrationRoundUpdateDto
+    {
+        public string RoundName { get; set; } = string.Empty;
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+
     public class CompetitionRoundReadDto
     {
         public int RoundId { get; set; }

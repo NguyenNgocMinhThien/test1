@@ -19,7 +19,10 @@ public interface ICompetitionService
     Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync();
 
     /// <summary>Thêm đợt đăng ký mới. Chỉ được gọi khi cuộc thi chưa bắt đầu.</summary>
-    Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto);
+    Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto, DateTime? pendingStartDate = null);
+
+    /// <summary>Cập nhật tên và thời gian đợt đăng ký. Cho phép kể cả khi đã có đăng ký (chỉ chặn xóa).</summary>
+    Task<bool> UpdateRegistrationRoundAsync(int roundId, int competitionId, RegistrationRoundUpdateDto dto);
 
     /// <summary>Xóa đợt đăng ký. Chỉ được xóa khi round chưa có đăng ký nào và cuộc thi chưa bắt đầu.</summary>
     Task<bool> DeleteRegistrationRoundAsync(int roundId, int competitionId);

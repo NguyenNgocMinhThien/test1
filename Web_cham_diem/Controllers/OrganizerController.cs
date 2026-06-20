@@ -176,14 +176,14 @@ namespace Web_cham_diem.Controllers
 
         // === THÊM ĐỢT ĐĂNG KÝ MỚI (API) ===
         [HttpPost]
-        public async Task<IActionResult> AddRegistrationRound(int competitionId, [FromBody] RegistrationRoundCreateDto roundDto)
+        public async Task<IActionResult> AddRegistrationRound(int competitionId, DateTime? pendingStartDate, [FromBody] RegistrationRoundCreateDto roundDto)
         {
             try
             {
                 if (roundDto == null || string.IsNullOrWhiteSpace(roundDto.RoundName))
                     return Json(new { success = false, message = "Thông tin đợt đăng ký không hợp lệ." });
 
-                var result = await _competitionService.AddRegistrationRoundAsync(competitionId, roundDto);
+                var result = await _competitionService.AddRegistrationRoundAsync(competitionId, roundDto, pendingStartDate);
                 if (!result) return Json(new { success = false, message = "Cuộc thi không tìm thấy." });
 
                 return Json(new { success = true, message = "Thêm đợt đăng ký thành công!" });
@@ -196,6 +196,32 @@ namespace Web_cham_diem.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding registration round to competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
+            }
+        }
+
+        // === CẬP NHẬT ĐỢT ĐĂNG KÝ (API) ===
+        [HttpPost]
+        public async Task<IActionResult> UpdateRegistrationRound(int roundId, int competitionId, [FromBody] RegistrationRoundUpdateDto dto)
+        {
+            try
+            {
+                if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
+                    return Json(new { success = false, message = "Tên đợt đăng ký không được để trống." });
+
+                var result = await _competitionService.UpdateRegistrationRoundAsync(roundId, competitionId, dto);
+                if (!result) return Json(new { success = false, message = "Đợt đăng ký không tìm thấy." });
+
+                return Json(new { success = true, message = "Cập nhật đợt đăng ký thành công!" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("Validation error updating round {RoundId}: {Message}", roundId, ex.Message);
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating registration round {RoundId}", roundId);
                 return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
             }
         }

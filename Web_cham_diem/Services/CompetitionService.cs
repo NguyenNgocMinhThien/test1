@@ -888,7 +888,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== ADD REGISTRATION ROUND =====
 
-    public async Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto)
+    public async Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto, DateTime? pendingStartDate = null)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
@@ -901,8 +901,11 @@ public class CompetitionService : ICompetitionService
         if (now >= competition.StartDate)
             throw new InvalidOperationException("Không thể thêm đợt đăng ký sau khi cuộc thi đã bắt đầu.");
 
+        // Dùng ngày bắt đầu đang chờ lưu (nếu có) để tránh xung đột khi user chưa save form
+        var effectiveStartDate = pendingStartDate.HasValue ? pendingStartDate.Value : competition.StartDate;
+
         var newRoundList = new List<RegistrationRoundCreateDto> { roundDto };
-        ValidateRounds(newRoundList, competition.StartDate);
+        ValidateRounds(newRoundList, effectiveStartDate);
 
         var newStart = ToUtc(roundDto.StartDate);
         var newEnd   = ToUtc(roundDto.EndDate);
@@ -922,6 +925,48 @@ public class CompetitionService : ICompetitionService
             EndDate       = newEnd,
             CreatedAt     = now
         });
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateRegistrationRoundAsync(int roundId, int competitionId, RegistrationRoundUpdateDto dto)
+    {
+        var round = await _context.RegistrationRounds
+            .Include(r => r.Registrations)
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+
+        if (round == null) return false;
+
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+
+        if (competition == null) return false;
+
+        if (DateTime.UtcNow >= competition.StartDate)
+            throw new InvalidOperationException("Không thể chỉnh sửa đợt đăng ký sau khi cuộc thi đã bắt đầu.");
+
+        var newStart = ToUtc(dto.StartDate);
+        var newEnd   = ToUtc(dto.EndDate);
+
+        if (newEnd <= newStart)
+            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+
+        if (newEnd > competition.StartDate)
+            throw new InvalidOperationException(
+                $"Hạn đăng ký phải trước ngày bắt đầu cuộc thi ({competition.StartDate:dd/MM/yyyy HH:mm}).");
+
+        foreach (var other in competition.RegistrationRounds.Where(r => r.RoundId != roundId))
+        {
+            if (newStart <= other.EndDate && newEnd >= other.StartDate)
+                throw new InvalidOperationException(
+                    $"Đợt đăng ký này chồng chéo với đợt \"{other.RoundName}\" ({other.StartDate:dd/MM/yyyy} - {other.EndDate:dd/MM/yyyy}).");
+        }
+
+        round.RoundName  = dto.RoundName;
+        round.StartDate  = newStart;
+        round.EndDate    = newEnd;
 
         await _context.SaveChangesAsync();
         return true;
@@ -1683,9 +1728,14 @@ public class CompetitionService : ICompetitionService
         _context.CompetitionRounds.Add(round);
         await _context.SaveChangesAsync();
 
-        if (dto.ScoringCriteria != null)
+        if (dto.ScoringCriteria != null && dto.ScoringCriteria.Any())
         {
             foreach (var c in dto.ScoringCriteria)
+            {
+                // Chuẩn hóa weight: nếu được gửi dạng % (> 1) thì chuyển sang phân số
+                if (c.Weight > 1m)
+                    c.Weight = c.Weight > 100m ? c.Weight / 10000m : c.Weight / 100m;
+
                 _context.ScoringCriteria.Add(new ScoringCriteria
                 {
                     RoundId      = round.RoundId,
@@ -1696,6 +1746,7 @@ public class CompetitionService : ICompetitionService
                     Order        = c.Order,
                     CreatedAt    = DateTime.UtcNow
                 });
+            }
             await _context.SaveChangesAsync();
         }
         return true;
@@ -1736,12 +1787,16 @@ public class CompetitionService : ICompetitionService
         round.Location          = dto.Location;
         round.UpdatedAt         = DateTime.UtcNow;
 
-        // Cập nhật tiêu chí chấm điểm nếu được gửi kèm
+        // Cập nhật tiêu chí chấm điểm — ghi đè toàn bộ nếu danh sách được gửi
         if (dto.ScoringCriteria != null && dto.ScoringCriteria.Any())
         {
             var existing = await _context.ScoringCriteria.Where(sc => sc.RoundId == roundId).ToListAsync();
             _context.ScoringCriteria.RemoveRange(existing);
             foreach (var c in dto.ScoringCriteria)
+            {
+                if (c.Weight > 1m)
+                    c.Weight = c.Weight > 100m ? c.Weight / 10000m : c.Weight / 100m;
+
                 _context.ScoringCriteria.Add(new ScoringCriteria
                 {
                     RoundId      = roundId,
@@ -1752,6 +1807,7 @@ public class CompetitionService : ICompetitionService
                     Order        = c.Order,
                     CreatedAt    = DateTime.UtcNow
                 });
+            }
         }
 
         await _context.SaveChangesAsync();
