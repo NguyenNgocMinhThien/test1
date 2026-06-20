@@ -263,20 +263,46 @@
                     }
                     @foreach (var r in Model.ExistingRounds)
                     {
+                        var rSStart = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("yyyy-MM-ddTHH:mm");
+                        var rSEnd   = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   seTz).ToString("yyyy-MM-ddTHH:mm");
                         <div class="round-item" id="round-@r.RoundId" style="@(canEditRounds ? "" : "opacity:.7")">
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Tên đợt</label>
-                                <div class="fw-semibold">@r.RoundName</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="text" class="form-control form-control-sm"
+                                           id="rName-@r.RoundId" value="@r.RoundName">
+                                }
+                                else
+                                {
+                                    <div class="fw-semibold">@r.RoundName</div>
+                                }
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Bắt đầu</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                           id="rStart-@r.RoundId" value="@rSStart">
+                                }
+                                else
+                                {
+                                    <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                }
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Kết thúc</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                           id="rEnd-@r.RoundId" value="@rSEnd">
+                                }
+                                else
+                                {
+                                    <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                }
                             </div>
-                            <div class="d-flex align-items-end gap-2">
+                            <div class="d-flex align-items-end gap-2 flex-wrap">
                                 @if (r.RegistrationCount > 0)
                                 {
                                     <span class="badge bg-success">@r.RegistrationCount đăng ký</span>
@@ -284,6 +310,13 @@
                                 else if (r.IsPast)
                                 {
                                     <span class="badge bg-secondary">Đã qua</span>
+                                }
+                                @if (canEditRounds)
+                                {
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="updateRoundAjax(@r.RoundId)" title="Lưu thay đổi">
+                                        <i class="bi bi-check2"></i>
+                                    </button>
                                 }
                                 @if (canEditRounds && r.RegistrationCount == 0)
                                 {
@@ -294,6 +327,7 @@
                                 }
                             </div>
                         </div>
+                        <div class="small px-1 mb-1" id="roundEditMsg-@r.RoundId"></div>
                     }
 
                     @if (canEditRounds)
@@ -340,13 +374,15 @@
                     <div id="compRoundList">
                         @foreach (var r in Model.ExistingCompetitionRounds)
                         {
-                            var rStart  = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
-                            var rEnd    = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
-                            var rSubDL  = r.SubmissionDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.SubmissionDeadline.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
-                            var rMtTime = r.MeetingTime.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.MeetingTime.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            var rStart        = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rEnd          = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rSubDL        = r.SubmissionDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.SubmissionDeadline.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            var rMtTime       = r.MeetingTime.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.MeetingTime.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
                             string badgeClass = r.IsActive ? "bg-success" : (r.IsPast ? "bg-secondary" : "bg-warning text-dark");
                             string badgeText  = r.IsActive ? "Đang diễn ra" : (r.IsPast ? "Đã qua" : "Sắp diễn ra");
-                            var totalW = r.ScoringCriteria.Any() ? (double)r.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+                            var totalW        = r.ScoringCriteria.Any() ? (double)r.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+                            string onlineDisplay  = r.IsOnline ? "display:block" : "display:none";
+                            string offlineDisplay = r.IsOnline ? "display:none"  : "display:block";
 
                             <div class="comp-round-card comp-round-row" id="cr-@r.RoundId">
                                 <!-- Header -->
@@ -432,7 +468,7 @@
                                                 <label class="form-check-label" style="font-size:.88rem; font-weight:600;">Online</label>
                                             </div>
                                         </div>
-                                        <div class="round-online-section" style="@(r.IsOnline ? "" : "display:none;")">
+                                        <div class="round-online-section" style="@onlineDisplay">
                                             <div class="row g-2">
                                                 <div class="col-md-6">
                                                     <label class="form-label" style="font-size:.82rem;">🔗 Link tham dự</label>
@@ -447,7 +483,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="round-offline-section" style="@(r.IsOnline ? "display:none;" : "")">
+                                        <div class="round-offline-section" style="@offlineDisplay">
                                             <div class="row g-2">
                                                 <div class="col-12">
                                                     <label class="form-label" style="font-size:.82rem;">🏢 Địa điểm thi (offline)</label>
@@ -1072,6 +1108,40 @@
 
     // ═══════════════════════════════════ ROUNDS ══════════════════════════════
 
+    async function updateRoundAjax(roundId) {
+        const name  = document.getElementById(`rName-${roundId}`)?.value?.trim();
+        const start = document.getElementById(`rStart-${roundId}`)?.value;
+        const end   = document.getElementById(`rEnd-${roundId}`)?.value;
+        const msg   = document.getElementById(`roundEditMsg-${roundId}`);
+
+        if (!name || !start || !end) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ thông tin.</span>';
+            return;
+        }
+        if (new Date(start) >= new Date(end)) {
+            msg.innerHTML = '<span class="text-danger">Ngày bắt đầu phải trước ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/Organizer/UpdateRegistrationRound?roundId=${roundId}&competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({ roundName: name, startDate: toUtcIso(start), endDate: toUtcIso(end) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ Đã lưu đợt đăng ký.</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 3000);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
+        }
+    }
+
     async function addRoundAjax() {
         const name  = document.getElementById('newRoundName').value.trim();
         const start = document.getElementById('newRoundStart').value;
@@ -1080,10 +1150,22 @@
 
         if (!name || !start || !end) { msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ.</span>'; return; }
 
-        const res = await fetch(`/Organizer/AddRegistrationRound?competitionId=${CID}`, {
+        // Lấy ngày bắt đầu cuộc thi hiện tại trong form (có thể chưa được lưu)
+        const pendingStartRaw = document.getElementById('StartDate')?.value;
+        if (pendingStartRaw && new Date(end) > new Date(pendingStartRaw)) {
+            msg.innerHTML = '<span class="text-danger">Hạn đăng ký phải trước hoặc bằng ngày bắt đầu cuộc thi.</span>';
+            return;
+        }
+
+        const urlBase = `/Organizer/AddRegistrationRound?competitionId=${CID}`;
+        const url = pendingStartRaw
+            ? `${urlBase}&pendingStartDate=${encodeURIComponent(toUtcIso(pendingStartRaw))}`
+            : urlBase;
+
+        const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify({ roundName: name, startDate: start, endDate: end })
+            body: JSON.stringify({ roundName: name, startDate: toUtcIso(start), endDate: toUtcIso(end) })
         });
         const data = await res.json();
         if (data.success) {
@@ -1217,7 +1299,7 @@
         }
     }
 
-    async function addCompRoundAjax() {
+    async function addCompRoundAjax(submitAfter = false) {
         const name    = document.getElementById('newCrName').value;
         const start   = document.getElementById('newCrStart').value;
         const end     = document.getElementById('newCrEnd').value;
@@ -1229,7 +1311,7 @@
         const isOnline = document.getElementById('newCrIsOnline').checked;
         const meetLink = document.getElementById('newCrMeetLink').value || null;
         const meetTime = document.getElementById('newCrMeetTime').value;
-        const location = document.getElementById('newCrLocation').value || null;
+        const venue = document.getElementById('newCrLocation').value || null;
         const msg = document.getElementById('newCrMsg');
 
         if (!name || !start || !end) {
@@ -1267,14 +1349,19 @@
                     isOnline:          isOnline,
                     meetingLink:       isOnline ? meetLink : null,
                     meetingTime:       isOnline && meetTime ? toUtcIso(meetTime) : null,
-                    location:          !isOnline ? location : null,
+                    location:          !isOnline ? venue : null,
                     scoringCriteria:   criteria
                 })
             });
             const data = await res.json();
             if (data.success) {
-                msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang tải lại...</span>';
-                setTimeout(() => location.reload(), 800);
+                if (submitAfter) {
+                    msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang lưu thay đổi...</span>';
+                    document.getElementById('editForm').submit();
+                } else {
+                    msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang tải lại...</span>';
+                    setTimeout(() => window.location.reload(), 800);
+                }
             } else {
                 msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
             }
@@ -1312,14 +1399,18 @@
 
     async function uploadImages() {
         if (!pendingImages.length) return;
-        const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify(pendingImages.map(i => i.data))
-        });
-        const data = await res.json();
-        if (data.success) { showToast('Upload ảnh thành công!', 'success'); setTimeout(() => location.reload(), 600); }
-        else showToast(data.message, 'danger');
+        try {
+            const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify(pendingImages.map(i => i.data))
+            });
+            const data = await res.json();
+            if (data.success) { showToast('Upload ảnh thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+            else showToast(data.message || 'Lỗi upload ảnh.', 'danger');
+        } catch (e) {
+            showToast('Lỗi kết nối khi upload ảnh, vui lòng thử lại.', 'danger');
+        }
     }
 
     async function deleteImage(imageId) {
@@ -1376,14 +1467,18 @@
 
     async function uploadDocuments() {
         if (!pendingDocs.length) return;
-        const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
-        });
-        const data = await res.json();
-        if (data.success) { showToast('Upload tài liệu thành công!', 'success'); setTimeout(() => location.reload(), 600); }
-        else showToast(data.message, 'danger');
+        try {
+            const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
+            });
+            const data = await res.json();
+            if (data.success) { showToast('Upload tài liệu thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+            else showToast(data.message || 'Lỗi upload tài liệu.', 'danger');
+        } catch (e) {
+            showToast('Lỗi kết nối khi upload tài liệu, vui lòng thử lại.', 'danger');
+        }
     }
 
     async function deleteDocument(docId) {
@@ -1590,12 +1685,52 @@
         });
     });
 
-    document.getElementById('editForm').addEventListener('submit', () => {
+    document.getElementById('editForm').addEventListener('submit', async function(e) {
         const chk = document.getElementById('chkTeam');
         syncTeamSizeField(chk ? chk.checked : false);
         // Lưu tab đang active để khôi phục sau reload
         const activeTab = document.querySelector('[data-bs-toggle="tab"].active');
         if (activeTab) sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab.getAttribute('href'));
+
+        const hasPendingImages = pendingImages.length > 0;
+        const hasPendingDocs   = pendingDocs.length > 0;
+        const newCrStart = document.getElementById('newCrStart')?.value;
+        const newCrEnd   = document.getElementById('newCrEnd')?.value;
+        const hasNewRound = !!(newCrStart && newCrEnd);
+
+        if (hasPendingImages || hasPendingDocs || hasNewRound) {
+            e.preventDefault();
+            try {
+                if (hasPendingImages) {
+                    const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                        body: JSON.stringify(pendingImages.map(i => i.data))
+                    });
+                    const data = await res.json();
+                    if (!data.success) { showToast('Lỗi upload ảnh: ' + (data.message || 'Có lỗi xảy ra'), 'danger'); return; }
+                    pendingImages = [];
+                }
+                if (hasPendingDocs) {
+                    const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                        body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
+                    });
+                    const data = await res.json();
+                    if (!data.success) { showToast('Lỗi upload tài liệu: ' + (data.message || 'Có lỗi xảy ra'), 'danger'); return; }
+                    pendingDocs = [];
+                }
+                if (hasNewRound) {
+                    // addCompRoundAjax(true) tự gọi form.submit() khi thành công
+                    await addCompRoundAjax(true);
+                    return;
+                }
+                document.getElementById('editForm').submit();
+            } catch (err) {
+                showToast('Lỗi kết nối, vui lòng thử lại.', 'danger');
+            }
+        }
     });
 </script>
 }
