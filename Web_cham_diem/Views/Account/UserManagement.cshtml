@@ -254,7 +254,16 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Mật khẩu ban đầu</label>
-                            <input type="text" name="Password" class="form-control rounded-3" value="UEF@12345" readonly>
+                            <div class="input-group">
+                                <input type="password" name="Password" id="addUserPassword"
+                                       class="form-control rounded-start-3" value="UEF@12345"
+                                       placeholder="Tối thiểu 6 ký tự">
+                                <button type="button" class="btn btn-outline-secondary rounded-end-3"
+                                        onclick="toggleAddPassword(this)" tabindex="-1">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text text-muted">Mặc định <strong>UEF@12345</strong> — có thể thay đổi trước khi lưu.</div>
                         </div>
                     </div>
                 </div>
@@ -614,6 +623,18 @@
         }
     });
 
+    function toggleAddPassword(btn) {
+        const input = document.getElementById('addUserPassword');
+        const icon  = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+
     function exportData() {
         alert('Đang chuẩn bị trích xuất dữ liệu người dùng ra tệp Excel...');
     }
@@ -745,14 +766,16 @@
     // CHỨC NĂNG 4: KHÓA / MỞ KHÓA TÀI KHOẢN
     // ==========================================
     function toggleLockUser(userId, currentStatus) {
-        const msg = currentStatus ? "Bạn chắc chắn muốn KHÓA tài khoản này?" : "Bạn muốn MỞ KHÓA cho tài khoản này?";
+        const msg = currentStatus
+            ? "Bạn chắc chắn muốn KHÓA tài khoản này?"
+            : "Bạn muốn MỞ KHÓA cho tài khoản này?";
         if (!confirm(msg)) return;
 
         const formData = new FormData();
-        formData.append("userId", userId);
+        formData.append("id", userId);
         formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-        fetch('/Account/ToggleLockUser', {
+        fetch('/Account/ToggleUserStatus', {
             method: 'POST',
             body: formData
         })
@@ -764,12 +787,30 @@
             } else {
                 alert("Thao tác thất bại: " + data.message);
             }
-        });
+        })
+        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
     }
 
     function deleteUser(userId) {
-        if (!confirm("Hành động này không thể hoàn tác! Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này?")) return;
-        // Thực hiện fetch API xóa nếu backend có viết hàm DeleteUser...
-        alert("Tính năng xóa ID " + userId + " đang được phát triển.");
+        if (!confirm("Hành động này KHÔNG THỂ HOÀN TÁC!\nToàn bộ dữ liệu liên quan của tài khoản sẽ bị xóa.\n\nBạn có chắc chắn muốn xóa?")) return;
+
+        const formData = new FormData();
+        formData.append("id", userId);
+        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        fetch('/Account/DeleteUser', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Xóa thất bại: " + data.message);
+            }
+        })
+        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
     }
 </script>

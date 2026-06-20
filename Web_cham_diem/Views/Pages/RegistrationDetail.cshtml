@@ -638,6 +638,110 @@
         </div>
     }
 
+    <!-- ── LỊCH SỬ GIAO TASK ─────────────────────────────────────────────── -->
+    @{
+        var taskHistory = isLecturer ? allTasks : myTasks;
+    }
+    @if (Model.Team != null && taskHistory.Any())
+    {
+        <div class="row g-4 mt-0">
+            <div class="col-12">
+                <div class="info-card card p-4">
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="fw-bold mb-0">
+                            <i class="bi bi-list-task me-2 text-primary"></i>
+                            @(isLecturer ? "Lịch sử giao task (tất cả thành viên)" : "Lịch sử task được giao cho tôi")
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            @{
+                                var doneCount    = taskHistory.Count(t => t.Status == "Completed");
+                                var overdueCount = taskHistory.Count(t => t.DueDate.HasValue && t.DueDate < DateTime.UtcNow && t.Status != "Completed");
+                            }
+                            <span class="badge bg-success rounded-pill" title="Hoàn thành">@doneCount / @taskHistory.Count</span>
+                            @if (overdueCount > 0)
+                            {
+                                <span class="badge bg-danger rounded-pill" title="Quá hạn">@overdueCount quá hạn</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="history-timeline">
+                        @foreach (var task in taskHistory.OrderByDescending(t => t.CreatedAt))
+                        {
+                            var isDone    = task.Status == "Completed";
+                            var isOverdue = task.DueDate.HasValue && task.DueDate < DateTime.UtcNow && !isDone;
+                            var dotCls    = isDone ? "dot-approved" : isOverdue ? "dot-rejected" : "dot-edit";
+                            var iconCls   = isDone ? "bi-check-lg"  : isOverdue ? "bi-alarm"     : "bi-list-task";
+                            var createdLocal = TimeZoneInfo.ConvertTimeFromUtc(task.CreatedAt, tz);
+                            var completions  = task.TaskCompletions?.ToList() ?? new();
+
+                            <div class="history-item">
+                                <div class="history-dot @dotCls">
+                                    <i class="bi @iconCls"></i>
+                                </div>
+                                <div class="d-flex flex-wrap justify-content-between align-items-start gap-1">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold" style="font-size:.88rem;">@task.Title</div>
+                                        @if (!string.IsNullOrEmpty(task.Description))
+                                        {
+                                            <div class="text-muted small">@task.Description</div>
+                                        }
+                                        <div class="d-flex flex-wrap gap-2 mt-1 align-items-center">
+                                            <span class="badge @(isDone ? "bg-success" : isOverdue ? "bg-danger" : "bg-warning text-dark")" style="font-size:.68rem;">
+                                                @(isDone ? "Hoàn thành" : isOverdue ? "Quá hạn" : "Đang chờ")
+                                            </span>
+                                            @if (task.AssignedToUser != null)
+                                            {
+                                                <span class="badge bg-light text-dark border" style="font-size:.68rem;">
+                                                    <i class="bi bi-person me-1"></i>@task.AssignedToUser.FullName
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark border" style="font-size:.68rem;">
+                                                    <i class="bi bi-people me-1"></i>Cả nhóm
+                                                </span>
+                                            }
+                                            @if (task.DueDate.HasValue)
+                                            {
+                                                <span class="text-muted" style="font-size:.73rem;">
+                                                    <i class="bi bi-alarm me-1"></i>Hạn: @TimeZoneInfo.ConvertTimeFromUtc(task.DueDate.Value, tz).ToString("dd/MM/yyyy HH:mm")
+                                                </span>
+                                            }
+                                        </div>
+                                        @if (completions.Any())
+                                        {
+                                            <div class="mt-2 ps-2 border-start border-success border-2">
+                                                @foreach (var c in completions)
+                                                {
+                                                    var cTime = TimeZoneInfo.ConvertTimeFromUtc(c.CompletedAt, tz);
+                                                    <div class="small" style="color:#198754;">
+                                                        <i class="bi bi-check-circle-fill me-1"></i>
+                                                        <strong>@c.CompletedByUser.FullName</strong> hoàn thành lúc @cTime.ToString("dd/MM/yyyy HH:mm")
+                                                        @if (!string.IsNullOrEmpty(c.Note))
+                                                        {
+                                                            <span class="text-muted ms-1">— @c.Note</span>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="text-end text-muted" style="font-size:.78rem; white-space:nowrap;">
+                                        <div>Giao bởi: @(task.AssignedByUser?.FullName ?? "—")</div>
+                                        <div>@createdLocal.ToString("dd/MM/yyyy HH:mm")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+
 </div>
 
 @* ══ MODAL CHỈNH SỬA HỒ SƠ ══════════════════════════════════════════════ *@

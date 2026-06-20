@@ -364,6 +364,16 @@
                         </li>
                     }
 
+                    @if (isAuthenticated && User.IsInRole("Lecturer"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/MyRegistrations">
+                                <i class="bi bi-people-fill text-success"></i>
+                                <span>Đội đang hướng dẫn</span>
+                            </a>
+                        </li>
+                    }
+
                     @if (User.IsInRole("Organizer"))
                     {
                         <li class="nav-item">

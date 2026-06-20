@@ -363,12 +363,16 @@ public class AccountController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateUser(string fullName, string email, string studentId, string roleName)
+    public async Task<IActionResult> CreateUser(string fullName, string email, string studentId, string roleName, string? password)
     {
         try
         {
             if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email))
                 return Json(new { success = false, message = "Họ tên và Email không được để trống." });
+
+            var plainPassword = string.IsNullOrWhiteSpace(password) ? "UEF@12345" : password.Trim();
+            if (plainPassword.Length < 6)
+                return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự." });
 
             var emailTrim = email.ToLower().Trim();
             bool isEmailExist = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailTrim);
@@ -387,7 +391,7 @@ public class AccountController : Controller
                 FullName = fullName.Trim(),
                 Email = emailTrim,
                 StudentId = studentIdUpper,
-                PasswordHash = "AQAAAAIAAYagAAAAE...",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -438,6 +442,40 @@ public class AccountController : Controller
         catch (Exception ex)
         {
             return Json(new { success = false, message = "Thao tác thất bại: " + ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        try
+        {
+            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (id == currentUserId)
+                return Json(new { success = false, message = "Không thể xóa tài khoản của chính mình." });
+
+            var user = await _context.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+
+            if (user == null)
+                return Json(new { success = false, message = "Không tìm thấy tài khoản." });
+
+            bool isAdmin = user.UserRoles.Any(ur => ur.Role != null && ur.Role.RoleName == "Admin");
+            if (isAdmin)
+                return Json(new { success = false, message = "Không thể xóa tài khoản Admin." });
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Đã xóa tài khoản thành công." });
+        }
+        catch (Exception ex)
+        {
+            var inner = ex.InnerException?.Message ?? ex.Message;
+            return Json(new { success = false, message = "Lỗi khi xóa: " + inner });
         }
     }
 
