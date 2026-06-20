@@ -70,6 +70,20 @@ builder.Services.AddLogging(config =>
 });
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Gọi hàm Seeder của bạn và bắt nó đợi (Wait) để tránh xung đột luồng
+        Web_cham_diem.Data.DbSeeder.SeedAsync(app).Wait();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Lỗi xảy ra trong quá trình đổ dữ liệu mẫu (Seed Data).");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

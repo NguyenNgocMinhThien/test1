@@ -6,12 +6,11 @@ using Web_cham_diem.Models.ViewModels;
 
 namespace Web_cham_diem.Controllers;
 
-[Authorize] // BẮT BUỘC: Phải đăng nhập mới được vào bất kỳ tính năng nào trong này
+[Authorize]
 public class AccountController : Controller
 {
     private readonly ApplicationDbContext _context;
 
-    // Sử dụng Dependency Injection để truyền Database Context vào Controller
     public AccountController(ApplicationDbContext context)
     {
         _context = context;
@@ -21,7 +20,6 @@ public class AccountController : Controller
     // KHÔNG GIAN DÀNH CHO USER / STUDENT
     // ==========================================
 
-    // Đường dẫn truy cập: /Account/UserDashboard
     [Authorize(Roles = "Student,Admin")]
     public IActionResult UserDashboard()
     {
@@ -32,35 +30,30 @@ public class AccountController : Controller
     // KHÔNG GIAN QUẢN TRỊ VIÊN (ADMIN ONLY)
     // ==========================================
 
-    // Đường dẫn: /Account/Admin
     [Authorize(Roles = "Admin")]
     public IActionResult Admin()
     {
         return View();
     }
+
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAdminMainDashboardData()
     {
         try
         {
-            // 1. Thống kê tổng số lượng người dùng hệ thống
             var totalUsers = await _context.Users.CountAsync();
 
-            // 2. Thống kê số lượng theo vai trò (Role) bằng cách đếm từ bảng liên kết UserRoles
             var totalStudents = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Student");
             var totalLecturers = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Lecturer" || ur.Role.RoleName == "Giảng viên");
             var totalJudges = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Judge" || ur.Role.RoleName == "Ban giám khảo");
             var totalAdmins = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Admin");
 
-            // 3. Thống kê số lượng cuộc thi (Competitions)
             var totalContests = await _context.Competitions.CountAsync();
             var activeContests = await _context.Competitions.CountAsync(c => c.Status == "Đang hoạt động" || c.Status == "Active");
 
-            // 4. Thống kê tổng số lượng bài làm đã nộp (Submissions)
             var totalSubmissions = await _context.Submissions.CountAsync();
 
-            // 5. Chuẩn bị dữ liệu cho biểu đồ Cột (Số cuộc thi trong 5 năm gần đây)
             var currentYear = DateTime.UtcNow.Year;
             var barLabels = new string[5];
             var barData = new int[5];
@@ -102,32 +95,26 @@ public class AccountController : Controller
         }
     }
 
-    // KHÔI PHỤC: Tuyến đường hiển thị giao diện Quản lý tài khoản bị thiếu
-    // Đường dẫn: /Account/UserManagement
     [Authorize(Roles = "Admin")]
     public IActionResult UserManagement()
     {
         return View();
     }
 
-    // Tuyến đường hiển thị giao diện: /Account/ContestOverview
     [Authorize(Roles = "Admin")]
     public IActionResult ContestOverview()
     {
         return View();
     }
 
-    // API TRUY VẤN DATABASE THẬT: Lấy số liệu thống kê động cho Admin Dashboard
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetRealContestOverviewData(string search, string status, string field, string schoolYear)
     {
         try
         {
-            // 1. Khởi tạo Query gốc truy vấn từ bảng Cuộc thi thực tế (Competitions) trong DbContext
             var competitionQuery = _context.Competitions.AsQueryable();
 
-            // 2. Thực hiện lọc dữ liệu theo bộ gõ tìm kiếm và Dropdown từ UI gửi lên
             if (!string.IsNullOrEmpty(search))
             {
                 var searchLower = search.ToLower().Trim();
@@ -140,16 +127,13 @@ public class AccountController : Controller
                 competitionQuery = competitionQuery.Where(c => c.Status == status);
             }
 
-            // Lấy danh sách cuộc thi thực tế sau khi đã lọc dữ liệu để hiển thị cho phần Monitoring
             var rawCompetitions = await competitionQuery.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
-            // 3. Đếm dữ liệu thực tế phục vụ 6 thẻ trạng thái
             var totalCompetitions = await _context.Competitions.CountAsync();
             var activeCompetitions = await _context.Competitions.CountAsync(c => c.Status == "Đang hoạt động" || c.Status == "Active");
             var upcomingCompetitions = await _context.Competitions.CountAsync(c => c.Status == "Sắp diễn ra" || c.Status == "Upcoming");
             var completedCompetitions = await _context.Competitions.CountAsync(c => c.Status == "Đã kết thúc" || c.Status == "Completed");
 
-            // Đếm tổng số lượt thí sinh đăng ký dự thi (Registrations) và tổng số bài đã nộp từ DB (Submissions)
             var totalRegistrations = await _context.Registrations.CountAsync();
             var totalSubmissions = await _context.Submissions.CountAsync();
 
@@ -163,7 +147,6 @@ public class AccountController : Controller
                 TotalSubmissions = totalSubmissions >= 1000 ? (totalSubmissions / 1000.0).ToString("0.0") + "K" : totalSubmissions.ToString()
             };
 
-            // 4. Biểu đồ đường tròn (Doughnut): Đếm số lượng cuộc thi phân bổ theo Trạng thái
             var statusGroup = await _context.Competitions
                 .GroupBy(c => c.Status)
                 .Select(g => new { StatusName = g.Key ?? "Chưa rõ", Count = g.Count() })
@@ -175,7 +158,6 @@ public class AccountController : Controller
                 Data = statusGroup.Select(f => f.Count).ToArray()
             };
 
-            // 5. Biểu đồ hỗn hợp (6 Tháng gần nhất): Tính số cuộc thi mới tạo và lượng bài nộp từ thí sinh từng tháng
             var monthLabels = new string[6];
             var newContestCounts = new int[6];
             var submissionCounts = new int[6];
@@ -185,12 +167,9 @@ public class AccountController : Controller
                 var targetDate = DateTime.UtcNow.AddMonths(-i);
                 monthLabels[5 - i] = $"Tháng {targetDate.Month}";
 
-                // Đếm số lượng thực tế trong Database theo từng tháng cụ thể thông qua trường CreatedAt
                 newContestCounts[5 - i] = await _context.Competitions
                     .CountAsync(c => c.CreatedAt.Month == targetDate.Month && c.CreatedAt.Year == targetDate.Year);
 
-                // ĐÃ SỬA: Sử dụng trường cấu trúc thật s.SubmissionDate từ cơ sở dữ liệu của bạn
-                // Ví dụ nếu tên cột chính xác của bạn trong DB là SubmissionDate:
                 submissionCounts[5 - i] = await _context.Submissions
                     .CountAsync(s => s.SubmissionDate.Month == targetDate.Month && s.SubmissionDate.Year == targetDate.Year);
             }
@@ -202,10 +181,8 @@ public class AccountController : Controller
                 Submissions = submissionCounts
             };
 
-            // 6. Xử lý dữ liệu hiển thị bảng Monitoring (Giám sát % tiến độ dựa trên mốc thời gian thật)
             var monitoringList = rawCompetitions.Select(c => {
                 double progressPercent = 0;
-
                 var totalTicks = (c.EndDate - c.StartDate).TotalSeconds;
                 var elapsedTicks = (DateTime.UtcNow - c.StartDate).TotalSeconds;
 
@@ -225,7 +202,6 @@ public class AccountController : Controller
                     Progress = progressPercent,
                     Registrations = _context.Registrations.Count(r => r.CompetitionId == c.CompetitionId),
                     Submissions = _context.Submissions.Count(s => s.CompetitionId == c.CompetitionId),
-                    // Kiểm tra nếu ngày kết thúc khác ngày mặc định tối thiểu của hệ thống
                     EndDate = c.EndDate != DateTime.MinValue ? c.EndDate.ToString("dd/MM/yyyy") : "Vô thời hạn"
                 };
             }).ToList();
@@ -255,8 +231,8 @@ public class AccountController : Controller
         {
             var searchLower = search.ToLower().Trim();
             query = query.Where(u => u.FullName.ToLower().Contains(searchLower) ||
-                                     u.Email.ToLower().Contains(searchLower) ||
-                                     (u.StudentId != null && u.StudentId.ToLower().Contains(searchLower)));
+                                 u.Email.ToLower().Contains(searchLower) ||
+                                 (u.StudentId != null && u.StudentId.ToLower().Contains(searchLower)));
         }
 
         if (!string.IsNullOrEmpty(status))
@@ -291,8 +267,7 @@ public class AccountController : Controller
             userList = userList.Where(u => u.RoleName.Equals(role, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        var result = userList.OrderByDescending(u => u.UserId).ToList();
-        return Json(result);
+        return Json(userList.OrderByDescending(u => u.UserId).ToList());
     }
 
     [HttpGet]
@@ -315,11 +290,7 @@ public class AccountController : Controller
             })
             .FirstOrDefaultAsync(u => u.UserId == id);
 
-        if (user == null)
-        {
-            return Json(new { success = false, message = "Không tìm thấy người dùng này." });
-        }
-
+        if (user == null) return Json(new { success = false, message = "Không tìm thấy người dùng này." });
         return Json(new { success = true, data = user });
     }
 
@@ -332,7 +303,6 @@ public class AccountController : Controller
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return Json(new { success = false, message = "Người dùng không tồn tại." });
-
             if (string.IsNullOrEmpty(fullName)) return Json(new { success = false, message = "Họ tên không được để trống." });
 
             if (!string.IsNullOrEmpty(studentId))
@@ -367,7 +337,6 @@ public class AccountController : Controller
             if (selectedRole == null) return Json(new { success = false, message = "Quyền hệ thống yêu cầu không hợp lệ." });
 
             var currentLink = await _context.UserRoles.FirstOrDefaultAsync(ur => ur.UserId == userId);
-
             if (currentLink != null)
             {
                 _context.UserRoles.Remove(currentLink);
@@ -383,12 +352,70 @@ public class AccountController : Controller
 
             _context.UserRoles.Add(newLink);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Đã cập nhật phân quyền mới thành công!" });
         }
         catch (Exception ex)
         {
             return Json(new { success = false, message = "Lỗi hệ thống phân quyền: " + ex.Message });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateUser(string fullName, string email, string studentId, string roleName)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email))
+                return Json(new { success = false, message = "Họ tên và Email không được để trống." });
+
+            var emailTrim = email.ToLower().Trim();
+            bool isEmailExist = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailTrim);
+            if (isEmailExist) return Json(new { success = false, message = "Email này đã được sử dụng bởi một tài khoản khác." });
+
+            string? studentIdUpper = null;
+            if (!string.IsNullOrEmpty(studentId))
+            {
+                studentIdUpper = studentId.ToUpper().Trim();
+                bool isIdExist = await _context.Users.AnyAsync(u => u.StudentId != null && u.StudentId.ToUpper() == studentIdUpper);
+                if (isIdExist) return Json(new { success = false, message = "Mã số sinh viên/nhân viên này đã tồn tại." });
+            }
+
+            var newUser = new Users
+            {
+                FullName = fullName.Trim(),
+                Email = emailTrim,
+                StudentId = studentIdUpper,
+                PasswordHash = "AQAAAAIAAYagAAAAE...",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrEmpty(roleName))
+            {
+                var selectedRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == roleName.ToLower());
+                if (selectedRole != null)
+                {
+                    var userRole = new UserRoles
+                    {
+                        UserId = newUser.UserId,
+                        RoleId = selectedRole.RoleId,
+                        AssignedAt = DateTime.UtcNow
+                    };
+                    _context.UserRoles.Add(userRole);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return Json(new { success = true, message = "Thêm mới tài khoản thành công!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Lỗi hệ thống khi thêm tài khoản: " + ex.InnerException?.Message ?? ex.Message });
         }
     }
 
@@ -421,10 +448,7 @@ public class AccountController : Controller
     {
         try
         {
-            if (string.IsNullOrEmpty(name))
-            {
-                return Json(new { success = false, message = "Tên cuộc thi không được để trống!" });
-            }
+            if (string.IsNullOrEmpty(name)) return Json(new { success = false, message = "Tên cuộc thi không được để trống!" });
 
             var newComp = new Competitions
             {
@@ -438,7 +462,6 @@ public class AccountController : Controller
 
             _context.Competitions.Add(newComp);
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, message = "Tạo cuộc thi thành công! Thống kê sẽ được cập nhật." });
         }
         catch (Exception ex)
@@ -447,7 +470,96 @@ public class AccountController : Controller
         }
     }
 
-    // Các action bổ sung cho thanh Menu Hệ thống
+    // XÓA TOÀN BỘ method GetReportData cũ (cái không có [Authorize] và thiếu params)
+    // Chỉ giữ lại method này, sửa lại return Json với lowercase key:
+
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetReportData(string schoolYear, string department, string contestType, DateTime? fromDate, DateTime? toDate)
+    {
+        try
+        {
+            var totalUsers = await _context.Users.CountAsync();
+            var totalStudents = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Student" || ur.Role.RoleName == "Sinh viên");
+            var totalLecturers = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Lecturer" || ur.Role.RoleName == "Giảng viên");
+            var totalJudges = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Judge" || ur.Role.RoleName == "Ban giám khảo");
+            var totalOrganizers = await _context.UserRoles.CountAsync(ur => ur.Role.RoleName == "Organizer" || ur.Role.RoleName == "Ban tổ chức");
+            var totalLocked = await _context.Users.CountAsync(u => u.IsActive == false);
+
+            var totalCompetitions = await _context.Competitions.CountAsync();
+            var totalSubmissions = await _context.Submissions.CountAsync();
+            var totalRegistrations = await _context.Registrations.CountAsync();
+
+            double completionRate = 0;
+            if (totalRegistrations > 0)
+                completionRate = Math.Round(((double)totalSubmissions / totalRegistrations) * 100, 1);
+
+            var lineLabels = new string[6];
+            var lineRegistrations = new int[6];
+            var lineSubmissions = new int[6];
+
+            for (int i = 0; i < 6; i++)
+            {
+                var targetDate = DateTime.UtcNow.AddMonths(-(5 - i));
+                lineLabels[i] = $"Tháng {targetDate.Month}";
+                lineRegistrations[i] = await _context.Registrations
+                    .CountAsync(r => r.RegistrationDate.Month == targetDate.Month && r.RegistrationDate.Year == targetDate.Year);
+                lineSubmissions[i] = await _context.Submissions
+                    .CountAsync(s => s.SubmissionDate.Month == targetDate.Month && s.SubmissionDate.Year == targetDate.Year);
+            }
+
+            var approvedCount = await _context.Submissions.CountAsync(s => s.Status == "Đã duyệt" || s.Status == "Approved");
+            var rejectedCount = await _context.Submissions.CountAsync(s => s.Status == "Từ chối" || s.Status == "Rejected");
+            var pendingCount = totalSubmissions - (approvedCount + rejectedCount);
+
+            // ✅ Dùng anonymous object lowercase để match với JS
+            return Json(new
+            {
+                success = true,
+                cards = new
+                {
+                    totalCompetitions,
+                    totalStudents,
+                    totalSubmissions,
+                    completionRate
+                },
+                accounts = new
+                {
+                    total = totalUsers,
+                    students = totalStudents,
+                    teachers = totalLecturers,
+                    organizers = totalOrganizers,
+                    judges = totalJudges,
+                    locked = totalLocked
+                },
+                lineChart = new
+                {
+                    labels = lineLabels,
+                    registrations = lineRegistrations,
+                    submissions = lineSubmissions
+                },
+                doughnutChart = new
+                {
+                    labels = new[] { "Đã duyệt", "Chờ xử lý", "Từ chối" },
+                    data = new[] { approvedCount, pendingCount, rejectedCount }
+                },
+                facultyChart = new
+                {
+                    labels = new[] { "Khoa CNTT", "Khoa Kinh tế", "Phòng QLKH", "Khoa Ngoại ngữ" },
+                    data = new[] { totalSubmissions, 0, 0, 0 }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Lỗi: " + ex.Message });
+        }
+    }
+
+
+    // ==========================================
+    // CÁC ĐƯỜNG DẪN BỔ SUNG CHO HỆ THỐNG
+    // ==========================================
     [Authorize(Roles = "Admin")]
     public IActionResult SystemSettings() { return View(); }
 
