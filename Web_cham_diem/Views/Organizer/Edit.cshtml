@@ -154,7 +154,7 @@
             <ul class="nav nav-tabs px-3 pt-2" id="editTabs">
                 <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-info"><i class="bi bi-info-circle me-1"></i>Cơ bản</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-schedule"><i class="bi bi-calendar3 me-1"></i>Lịch trình</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-criteria"><i class="bi bi-bar-chart me-1"></i>Tiêu chí @(!canEditCriteria ? "<span class=\"state-locked\">🔒</span>" : "")</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-criteria"><i class="bi bi-bar-chart me-1"></i>Tiêu chí @if (!canEditCriteria) { <span class="state-locked">🔒</span> }</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-media"><i class="bi bi-images me-1"></i>Ảnh & Tài liệu</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sponsors"><i class="bi bi-building me-1"></i>Nhà tài trợ</a></li>
             </ul>

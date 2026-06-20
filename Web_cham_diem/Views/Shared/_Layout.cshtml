@@ -354,12 +354,12 @@
                         </a>
                     </li>
 
-                    @if (isAuthenticated && User.IsInRole("Student"))
+                    @if (isAuthenticated && (User.IsInRole("Student") || User.IsInRole("Lecturer")))
                     {
                         <li class="nav-item">
                             <a class="nav-link" href="/MyRegistrations">
                                 <i class="bi bi-journal-check text-primary"></i>
-                                <span>Cuộc thi đã đăng ký</span>
+                                <span>@(User.IsInRole("Lecturer") ? "Đội tôi hướng dẫn" : "Cuộc thi đã đăng ký")</span>
                             </a>
                         </li>
                     }
@@ -451,7 +451,7 @@
                                 <li>
                                     <a class="dropdown-item dropdown-item-user" href="/MyRegistrations">
                                         <i class="bi bi-journal-check"></i>
-                                        <span>Cuộc thi đã đăng ký</span>
+                                        <span>@(User.IsInRole("Lecturer") ? "Đội tôi hướng dẫn" : "Cuộc thi đã đăng ký")</span>
                                     </a>
                                 </li>
                                 <li>
