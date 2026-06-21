@@ -92,7 +92,8 @@ public static class DbSeeder
             IsTeamBased        = true,
             Rules              = "1. Mỗi đội 2–5 thành viên là sinh viên đang theo học.\n2. Dự án phải mang tính đổi mới sáng tạo, chưa được giải thưởng tại cuộc thi khác.\n3. Nghiêm cấm sao chép ý tưởng của đội khác.",
             Prize              = "🥇 Giải Nhất: 50.000.000 VND\n🥈 Giải Nhì: 30.000.000 VND\n🥉 Giải Ba: 20.000.000 VND\n🏅 Giải Khuyến khích (×2): 5.000.000 VND/giải",
-            CreatedAt          = now
+            CreatedAt          = now,
+            CreatedByUserId    = organizer.UserId
         };
         var comp2 = new Competitions
         {
@@ -110,7 +111,8 @@ public static class DbSeeder
             IsTeamBased        = true,
             Rules              = "1. Mỗi đội 2–4 thành viên.\n2. Phát triển sản phẩm trong 48 giờ.\n3. Ưu tiên sử dụng công nghệ mã nguồn mở.",
             Prize              = "🥇 Giải Nhất: 30.000.000 VND\n🥈 Giải Nhì: 20.000.000 VND",
-            CreatedAt          = now
+            CreatedAt          = now,
+            CreatedByUserId    = organizer.UserId
         };
         db.Competitions.AddRange(comp1, comp2);
         await db.SaveChangesAsync();

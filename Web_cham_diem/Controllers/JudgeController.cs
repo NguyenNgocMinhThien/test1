@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
+using Web_cham_diem.Services;
 
 namespace Web_cham_diem.Controllers;
 
@@ -12,12 +13,16 @@ public class JudgeController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<JudgeController> _logger;
+    private readonly INotificationsService _notifications;
 
-    public JudgeController(ApplicationDbContext context, ILogger<JudgeController> logger)
+    public JudgeController(ApplicationDbContext context, ILogger<JudgeController> logger, INotificationsService notifications)
     {
         _context = context;
         _logger = logger;
+        _notifications = notifications;
     }
+
+    private int GetCurrentUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     // GET /Judge/Dashboard — Tổng quan / phân tích chấm điểm
     [HttpGet("/Judge/Dashboard")]
@@ -698,5 +703,17 @@ public class JudgeController : Controller
         }
 
         return BadRequest(new { message = "Hành động không hợp lệ." });
+    }
+
+    // GET /Judge/Notifications
+    [HttpGet("/Judge/Notifications")]
+    public async Task<IActionResult> Notifications(
+        [FromQuery] string? type,
+        [FromQuery] bool unreadOnly = false,
+        [FromQuery] int page = 1)
+    {
+        var userId = GetCurrentUserId();
+        var vm = await _notifications.GetUserNotificationsPageAsync(userId, type, unreadOnly, page, 15);
+        return View(vm);
     }
 }
