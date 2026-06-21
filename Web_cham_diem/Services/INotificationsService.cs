@@ -4,8 +4,8 @@ namespace Web_cham_diem.Services;
 
 public interface INotificationsService
 {
-    Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int? competitionId);
-    Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req);
+    Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int organizerId, int? competitionId);
+    Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req, int organizerId);
     Task<int> GetUnreadCountAsync(int userId);
     Task<List<UserNotificationDto>> GetRecentForUserAsync(int userId, int take = 10);
     Task<UserNotificationsPageViewModel> GetUserNotificationsPageAsync(int userId, string? typeFilter, bool unreadOnly, int page, int pageSize);

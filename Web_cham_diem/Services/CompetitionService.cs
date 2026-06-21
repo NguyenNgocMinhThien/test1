@@ -187,10 +187,18 @@ public class CompetitionService : ICompetitionService
             .ToListAsync();
     }
 
-    public async Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(
-        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber = 1)
+    public async Task<bool> IsCompetitionOwnerAsync(int competitionId, int organizerId)
     {
-        var query = _context.Competitions.AsQueryable();
+        return await _context.Competitions
+            .AnyAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+    }
+
+    public async Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(
+        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId)
+    {
+        var query = _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(c => c.CompetitionName.Contains(searchQuery) || c.Category.Contains(searchQuery));
@@ -385,7 +393,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== CREATE =====
 
-    public async Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model)
+    public async Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model, int organizerId)
     {
         if (string.IsNullOrWhiteSpace(model.CompetitionName))
             throw new InvalidOperationException("Tên cuộc thi không được để trống.");
@@ -446,7 +454,8 @@ public class CompetitionService : ICompetitionService
             MaxTeamSize        = model.MaxTeamSize,
             IsTeamBased        = model.IsTeamBased,
             Status             = "Draft",
-            CreatedAt          = DateTime.UtcNow
+            CreatedAt          = DateTime.UtcNow,
+            CreatedByUserId    = organizerId
         };
 
         _context.Competitions.Add(competition);
@@ -638,7 +647,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== GET FOR EDIT =====
 
-    public async Task<EditCompetitionViewModel> GetCompetitionForEditAsync(int competitionId)
+    public async Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
@@ -649,7 +658,7 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
                 .ThenInclude(cs => cs.Sponsor)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return null;
 
@@ -765,12 +774,12 @@ public class CompetitionService : ICompetitionService
 
     // ===== UPDATE =====
 
-    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model)
+    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -974,14 +983,14 @@ public class CompetitionService : ICompetitionService
 
     // ===== DELETE =====
 
-    public async Task<bool> DeleteCompetitionAsync(int competitionId)
+    public async Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.Registrations)
             .Include(c => c.Teams)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -1031,10 +1040,10 @@ public class CompetitionService : ICompetitionService
 
     // ===== CHANGE STATUS =====
 
-    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus)
+    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId)
     {
         var competition = await _context.Competitions
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -1050,18 +1059,22 @@ public class CompetitionService : ICompetitionService
 
     // ===== DASHBOARD =====
 
-    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync()
+    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId)
     {
         var now = DateTime.UtcNow;
 
         var competitions = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
             .Include(c => c.Teams)
             .ToListAsync();
 
-        var judges = await _context.Judges.ToListAsync();
+        var competitionIds = competitions.Select(c => c.CompetitionId).ToList();
+        var judges = await _context.Judges
+            .Where(j => competitionIds.Contains(j.CompetitionId))
+            .ToListAsync();
 
         // ===== COMPETITION STATUS BREAKDOWN =====
         int totalCompetitions = competitions.Count;
@@ -1312,6 +1325,7 @@ public class CompetitionService : ICompetitionService
 
         var recentScores = await _context.Scores
             .Include(s => s.Submission)
+            .Where(s => s.Submission != null && competitionIds.Contains(s.Submission.CompetitionId))
             .OrderByDescending(s => s.ScoredDate)
             .Take(5)
             .ToListAsync();
@@ -1328,7 +1342,7 @@ public class CompetitionService : ICompetitionService
 
         var recentRegistrations = await _context.Registrations
             .Include(r => r.User)
-            .Where(r => r.Status == "Pending")
+            .Where(r => r.Status == "Pending" && competitionIds.Contains(r.CompetitionId))
             .OrderByDescending(r => r.RegistrationDate)
             .Take(3)
             .ToListAsync();
@@ -1344,6 +1358,7 @@ public class CompetitionService : ICompetitionService
             });
 
         var recentSubmissions = await _context.Submissions
+            .Where(s => competitionIds.Contains(s.CompetitionId))
             .OrderByDescending(s => s.SubmissionDate)
             .Take(2)
             .ToListAsync();

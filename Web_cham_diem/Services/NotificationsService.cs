@@ -28,11 +28,12 @@ public class NotificationsService : INotificationsService
 
     // ───────── organizer page ─────────
 
-    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int? competitionId)
+    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int organizerId, int? competitionId)
     {
         var vm = new OrganizerNotificationsViewModel();
 
         var allComps = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .Include(c => c.RegistrationRounds)
             .Include(c => c.CompetitionRounds)
             .Include(c => c.Registrations)
@@ -40,14 +41,16 @@ public class NotificationsService : INotificationsService
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
+        var ownedIds = allComps.Select(c => c.CompetitionId).ToList();
+
         vm.Competitions = allComps.Select(c => new CompetitionBasicDto
         {
             CompetitionId = c.CompetitionId,
             CompetitionName = c.CompetitionName
         }).ToList();
 
-        vm.TotalSentAll = await _context.Notifications.CountAsync();
-        vm.UnreadByRecipients = await _context.Notifications.CountAsync(n => !n.IsRead);
+        vm.TotalSentAll = await _context.Notifications.CountAsync(n => n.RelatedEntityId.HasValue && ownedIds.Contains(n.RelatedEntityId.Value));
+        vm.UnreadByRecipients = await _context.Notifications.CountAsync(n => !n.IsRead && n.RelatedEntityId.HasValue && ownedIds.Contains(n.RelatedEntityId.Value));
         vm.ActiveCompetitionCount = allComps.Count(c => c.Status == "Active");
 
         if (!competitionId.HasValue && allComps.Count > 0)
@@ -139,10 +142,19 @@ public class NotificationsService : INotificationsService
 
     // ───────── send notification ─────────
 
-    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req)
+    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req, int organizerId)
     {
         if (string.IsNullOrWhiteSpace(req.Title))
             return (false, "Tiêu đề không được để trống.", 0);
+
+        // Xác nhận cuộc thi thuộc organizer này
+        if (req.CompetitionId > 0)
+        {
+            var isOwner = await _context.Competitions
+                .AnyAsync(c => c.CompetitionId == req.CompetitionId && c.CreatedByUserId == organizerId);
+            if (!isOwner)
+                return (false, "Bạn không có quyền gửi thông báo cho cuộc thi này.", 0);
+        }
 
         var userIds = await ResolveAudienceAsync(req.CompetitionId, req.Audience);
         if (userIds.Count == 0)

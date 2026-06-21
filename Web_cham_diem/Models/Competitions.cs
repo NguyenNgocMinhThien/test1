@@ -19,8 +19,10 @@
         public string? Prize { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public int? CreatedByUserId { get; set; }
 
         // Navigation properties
+        public Users? CreatedBy { get; set; }
         public ICollection<Registrations> Registrations { get; set; } = new List<Registrations>();
         public ICollection<Teams> Teams { get; set; } = new List<Teams>();
         public ICollection<Submissions> Submissions { get; set; } = new List<Submissions>();
