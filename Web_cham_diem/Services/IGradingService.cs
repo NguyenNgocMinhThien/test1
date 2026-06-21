@@ -4,7 +4,7 @@ namespace Web_cham_diem.Services;
 
 public interface IGradingService
 {
-    Task<OrganizerGradingViewModel> GetGradingViewAsync(int? competitionId);
+    Task<OrganizerGradingViewModel> GetGradingViewAsync(int organizerId, int? competitionId);
     Task<List<UserSearchDto>> SearchUsersForJudgeAsync(int competitionId, string search, int? roundId = null);
     Task<List<UserSearchDto>> SearchUsersForJudgePoolAsync(string search);
     Task<List<UserSearchDto>> SearchJudgesForRoundAsync(int competitionId, int roundId, string search);

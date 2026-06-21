@@ -9,19 +9,21 @@ public interface ICompetitionService
     Task<Competitions> GetCompetitionByIdAsync(int id);
     Task<List<Teams>> GetCompetitionTeamsAsync(int competitionId);
     Task<List<Registrations>> GetCompetitionRegistrationsAsync(int competitionId);
-    Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber = 1);
+
+    Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId);
     Task<CompetitionDetailViewModel> GetCompetitionDetailAsync(int competitionId);
-    Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model);
-    Task<EditCompetitionViewModel> GetCompetitionForEditAsync(int competitionId);
-    Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model);
-    Task<bool> DeleteCompetitionAsync(int competitionId);
-    Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus);
-    Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync();
+    Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model, int organizerId);
+    Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId);
+    Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId);
+    Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId);
+    Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId);
+    Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId);
+    Task<bool> IsCompetitionOwnerAsync(int competitionId, int organizerId);
 
     /// <summary>Thêm đợt đăng ký mới. Chỉ được gọi khi cuộc thi chưa bắt đầu.</summary>
     Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto, DateTime? pendingStartDate = null);
 
-    /// <summary>Cập nhật tên và thời gian đợt đăng ký. Cho phép kể cả khi đã có đăng ký (chỉ chặn xóa).</summary>
+    /// <summary>Cập nhật tên và thời gian đợt đăng ký.</summary>
     Task<bool> UpdateRegistrationRoundAsync(int roundId, int competitionId, RegistrationRoundUpdateDto dto);
 
     /// <summary>Xóa đợt đăng ký. Chỉ được xóa khi round chưa có đăng ký nào và cuộc thi chưa bắt đầu.</summary>

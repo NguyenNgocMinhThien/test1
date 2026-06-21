@@ -15,13 +15,16 @@ public class ResultsService : IResultsService
         _logger = logger;
     }
 
-    public async Task<ResultsPageViewModel> GetResultsViewAsync(int? competitionId)
+    public async Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId)
     {
         var vm = new ResultsPageViewModel();
 
         var allComps = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
+
+        var ownedIds = allComps.Select(c => c.CompetitionId).ToList();
 
         vm.Competitions = allComps.Select(c => new CompetitionSelectorDto
         {
@@ -30,20 +33,22 @@ public class ResultsService : IResultsService
             Status = c.Status
         }).ToList();
 
-        // Overall aggregate stats
+        // Overall aggregate stats (chỉ trong phạm vi cuộc thi của organizer)
         vm.TotalCompetitions = allComps.Count;
-        vm.TotalRegistrations = await _context.Registrations.CountAsync();
-        vm.TotalSubmissions = await _context.Submissions.CountAsync();
-        vm.TotalEvaluatedSubmissions = await _context.Submissions.CountAsync(s => s.Status == "Evaluated");
-        vm.TotalRankedRounds = await _context.CompetitionRounds.CountAsync(r => r.Status == "Completed");
+        vm.TotalRegistrations = await _context.Registrations.CountAsync(r => ownedIds.Contains(r.CompetitionId));
+        vm.TotalSubmissions = await _context.Submissions.CountAsync(s => ownedIds.Contains(s.CompetitionId));
+        vm.TotalEvaluatedSubmissions = await _context.Submissions.CountAsync(s => ownedIds.Contains(s.CompetitionId) && s.Status == "Evaluated");
+        vm.TotalRankedRounds = await _context.CompetitionRounds.CountAsync(r => ownedIds.Contains(r.CompetitionId) && r.Status == "Completed");
 
         // Per-competition stats for summary tab
         var regCounts = await _context.Registrations
+            .Where(r => ownedIds.Contains(r.CompetitionId))
             .GroupBy(r => r.CompetitionId)
             .Select(g => new { CompId = g.Key, Count = g.Count() })
             .ToListAsync();
 
         var subCounts = await _context.Submissions
+            .Where(s => ownedIds.Contains(s.CompetitionId))
             .GroupBy(s => s.CompetitionId)
             .Select(g => new { CompId = g.Key, Total = g.Count(), Evaluated = g.Count(s => s.Status == "Evaluated") })
             .ToListAsync();

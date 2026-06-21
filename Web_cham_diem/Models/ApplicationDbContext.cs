@@ -86,6 +86,11 @@ namespace Web_cham_diem.Models
             modelBuilder.Entity<Competitions>()
                 .Property(c => c.MaxScore)
                 .HasPrecision(18, 2);
+            modelBuilder.Entity<Competitions>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany(u => u.CreatedCompetitions)
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Sponsors
             modelBuilder.Entity<Sponsors>()

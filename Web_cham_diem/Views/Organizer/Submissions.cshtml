@@ -120,11 +120,11 @@
                         onchange="this.form.submit()">
                     @if (!Model.SelectedCompetitionId.HasValue)
                     {
-                        <option value="" selected>Tất cả cuộc thi</option>
+                        <option value="" selected>Tất cả cuộc thi của tôi</option>
                     }
                     else
                     {
-                        <option value="">Tất cả cuộc thi</option>
+                        <option value="">Tất cả cuộc thi của tôi</option>
                     }
                     @foreach (var c in Model.Competitions)
                     {
