@@ -367,8 +367,34 @@ public class NotificationsService : INotificationsService
     {
         var ids = new HashSet<int>();
 
-        if (audience is "Students" or "All")
+        if (audience == "All")
         {
+            // Lấy danh sách userId của admin và của judge không thuộc cuộc thi này
+            var adminIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == 1)
+                .Select(ur => ur.UserId).ToListAsync();
+
+            var judgesInComp = await _context.Judges
+                .Where(j => j.CompetitionId == competitionId)
+                .Select(j => j.UserId).Distinct().ToListAsync();
+
+            var judgeRoleUserIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == 4)
+                .Select(ur => ur.UserId).ToListAsync();
+
+            // Giám khảo không tham gia cuộc thi này
+            var excludedJudgeIds = judgeRoleUserIds.Except(judgesInComp).ToHashSet();
+
+            var q = await _context.Users
+                .Where(u => u.IsActive
+                         && !adminIds.Contains(u.UserId)
+                         && !excludedJudgeIds.Contains(u.UserId))
+                .Select(u => u.UserId).Distinct().ToListAsync();
+            foreach (var id in q) ids.Add(id);
+        }
+        else if (audience == "Students")
+        {
+            // Chỉ thí sinh/đội đã được duyệt trong cuộc thi
             var q = await _context.Registrations
                 .Where(r => r.CompetitionId == competitionId && r.Status == "Approved")
                 .Select(r => r.UserId).Distinct().ToListAsync();
@@ -376,16 +402,17 @@ public class NotificationsService : INotificationsService
         }
         else if (audience == "AllRegistrants")
         {
+            // Tất cả đăng ký cuộc thi bất kể trạng thái
             var q = await _context.Registrations
                 .Where(r => r.CompetitionId == competitionId)
                 .Select(r => r.UserId).Distinct().ToListAsync();
             foreach (var id in q) ids.Add(id);
         }
-
-        if (audience is "Judges" or "All")
+        else if (audience == "Judges")
         {
+            // Tất cả giám khảo của cuộc thi
             var q = await _context.Judges
-                .Where(j => j.CompetitionId == competitionId && j.Status == "Active")
+                .Where(j => j.CompetitionId == competitionId)
                 .Select(j => j.UserId).Distinct().ToListAsync();
             foreach (var id in q) ids.Add(id);
         }
