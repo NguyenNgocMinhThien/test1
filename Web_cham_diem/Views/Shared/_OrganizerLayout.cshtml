@@ -468,62 +468,40 @@
                 </div>
 
                 <!-- Notification Bell dropdown -->
-                <div class="dropdown">
+                <div class="dropdown" id="orgNotifWrapper">
                     <button class="btn btn-light border-0 position-relative rounded-circle p-2"
                             style="width:38px;height:38px;"
                             data-bs-toggle="dropdown"
+                            id="orgNotifBtn"
+                            onclick="orgLoadNotifications()"
                             title="Thông báo">
                         <i class="bi bi-bell fs-6 text-muted"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
-                              style="width:8px;height:8px;"></span>
+                        <span id="orgNotifBadge"
+                              style="display:none;position:absolute;top:1px;right:1px;background:#dc3545;color:#fff;
+                                     border-radius:50%;min-width:18px;height:18px;font-size:10px;font-weight:700;
+                                     align-items:center;justify-content:center;border:2px solid #fff;padding:0 2px;"></span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 noti-dropdown">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 noti-dropdown" style="padding:0!important;">
                         <li class="px-3 py-2 border-bottom bg-light d-flex justify-content-between align-items-center sticky-top">
-                            <span class="fw-bold text-dark">Thông báo</span>
-                            <a href="/Organizer/Notifications" class="small text-decoration-none fw-semibold"
-                               style="color: var(--organizer-accent);">Xem tất cả</a>
+                            <span class="fw-bold text-dark"><i class="bi bi-bell-fill me-2"></i>Thông báo</span>
+                            <span id="orgNotifHdrCount" class="small text-muted">...</span>
                         </li>
                         <li>
-                            <div class="noti-dd-item">
-                                <div class="d-flex gap-2 align-items-start">
-                                    <div class="noti-dd-dot bg-danger"></div>
-                                    <div class="flex-grow-1">
-                                        <div class="small fw-bold text-dark mb-1">Hồ sơ mới chờ xét duyệt</div>
-                                        <div class="text-muted" style="font-size:0.75rem;">Có hồ sơ đăng ký vừa được gửi lên, cần phê duyệt sớm.</div>
-                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>Vừa xong</div>
-                                    </div>
+                            <div id="orgNotifList">
+                                <div class="text-center py-4 text-muted" style="font-size:13px;">
+                                    <i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo
                                 </div>
                             </div>
                         </li>
-                        <li>
-                            <div class="noti-dd-item">
-                                <div class="d-flex gap-2 align-items-start">
-                                    <div class="noti-dd-dot bg-warning"></div>
-                                    <div class="flex-grow-1">
-                                        <div class="small fw-bold text-dark mb-1">Deadline sắp đến</div>
-                                        <div class="text-muted" style="font-size:0.75rem;">Cuộc thi Hackathon 2026 còn 2 ngày hạn nộp bài.</div>
-                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>30 phút trước</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="noti-dd-item">
-                                <div class="d-flex gap-2 align-items-start">
-                                    <div class="noti-dd-dot bg-primary"></div>
-                                    <div class="flex-grow-1">
-                                        <div class="small fw-bold text-dark mb-1">Giám khảo chậm tiến độ</div>
-                                        <div class="text-muted" style="font-size:0.75rem;">TS. Lê Thị C mới chấm 10% số bài được giao.</div>
-                                        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>1 ngày trước</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="border-top">
-                            <a href="/Organizer/Notifications"
-                               class="d-block text-center small py-2 text-decoration-none fw-semibold"
-                               style="color: var(--organizer-accent);">
-                                <i class="bi bi-arrow-right-circle me-1"></i>Đến trang Thông báo
+                        <li class="border-top d-flex align-items-center justify-content-between px-3 py-2">
+                            <button id="orgMarkAllBtn" onclick="orgMarkAllRead(event)"
+                                    class="btn btn-sm btn-link p-0"
+                                    style="color:var(--organizer-accent);font-size:12px;display:none;">
+                                <i class="bi bi-check-all me-1"></i>Đánh dấu đã đọc
+                            </button>
+                            <a href="/Notifications" class="small text-decoration-none fw-semibold"
+                               style="color:var(--organizer-accent);">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Xem tất cả
                             </a>
                         </li>
                     </ul>
@@ -584,8 +562,8 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Settings">
-                                <i class="bi bi-gear"></i><span>Cài đặt tài khoản</span>
+                            <a class="dropdown-item dropdown-item-user" href="/HuongDan">
+                                <i class="bi bi-question-circle"></i><span>Trợ giúp</span>
                             </a>
                         </li>
 
@@ -676,6 +654,103 @@
                 bsAlert.close();
             }, 5000);
         });
+    </script>
+
+    <script>
+    (function () {
+        let _orgLoaded = false;
+
+        function orgIconClass(type) {
+            const m = { 'Success': ['bi-check-circle-fill','#16a34a','#dcfce7'], 'Warning': ['bi-exclamation-triangle-fill','#d97706','#fef3c7'], 'Error': ['bi-x-circle-fill','#dc2626','#fee2e2'] };
+            return m[type] ?? ['bi-info-circle-fill','#059669','#d1fae5'];
+        }
+
+        window.orgLoadNotifications = async function (force = false) {
+            if (_orgLoaded && !force) return;
+            try {
+                const res = await fetch('/api/user/notifications?take=8');
+                if (!res.ok) return;
+                const data = await res.json();
+                _orgLoaded = true;
+                orgUpdateBadge(data.unread);
+                orgRenderList(data.items ?? [], data.unread);
+            } catch { }
+        };
+
+        function orgUpdateBadge(count) {
+            const badge = document.getElementById('orgNotifBadge');
+            const markBtn = document.getElementById('orgMarkAllBtn');
+            const hdr = document.getElementById('orgNotifHdrCount');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = 'flex';
+                if (markBtn) markBtn.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+                if (markBtn) markBtn.style.display = 'none';
+            }
+            if (hdr) hdr.textContent = count > 0 ? count + ' chưa đọc' : 'Đã đọc hết';
+        }
+
+        function orgRenderList(items, unreadCount) {
+            const el = document.getElementById('orgNotifList');
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = '<div class="text-center py-4 text-muted" style="font-size:13px;"><i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo</div>';
+                return;
+            }
+            el.innerHTML = items.map(n => {
+                const [ic, color, bg] = orgIconClass(n.type);
+                const unread = !n.isRead ? 'background:#f0fdf4;border-left:3px solid #059669;' : '';
+                return `<div class="noti-dd-item" style="${unread}cursor:pointer;" onclick="orgReadNotif(event,${n.notificationId})">
+                    <div class="d-flex gap-2 align-items-start">
+                        <div style="width:30px;height:30px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi ${ic}" style="color:${color};font-size:13px;"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="small fw-bold text-dark mb-1" style="white-space:normal;">${escHtml(n.title)}</div>
+                            <div class="text-muted" style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;">${escHtml(n.message)}</div>
+                            <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>${escHtml(n.timeAgo)}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.orgReadNotif = async function (e, id) {
+            e.preventDefault();
+            await fetch(`/api/user/notifications/${id}/read`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgery() } });
+            _orgLoaded = false;
+            orgLoadNotifications(true);
+        };
+
+        window.orgMarkAllRead = async function (e) {
+            e.stopPropagation();
+            await fetch('/api/user/notifications/read-all', { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgery() } });
+            _orgLoaded = false;
+            orgLoadNotifications(true);
+        };
+
+        function getAntiForgery() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        function escHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Load badge count on page load
+        fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && orgUpdateBadge(d.unread)).catch(() => {});
+
+        // Refresh every 3 minutes
+        setInterval(() => {
+            _orgLoaded = false;
+            fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && orgUpdateBadge(d.unread)).catch(() => {});
+        }, 180000);
+    })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
