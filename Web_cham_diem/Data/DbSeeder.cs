@@ -456,5 +456,170 @@ public static class DbSeeder
             );
             await db.SaveChangesAsync();
         }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // DỮ LIỆU BỔ SUNG – test chức năng PHÂN CÔNG HÀNG LOẠT (Bulk Assign)
+        // Tạo thêm 4 đội/thí sinh với bài nộp ở vòng Bán kết (chưa phân công)
+        // ══════════════════════════════════════════════════════════════════════
+
+        // ── Thêm 6 sinh viên mới ──────────────────────────────────────────────
+        var student7  = new Users { FullName = "Phan Thị Lan",       Email = "student7@test.com",  PhoneNumber = "0900000013", PasswordHash = hash, StudentId = "SV007", IsActive = true, CreatedAt = now };
+        var student8  = new Users { FullName = "Đinh Quốc Hùng",     Email = "student8@test.com",  PhoneNumber = "0900000014", PasswordHash = hash, StudentId = "SV008", IsActive = true, CreatedAt = now };
+        var student9  = new Users { FullName = "Tô Minh Khoa",        Email = "student9@test.com",  PhoneNumber = "0900000015", PasswordHash = hash, StudentId = "SV009", IsActive = true, CreatedAt = now };
+        var student10 = new Users { FullName = "Mai Thị Ngọc",        Email = "student10@test.com", PhoneNumber = "0900000016", PasswordHash = hash, StudentId = "SV010", IsActive = true, CreatedAt = now };
+        var student11 = new Users { FullName = "Trịnh Văn Phúc",      Email = "student11@test.com", PhoneNumber = "0900000017", PasswordHash = hash, StudentId = "SV011", IsActive = true, CreatedAt = now };
+        var student12 = new Users { FullName = "Nguyễn Thị Quỳnh",    Email = "student12@test.com", PhoneNumber = "0900000018", PasswordHash = hash, StudentId = "SV012", IsActive = true, CreatedAt = now };
+        db.Users.AddRange(student7, student8, student9, student10, student11, student12);
+        await db.SaveChangesAsync();
+
+        db.UserRoles.AddRange(
+            new UserRoles { UserId = student7.UserId,  RoleId = 2 },
+            new UserRoles { UserId = student8.UserId,  RoleId = 2 },
+            new UserRoles { UserId = student9.UserId,  RoleId = 2 },
+            new UserRoles { UserId = student10.UserId, RoleId = 2 },
+            new UserRoles { UserId = student11.UserId, RoleId = 2 },
+            new UserRoles { UserId = student12.UserId, RoleId = 2 }
+        );
+        await db.SaveChangesAsync();
+
+        // ── Thêm 2 đội mới ────────────────────────────────────────────────────
+        var teamGamma = new Teams
+        {
+            TeamName      = "Team Gamma – SmartLearn",
+            CompetitionId = comp1.CompetitionId,
+            LeaderId      = student7.UserId,
+            Description   = "Nền tảng học tập thích ứng dùng AI cá nhân hóa lộ trình học cho từng sinh viên",
+            Status        = "Active",
+            CreatedAt     = now
+        };
+        var teamDelta = new Teams
+        {
+            TeamName      = "Team Delta – GreenCity",
+            CompetitionId = comp1.CompetitionId,
+            LeaderId      = student9.UserId,
+            Description   = "Giải pháp đô thị xanh thông minh: cảm biến môi trường + dự báo AI",
+            Status        = "Active",
+            CreatedAt     = now
+        };
+        db.Teams.AddRange(teamGamma, teamDelta);
+        await db.SaveChangesAsync();
+
+        db.TeamMembers.AddRange(
+            new TeamMembers { TeamId = teamGamma.TeamId, UserId = student7.UserId,  Role = "Leader", Status = "Active", JoinedAt = now },
+            new TeamMembers { TeamId = teamGamma.TeamId, UserId = student8.UserId,  Role = "Member", Status = "Active", JoinedAt = now, InvitedBy = student7.UserId },
+            new TeamMembers { TeamId = teamDelta.TeamId, UserId = student9.UserId,  Role = "Leader", Status = "Active", JoinedAt = now },
+            new TeamMembers { TeamId = teamDelta.TeamId, UserId = student10.UserId, Role = "Member", Status = "Active", JoinedAt = now, InvitedBy = student9.UserId }
+        );
+        await db.SaveChangesAsync();
+
+        // ── Đăng ký tham dự (Approved) ────────────────────────────────────────
+        var reg3 = new Registrations
+        {
+            UserId = student7.UserId, CompetitionId = comp1.CompetitionId, TeamId = teamGamma.TeamId,
+            RoundId = regRound1.RoundId, AdvisorId = lecturer.UserId, RegistrationType = "Team",
+            Status = "Approved", RegistrationDate = new DateTime(2026, 2, 14, 0, 0, 0, DateTimeKind.Utc),
+            ApprovalDate = new DateTime(2026, 2, 18, 0, 0, 0, DateTimeKind.Utc)
+        };
+        var reg4 = new Registrations
+        {
+            UserId = student9.UserId, CompetitionId = comp1.CompetitionId, TeamId = teamDelta.TeamId,
+            RoundId = regRound1.RoundId, AdvisorId = lecturer.UserId, RegistrationType = "Team",
+            Status = "Approved", RegistrationDate = new DateTime(2026, 2, 16, 0, 0, 0, DateTimeKind.Utc),
+            ApprovalDate = new DateTime(2026, 2, 19, 0, 0, 0, DateTimeKind.Utc)
+        };
+        var reg5 = new Registrations
+        {
+            UserId = student11.UserId, CompetitionId = comp1.CompetitionId, TeamId = null,
+            RoundId = regRound1.RoundId, AdvisorId = lecturer.UserId, RegistrationType = "Individual",
+            Status = "Approved", RegistrationDate = new DateTime(2026, 2, 17, 0, 0, 0, DateTimeKind.Utc),
+            ApprovalDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc)
+        };
+        var reg6 = new Registrations
+        {
+            UserId = student12.UserId, CompetitionId = comp1.CompetitionId, TeamId = null,
+            RoundId = regRound1.RoundId, AdvisorId = lecturer.UserId, RegistrationType = "Individual",
+            Status = "Approved", RegistrationDate = new DateTime(2026, 2, 18, 0, 0, 0, DateTimeKind.Utc),
+            ApprovalDate = new DateTime(2026, 2, 21, 0, 0, 0, DateTimeKind.Utc)
+        };
+        db.Registrations.AddRange(reg3, reg4, reg5, reg6);
+        await db.SaveChangesAsync();
+
+        // ── Bài nộp vòng Bán kết (5 bài CHƯA phân công – để test Bulk Assign) ─
+        var subBeta_bk = new Submissions
+        {
+            CompetitionId = comp1.CompetitionId, RegistrationId = reg2.RegistrationId,
+            TeamId = teamBeta.TeamId, CompetitionRoundId = roundBanKet.RoundId,
+            Title = "MediLink v2 – Demo AI chẩn đoán và hồ sơ y tế điện tử",
+            Description = "Demo ứng dụng telehealth tích hợp mô hình AI chẩn đoán sơ bộ từ ảnh chụp và triệu chứng, kết hợp lưu trữ hồ sơ y tế trên blockchain.",
+            FileUrl = "/uploads/submissions/beta_banket_report.pdf",
+            VideoUrl = "https://youtu.be/medilink-demo-2026",
+            ProjectLink = "https://github.com/medilink-team/medilink",
+            Status = "Submitted",
+            SubmissionDate = new DateTime(2026, 7, 10, 9, 0, 0, DateTimeKind.Utc)
+        };
+        var subGamma_bk = new Submissions
+        {
+            CompetitionId = comp1.CompetitionId, RegistrationId = reg3.RegistrationId,
+            TeamId = teamGamma.TeamId, CompetitionRoundId = roundBanKet.RoundId,
+            Title = "SmartLearn – Hệ thống học tập thích ứng dựa trên AI",
+            Description = "Nền tảng phân tích hành vi học tập theo thời gian thực, tự động đề xuất bài tập và nội dung phù hợp với năng lực từng sinh viên.",
+            FileUrl = "/uploads/submissions/gamma_banket_report.pdf",
+            VideoUrl = "https://youtu.be/smartlearn-demo-2026",
+            ProjectLink = "https://github.com/smartlearn-team/app",
+            Status = "Submitted",
+            SubmissionDate = new DateTime(2026, 7, 11, 10, 30, 0, DateTimeKind.Utc)
+        };
+        var subDelta_bk = new Submissions
+        {
+            CompetitionId = comp1.CompetitionId, RegistrationId = reg4.RegistrationId,
+            TeamId = teamDelta.TeamId, CompetitionRoundId = roundBanKet.RoundId,
+            Title = "GreenCity – Dashboard quản lý môi trường đô thị thông minh",
+            Description = "Hệ thống thu thập dữ liệu từ 200+ cảm biến IoT phân bố trong thành phố, hiển thị trực quan và dự báo ô nhiễm bằng mô hình ML.",
+            FileUrl = "/uploads/submissions/delta_banket_report.pdf",
+            VideoUrl = "https://youtu.be/greencity-demo-2026",
+            ProjectLink = "https://github.com/greencity-team/platform",
+            Status = "Submitted",
+            SubmissionDate = new DateTime(2026, 7, 13, 14, 0, 0, DateTimeKind.Utc)
+        };
+        var subInd1_bk = new Submissions
+        {
+            CompetitionId = comp1.CompetitionId, RegistrationId = reg5.RegistrationId,
+            TeamId = null, CompetitionRoundId = roundBanKet.RoundId,
+            Title = "FoodSafe – Ứng dụng kiểm soát an toàn thực phẩm bằng AI",
+            Description = "Ứng dụng chụp ảnh thực phẩm, dùng computer vision phát hiện thực phẩm biến chất và truy xuất nguồn gốc thông qua QR code.",
+            FileUrl = "/uploads/submissions/ind1_banket_report.pdf",
+            Status = "Submitted",
+            SubmissionDate = new DateTime(2026, 7, 14, 8, 0, 0, DateTimeKind.Utc)
+        };
+        var subInd2_bk = new Submissions
+        {
+            CompetitionId = comp1.CompetitionId, RegistrationId = reg6.RegistrationId,
+            TeamId = null, CompetitionRoundId = roundBanKet.RoundId,
+            Title = "EduMap – Bản đồ học tập trực tuyến theo kỹ năng",
+            Description = "Nền tảng trực quan hóa lộ trình học lập trình, kết nối với các khoá học mở và cộng đồng mentor để hỗ trợ sinh viên tự học.",
+            FileUrl = "/uploads/submissions/ind2_banket_report.pdf",
+            Status = "Under Review",
+            SubmissionDate = new DateTime(2026, 7, 9, 16, 0, 0, DateTimeKind.Utc)
+        };
+        db.Submissions.AddRange(subBeta_bk, subGamma_bk, subDelta_bk, subInd1_bk, subInd2_bk);
+        await db.SaveChangesAsync();
+
+        // ── Thêm giám khảo vào pool (judge4) để có thêm lựa chọn khi bulk assign ──
+        var judge4 = new Users { FullName = "Võ Thị Thẩm Định",  Email = "judge4@test.com", PhoneNumber = "0900000019", PasswordHash = hash, IsActive = true, CreatedAt = now };
+        db.Users.Add(judge4);
+        await db.SaveChangesAsync();
+        db.UserRoles.Add(new UserRoles { UserId = judge4.UserId, RoleId = 4 });
+        await db.SaveChangesAsync();
+
+        // Gán judge4 vào vòng Bán kết
+        var j4_bk = new Judges
+        {
+            UserId = judge4.UserId, CompetitionId = comp1.CompetitionId,
+            RoundId = roundBanKet.RoundId, JudgeRole = "Member",
+            Expertise = "Phân tích dữ liệu & Machine Learning",
+            Priority = 4, Status = "Active", AssignedDate = now
+        };
+        db.Judges.Add(j4_bk);
+        await db.SaveChangesAsync();
     }
 }
