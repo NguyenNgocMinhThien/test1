@@ -230,7 +230,7 @@
                                     </li>
                                 }
                             </ul>
-                            <a href="/Competitions/Detail/@_comp.CompetitionId"
+                            <a href="/Competitions/@_comp.CompetitionId"
                                class="btn @_btn btn-sm rounded-pill px-3 w-100">
                                 <i class="bi bi-arrow-right-circle me-1"></i>Xem & Đăng ký
                             </a>
@@ -463,88 +463,6 @@
 </section>
 
 
-<!-- ============================================================
-     8. THÔNG BÁO MỚI NHẤT
-     ============================================================ -->
-<section class="news-section mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <span class="badge bg-info-subtle text-info fw-semibold px-3 py-2 rounded-pill mb-1">Cập nhật</span>
-            <h2 class="fw-bold text-dark mb-0 section-title">THÔNG BÁO MỚI NHẤT</h2>
-        </div>
-        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold d-none d-md-inline-flex align-items-center gap-1">
-            Tất cả thông báo <i class="bi bi-arrow-right"></i>
-        </a>
-    </div>
-
-    @{
-        var _notifIcon = new Dictionary<string, string> {
-            { "Error",   "bi-megaphone-fill" },
-            { "Warning", "bi-info-circle-fill" },
-            { "Success", "bi-file-earmark-check-fill" },
-            { "Info",    "bi-star-fill" }
-        };
-        var _notifIconBg = new Dictionary<string, string> {
-            { "Error",   "bg-danger-subtle text-danger" },
-            { "Warning", "bg-warning-subtle text-warning-emphasis" },
-            { "Success", "bg-success-subtle text-success" },
-            { "Info",    "bg-primary-subtle text-primary" }
-        };
-        var _notifBadge = new Dictionary<string, string> {
-            { "Error",   "bg-danger-subtle text-danger" },
-            { "Warning", "bg-warning-subtle text-warning-emphasis" },
-            { "Success", "bg-success-subtle text-success" },
-            { "Info",    "bg-primary-subtle text-primary" }
-        };
-    }
-    <div class="row g-3">
-        @if (!Model.LatestNotifications.Any())
-        {
-            <div class="col-12 py-5 text-center text-secondary">
-                <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-50"></i>
-                Chưa có thông báo nào.
-            </div>
-        }
-        else
-        {
-            foreach (var _n in Model.LatestNotifications)
-            {
-                var _icon    = _notifIcon.GetValueOrDefault(_n.Type, "bi-info-circle-fill");
-                var _iconBg  = _notifIconBg.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
-                var _bdg     = _notifBadge.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
-                var _href    = _n.RelatedEntityId.HasValue
-                                ? $"/Competitions/Detail/{_n.RelatedEntityId}"
-                                : "#";
-                var _msg     = _n.Message.Length > 110 ? _n.Message[..110] + "…" : _n.Message;
-                <div class="col-12 col-md-6">
-                    <a href="@_href" class="text-decoration-none">
-                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="flex-shrink-0 icon-circle-sm @_iconBg">
-                                    <i class="bi @_icon"></i>
-                                </div>
-                                <div>
-                                    <span class="badge @_bdg small mb-1">@_n.CategoryLabel</span>
-                                    <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">@_n.Title</h6>
-                                    <p class="text-secondary small mb-1">@_msg</p>
-                                    <span class="text-muted" style="font-size:11px;">
-                                        <i class="bi bi-clock me-1"></i>@_n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            }
-        }
-    </div>
-
-    <div class="text-center mt-3 d-md-none">
-        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-semibold">
-            Xem tất cả thông báo <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-    </div>
-</section>
 
 
 <!-- ============================================================
