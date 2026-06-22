@@ -317,6 +317,14 @@
                     var userFullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Người dùng";
                     var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
                     var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Student";
+                    var roleDisplay = userRole switch {
+                        "Student"   => "Sinh viên",
+                        "Lecturer"  => "Giảng viên",
+                        "Organizer" => "Ban tổ chức",
+                        "Judge"     => "Giám khảo",
+                        "Admin"     => "Quản trị viên",
+                        _           => userRole
+                    };
                     var userInitial = !string.IsNullOrEmpty(userFullName)
                         ? string.Concat(userFullName.Split(' ').Select(x => x[0])).ToUpper()
                         : "U";
@@ -444,7 +452,7 @@
                                             <div class="dropdown-user-name">@userFullName</div>
                                             <div class="dropdown-user-email">@userEmail</div>
                                             <div class="dropdown-user-role">
-                                                <i class="bi bi-shield me-1" style="font-size: 10px;"></i>@userRole
+                                                <i class="bi bi-shield me-1" style="font-size: 10px;"></i>@roleDisplay
                                             </div>
                                         </div>
                                     </div>
@@ -452,41 +460,95 @@
 
                                 <li><hr class="dropdown-divider"></li>
 
+                                <!-- Hồ sơ cá nhân — tất cả role -->
                                 <li>
                                     <a class="dropdown-item dropdown-item-user" href="/Profile">
                                         <i class="bi bi-person-circle"></i>
                                         <span>Hồ sơ cá nhân</span>
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/MyRegistrations">
-                                        <i class="bi bi-journal-check"></i>
-                                        <span>Cuộc thi đã đăng ký</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/MySubmissions">
-                                        <i class="bi bi-file-earmark-arrow-up"></i>
-                                        <span>Bài nộp của tôi</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/MyScores">
-                                        <i class="bi bi-graph-up"></i>
-                                        <span>Kết quả chấm điểm</span>
-                                    </a>
-                                </li>
+
+                                <!-- Menu theo role -->
+                                @if (User.IsInRole("Student"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/MyRegistrations">
+                                            <i class="bi bi-journal-check"></i>
+                                            <span>Cuộc thi đã đăng ký</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Results">
+                                            <i class="bi bi-graph-up"></i>
+                                            <span>Kết quả thi</span>
+                                        </a>
+                                    </li>
+                                }
+                                else if (User.IsInRole("Lecturer"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/MyRegistrations">
+                                            <i class="bi bi-people-fill"></i>
+                                            <span>Đội đang hướng dẫn</span>
+                                        </a>
+                                    </li>
+                                }
+                                else if (User.IsInRole("Organizer"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Organizer/Dashboard">
+                                            <i class="bi bi-bar-chart-line"></i>
+                                            <span>Dashboard ban tổ chức</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Organizer/Contests">
+                                            <i class="bi bi-trophy"></i>
+                                            <span>Cuộc thi của tôi</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Organizer/Notifications">
+                                            <i class="bi bi-megaphone"></i>
+                                            <span>Gửi thông báo</span>
+                                        </a>
+                                    </li>
+                                }
+                                else if (User.IsInRole("Judge"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Judge/Assignments">
+                                            <i class="bi bi-clipboard-check"></i>
+                                            <span>Phân công chấm điểm</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Judge/ScoreHistory">
+                                            <i class="bi bi-clock-history"></i>
+                                            <span>Lịch sử chấm điểm</span>
+                                        </a>
+                                    </li>
+                                }
+                                else if (User.IsInRole("Admin"))
+                                {
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Account/Admin">
+                                            <i class="bi bi-speedometer2"></i>
+                                            <span>Quản trị hệ thống</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item dropdown-item-user" href="/Account/UserManagement">
+                                            <i class="bi bi-people"></i>
+                                            <span>Quản lý người dùng</span>
+                                        </a>
+                                    </li>
+                                }
 
                                 <li><hr class="dropdown-divider"></li>
 
                                 <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/Settings">
-                                        <i class="bi bi-gear"></i>
-                                        <span>Cài đặt tài khoản</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item dropdown-item-user" href="/Help">
+                                    <a class="dropdown-item dropdown-item-user" href="/HuongDan">
                                         <i class="bi bi-question-circle"></i>
                                         <span>Trợ giúp</span>
                                     </a>
