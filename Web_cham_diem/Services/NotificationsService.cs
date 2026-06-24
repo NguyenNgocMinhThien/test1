@@ -369,9 +369,9 @@ public class NotificationsService : INotificationsService
 
         if (audience == "All")
         {
-            // Lấy danh sách userId của admin và của judge không thuộc cuộc thi này
-            var adminIds = await _context.UserRoles
-                .Where(ur => ur.RoleId == 1)
+            // Loại trừ: Admin (1), Organizer (3), và Judge không thuộc cuộc thi này
+            var excludedRoleIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == 1 || ur.RoleId == 3)
                 .Select(ur => ur.UserId).ToListAsync();
 
             var judgesInComp = await _context.Judges
@@ -384,11 +384,10 @@ public class NotificationsService : INotificationsService
 
             // Giám khảo không tham gia cuộc thi này
             var excludedJudgeIds = judgeRoleUserIds.Except(judgesInComp).ToHashSet();
+            var excluded = new HashSet<int>(excludedRoleIds.Concat(excludedJudgeIds));
 
             var q = await _context.Users
-                .Where(u => u.IsActive
-                         && !adminIds.Contains(u.UserId)
-                         && !excludedJudgeIds.Contains(u.UserId))
+                .Where(u => u.IsActive && !excluded.Contains(u.UserId))
                 .Select(u => u.UserId).Distinct().ToListAsync();
             foreach (var id in q) ids.Add(id);
         }
@@ -469,5 +468,69 @@ public class NotificationsService : INotificationsService
         IconClass = GetIconForType(n.Type),
         TimeAgo = FormatTimeAgo(n.CreatedAt),
         CategoryLabel = GetCategoryLabel(n.RelatedEntity)
+    };
+
+    // ───────── Public Announcements ─────────
+
+    public async Task<List<PublicAnnouncementDto>> GetPublicAnnouncementsAsync(int page = 1, int pageSize = 20)
+    {
+        var items = await _context.PublicAnnouncements
+            .Where(a => a.IsPublished)
+            .Include(a => a.CreatedBy)
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return items.Select(MapToAnnouncementDto).ToList();
+    }
+
+    public async Task<(int Total, List<PublicAnnouncementDto> Items)> GetPublicAnnouncementsPagedAsync(string? search, int page, int pageSize)
+    {
+        var q = _context.PublicAnnouncements
+            .Where(a => a.IsPublished)
+            .Include(a => a.CreatedBy)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            q = q.Where(a => a.Title.Contains(search) || a.Content.Contains(search));
+
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (total, items.Select(MapToAnnouncementDto).ToList());
+    }
+
+    public async Task<PublicAnnouncementDto?> GetAnnouncementByIdAsync(int id)
+    {
+        var a = await _context.PublicAnnouncements
+            .Include(x => x.CreatedBy)
+            .FirstOrDefaultAsync(x => x.AnnouncementId == id && x.IsPublished);
+        return a is null ? null : MapToAnnouncementDto(a);
+    }
+
+    public async Task<int> CreateAnnouncementAsync(Models.PublicAnnouncements announcement)
+    {
+        _context.PublicAnnouncements.Add(announcement);
+        await _context.SaveChangesAsync();
+        return announcement.AnnouncementId;
+    }
+
+    private static PublicAnnouncementDto MapToAnnouncementDto(Models.PublicAnnouncements a) => new()
+    {
+        AnnouncementId     = a.AnnouncementId,
+        Title              = a.Title,
+        Content            = a.Content,
+        ImageUrl           = a.ImageUrl,
+        AttachmentUrl      = a.AttachmentUrl,
+        AttachmentFileName = a.AttachmentFileName,
+        Type               = a.Type,
+        IsPublished        = a.IsPublished,
+        CreatedAt          = a.CreatedAt,
+        CreatedByName      = a.CreatedBy?.FullName,
+        RelatedCompetitionId = a.RelatedCompetitionId,
+        TimeAgo            = FormatTimeAgo(a.CreatedAt),
     };
 }

@@ -70,29 +70,44 @@ public class CompetitiveController : Controller
         return Json(new { ok = true, count });
     }
 
-    // GET: /Notifications
+    // GET: /Notifications  — Public announcements list (no auth required)
     [HttpGet("/Notifications")]
-    public async Task<IActionResult> UserNotifications(
-        [FromQuery] string? type = null,
-        [FromQuery] bool unreadOnly = false,
+    [AllowAnonymous]
+    public async Task<IActionResult> PublicNotifications(
+        [FromQuery] string? search = null,
         [FromQuery] int page = 1)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out int userId))
-        {
-            // Unauthenticated — redirect to login
-            return Redirect("/Login?returnUrl=/Notifications");
-        }
-
         try
         {
-            var vm = await _notificationsService.GetUserNotificationsPageAsync(userId, type, unreadOnly, page, pageSize: 15);
-            return View("~/Views/Pages/Notifications.cshtml", vm);
+            var (total, items) = await _notificationsService.GetPublicAnnouncementsPagedAsync(search, page, pageSize: 12);
+            ViewBag.Search    = search;
+            ViewBag.Page      = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(total / 12.0);
+            ViewBag.Total     = total;
+            return View("~/Views/Pages/Notifications.cshtml", items);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading user notifications page");
-            return View("~/Views/Pages/Notifications.cshtml", new UserNotificationsPageViewModel());
+            _logger.LogError(ex, "Error loading public notifications page");
+            return View("~/Views/Pages/Notifications.cshtml", new List<Web_cham_diem.Models.ViewModels.PublicAnnouncementDto>());
+        }
+    }
+
+    // GET: /Notifications/{id}  — Detail page
+    [HttpGet("/Notifications/{id:int}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> AnnouncementDetail(int id)
+    {
+        try
+        {
+            var item = await _notificationsService.GetAnnouncementByIdAsync(id);
+            if (item is null) return NotFound();
+            return View("~/Views/Pages/AnnouncementDetail.cshtml", item);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading announcement detail {Id}", id);
+            return NotFound();
         }
     }
 
