@@ -30,6 +30,7 @@ namespace Web_cham_diem.Models
         public DbSet<TeamTasks> TeamTasks { get; set; }
         public DbSet<TaskCompletions> TaskCompletions { get; set; }
         public DbSet<RegistrationEditHistory> RegistrationEditHistories { get; set; }
+        public DbSet<PublicAnnouncements> PublicAnnouncements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -508,6 +509,22 @@ namespace Web_cham_diem.Models
                 .WithMany()
                 .HasForeignKey(h => h.EditedBy)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure PublicAnnouncements
+            modelBuilder.Entity<PublicAnnouncements>()
+                .HasKey(a => a.AnnouncementId);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .Property(a => a.Title)
+                .IsRequired()
+                .HasMaxLength(300);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .Property(a => a.Type)
+                .HasMaxLength(20);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .HasOne(a => a.CreatedBy)
+                .WithMany()
+                .HasForeignKey(a => a.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Seed initial roles
             modelBuilder.Entity<Roles>().HasData(

@@ -968,6 +968,80 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        [HttpPost]
+        [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB
+        public async Task<IActionResult> CreateAnnouncement(
+            [FromForm] string title,
+            [FromForm] string content,
+            [FromForm] string type,
+            [FromForm] int? relatedCompetitionId,
+            IFormFile? imageFile,
+            IFormFile? attachmentFile)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
+                    return Json(new { ok = false, message = "Tiêu đề và nội dung không được để trống." });
+
+                var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "announcements");
+                Directory.CreateDirectory(uploadsDir);
+
+                string? imageUrl = null;
+                if (imageFile != null && imageFile.Length > 0)
+                {
+                    var ext = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+                    var allowedImg = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    if (!allowedImg.Contains(ext))
+                        return Json(new { ok = false, message = "Chỉ chấp nhận ảnh JPG, PNG, GIF, WEBP." });
+
+                    var imgName = $"img_{Guid.NewGuid():N}{ext}";
+                    var imgPath = Path.Combine(uploadsDir, imgName);
+                    await using var fs = System.IO.File.Create(imgPath);
+                    await imageFile.CopyToAsync(fs);
+                    imageUrl = $"/uploads/announcements/{imgName}";
+                }
+
+                string? attachUrl = null;
+                string? attachName = null;
+                if (attachmentFile != null && attachmentFile.Length > 0)
+                {
+                    var ext = Path.GetExtension(attachmentFile.FileName).ToLowerInvariant();
+                    var allowedFile = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx" };
+                    if (!allowedFile.Contains(ext))
+                        return Json(new { ok = false, message = "Chỉ chấp nhận file PDF, Word, Excel." });
+
+                    var fileName = $"attach_{Guid.NewGuid():N}{ext}";
+                    var filePath = Path.Combine(uploadsDir, fileName);
+                    await using var fs = System.IO.File.Create(filePath);
+                    await attachmentFile.CopyToAsync(fs);
+                    attachUrl  = $"/uploads/announcements/{fileName}";
+                    attachName = attachmentFile.FileName;
+                }
+
+                var announcement = new Web_cham_diem.Models.PublicAnnouncements
+                {
+                    Title                = title.Trim(),
+                    Content              = content.Trim(),
+                    Type                 = type ?? "Info",
+                    ImageUrl             = imageUrl,
+                    AttachmentUrl        = attachUrl,
+                    AttachmentFileName   = attachName,
+                    RelatedCompetitionId = relatedCompetitionId,
+                    CreatedByUserId      = GetCurrentUserId(),
+                    CreatedAt            = DateTime.UtcNow,
+                    IsPublished          = true
+                };
+
+                var id = await _notificationsService.CreateAnnouncementAsync(announcement);
+                return Json(new { ok = true, message = "Đã đăng thông báo thành công.", id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating announcement");
+                return Json(new { ok = false, message = "Lỗi hệ thống khi tạo thông báo." });
+            }
+        }
+
         public IActionResult Progress() => View();
     }
 

@@ -11,6 +11,12 @@ public interface INotificationsService
     Task<UserNotificationsPageViewModel> GetUserNotificationsPageAsync(int userId, string? typeFilter, bool unreadOnly, int page, int pageSize);
     Task<bool> MarkReadAsync(int notificationId, int userId);
     Task<int> MarkAllReadAsync(int userId);
+
+    // Public Announcements
+    Task<List<PublicAnnouncementDto>> GetPublicAnnouncementsAsync(int page = 1, int pageSize = 20);
+    Task<(int Total, List<PublicAnnouncementDto> Items)> GetPublicAnnouncementsPagedAsync(string? search, int page, int pageSize);
+    Task<PublicAnnouncementDto?> GetAnnouncementByIdAsync(int id);
+    Task<int> CreateAnnouncementAsync(Web_cham_diem.Models.PublicAnnouncements announcement);
 }
 
 public class UserNotificationDto

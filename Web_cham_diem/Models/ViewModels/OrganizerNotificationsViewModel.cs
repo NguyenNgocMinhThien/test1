@@ -83,3 +83,22 @@ public class SendNotificationRequest
     public string Audience { get; set; } = "All";
     public string MilestoneKey { get; set; } = string.Empty;
 }
+
+// ── Public Announcement DTOs ──────────────────────────────────────────────────
+
+public class PublicAnnouncementDto
+{
+    public int AnnouncementId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public string? AttachmentUrl { get; set; }
+    public string? AttachmentFileName { get; set; }
+    public string Type { get; set; } = "Info";
+    public bool IsPublished { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedByName { get; set; }
+    public int? RelatedCompetitionId { get; set; }
+    public string TimeAgo { get; set; } = string.Empty;
+}
+
