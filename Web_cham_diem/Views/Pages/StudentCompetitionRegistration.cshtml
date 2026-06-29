@@ -104,7 +104,7 @@
                 <h4 class="fw-bold mb-4">Form đăng ký tham gia</h4>
 
                 <form asp-action="Register" asp-controller="Competitive" asp-route-id="@Model.CompetitionId"
-                      method="post" enctype="multipart/form-data" id="regForm">
+                      method="post" enctype="multipart/form-data" id="regForm" novalidate>
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="IsLecturerFlow" />
                     <div asp-validation-summary="All" class="text-danger mb-3"></div>
@@ -259,6 +259,83 @@
                         <textarea class="form-control" asp-for="Notes" rows="3"
                                   placeholder="Ghi chú thêm (nếu có)"></textarea>
                     </div>
+
+                    @* ── Biểu mẫu tùy chỉnh từ BTC ── *@
+                    @if (Model.CustomFormFields.Any())
+                    {
+                        <hr class="section-divider" />
+                        <h6 class="fw-bold mb-3">Thông tin bổ sung</h6>
+                        @foreach (var field in Model.CustomFormFields)
+                        {
+                            <div class="mb-3"
+                                 id="df-wrapper-@field.FieldId"
+                                 data-df-id="@field.FieldId"
+                                 data-df-required="@field.IsRequired.ToString().ToLower()"
+                                 data-df-label="@field.FieldLabel"
+                                 data-df-type="@field.FieldType">
+                                <label class="form-label fw-semibold">
+                                    @field.FieldLabel
+                                    @if (field.IsRequired) { <span class="text-danger">*</span> }
+                                </label>
+                                @if (field.FieldType == "Text")
+                                {
+                                    <input type="text" name="df_@field.FieldId" class="form-control"
+                                           placeholder="@field.Placeholder" />
+                                }
+                                else if (field.FieldType == "Textarea")
+                                {
+                                    <textarea name="df_@field.FieldId" class="form-control" rows="3"
+                                              placeholder="@field.Placeholder"></textarea>
+                                }
+                                else if (field.FieldType == "Email")
+                                {
+                                    <input type="email" name="df_@field.FieldId" class="form-control"
+                                           placeholder="@field.Placeholder" />
+                                }
+                                else if (field.FieldType == "Number")
+                                {
+                                    <input type="number" name="df_@field.FieldId" class="form-control"
+                                           placeholder="@field.Placeholder" />
+                                }
+                                else if (field.FieldType == "Date")
+                                {
+                                    <input type="date" name="df_@field.FieldId" class="form-control" />
+                                }
+                                else if (field.FieldType == "Select" && !string.IsNullOrEmpty(field.Options))
+                                {
+                                    var opts = System.Text.Json.JsonSerializer.Deserialize<List<string>>(field.Options) ?? new();
+                                    <select name="df_@field.FieldId" class="form-select">
+                                        <option value="">-- Chọn --</option>
+                                        @foreach (var opt in opts)
+                                        {
+                                            <option value="@opt">@opt</option>
+                                        }
+                                    </select>
+                                }
+                                else if (field.FieldType == "Checkbox")
+                                {
+                                    <div class="form-check">
+                                        <input type="hidden" name="df_@field.FieldId" value="false" />
+                                        <input type="checkbox" name="df_@field.FieldId" value="true"
+                                               class="form-check-input" id="df_cb_@field.FieldId" />
+                                        <label class="form-check-label" for="df_cb_@field.FieldId">
+                                            @(string.IsNullOrEmpty(field.Placeholder) ? "Có" : field.Placeholder)
+                                        </label>
+                                    </div>
+                                }
+                                else if (field.FieldType == "File")
+                                {
+                                    <input type="file" name="df_file_@field.FieldId" class="form-control" />
+                                    <div class="form-text text-muted">Hỗ trợ mọi định dạng file</div>
+                                }
+                                <div class="invalid-feedback" id="df-err-@field.FieldId"></div>
+                                @if (!string.IsNullOrEmpty(field.HelpText))
+                                {
+                                    <div class="form-text text-muted">@field.HelpText</div>
+                                }
+                            </div>
+                        }
+                    }
 
                     @* ── Hồ sơ đăng ký ── *@
                     <div class="mb-4">
@@ -462,5 +539,71 @@
     function showResult(el, type, html) {
         el.innerHTML = `<div class="search-result-box ${type === 'found' ? 'found' : 'error'} mt-1">${html}</div>`;
     }
+
+    // ── Validate trường tùy chỉnh bắt buộc ──────────────────────────────────
+    document.getElementById('regForm').addEventListener('submit', function(e) {
+        let isValid = true;
+
+        document.querySelectorAll('[data-df-required="true"]').forEach(wrapper => {
+            const fieldId   = wrapper.dataset.dfId;
+            const fieldType = wrapper.dataset.dfType;
+            const label     = wrapper.dataset.dfLabel;
+            const errEl     = document.getElementById(`df-err-${fieldId}`);
+
+            // Reset trạng thái cũ
+            wrapper.querySelectorAll('input:not([type=hidden]), textarea, select')
+                   .forEach(el => el.classList.remove('is-invalid'));
+            if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+            let empty = false;
+            let targetEl = null;
+
+            if (fieldType === 'File') {
+                targetEl = wrapper.querySelector(`[name="df_file_${fieldId}"]`);
+                empty = !targetEl || targetEl.files.length === 0;
+            } else if (fieldType === 'Checkbox') {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"][type="checkbox"]`);
+                empty = !targetEl || !targetEl.checked;
+            } else {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"]`);
+                empty = !targetEl || !targetEl.value.trim();
+            }
+
+            if (empty) {
+                isValid = false;
+                if (targetEl) targetEl.classList.add('is-invalid');
+                if (errEl) {
+                    errEl.textContent = fieldType === 'Checkbox'
+                        ? `Vui lòng xác nhận "${label}".`
+                        : `"${label}" là trường bắt buộc.`;
+                    errEl.style.display = 'block';
+                }
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            const firstInvalid = document.querySelector('[data-df-required="true"] .is-invalid');
+            if (firstInvalid) {
+                firstInvalid.closest('[data-df-id]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+
+    // Xóa lỗi khi user bắt đầu điền
+    document.querySelectorAll('[data-df-id]').forEach(wrapper => {
+        wrapper.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(el => {
+            el.addEventListener('input', () => {
+                el.classList.remove('is-invalid');
+                const errEl = document.getElementById(`df-err-${wrapper.dataset.dfId}`);
+                if (errEl) errEl.style.display = 'none';
+            });
+            el.addEventListener('change', () => {
+                el.classList.remove('is-invalid');
+                const errEl = document.getElementById(`df-err-${wrapper.dataset.dfId}`);
+                if (errEl) errEl.style.display = 'none';
+            });
+        });
+    });
 </script>
 }

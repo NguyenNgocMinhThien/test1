@@ -283,7 +283,7 @@ public class CompetitionService : ICompetitionService
                 RoundName         = r.RoundName,
                 StartDate         = r.StartDate,
                 EndDate           = r.EndDate,
-                RegistrationCount = r.Registrations.Count
+                RegistrationCount = r.Registrations.Count(reg => reg.Status != "Withdrawn" && reg.Status != "Rejected")
             }).ToList();
 
         var images = competition.CompetitionImages
@@ -664,7 +664,9 @@ public class CompetitionService : ICompetitionService
 
         var now = DateTime.UtcNow;
         var totalRegistrations = await _context.Registrations
-            .CountAsync(r => r.CompetitionId == competitionId);
+            .CountAsync(r => r.CompetitionId == competitionId
+                          && r.Status != "Withdrawn"
+                          && r.Status != "Rejected");
         var submissionCount = await _context.Submissions
             .CountAsync(s => s.CompetitionId == competitionId);
 
@@ -676,7 +678,7 @@ public class CompetitionService : ICompetitionService
                 RoundName         = r.RoundName,
                 StartDate         = r.StartDate,
                 EndDate           = r.EndDate,
-                RegistrationCount = r.Registrations.Count
+                RegistrationCount = r.Registrations.Count(reg => reg.Status != "Withdrawn" && reg.Status != "Rejected")
             }).ToList();
 
 
@@ -1838,5 +1840,109 @@ public class CompetitionService : ICompetitionService
         _context.CompetitionRounds.Remove(round);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    // ─── Registration Form Fields ─────────────────────────────────────────────
+
+    public async Task<List<FormFieldReadDto>> GetFormFieldsAsync(int competitionId)
+    {
+        return await _context.RegistrationFormFields
+            .Where(f => f.CompetitionId == competitionId)
+            .OrderBy(f => f.DisplayOrder)
+            .ThenBy(f => f.FieldId)
+            .Select(f => new FormFieldReadDto
+            {
+                FieldId      = f.FieldId,
+                FieldLabel   = f.FieldLabel,
+                FieldType    = f.FieldType,
+                IsRequired   = f.IsRequired,
+                Placeholder  = f.Placeholder,
+                Options      = f.Options,
+                HelpText     = f.HelpText,
+                DisplayOrder = f.DisplayOrder,
+                IsActive     = f.IsActive
+            })
+            .ToListAsync();
+    }
+
+    public async Task<(bool ok, string message, int fieldId)> AddFormFieldAsync(int competitionId, FormFieldCreateDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FieldLabel))
+            return (false, "Nhãn trường không được để trống.", 0);
+
+        var validTypes = new[] { "Text", "Textarea", "Select", "Checkbox", "File", "Date", "Number", "Email" };
+        if (!validTypes.Contains(dto.FieldType))
+            return (false, "Loại trường không hợp lệ.", 0);
+
+        var field = new RegistrationFormFields
+        {
+            CompetitionId = competitionId,
+            FieldLabel    = dto.FieldLabel.Trim(),
+            FieldType     = dto.FieldType,
+            IsRequired    = dto.IsRequired,
+            Placeholder   = dto.Placeholder?.Trim(),
+            Options       = dto.Options,
+            HelpText      = dto.HelpText?.Trim(),
+            DisplayOrder  = dto.DisplayOrder,
+            IsActive      = dto.IsActive,
+            CreatedAt     = DateTime.UtcNow
+        };
+
+        _context.RegistrationFormFields.Add(field);
+        await _context.SaveChangesAsync();
+        return (true, "Thêm trường thành công!", field.FieldId);
+    }
+
+    public async Task<(bool ok, string message)> UpdateFormFieldAsync(int fieldId, int competitionId, FormFieldCreateDto dto)
+    {
+        var field = await _context.RegistrationFormFields
+            .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
+        if (field == null) return (false, "Trường không tìm thấy.");
+
+        if (string.IsNullOrWhiteSpace(dto.FieldLabel))
+            return (false, "Nhãn trường không được để trống.");
+
+        var validTypes = new[] { "Text", "Textarea", "Select", "Checkbox", "File", "Date", "Number", "Email" };
+        if (!validTypes.Contains(dto.FieldType))
+            return (false, "Loại trường không hợp lệ.");
+
+        field.FieldLabel   = dto.FieldLabel.Trim();
+        field.FieldType    = dto.FieldType;
+        field.IsRequired   = dto.IsRequired;
+        field.Placeholder  = dto.Placeholder?.Trim();
+        field.Options      = dto.Options;
+        field.HelpText     = dto.HelpText?.Trim();
+        field.DisplayOrder = dto.DisplayOrder;
+        field.IsActive     = dto.IsActive;
+
+        await _context.SaveChangesAsync();
+        return (true, "Cập nhật trường thành công!");
+    }
+
+    public async Task<(bool ok, string message)> DeleteFormFieldAsync(int fieldId, int competitionId)
+    {
+        var field = await _context.RegistrationFormFields
+            .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
+        if (field == null) return (false, "Trường không tìm thấy.");
+
+        _context.RegistrationFormFields.Remove(field);
+        await _context.SaveChangesAsync();
+        return (true, "Đã xóa trường.");
+    }
+
+    public async Task<(bool ok, string message)> ReorderFormFieldsAsync(int competitionId, List<int> orderedFieldIds)
+    {
+        var fields = await _context.RegistrationFormFields
+            .Where(f => f.CompetitionId == competitionId && orderedFieldIds.Contains(f.FieldId))
+            .ToListAsync();
+
+        for (int i = 0; i < orderedFieldIds.Count; i++)
+        {
+            var field = fields.FirstOrDefault(f => f.FieldId == orderedFieldIds[i]);
+            if (field != null) field.DisplayOrder = i;
+        }
+
+        await _context.SaveChangesAsync();
+        return (true, "Đã cập nhật thứ tự.");
     }
 }

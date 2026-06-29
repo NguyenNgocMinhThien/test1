@@ -33,6 +33,7 @@
         public ICollection<CompetitionSponsors> CompetitionSponsors { get; set; } = new List<CompetitionSponsors>();
         public ICollection<CompetitionRounds> CompetitionRounds { get; set; } = new List<CompetitionRounds>();
         public ICollection<JudgeAssignments> JudgeAssignments { get; set; } = new List<JudgeAssignments>();
+        public ICollection<RegistrationFormFields> RegistrationFormFields { get; set; } = new List<RegistrationFormFields>();
     }
 }
 

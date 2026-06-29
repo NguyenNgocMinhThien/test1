@@ -569,6 +569,13 @@
                                         }
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
+                                            <a class="dropdown-item" href="/Organizer/Edit/@comp.CompetitionId"
+                                               onclick="sessionStorage.setItem('editCompetitionTab_@comp.CompetitionId','#tab-form')">
+                                                <i class="bi bi-ui-checks me-2 text-primary"></i>Tạo biểu mẫu đăng ký
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
                                             <button type="button" class="dropdown-item delete-action" onclick="deleteCompetition(@comp.CompetitionId, '@comp.CompetitionName')">
                                                 <i class="bi bi-trash me-2"></i>Xóa cuộc thi
                                             </button>

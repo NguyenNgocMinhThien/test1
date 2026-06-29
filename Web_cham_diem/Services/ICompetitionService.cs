@@ -50,4 +50,11 @@ public interface ICompetitionService
     Task<bool> CreateAndLinkSponsorAsync(int competitionId, SponsorCreateDto dto);
     Task<bool> RemoveSponsorFromCompetitionAsync(int competitionSponsorId, int competitionId);
     Task<bool> UpdateSponsorLinkAsync(int competitionSponsorId, AddSponsorToCompetitionDto dto);
+
+    // ─── Registration Form Fields ───────────────────────────────────────────
+    Task<List<FormFieldReadDto>> GetFormFieldsAsync(int competitionId);
+    Task<(bool ok, string message, int fieldId)> AddFormFieldAsync(int competitionId, FormFieldCreateDto dto);
+    Task<(bool ok, string message)> UpdateFormFieldAsync(int fieldId, int competitionId, FormFieldCreateDto dto);
+    Task<(bool ok, string message)> DeleteFormFieldAsync(int fieldId, int competitionId);
+    Task<(bool ok, string message)> ReorderFormFieldsAsync(int competitionId, List<int> orderedFieldIds);
 }

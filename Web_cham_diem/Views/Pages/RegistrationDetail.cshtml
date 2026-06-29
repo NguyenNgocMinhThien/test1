@@ -823,6 +823,9 @@
                             </div>
                         }
 
+                        @* Trường biểu mẫu tùy chỉnh (render via JS) *@
+                        <div id="dynamicFieldsContainer"></div>
+
                         @* ── Hồ sơ đính kèm hiện tại ─────────────────────── *@
                         @if (files.Any())
                         {
@@ -1089,6 +1092,48 @@
         const saveBtn = document.getElementById('saveEditBtn');
         if (!form) return;
 
+        // Validate required dynamic fields
+        let dfValid = true;
+        form.querySelectorAll('[data-df-required="true"]').forEach(wrapper => {
+            const fieldId   = wrapper.dataset.dfId;
+            const fieldType = wrapper.dataset.dfType;
+            const label     = wrapper.dataset.dfLabel;
+            const errEl     = document.getElementById(`edit-df-err-${fieldId}`);
+            wrapper.querySelectorAll('input:not([type=hidden]), textarea, select')
+                   .forEach(el => el.classList.remove('is-invalid'));
+            if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+            let empty = false;
+            let targetEl = null;
+            if (fieldType === 'File') {
+                targetEl = wrapper.querySelector(`[name="df_file_${fieldId}"]`);
+                // File bắt buộc chỉ cần check nếu chưa có file cũ (server xử lý)
+                empty = targetEl && targetEl.files.length === 0 && !wrapper.querySelector('.bi-file-earmark');
+            } else if (fieldType === 'Checkbox') {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"][type="checkbox"]`);
+                empty = !targetEl || !targetEl.checked;
+            } else {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"]`);
+                empty = !targetEl || !targetEl.value.trim();
+            }
+
+            if (empty) {
+                dfValid = false;
+                if (targetEl) targetEl.classList.add('is-invalid');
+                if (errEl) {
+                    errEl.textContent = fieldType === 'Checkbox'
+                        ? `Vui lòng xác nhận "${label}".`
+                        : `"${label}" là trường bắt buộc.`;
+                    errEl.style.display = 'block';
+                }
+            }
+        });
+        if (!dfValid) {
+            const first = form.querySelector('.is-invalid');
+            if (first) first.closest('[data-df-id]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
         alertEl.classList.add('d-none');
         alertEl.textContent = '';
         saveBtn.disabled = true;
@@ -1162,6 +1207,115 @@
         } catch {
             msgEl.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
         }
+    }
+
+    // ── CUSTOM FIELDS DYNAMIC LOADING ────────────────────────────────────────
+
+    const COMP_ID_FOR_FIELDS = @Model.CompetitionId;
+
+    // Giá trị đã lưu của thí sinh (key = fieldId)
+    const EXISTING_FIELD_VALS = @Html.Raw(
+        System.Text.Json.JsonSerializer.Serialize(
+            Model.FieldValues.ToDictionary(
+                v => v.FieldId,
+                v => new { value = v.Value, fileName = v.FileName }
+            )
+        )
+    );
+
+    // Load fields khi modal mở
+    document.getElementById('editRegModal')?.addEventListener('show.bs.modal', function () {
+        loadCustomEditFields();
+    });
+
+    async function loadCustomEditFields() {
+        const container = document.getElementById('dynamicFieldsContainer');
+        if (!container) return;
+
+        try {
+            const res = await fetch(`/Organizer/GetFormFields?competitionId=${COMP_ID_FOR_FIELDS}`);
+            if (!res.ok) { container.innerHTML = ''; return; }
+            const fields = await res.json();
+            const active = fields.filter(f => f.isActive);
+            if (!active.length) { container.innerHTML = ''; return; }
+
+            let html = '<hr class="my-2"><div class="fw-semibold small text-muted mb-2"><i class="bi bi-ui-checks me-1"></i>Thông tin bổ sung</div>';
+            active.forEach(f => { html += buildEditField(f); });
+            html += '<hr class="my-2">';
+            container.innerHTML = html;
+
+            // Xóa lỗi khi người dùng nhập
+            container.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(el => {
+                el.addEventListener('input', () => clearDfError(el));
+                el.addEventListener('change', () => clearDfError(el));
+            });
+        } catch (e) {
+            container.innerHTML = '';
+        }
+    }
+
+    function clearDfError(el) {
+        el.classList.remove('is-invalid');
+        const wrapper = el.closest('[data-df-id]');
+        if (wrapper) {
+            const errEl = document.getElementById(`edit-df-err-${wrapper.dataset.dfId}`);
+            if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+        }
+    }
+
+    function dfEsc(s) {
+        return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function buildEditField(f) {
+        const ex     = EXISTING_FIELD_VALS[f.fieldId] ?? null;
+        const curVal = ex?.value ?? '';
+        const reqStar = f.isRequired ? '<span class="text-danger">*</span>' : '';
+        const wrapperAttrs = `id="edit-df-wrapper-${f.fieldId}" data-df-id="${f.fieldId}" data-df-required="${f.isRequired}" data-df-label="${dfEsc(f.fieldLabel)}" data-df-type="${f.fieldType}"`;
+
+        let input = '';
+        if (f.fieldType === 'File') {
+            const filePreview = ex?.value ? `
+                <div class="d-flex align-items-center gap-2 p-2 rounded mb-1" style="background:#f8f9fa;border:1px solid #e0e0e0;">
+                    <i class="bi bi-file-earmark text-muted"></i>
+                    <span class="small flex-grow-1">${dfEsc(ex.fileName || '')}</span>
+                    <a href="${dfEsc(ex.value)}" target="_blank" class="btn btn-outline-secondary btn-sm" style="padding:2px 8px;font-size:.75rem;"><i class="bi bi-eye"></i></a>
+                </div>` : '';
+            input = `${filePreview}<input type="file" name="df_file_${f.fieldId}" class="form-control form-control-sm" />
+                     <div class="form-text text-muted">${ex?.value ? 'Để trống để giữ nguyên file cũ' : 'Hỗ trợ mọi định dạng file'}</div>`;
+        } else if (f.fieldType === 'Textarea') {
+            input = `<textarea name="df_${f.fieldId}" class="form-control form-control-sm" rows="3" placeholder="${dfEsc(f.placeholder ?? '')}">${dfEsc(curVal)}</textarea>`;
+        } else if (f.fieldType === 'Select' && f.options) {
+            try {
+                const opts = JSON.parse(f.options);
+                const optsHtml = opts.map(o => `<option value="${dfEsc(o)}"${o === curVal ? ' selected' : ''}>${dfEsc(o)}</option>`).join('');
+                input = `<select name="df_${f.fieldId}" class="form-select form-select-sm"><option value="">-- Chọn --</option>${optsHtml}</select>`;
+            } catch { input = `<input type="text" name="df_${f.fieldId}" class="form-control form-control-sm" value="${dfEsc(curVal)}" />`; }
+        } else if (f.fieldType === 'Checkbox') {
+            input = `<div class="form-check">
+                        <input type="hidden" name="df_${f.fieldId}" value="false" />
+                        <input type="checkbox" name="df_${f.fieldId}" value="true" class="form-check-input" id="edit_df_cb_${f.fieldId}"${curVal === 'true' ? ' checked' : ''} />
+                        <label class="form-check-label small" for="edit_df_cb_${f.fieldId}">${dfEsc(f.placeholder || 'Có')}</label>
+                     </div>`;
+        } else if (f.fieldType === 'Date') {
+            input = `<input type="date" name="df_${f.fieldId}" class="form-control form-control-sm" value="${dfEsc(curVal)}" />`;
+        } else if (f.fieldType === 'Number') {
+            input = `<input type="number" name="df_${f.fieldId}" class="form-control form-control-sm" placeholder="${dfEsc(f.placeholder ?? '')}" value="${dfEsc(curVal)}" />`;
+        } else if (f.fieldType === 'Email') {
+            input = `<input type="email" name="df_${f.fieldId}" class="form-control form-control-sm" placeholder="${dfEsc(f.placeholder ?? '')}" value="${dfEsc(curVal)}" />`;
+        } else {
+            input = `<input type="text" name="df_${f.fieldId}" class="form-control form-control-sm" placeholder="${dfEsc(f.placeholder ?? '')}" value="${dfEsc(curVal)}" />`;
+        }
+
+        const helpText = f.helpText ? `<div class="form-text text-muted">${dfEsc(f.helpText)}</div>` : '';
+
+        return `
+        <div class="mb-3" ${wrapperAttrs}>
+            <label class="form-label fw-semibold small">${dfEsc(f.fieldLabel)} ${reqStar}</label>
+            ${input}
+            <div class="invalid-feedback" id="edit-df-err-${f.fieldId}"></div>
+            ${helpText}
+        </div>`;
     }
 </script>
 }

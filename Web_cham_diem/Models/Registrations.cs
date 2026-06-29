@@ -23,5 +23,6 @@
         public Teams? Team { get; set; }
         public RegistrationRounds? RegistrationRound { get; set; }
         public Users? Advisor { get; set; }
+        public ICollection<RegistrationFieldValues> FieldValues { get; set; } = new List<RegistrationFieldValues>();
     }
 }
