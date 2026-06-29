@@ -193,6 +193,26 @@ namespace Web_cham_diem.Controllers
             catch { /* không làm hỏng luồng chính */ }
         }
 
+        // === CẬP NHẬT LỊCH TRÌNH CHUNG (API) ===
+        [HttpPost]
+        public async Task<IActionResult> UpdateScheduleDates(int competitionId, [FromBody] UpdateScheduleDatesDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _competitionService.UpdateScheduleDatesAsync(competitionId, dto, GetCurrentUserId());
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating schedule dates for competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
+            }
+        }
+
         // === THÊM ĐỢT ĐĂNG KÝ MỚI (API) ===
         [HttpPost]
         public async Task<IActionResult> AddRegistrationRound(int competitionId, DateTime? pendingStartDate, [FromBody] RegistrationRoundCreateDto roundDto)
