@@ -607,6 +607,13 @@
                     </div>
                 </div>
 
+                <!-- Thông tin bổ sung (custom fields) -->
+                <div id="modal-custom-fields" class="d-none">
+                    <hr class="my-3">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-ui-checks me-1"></i>Thông tin bổ sung</h6>
+                    <div id="modal-custom-fields-content"></div>
+                </div>
+
                 <div id="modal-action-area" class="d-none">
                     <hr class="my-3">
                     <h6 class="fw-bold text-dark mb-2">Phản hồi / Nhận xét của BTC</h6>
@@ -685,7 +692,39 @@
         document.getElementById('btn-reject').classList.toggle('d-none', !isPending);
         document.getElementById('btn-supplement').classList.toggle('d-none', !isPending);
 
+        // Reset custom fields
+        document.getElementById('modal-custom-fields').classList.add('d-none');
+        document.getElementById('modal-custom-fields-content').innerHTML =
+            '<div class="text-muted small"><i class="spinner-border spinner-border-sm me-1"></i>Đang tải...</div>';
+
         new bootstrap.Modal(document.getElementById('previewModal')).show();
+
+        // Load custom fields via API
+        fetch(`/Organizer/GetRegistrationDetail?registrationId=${currentRegId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(detail => {
+                if (!detail || !detail.customFieldValues || detail.customFieldValues.length === 0) return;
+                const html = detail.customFieldValues.map(fv => {
+                    let valHtml;
+                    if (fv.fieldType === 'File' && fv.value) {
+                        valHtml = `<a href="${fv.value}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i>${fv.fileName || 'Tải file'}</a>`;
+                    } else if (fv.fieldType === 'Checkbox') {
+                        valHtml = fv.value === 'true'
+                            ? '<span class="badge bg-success">Có</span>'
+                            : '<span class="badge bg-secondary">Không</span>';
+                    } else {
+                        valHtml = `<span class="text-dark">${fv.value || '<em class="text-muted">Không điền</em>'}</span>`;
+                    }
+                    return `<div class="row mb-2">
+                        <div class="col-sm-4 text-muted fw-bold small text-uppercase">${fv.fieldLabel}</div>
+                        <div class="col-sm-8">${valHtml}</div>
+                    </div>`;
+                }).join('');
+                document.getElementById('modal-custom-fields-content').innerHTML = html;
+                document.getElementById('modal-custom-fields').classList.remove('d-none');
+            })
+            .catch(() => {});
     }
 
     // ---- Quick approve ----

@@ -240,6 +240,44 @@ namespace Web_cham_diem.Models.ViewModels
         public bool IsPast => DateTime.UtcNow > EndDate;
     }
 
+    // ─── Registration Form Fields DTOs ──────────────────────────────────────
+
+    public class FormFieldCreateDto
+    {
+        public string FieldLabel { get; set; } = string.Empty;
+        /// <summary>Text | Textarea | Select | Checkbox | File | Date | Number | Email</summary>
+        public string FieldType { get; set; } = "Text";
+        public bool IsRequired { get; set; } = false;
+        public string? Placeholder { get; set; }
+        /// <summary>JSON array của options (chỉ dùng khi FieldType = Select)</summary>
+        public string? Options { get; set; }
+        public string? HelpText { get; set; }
+        public int DisplayOrder { get; set; } = 0;
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class FormFieldReadDto
+    {
+        public int FieldId { get; set; }
+        public string FieldLabel { get; set; } = string.Empty;
+        public string FieldType { get; set; } = "Text";
+        public bool IsRequired { get; set; }
+        public string? Placeholder { get; set; }
+        public string? Options { get; set; }
+        public string? HelpText { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class FormFieldValueDto
+    {
+        public int FieldId { get; set; }
+        public string FieldLabel { get; set; } = string.Empty;
+        public string FieldType { get; set; } = "Text";
+        public string? Value { get; set; }
+        public string? FileName { get; set; }
+    }
+
     public class UpdateCompetitionRoundDto
     {
         public string RoundName { get; set; } = string.Empty;

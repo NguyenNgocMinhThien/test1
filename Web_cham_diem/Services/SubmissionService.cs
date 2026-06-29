@@ -309,26 +309,45 @@ public class SubmissionService : ISubmissionService
         var registration = await _context.Registrations
             .Include(r => r.User)
             .Include(r => r.Team)
+            .Include(r => r.Advisor)
+            .Include(r => r.FieldValues)
+                .ThenInclude(v => v.Field)
             .FirstOrDefaultAsync(r => r.RegistrationId == registrationId);
 
         if (registration == null)
             return null;
 
+        var customValues = registration.FieldValues
+            .Where(v => v.Field.IsActive)
+            .OrderBy(v => v.Field.DisplayOrder)
+            .Select(v => new FormFieldValueDto
+            {
+                FieldId    = v.FieldId,
+                FieldLabel = v.Field.FieldLabel,
+                FieldType  = v.Field.FieldType,
+                Value      = v.Value,
+                FileName   = v.FileName
+            })
+            .ToList();
+
         return new RegistrationDetailDto
         {
-            RegistrationId = registration.RegistrationId,
+            RegistrationId     = registration.RegistrationId,
             RepresentativeName = registration.User.FullName,
-            Email = registration.User.Email,
-            StudentId = registration.User.StudentId,
-            Department = "Công nghệ Thông tin",
-            TeamName = registration.Team?.TeamName ?? registration.User.FullName,
-            Topic = registration.SubmissionDocument ?? "Không có thông tin",
+            Email              = registration.User.Email,
+            StudentId          = registration.User.StudentId,
+            Department         = "Công nghệ Thông tin",
+            TeamName           = registration.Team?.TeamName ?? registration.User.FullName,
+            Topic              = registration.SubmissionDocument ?? "Không có thông tin",
             SubmissionDocument = registration.SubmissionDocument,
-            Status = registration.Status,
-            RegistrationDate = registration.RegistrationDate,
-            ApprovalDate = registration.ApprovalDate,
-            Notes = registration.Notes ?? string.Empty,
-            RegistrationId_FK = registration.RegistrationId
+            Status             = registration.Status,
+            RegistrationDate   = registration.RegistrationDate,
+            ApprovalDate       = registration.ApprovalDate,
+            Notes              = registration.Notes ?? string.Empty,
+            RegistrationId_FK  = registration.RegistrationId,
+            RegistrationType   = registration.RegistrationType,
+            AdvisorName        = registration.Advisor?.FullName,
+            CustomFieldValues  = customValues
         };
     }
 

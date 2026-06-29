@@ -294,6 +294,15 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        // API: Chi tiết hồ sơ đăng ký (dùng cho modal, bao gồm custom fields)
+        [HttpGet]
+        public async Task<IActionResult> GetRegistrationDetail(int registrationId)
+        {
+            var detail = await _submissionService.GetRegistrationDetailAsync(registrationId);
+            if (detail == null) return NotFound();
+            return Json(detail);
+        }
+
         // API: Chi tiết cuộc thi (dùng cho modal)
         [HttpGet]
         public async Task<IActionResult> GetCompetitionDetail(int id)
@@ -1043,6 +1052,91 @@ namespace Web_cham_diem.Controllers
         }
 
         public IActionResult Progress() => View();
+
+        // ====== REGISTRATION FORM FIELDS ======
+
+        [HttpGet]
+        public async Task<IActionResult> GetFormFields(int competitionId)
+        {
+            var fields = await _competitionService.GetFormFieldsAsync(competitionId);
+            return Json(fields);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddFormField(int competitionId, [FromBody] FormFieldCreateDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg, fieldId) = await _competitionService.AddFormFieldAsync(competitionId, dto);
+                return Json(new { success = ok, message = msg, fieldId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding form field to competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateFormField(int fieldId, int competitionId, [FromBody] FormFieldCreateDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _competitionService.UpdateFormFieldAsync(fieldId, competitionId, dto);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating form field {FieldId}", fieldId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteFormField(int fieldId, int competitionId)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                var (ok, msg) = await _competitionService.DeleteFormFieldAsync(fieldId, competitionId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting form field {FieldId}", fieldId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReorderFormFields(int competitionId, [FromBody] List<int> orderedIds)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (orderedIds == null || !orderedIds.Any())
+                    return Json(new { success = false, message = "Danh sách trống." });
+                var (ok, msg) = await _competitionService.ReorderFormFieldsAsync(competitionId, orderedIds);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reordering form fields for competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
     }
 
     // Request DTO cho upload documents

@@ -52,6 +52,9 @@ namespace Web_cham_diem.Models.ViewModels
 
         [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn cần xác nhận thông tin chính xác.")]
         public bool ConfirmInformation { get; set; }
+
+        /// <summary>Danh sách trường tùy chỉnh BTC định nghĩa — chỉ dùng để render, không bind</summary>
+        public List<FormFieldReadDto> CustomFormFields { get; set; } = new();
     }
 
     public class RegistrationMemberDto
