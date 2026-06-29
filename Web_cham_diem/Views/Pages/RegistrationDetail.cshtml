@@ -946,7 +946,7 @@
                                             <option value="">-- Chọn --</option>
                                             @foreach (var opt in efOpts)
                                             {
-                                                <option value="@opt" @@(opt == efCurVal ? "selected" : "")>@opt</option>
+                                                <option value="@opt" selected="@(opt == efCurVal)">@opt</option>
                                             }
                                         </select>
                                     }

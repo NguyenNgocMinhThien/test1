@@ -897,6 +897,57 @@ public class CompetitionService : ICompetitionService
         }
     }
 
+    // ===== UPDATE SCHEDULE DATES (AJAX) =====
+
+    public async Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId)
+    {
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+
+        if (competition == null) return (false, "Cuộc thi không tìm thấy.");
+
+        var now        = DateTime.UtcNow;
+        var hasStarted = now >= competition.StartDate;
+
+        if (hasStarted)
+            return (false, "Cuộc thi đã bắt đầu — không thể thay đổi ngày.");
+
+        var startDate          = ToUtc(dto.StartDate);
+        var endDate            = ToUtc(dto.EndDate);
+        var submissionDeadline = ToUtc(dto.SubmissionDeadline);
+
+        if (endDate <= startDate)
+            return (false, "Ngày kết thúc phải sau ngày bắt đầu.");
+        if (submissionDeadline > endDate)
+            return (false, "Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
+
+        foreach (var r in competition.RegistrationRounds)
+        {
+            if (r.EndDate > startDate)
+                return (false, $"Đợt \"{r.RoundName}\" kết thúc {r.EndDate:dd/MM/yyyy HH:mm} — phải trước ngày bắt đầu mới ({startDate:dd/MM/yyyy HH:mm}).");
+        }
+
+        var hasRegistrations = await _context.Registrations.AnyAsync(r => r.CompetitionId == competitionId);
+        if (hasRegistrations)
+        {
+            var currentRegCount = await _context.Registrations.CountAsync(r => r.CompetitionId == competitionId);
+            if (dto.MaxParticipants < currentRegCount)
+                return (false, $"Không thể giảm số lượng tối đa xuống {dto.MaxParticipants} khi đã có {currentRegCount} người đăng ký.");
+        }
+
+        competition.StartDate          = startDate;
+        competition.EndDate            = endDate;
+        competition.SubmissionDeadline = submissionDeadline;
+        competition.MaxParticipants    = dto.MaxParticipants;
+        if (dto.MaxTeamSize.HasValue && competition.IsTeamBased)
+            competition.MaxTeamSize = dto.MaxTeamSize.Value;
+        competition.UpdatedAt = now;
+
+        await _context.SaveChangesAsync();
+        return (true, "Đã lưu lịch trình thành công!");
+    }
+
     // ===== ADD REGISTRATION ROUND =====
 
     public async Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto, DateTime? pendingStartDate = null)

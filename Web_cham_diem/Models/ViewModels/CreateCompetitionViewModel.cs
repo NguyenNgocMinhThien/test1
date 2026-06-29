@@ -213,6 +213,15 @@ namespace Web_cham_diem.Models.ViewModels
         public DateTime EndDate { get; set; }
     }
 
+    public class UpdateScheduleDatesDto
+    {
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public DateTime SubmissionDeadline { get; set; }
+        public int MaxParticipants { get; set; }
+        public int? MaxTeamSize { get; set; }
+    }
+
     public class CompetitionRoundReadDto
     {
         public int RoundId { get; set; }

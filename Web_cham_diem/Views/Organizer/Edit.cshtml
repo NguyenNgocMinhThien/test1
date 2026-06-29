@@ -291,6 +291,15 @@
                                    value="@Model.MaxTeamSize" class="form-control" min="2"
                                    @(Model.IsTeamBased ? "" : "disabled") />
                         </div>
+                        @if (canEditDates)
+                        {
+                            <div class="col-12 d-flex align-items-center gap-3">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveScheduleDates()">
+                                    <i class="bi bi-check2 me-1"></i>Lưu lịch trình
+                                </button>
+                                <span id="scheduleDatesMsg" class="small"></span>
+                            </div>
+                        }
                     </div>
 
                     <hr class="my-4" />
@@ -1190,6 +1199,54 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     const CID = @cid;
+
+    // ═══════════════════════════════════ SCHEDULE DATES ═════════════════════════
+
+    async function saveScheduleDates() {
+        const startVal = document.getElementById('StartDate')?.value;
+        const endVal   = document.getElementById('EndDate')?.value;
+        const subVal   = document.getElementById('SubmissionDeadline')?.value;
+        const maxP     = document.getElementById('MaxParticipants')?.value;
+        const maxT     = document.getElementById('MaxTeamSize')?.value;
+        const msg      = document.getElementById('scheduleDatesMsg');
+
+        if (!startVal || !endVal || !subVal) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ các ngày.</span>';
+            return;
+        }
+        if (new Date(endVal) <= new Date(startVal)) {
+            msg.innerHTML = '<span class="text-danger">Ngày kết thúc phải sau ngày bắt đầu.</span>';
+            return;
+        }
+        if (new Date(subVal) > new Date(endVal)) {
+            msg.innerHTML = '<span class="text-danger">Hạn nộp bài phải trước hoặc bằng ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/Organizer/UpdateScheduleDates?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({
+                    startDate:          toUtcIso(startVal),
+                    endDate:            toUtcIso(endVal),
+                    submissionDeadline: toUtcIso(subVal),
+                    maxParticipants:    parseInt(maxP) || 1,
+                    maxTeamSize:        maxT ? parseInt(maxT) : null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ ' + data.message + '</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 3000);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
+        }
+    }
 
     // ═══════════════════════════════════ PER-ROUND CRITERIA ════════════════════
 
