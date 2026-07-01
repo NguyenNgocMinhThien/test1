@@ -1,7 +1,10 @@
 @model Web_cham_diem.Models.ViewModels.UserProfileViewModel
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = User.IsInRole("Admin") ? "~/Views/Shared/_AdminLayout.cshtml"
+           : User.IsInRole("Organizer") ? "~/Views/Shared/_OrganizerLayout.cshtml"
+           : User.IsInRole("Judge") ? "~/Views/Shared/_JudgeLayout.cshtml"
+           : "~/Views/Shared/_Layout.cshtml";
 
     string RoleLabel(string r) => r switch
     {
