@@ -41,16 +41,13 @@ builder.Services.AddScoped<IGradingService, GradingService>();
 builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddScoped<INotificationsService, NotificationsService>();
 
-
-
-// Add Authentication with Cookie
 // Add Authentication with Cookie
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.LoginPath = "/Login";
-        options.LogoutPath = "/Login/Logout";
-        options.AccessDeniedPath = "/Access-Denied";
+        options.LoginPath = "/Account/Login"; // 🌟 SỬA TẠI ĐÂY: Khớp chính xác với Controller Account của bạn
+        options.LogoutPath = "/Account/Logout"; // 🌟 SỬA TẠI ĐÂY: Khớp với hàm Logout trong AccountController
+        options.AccessDeniedPath = "/Home/Error"; // Hoặc trang báo lỗi quyền của bạn
         options.Cookie.Name = "AuthCookie";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
@@ -70,13 +67,15 @@ builder.Services.AddLogging(config =>
 });
 
 var app = builder.Build();
+
+// Chỉ chạy một khối Seed mẫu này để đảm bảo dữ liệu không bị xung đột luồng
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        // Gọi hàm Seeder của bạn và bắt nó đợi (Wait) để tránh xung đột luồng
-        Web_cham_diem.Data.DbSeeder.SeedAsync(app).Wait();
+        // Khởi tạo dữ liệu ban đầu an toàn thông qua Scope
+        await Web_cham_diem.Data.DbSeeder.SeedAsync(app);
     }
     catch (Exception ex)
     {
@@ -117,6 +116,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-await DbSeeder.SeedAsync(app);
+// 🌟 ĐÃ XÓA dòng trùng lặp "await DbSeeder.SeedAsync(app);" sai vị trí ở cuối tệp gây crash ứng dụng.
 
 app.Run();

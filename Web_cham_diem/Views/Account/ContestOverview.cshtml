@@ -122,6 +122,29 @@
         .quick-icon {
             font-size: 1.2rem;
         }
+
+        /* --- MAIN TABLE HIGHLIGHT --- */
+        .main-table-panel {
+            border: 1px solid var(--border-color);
+            border-top: 4px solid #0d6efd;
+            box-shadow: 0 6px 20px rgba(13, 110, 253, 0.08);
+        }
+
+            .main-table-panel .panel-title {
+                font-size: 1.25rem;
+                margin-bottom: 24px;
+            }
+
+            .main-table-panel .enterprise-table td {
+                font-size: 0.95rem;
+                padding-top: 14px;
+                padding-bottom: 14px;
+            }
+
+            .main-table-panel .enterprise-table th {
+                font-size: 0.85rem;
+                padding-bottom: 12px;
+            }
     </style>
 }
 
@@ -231,30 +254,11 @@
             </div>
         </div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-lg-8">
-                <div class="content-panel">
-                    <h5 class="panel-title"><i class="bi bi-bar-chart"></i> Phân bổ số lượng cuộc thi (Thống kê 6 tháng)</h5>
-                    <div style="height: 280px;">
-                        <canvas id="monthlyCompChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="content-panel">
-                    <h5 class="panel-title"><i class="bi bi-pie-chart"></i> Lĩnh vực phổ biến</h5>
-                    <div style="height: 280px; display:flex; justify-content:center;">
-                        <canvas id="fieldChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="content-panel">
+            <div class="col-lg-9">
+                <div class="content-panel main-table-panel">
                     <h5 class="panel-title d-flex justify-content-between">
-                        <span><i class="bi bi-table"></i> Giám sát Tiến độ Cuộc thi</span>
+                        <span><i class="bi bi-table"></i> Danh sách Cuộc thi</span>
                     </h5>
                     <div class="table-responsive">
                         <table class="table enterprise-table align-middle">
@@ -277,7 +281,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <div class="content-panel bg-light border-0">
                     <h5 class="panel-title"><i class="bi bi-lightning-charge"></i> Cảnh báo hệ thống</h5>
                     <div class="mt-3" id="alertsContainer">
@@ -332,7 +336,6 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
@@ -371,11 +374,6 @@
     </script>
 
     <script>
-        Chart.defaults.font.family = "'Inter', sans-serif";
-
-        let monthlyChartInstance = null;
-        let fieldChartInstance = null;
-
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("filterSearch").addEventListener("input", fetchRealtimeOverviewData);
             document.getElementById("filterStatus").addEventListener("change", fetchRealtimeOverviewData);
@@ -404,8 +402,6 @@
                         document.getElementById("statTotalRegistrations").innerText = data.stats.totalRegistrations;
                         document.getElementById("statTotalSubmissions").innerText = data.stats.totalSubmissions;
 
-                        renderMonthlyChart(data.monthlyData);
-                        renderFieldChart(data.fieldData);
                         renderContestTable(data.contests);
                         generateSmartAlerts(data.contests);
                     } else {
@@ -413,78 +409,6 @@
                     }
                 })
                 .catch(error => console.error("Lỗi kết nối API tổng quan:", error));
-        }
-
-        function renderMonthlyChart(monthlyData) {
-            const ctx = document.getElementById('monthlyCompChart').getContext('2d');
-            if (monthlyChartInstance) monthlyChartInstance.destroy();
-
-            monthlyChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: monthlyData.labels,
-                    datasets: [
-                        {
-                            label: 'Số cuộc thi mở mới',
-                            data: monthlyData.newContests,
-                            backgroundColor: '#0d6efd',
-                            borderRadius: 4,
-                            barPercentage: 0.5
-                        },
-                        {
-                            label: 'Lượt nộp bài thực tế',
-                            type: 'line',
-                            data: monthlyData.submissions,
-                            borderColor: '#f59e0b',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            borderWidth: 2,
-                            fill: false
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-        }
-
-        function renderFieldChart(fieldData) {
-            const ctx = document.getElementById('fieldChart').getContext('2d');
-            if (fieldChartInstance) fieldChartInstance.destroy();
-
-            const labels = fieldData.labels.length ? fieldData.labels : ['Chưa có dữ liệu'];
-            const dataValues = fieldData.data.length ? fieldData.data : [1];
-            const bgColors = fieldData.labels.length ? ['#0d6efd', '#22c55e', '#f59e0b', '#a855f7', '#ec4899'] : ['#e2e8f0'];
-
-            fieldChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dataValues,
-                        backgroundColor: bgColors,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { boxWidth: 12, padding: 15 }
-                        }
-                    }
-                }
-            });
         }
 
         function renderContestTable(contests) {

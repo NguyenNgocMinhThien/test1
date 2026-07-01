@@ -104,7 +104,6 @@
 
 <div class="notification-page py-4">
     <div class="container-fluid">
-        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h3 class="fw-bold mb-1 text-dark">Thông báo & Cảnh báo Hệ thống</h3>
@@ -115,14 +114,13 @@
             </button>
         </div>
 
-        <!-- 1. Statistics Cards -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="stat-card-noti">
                     <div class="icon-circle bg-primary bg-opacity-10 text-primary fs-4"><i class="bi bi-envelope-check"></i></div>
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Broadcast đã gửi</div>
-                        <h4 class="fw-bold mb-0">1,245</h4>
+                        <h4 class="fw-bold mb-0">@(ViewData["TotalBroadcasts"] ?? "0")</h4>
                     </div>
                 </div>
             </div>
@@ -131,7 +129,7 @@
                     <div class="icon-circle bg-info bg-opacity-10 text-info fs-4"><i class="bi bi-tools"></i></div>
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Bảo trì & Cập nhật</div>
-                        <h4 class="fw-bold mb-0">12</h4>
+                        <h4 class="fw-bold mb-0">@(ViewData["TotalMaintenance"] ?? "0")</h4>
                     </div>
                 </div>
             </div>
@@ -140,7 +138,7 @@
                     <div class="icon-circle bg-danger bg-opacity-10 text-danger fs-4"><i class="bi bi-shield-exclamation"></i></div>
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Cảnh báo Bảo mật</div>
-                        <h4 class="fw-bold mb-0 text-danger">3</h4>
+                        <h4 class="fw-bold mb-0 text-danger">@(ViewData["SecurityAlerts"] ?? "0")</h4>
                     </div>
                 </div>
             </div>
@@ -149,14 +147,13 @@
                     <div class="icon-circle bg-success bg-opacity-10 text-success fs-4"><i class="bi bi-eye"></i></div>
                     <div>
                         <div class="text-muted small fw-bold text-uppercase">Tỷ lệ đã đọc</div>
-                        <h4 class="fw-bold mb-0">92%</h4>
+                        <h4 class="fw-bold mb-0">@(ViewData["ReadRate"] ?? "0%")</h4>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
-            <!-- Left Column: Notification List & History -->
             <div class="col-lg-8">
                 <ul class="nav nav-tabs nav-tabs-custom" id="notiTabs" role="tablist">
                     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#history">Lịch sử Broadcast</button></li>
@@ -165,7 +162,6 @@
 
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="history">
-                        <!-- Filters -->
                         <div class="d-flex gap-2 mb-3">
                             <input type="text" class="form-control form-control-sm w-50" placeholder="Tìm kiếm nội dung thông báo...">
                             <select class="form-select form-select-sm w-25">
@@ -176,74 +172,49 @@
                             <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-filter"></i> Lọc</button>
                         </div>
 
-                        <!-- Danh sách Noti -->
-                        <div class="noti-item">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="priority-indicator bg-danger"></span>
-                                    <h6 class="mb-0 fw-bold">Yêu cầu cập nhật mật khẩu định kỳ</h6>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">High Priority</span>
+                        @if (Model != null && ((IEnumerable<dynamic>)Model).Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <div class="noti-item">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="priority-indicator @(item.Priority == "high" ? "bg-danger" : "bg-primary")"></span>
+                                            <h6 class="mb-0 fw-bold">@item.Title</h6>
+                                            @if (item.Priority == "high")
+                                            {
+                                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">High Priority</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted">@item.CreatedAt.ToString("HH:mm tt - dd/MM/yyyy")</small>
+                                    </div>
+                                    <p class="text-muted small mb-3">@item.Content</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="small fw-bold text-muted"><i class="bi bi-people"></i> Gửi đến: @item.TargetAudience</div>
+                                        <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: @(item.IsRead == true ? "100%" : "0%")</div>
+                                    </div>
                                 </div>
-                                <small class="text-muted">10:15 AM - Hôm nay</small>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center p-5 text-muted bg-white border rounded-3">
+                                <i class="bi bi-bell-slash fs-1 text-secondary"></i>
+                                <p class="mt-2 mb-0 fw-bold text-secondary">Chưa có thông báo nào được tạo.</p>
+                                <small class="text-muted">Nhấp vào nút "Gửi Broadcast" ở trên để tạo thông báo đầu tiên của bạn.</small>
                             </div>
-                            <p class="text-muted small mb-3">Hệ thống yêu cầu toàn bộ tài khoản Admin và Ban tổ chức phải tiến hành thay đổi mật khẩu định kỳ 90 ngày để đảm bảo an ninh mạng. Vui lòng thực hiện trước ngày 30/11/2026.</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="small fw-bold text-muted"><i class="bi bi-people"></i> Gửi đến: Admin, Ban tổ chức</div>
-                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 85%</div>
-                            </div>
-                        </div>
-
-                        <div class="noti-item">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="priority-indicator bg-info"></span>
-                                    <h6 class="mb-0 fw-bold">Bảo trì máy chủ Database định kỳ</h6>
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">System</span>
-                                </div>
-                                <small class="text-muted">10/11/2026</small>
-                            </div>
-                            <p class="text-muted small mb-3">Máy chủ sẽ tạm ngưng kết nối từ 01:00 AM đến 03:00 AM Chủ nhật này để tiến hành nâng cấp SQL Server. Trong thời gian này sinh viên không thể nộp bài.</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="small fw-bold text-muted"><i class="bi bi-globe"></i> Gửi đến: Toàn hệ thống</div>
-                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 98%</div>
-                            </div>
-                        </div>
-
-                        <div class="noti-item">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="priority-indicator bg-primary"></span>
-                                    <h6 class="mb-0 fw-bold">Thông báo ra mắt tính năng AI Anti-cheat</h6>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2" style="font-size: 0.65rem;">Release</span>
-                                </div>
-                                <small class="text-muted">05/11/2026</small>
-                            </div>
-                            <p class="text-muted small mb-3">Bắt đầu từ học kỳ 2 (2025-2026), hệ thống sẽ tích hợp module AI tự động quét mã nguồn và văn bản để phát hiện gian lận trong các bài thi nộp trực tuyến.</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="small fw-bold text-muted"><i class="bi bi-person-badge"></i> Gửi đến: Ban tổ chức, Giám khảo</div>
-                                <div class="small"><i class="bi bi-check-all text-primary"></i> Đã đọc: 100%</div>
-                            </div>
-                        </div>
-
-                        <!-- Pagination -->
-                        <ul class="pagination pagination-sm justify-content-end mt-3">
-                            <li class="page-item disabled"><a class="page-link" href="#">Trang trước</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">Tiếp</a></li>
-                        </ul>
+                        }
                     </div>
 
                     <div class="tab-pane fade" id="maintenance">
-                        <div class="text-center p-5 text-muted">
+                        <div class="text-center p-5 text-muted bg-white border rounded-3">
                             <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-2">Không có kế hoạch bảo trì nào trong vòng 30 ngày tới.</p>
+                            <p class="mt-2 mb-0">Không có kế hoạch bảo trì nào trong vòng 30 ngày tới.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: System Alerts -->
             <div class="col-lg-4">
                 <div class="alerts-panel shadow-sm">
                     <h5 class="fw-bold mb-4" style="color: var(--navy-blue); font-size: 1.05rem;">
@@ -284,7 +255,6 @@
     </div>
 </div>
 
-<!-- Modal Compose System Notification -->
 <div class="modal fade" id="composeModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0" style="border-radius: 12px;">
