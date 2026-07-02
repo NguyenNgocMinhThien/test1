@@ -87,6 +87,49 @@
         border-radius:6px; padding:7px 14px; cursor:pointer; font-weight:600;
         font-size:.83rem; transition:all .2s; width:100%; margin-top:6px; }
     .round-add-criteria-btn:hover { background:#d4f1d4; }
+    /* Form Preview Builder */
+    .fp-wrapper { background:#fff; border:1px solid #e0e0e0; border-radius:12px;
+        padding:28px 32px; max-width:680px; }
+    .fp-form-title { font-size:1.1rem; font-weight:700; color:#1a1a2e; margin-bottom:20px; }
+    .fp-divider { border-top:1px solid #eee; margin:18px 0; }
+    .fp-fixed-field { position:relative; }
+    .fp-field-label { font-weight:600; font-size:.88rem; color:#374151; margin-bottom:4px;
+        display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .fp-lock { font-size:.7rem; font-weight:600; color:#9ca3af; background:#f3f4f6;
+        border-radius:4px; padding:1px 6px; display:inline-flex; align-items:center; gap:3px; }
+    .fp-add-btn-area { padding:10px 0; }
+    .fp-add-btn { width:100%; border:2px dashed #d1d5db; border-radius:8px;
+        background:#f9fafb; color:#6b7280; padding:10px; font-size:.88rem; font-weight:600;
+        cursor:pointer; transition:all .2s; }
+    .fp-add-btn:hover { border-color:var(--organizer-accent); color:var(--organizer-accent);
+        background:#f0fdf4; }
+    /* Custom field row within preview */
+    .fp-custom-field { position:relative; margin-bottom:16px; }
+    .fp-custom-field-inner { border:1.5px solid #e5e7eb; border-radius:8px;
+        padding:12px 14px; background:#fff; transition:border-color .15s, box-shadow .15s; }
+    .fp-custom-field:hover .fp-custom-field-inner { border-color:var(--organizer-accent);
+        box-shadow:0 0 0 3px rgba(34,197,94,.08); }
+    .fp-custom-header { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .fp-drag-handle { cursor:grab; color:#d1d5db; font-size:1.1rem; }
+    .fp-drag-handle:active { cursor:grabbing; }
+    .fp-custom-label { font-weight:600; font-size:.88rem; color:#111827; flex:1; }
+    .fp-custom-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+    .fp-custom-field:hover .fp-custom-actions { opacity:1; }
+    .fp-action-btn { border:none; border-radius:6px; padding:3px 8px; font-size:.78rem;
+        cursor:pointer; transition:background .15s; }
+    .fp-action-edit { background:#eff6ff; color:#2563eb; }
+    .fp-action-edit:hover { background:#dbeafe; }
+    .fp-action-del { background:#fef2f2; color:#dc2626; }
+    .fp-action-del:hover { background:#fee2e2; }
+    .fp-type-chip { font-size:.68rem; font-weight:700; padding:1px 7px;
+        border-radius:10px; white-space:nowrap; }
+    .ft-Text,.ft-Email,.ft-Number { background:#dbeafe; color:#1e40af; }
+    .ft-Textarea { background:#ede9fe; color:#5b21b6; }
+    .ft-Select { background:#dcfce7; color:#166534; }
+    .ft-Checkbox { background:#fef9c3; color:#854d0e; }
+    .ft-File { background:#fee2e2; color:#991b1b; }
+    .ft-Date { background:#d1fae5; color:#065f46; }
+    .sortable-ghost { opacity:.35; }
 </style>
 }
 
@@ -157,6 +200,7 @@
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-criteria"><i class="bi bi-bar-chart me-1"></i>Tiêu chí @Html.Raw(!canEditCriteria ? "<span class=\"state-locked\">🔒</span>" : "")</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-media"><i class="bi bi-images me-1"></i>Ảnh & Tài liệu</a></li>
                 <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-sponsors"><i class="bi bi-building me-1"></i>Nhà tài trợ</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-form" id="formFieldsTab"><i class="bi bi-ui-checks me-1"></i>Biểu mẫu</a></li>
             </ul>
 
             <div class="tab-content">
@@ -247,6 +291,15 @@
                                    value="@Model.MaxTeamSize" class="form-control" min="2"
                                    @(Model.IsTeamBased ? "" : "disabled") />
                         </div>
+                        @if (canEditDates)
+                        {
+                            <div class="col-12 d-flex align-items-center gap-3">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveScheduleDates()">
+                                    <i class="bi bi-check2 me-1"></i>Lưu lịch trình
+                                </button>
+                                <span id="scheduleDatesMsg" class="small"></span>
+                            </div>
+                        }
                     </div>
 
                     <hr class="my-4" />
@@ -263,20 +316,46 @@
                     }
                     @foreach (var r in Model.ExistingRounds)
                     {
+                        var rSStart = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("yyyy-MM-ddTHH:mm");
+                        var rSEnd   = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   seTz).ToString("yyyy-MM-ddTHH:mm");
                         <div class="round-item" id="round-@r.RoundId" style="@(canEditRounds ? "" : "opacity:.7")">
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Tên đợt</label>
-                                <div class="fw-semibold">@r.RoundName</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="text" class="form-control form-control-sm"
+                                           id="rName-@r.RoundId" value="@r.RoundName">
+                                }
+                                else
+                                {
+                                    <div class="fw-semibold">@r.RoundName</div>
+                                }
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Bắt đầu</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                           id="rStart-@r.RoundId" value="@rSStart">
+                                }
+                                else
+                                {
+                                    <div>@TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                }
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:.82rem;">Kết thúc</label>
-                                <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (canEditRounds)
+                                {
+                                    <input type="datetime-local" class="form-control form-control-sm"
+                                           id="rEnd-@r.RoundId" value="@rSEnd">
+                                }
+                                else
+                                {
+                                    <div>@TimeZoneInfo.ConvertTimeFromUtc(r.EndDate, seTz).ToString("dd/MM/yyyy HH:mm")</div>
+                                }
                             </div>
-                            <div class="d-flex align-items-end gap-2">
+                            <div class="d-flex align-items-end gap-2 flex-wrap">
                                 @if (r.RegistrationCount > 0)
                                 {
                                     <span class="badge bg-success">@r.RegistrationCount đăng ký</span>
@@ -284,6 +363,13 @@
                                 else if (r.IsPast)
                                 {
                                     <span class="badge bg-secondary">Đã qua</span>
+                                }
+                                @if (canEditRounds)
+                                {
+                                    <button type="button" class="btn btn-primary btn-sm"
+                                            onclick="updateRoundAjax(@r.RoundId)" title="Lưu thay đổi">
+                                        <i class="bi bi-check2"></i>
+                                    </button>
                                 }
                                 @if (canEditRounds && r.RegistrationCount == 0)
                                 {
@@ -294,6 +380,7 @@
                                 }
                             </div>
                         </div>
+                        <div class="small px-1 mb-1" id="roundEditMsg-@r.RoundId"></div>
                     }
 
                     @if (canEditRounds)
@@ -340,13 +427,15 @@
                     <div id="compRoundList">
                         @foreach (var r in Model.ExistingCompetitionRounds)
                         {
-                            var rStart  = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
-                            var rEnd    = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
-                            var rSubDL  = r.SubmissionDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.SubmissionDeadline.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
-                            var rMtTime = r.MeetingTime.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.MeetingTime.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            var rStart        = TimeZoneInfo.ConvertTimeFromUtc(r.StartDate, tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rEnd          = TimeZoneInfo.ConvertTimeFromUtc(r.EndDate,   tz).ToString("yyyy-MM-ddTHH:mm");
+                            var rSubDL        = r.SubmissionDeadline.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.SubmissionDeadline.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
+                            var rMtTime       = r.MeetingTime.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(r.MeetingTime.Value, tz).ToString("yyyy-MM-ddTHH:mm") : "";
                             string badgeClass = r.IsActive ? "bg-success" : (r.IsPast ? "bg-secondary" : "bg-warning text-dark");
                             string badgeText  = r.IsActive ? "Đang diễn ra" : (r.IsPast ? "Đã qua" : "Sắp diễn ra");
-                            var totalW = r.ScoringCriteria.Any() ? (double)r.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+                            var totalW        = r.ScoringCriteria.Any() ? (double)r.ScoringCriteria.Sum(c => c.Weight) * 100 : 0;
+                            string onlineDisplay  = r.IsOnline ? "display:block" : "display:none";
+                            string offlineDisplay = r.IsOnline ? "display:none"  : "display:block";
 
                             <div class="comp-round-card comp-round-row" id="cr-@r.RoundId">
                                 <!-- Header -->
@@ -432,7 +521,7 @@
                                                 <label class="form-check-label" style="font-size:.88rem; font-weight:600;">Online</label>
                                             </div>
                                         </div>
-                                        <div class="round-online-section" style="@(r.IsOnline ? "" : "display:none;")">
+                                        <div class="round-online-section" style="@onlineDisplay">
                                             <div class="row g-2">
                                                 <div class="col-md-6">
                                                     <label class="form-label" style="font-size:.82rem;">🔗 Link tham dự</label>
@@ -447,7 +536,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="round-offline-section" style="@(r.IsOnline ? "display:none;" : "")">
+                                        <div class="round-offline-section" style="@offlineDisplay">
                                             <div class="row g-2">
                                                 <div class="col-12">
                                                     <label class="form-label" style="font-size:.82rem;">🏢 Địa điểm thi (offline)</label>
@@ -805,6 +894,107 @@
                     }
                 </div>
 
+                <!-- ── TAB 6: Biểu mẫu đăng ký ── -->
+                <div class="tab-pane fade" id="tab-form">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="section-title mb-1"><i class="bi bi-ui-checks me-1"></i>Xem trước biểu mẫu đăng ký</div>
+                            <div class="text-muted" style="font-size:.82rem;">Trường cố định không thể xóa. Kéo thả <i class="bi bi-grip-vertical"></i> để sắp xếp trường tùy chỉnh.</div>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" onclick="openAddFieldModal()">
+                            <i class="bi bi-plus-circle me-1"></i>Thêm trường
+                        </button>
+                    </div>
+
+                    <!-- Form preview wrapper -->
+                    <div class="fp-wrapper">
+                        <h6 class="fp-form-title">Form đăng ký tham gia</h6>
+
+                        <!-- Trường cố định: Thông tin cá nhân -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="fp-fixed-field">
+                                    <div class="fp-field-label">Họ tên <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                                    <input class="form-control form-control-sm" disabled placeholder="Nguyễn Văn A">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="fp-fixed-field">
+                                    <div class="fp-field-label">MSSV <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                                    <input class="form-control form-control-sm" disabled placeholder="SV001">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="fp-fixed-field">
+                                    <div class="fp-field-label">Email <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                                    <input class="form-control form-control-sm" disabled placeholder="example@email.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fp-divider"></div>
+
+                        <!-- Trường cố định: Hình thức đăng ký -->
+                        <div class="fp-fixed-field mb-3">
+                            <div class="fp-field-label">Hình thức đăng ký <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                            <div class="d-flex gap-3 mt-1" style="opacity:.6;pointer-events:none;">
+                                <div class="form-check"><input class="form-check-input" type="radio" checked disabled><label class="form-check-label">Cá nhân</label></div>
+                                <div class="form-check"><input class="form-check-input" type="radio" disabled><label class="form-check-label">Đội nhóm</label></div>
+                            </div>
+                        </div>
+
+                        <!-- Trường cố định: Giảng viên hướng dẫn -->
+                        <div class="fp-fixed-field mb-3">
+                            <div class="fp-field-label">Giảng viên hướng dẫn <small class="text-muted">(không bắt buộc)</small> <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                            <input class="form-control form-control-sm" disabled placeholder="Nhập MSSV / mã GV của giảng viên">
+                        </div>
+
+                        <!-- Trường cố định: Ghi chú -->
+                        <div class="fp-fixed-field mb-3">
+                            <div class="fp-field-label">Ghi chú <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                            <textarea class="form-control form-control-sm" rows="2" disabled placeholder="Ghi chú thêm (nếu có)"></textarea>
+                        </div>
+
+                        <div class="fp-divider"></div>
+
+                        <!-- ── Khu vực trường tùy chỉnh ── -->
+                        <div id="fpCustomSection">
+                            <div id="fpCustomFields">
+                                <!-- Rendered by JS -->
+                            </div>
+                            <!-- Nút thêm trường nằm ngay dưới custom fields -->
+                            <div class="fp-add-btn-area" id="fpAddBtnArea">
+                                <button type="button" class="fp-add-btn" onclick="openAddFieldModal()">
+                                    <i class="bi bi-plus-circle me-2"></i>Thêm trường tùy chỉnh
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="fp-divider"></div>
+
+                        <!-- Trường cố định: Hồ sơ đăng ký -->
+                        <div class="fp-fixed-field mb-3">
+                            <div class="fp-field-label mb-2">Hồ sơ đăng ký <span class="fp-lock"><i class="bi bi-lock-fill"></i> Cố định</span></div>
+                            <div class="row g-2" style="opacity:.6;pointer-events:none;">
+                                <div class="col-md-4"><label class="form-label small fw-semibold">CV</label><input type="file" class="form-control form-control-sm" disabled></div>
+                                <div class="col-md-4"><label class="form-label small fw-semibold">Proposal</label><input type="file" class="form-control form-control-sm" disabled></div>
+                                <div class="col-md-4"><label class="form-label small fw-semibold">File mô tả</label><input type="file" class="form-control form-control-sm" disabled></div>
+                            </div>
+                        </div>
+
+                        <!-- Trường cố định: Xác nhận -->
+                        <div class="fp-fixed-field mb-3" style="opacity:.6;pointer-events:none;">
+                            <div class="form-check"><input class="form-check-input" type="checkbox" disabled><label class="form-check-label small">Tôi đồng ý với thể lệ cuộc thi <span class="fp-lock ms-2"><i class="bi bi-lock-fill"></i> Cố định</span></label></div>
+                            <div class="form-check mt-1"><input class="form-check-input" type="checkbox" disabled><label class="form-check-label small">Tôi xác nhận thông tin là chính xác</label></div>
+                        </div>
+
+                        <!-- Nút submit preview -->
+                        <div style="opacity:.5;pointer-events:none;">
+                            <button class="btn btn-primary btn-sm rounded-pill"><i class="bi bi-send me-1"></i>Gửi đăng ký</button>
+                        </div>
+                    </div><!-- end fp-wrapper -->
+                </div>
+
             </div><!-- end tab-content -->
         </div><!-- end card-tab -->
 
@@ -943,9 +1133,120 @@
     </div>
 </div>
 
+<!-- ── Modal: Thêm / Sửa trường biểu mẫu ── -->
+<div class="modal fade" id="formFieldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="formFieldModalTitle">Thêm trường mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ff-fieldId" value="0">
+                <div class="mb-3">
+                    <label class="form-label">Nhãn trường *</label>
+                    <input type="text" id="ff-label" class="form-control" placeholder="VD: Link GitHub, Chủ đề nghiên cứu...">
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Loại trường *</label>
+                        <select id="ff-type" class="form-select" onchange="onFieldTypeChange()">
+                            <option value="Text">Text (văn bản ngắn)</option>
+                            <option value="Textarea">Textarea (văn bản dài)</option>
+                            <option value="Select">Select (chọn từ danh sách)</option>
+                            <option value="Checkbox">Checkbox (có/không)</option>
+                            <option value="File">File (tải file)</option>
+                            <option value="Date">Date (ngày)</option>
+                            <option value="Number">Number (số)</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check me-3">
+                            <input type="checkbox" id="ff-required" class="form-check-input">
+                            <label class="form-check-label" for="ff-required">Bắt buộc</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" id="ff-active" class="form-check-input" checked>
+                            <label class="form-check-label" for="ff-active">Hiển thị</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3" id="ff-options-group" style="display:none;">
+                    <label class="form-label">Các lựa chọn <small class="text-muted">(mỗi dòng một lựa chọn)</small></label>
+                    <textarea id="ff-options" class="form-control" rows="4" placeholder="Khoa học máy tính&#10;Kỹ thuật phần mềm&#10;Trí tuệ nhân tạo"></textarea>
+                </div>
+                <div class="mb-3" id="ff-placeholder-group">
+                    <label class="form-label">Placeholder <small class="text-muted">(tùy chọn)</small></label>
+                    <input type="text" id="ff-placeholder" class="form-control" placeholder="Gợi ý cho người điền...">
+                </div>
+                <div class="mb-0">
+                    <label class="form-label">Hướng dẫn <small class="text-muted">(tùy chọn)</small></label>
+                    <input type="text" id="ff-helptext" class="form-control" placeholder="Mô tả ngắn giúp thí sinh hiểu cần điền gì...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-success btn-sm" onclick="saveFormField()">
+                    <i class="bi bi-check2 me-1"></i>Lưu trường
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     const CID = @cid;
+
+    // ═══════════════════════════════════ SCHEDULE DATES ═════════════════════════
+
+    async function saveScheduleDates() {
+        const startVal = document.getElementById('StartDate')?.value;
+        const endVal   = document.getElementById('EndDate')?.value;
+        const subVal   = document.getElementById('SubmissionDeadline')?.value;
+        const maxP     = document.getElementById('MaxParticipants')?.value;
+        const maxT     = document.getElementById('MaxTeamSize')?.value;
+        const msg      = document.getElementById('scheduleDatesMsg');
+
+        if (!startVal || !endVal || !subVal) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ các ngày.</span>';
+            return;
+        }
+        if (new Date(endVal) <= new Date(startVal)) {
+            msg.innerHTML = '<span class="text-danger">Ngày kết thúc phải sau ngày bắt đầu.</span>';
+            return;
+        }
+        if (new Date(subVal) > new Date(endVal)) {
+            msg.innerHTML = '<span class="text-danger">Hạn nộp bài phải trước hoặc bằng ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/Organizer/UpdateScheduleDates?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({
+                    startDate:          toUtcIso(startVal),
+                    endDate:            toUtcIso(endVal),
+                    submissionDeadline: toUtcIso(subVal),
+                    maxParticipants:    parseInt(maxP) || 1,
+                    maxTeamSize:        maxT ? parseInt(maxT) : null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ ' + data.message + '</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 3000);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
+        }
+    }
 
     // ═══════════════════════════════════ PER-ROUND CRITERIA ════════════════════
 
@@ -1072,6 +1373,40 @@
 
     // ═══════════════════════════════════ ROUNDS ══════════════════════════════
 
+    async function updateRoundAjax(roundId) {
+        const name  = document.getElementById(`rName-${roundId}`)?.value?.trim();
+        const start = document.getElementById(`rStart-${roundId}`)?.value;
+        const end   = document.getElementById(`rEnd-${roundId}`)?.value;
+        const msg   = document.getElementById(`roundEditMsg-${roundId}`);
+
+        if (!name || !start || !end) {
+            msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ thông tin.</span>';
+            return;
+        }
+        if (new Date(start) >= new Date(end)) {
+            msg.innerHTML = '<span class="text-danger">Ngày bắt đầu phải trước ngày kết thúc.</span>';
+            return;
+        }
+
+        msg.innerHTML = '<span class="text-secondary">Đang lưu...</span>';
+        try {
+            const res = await fetch(`/Organizer/UpdateRegistrationRound?roundId=${roundId}&competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({ roundName: name, startDate: toUtcIso(start), endDate: toUtcIso(end) })
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.innerHTML = '<span class="text-success">✓ Đã lưu đợt đăng ký.</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 3000);
+            } else {
+                msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
+            }
+        } catch (e) {
+            msg.innerHTML = '<span class="text-danger">Lỗi kết nối, vui lòng thử lại.</span>';
+        }
+    }
+
     async function addRoundAjax() {
         const name  = document.getElementById('newRoundName').value.trim();
         const start = document.getElementById('newRoundStart').value;
@@ -1080,10 +1415,22 @@
 
         if (!name || !start || !end) { msg.innerHTML = '<span class="text-danger">Vui lòng điền đầy đủ.</span>'; return; }
 
-        const res = await fetch(`/Organizer/AddRegistrationRound?competitionId=${CID}`, {
+        // Lấy ngày bắt đầu cuộc thi hiện tại trong form (có thể chưa được lưu)
+        const pendingStartRaw = document.getElementById('StartDate')?.value;
+        if (pendingStartRaw && new Date(end) > new Date(pendingStartRaw)) {
+            msg.innerHTML = '<span class="text-danger">Hạn đăng ký phải trước hoặc bằng ngày bắt đầu cuộc thi.</span>';
+            return;
+        }
+
+        const urlBase = `/Organizer/AddRegistrationRound?competitionId=${CID}`;
+        const url = pendingStartRaw
+            ? `${urlBase}&pendingStartDate=${encodeURIComponent(toUtcIso(pendingStartRaw))}`
+            : urlBase;
+
+        const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify({ roundName: name, startDate: start, endDate: end })
+            body: JSON.stringify({ roundName: name, startDate: toUtcIso(start), endDate: toUtcIso(end) })
         });
         const data = await res.json();
         if (data.success) {
@@ -1217,7 +1564,7 @@
         }
     }
 
-    async function addCompRoundAjax() {
+    async function addCompRoundAjax(submitAfter = false) {
         const name    = document.getElementById('newCrName').value;
         const start   = document.getElementById('newCrStart').value;
         const end     = document.getElementById('newCrEnd').value;
@@ -1229,7 +1576,7 @@
         const isOnline = document.getElementById('newCrIsOnline').checked;
         const meetLink = document.getElementById('newCrMeetLink').value || null;
         const meetTime = document.getElementById('newCrMeetTime').value;
-        const location = document.getElementById('newCrLocation').value || null;
+        const venue = document.getElementById('newCrLocation').value || null;
         const msg = document.getElementById('newCrMsg');
 
         if (!name || !start || !end) {
@@ -1267,14 +1614,19 @@
                     isOnline:          isOnline,
                     meetingLink:       isOnline ? meetLink : null,
                     meetingTime:       isOnline && meetTime ? toUtcIso(meetTime) : null,
-                    location:          !isOnline ? location : null,
+                    location:          !isOnline ? venue : null,
                     scoringCriteria:   criteria
                 })
             });
             const data = await res.json();
             if (data.success) {
-                msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang tải lại...</span>';
-                setTimeout(() => location.reload(), 800);
+                if (submitAfter) {
+                    msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang lưu thay đổi...</span>';
+                    document.getElementById('editForm').submit();
+                } else {
+                    msg.innerHTML = '<span class="text-success">✓ Đã thêm vòng thi! Đang tải lại...</span>';
+                    setTimeout(() => window.location.reload(), 800);
+                }
             } else {
                 msg.innerHTML = `<span class="text-danger">${data.message}</span>`;
             }
@@ -1312,14 +1664,18 @@
 
     async function uploadImages() {
         if (!pendingImages.length) return;
-        const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify(pendingImages.map(i => i.data))
-        });
-        const data = await res.json();
-        if (data.success) { showToast('Upload ảnh thành công!', 'success'); setTimeout(() => location.reload(), 600); }
-        else showToast(data.message, 'danger');
+        try {
+            const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify(pendingImages.map(i => i.data))
+            });
+            const data = await res.json();
+            if (data.success) { showToast('Upload ảnh thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+            else showToast(data.message || 'Lỗi upload ảnh.', 'danger');
+        } catch (e) {
+            showToast('Lỗi kết nối khi upload ảnh, vui lòng thử lại.', 'danger');
+        }
     }
 
     async function deleteImage(imageId) {
@@ -1376,14 +1732,18 @@
 
     async function uploadDocuments() {
         if (!pendingDocs.length) return;
-        const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
-            body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
-        });
-        const data = await res.json();
-        if (data.success) { showToast('Upload tài liệu thành công!', 'success'); setTimeout(() => location.reload(), 600); }
-        else showToast(data.message, 'danger');
+        try {
+            const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
+            });
+            const data = await res.json();
+            if (data.success) { showToast('Upload tài liệu thành công!', 'success'); setTimeout(() => location.reload(), 600); }
+            else showToast(data.message || 'Lỗi upload tài liệu.', 'danger');
+        } catch (e) {
+            showToast('Lỗi kết nối khi upload tài liệu, vui lòng thử lại.', 'danger');
+        }
     }
 
     async function deleteDocument(docId) {
@@ -1575,6 +1935,9 @@
             sessionStorage.removeItem(ACTIVE_TAB_KEY);
         }
 
+        // Luôn tải form fields ngay khi trang load
+        loadFormFields();
+
         // Nếu có lỗi → scroll lên đầu để thấy thông báo
         const errDiv = document.querySelector('.alert-danger');
         if (errDiv) {
@@ -1590,12 +1953,281 @@
         });
     });
 
-    document.getElementById('editForm').addEventListener('submit', () => {
+    document.getElementById('editForm').addEventListener('submit', async function(e) {
         const chk = document.getElementById('chkTeam');
         syncTeamSizeField(chk ? chk.checked : false);
         // Lưu tab đang active để khôi phục sau reload
         const activeTab = document.querySelector('[data-bs-toggle="tab"].active');
         if (activeTab) sessionStorage.setItem(ACTIVE_TAB_KEY, activeTab.getAttribute('href'));
+
+        const hasPendingImages = pendingImages.length > 0;
+        const hasPendingDocs   = pendingDocs.length > 0;
+        const newCrStart = document.getElementById('newCrStart')?.value;
+        const newCrEnd   = document.getElementById('newCrEnd')?.value;
+        const hasNewRound = !!(newCrStart && newCrEnd);
+
+        if (hasPendingImages || hasPendingDocs || hasNewRound) {
+            e.preventDefault();
+            try {
+                if (hasPendingImages) {
+                    const res = await fetch(`/Organizer/UploadImages?competitionId=${CID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                        body: JSON.stringify(pendingImages.map(i => i.data))
+                    });
+                    const data = await res.json();
+                    if (!data.success) { showToast('Lỗi upload ảnh: ' + (data.message || 'Có lỗi xảy ra'), 'danger'); return; }
+                    pendingImages = [];
+                }
+                if (hasPendingDocs) {
+                    const res = await fetch(`/Organizer/UploadDocuments?competitionId=${CID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+                        body: JSON.stringify({ dataList: pendingDocs.map(d => d.data), fileNames: pendingDocs.map(d => d.name) })
+                    });
+                    const data = await res.json();
+                    if (!data.success) { showToast('Lỗi upload tài liệu: ' + (data.message || 'Có lỗi xảy ra'), 'danger'); return; }
+                    pendingDocs = [];
+                }
+                if (hasNewRound) {
+                    // addCompRoundAjax(true) tự gọi form.submit() khi thành công
+                    await addCompRoundAjax(true);
+                    return;
+                }
+                document.getElementById('editForm').submit();
+            } catch (err) {
+                showToast('Lỗi kết nối, vui lòng thử lại.', 'danger');
+            }
+        }
     });
+
+    // ══════════════════════════ FORM FIELDS (BIỂU MẪU) ═══════════════════════
+
+    let formFieldSortable = null;
+    let formFieldsLoaded = false;
+
+    function loadFormFields() {
+        if (formFieldsLoaded) return;
+        fetch(`/Organizer/GetFormFields?competitionId=${CID}`)
+            .then(r => r.json())
+            .then(fields => {
+                formFieldsLoaded = true;
+                renderFormPreview(fields);
+            })
+            .catch(() => {
+                document.getElementById('fpCustomFields').innerHTML =
+                    '<div class="alert alert-danger mb-2">Không thể tải dữ liệu.</div>';
+            });
+    }
+
+    const fieldTypeLabels = {
+        Text: 'Text', Textarea: 'Textarea', Select: 'Select',
+        Checkbox: 'Checkbox', File: 'File', Date: 'Date',
+        Number: 'Number', Email: 'Email'
+    };
+
+    function buildFieldInputPreview(f) {
+        const ph = escHtml(f.placeholder || '');
+        if (f.fieldType === 'Textarea')
+            return `<textarea class="form-control form-control-sm" rows="2" disabled placeholder="${ph}"></textarea>`;
+        if (f.fieldType === 'Select') {
+            let opts = '<option value="">-- Chọn --</option>';
+            if (f.options) {
+                try { JSON.parse(f.options).forEach(o => { opts += `<option>${escHtml(o)}</option>`; }); } catch {}
+            }
+            return `<select class="form-select form-select-sm" disabled>${opts}</select>`;
+        }
+        if (f.fieldType === 'Checkbox')
+            return `<div class="form-check mt-1"><input class="form-check-input" type="checkbox" disabled><label class="form-check-label small">${ph || 'Có'}</label></div>`;
+        if (f.fieldType === 'File')
+            return `<input type="file" class="form-control form-control-sm" disabled>`;
+        if (f.fieldType === 'Date')
+            return `<input type="date" class="form-control form-control-sm" disabled>`;
+        if (f.fieldType === 'Number')
+            return `<input type="number" class="form-control form-control-sm" disabled placeholder="${ph}">`;
+        if (f.fieldType === 'Email')
+            return `<input type="email" class="form-control form-control-sm" disabled placeholder="${ph || 'example@email.com'}">`;
+        return `<input type="text" class="form-control form-control-sm" disabled placeholder="${ph}">`;
+    }
+
+    function renderFormPreview(fields) {
+        const container = document.getElementById('fpCustomFields');
+        container.innerHTML = '';
+
+        if (!fields || fields.length === 0) {
+            // Để trống — nút "Thêm trường tùy chỉnh" vẫn hiện
+            return;
+        }
+
+        fields.forEach(f => container.appendChild(buildCustomFieldItem(f)));
+
+        if (formFieldSortable) formFieldSortable.destroy();
+        formFieldSortable = Sortable.create(container, {
+            handle: '.fp-drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: () => saveFieldOrder()
+        });
+    }
+
+    function buildCustomFieldItem(f) {
+        const wrap = document.createElement('div');
+        wrap.className = 'fp-custom-field';
+        wrap.dataset.fieldId = f.fieldId;
+
+        const hiddenBadge = !f.isActive
+            ? '<span class="badge bg-secondary ms-1" style="font-size:.65rem;">Ẩn</span>' : '';
+        const reqMark = f.isRequired ? '<span class="text-danger ms-1">*</span>' : '';
+        const helpHtml = f.helpText
+            ? `<div class="text-muted mt-1" style="font-size:.75rem;">${escHtml(f.helpText)}</div>` : '';
+
+        wrap.innerHTML = `
+            <div class="fp-custom-field-inner">
+                <div class="fp-custom-header">
+                    <span class="fp-drag-handle bi bi-grip-vertical"></span>
+                    <span class="fp-custom-label">${escHtml(f.fieldLabel)}${reqMark}${hiddenBadge}</span>
+                    <span class="fp-type-chip ft-${f.fieldType}">${fieldTypeLabels[f.fieldType] || f.fieldType}</span>
+                    <div class="fp-custom-actions">
+                        <button type="button" class="fp-action-btn fp-action-edit" onclick="openEditFieldModal(${f.fieldId})" title="Sửa">
+                            <i class="bi bi-pencil me-1"></i>Sửa
+                        </button>
+                        <button type="button" class="fp-action-btn fp-action-del" onclick="deleteField(${f.fieldId})" title="Xóa">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                ${buildFieldInputPreview(f)}
+                ${helpHtml}
+            </div>`;
+        return wrap;
+    }
+
+    function saveFieldOrder() {
+        const container = document.getElementById('fpCustomFields');
+        if (!container) return;
+        const ids = [...container.querySelectorAll('.fp-custom-field')].map(el => parseInt(el.dataset.fieldId));
+        fetch(`/Organizer/ReorderFormFields?competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+            body: JSON.stringify(ids)
+        })
+        .then(r => r.json())
+        .then(d => { if (!d.success) showToast(d.message, 'warning'); });
+    }
+
+    function openAddFieldModal() {
+        document.getElementById('formFieldModalTitle').textContent = 'Thêm trường mới';
+        document.getElementById('ff-fieldId').value = '0';
+        document.getElementById('ff-label').value = '';
+        document.getElementById('ff-type').value = 'Text';
+        document.getElementById('ff-required').checked = false;
+        document.getElementById('ff-active').checked = true;
+        document.getElementById('ff-options').value = '';
+        document.getElementById('ff-placeholder').value = '';
+        document.getElementById('ff-helptext').value = '';
+        onFieldTypeChange();
+        new bootstrap.Modal(document.getElementById('formFieldModal')).show();
+    }
+
+    function openEditFieldModal(fieldId) {
+        const row = document.querySelector(`.field-row[data-field-id="${fieldId}"]`);
+        // Re-fetch fresh data
+        fetch(`/Organizer/GetFormFields?competitionId=${CID}`)
+            .then(r => r.json())
+            .then(fields => {
+                const f = fields.find(x => x.fieldId === fieldId);
+                if (!f) return;
+                document.getElementById('formFieldModalTitle').textContent = 'Sửa trường';
+                document.getElementById('ff-fieldId').value = f.fieldId;
+                document.getElementById('ff-label').value = f.fieldLabel;
+                document.getElementById('ff-type').value = f.fieldType;
+                document.getElementById('ff-required').checked = f.isRequired;
+                document.getElementById('ff-active').checked = f.isActive;
+                // Convert JSON options array to one-per-line
+                if (f.options) {
+                    try { document.getElementById('ff-options').value = JSON.parse(f.options).join('\n'); }
+                    catch { document.getElementById('ff-options').value = f.options; }
+                } else {
+                    document.getElementById('ff-options').value = '';
+                }
+                document.getElementById('ff-placeholder').value = f.placeholder || '';
+                document.getElementById('ff-helptext').value = f.helpText || '';
+                onFieldTypeChange();
+                new bootstrap.Modal(document.getElementById('formFieldModal')).show();
+            });
+    }
+
+    function onFieldTypeChange() {
+        const type = document.getElementById('ff-type').value;
+        const optGrp = document.getElementById('ff-options-group');
+        const plhGrp = document.getElementById('ff-placeholder-group');
+        optGrp.style.display = type === 'Select' ? '' : 'none';
+        plhGrp.style.display = (type === 'Checkbox' || type === 'File') ? 'none' : '';
+    }
+
+    async function saveFormField() {
+        const fieldId = parseInt(document.getElementById('ff-fieldId').value);
+        const label = document.getElementById('ff-label').value.trim();
+        const type = document.getElementById('ff-type').value;
+        if (!label) { showToast('Vui lòng nhập nhãn trường.', 'warning'); return; }
+
+        let options = null;
+        if (type === 'Select') {
+            const lines = document.getElementById('ff-options').value
+                .split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length < 2) { showToast('Vui lòng nhập ít nhất 2 lựa chọn.', 'warning'); return; }
+            options = JSON.stringify(lines);
+        }
+
+        const dto = {
+            fieldLabel:   label,
+            fieldType:    type,
+            isRequired:   document.getElementById('ff-required').checked,
+            isActive:     document.getElementById('ff-active').checked,
+            placeholder:  document.getElementById('ff-placeholder').value.trim() || null,
+            helpText:     document.getElementById('ff-helptext').value.trim() || null,
+            options:      options,
+            displayOrder: 0
+        };
+
+        const isEdit = fieldId > 0;
+        const url = isEdit
+            ? `/Organizer/UpdateFormField?fieldId=${fieldId}&competitionId=${CID}`
+            : `/Organizer/AddFormField?competitionId=${CID}`;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getAntiForgeryToken() },
+            body: JSON.stringify(dto)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('formFieldModal')).hide();
+            formFieldsLoaded = false;
+            loadFormFields();
+        } else {
+            showToast(data.message, 'danger');
+        }
+    }
+
+    async function deleteField(fieldId) {
+        if (!confirm('Xóa trường này? Dữ liệu thí sinh đã điền cũng sẽ bị xóa.')) return;
+        const res = await fetch(`/Organizer/DeleteFormField?fieldId=${fieldId}&competitionId=${CID}`, {
+            method: 'POST',
+            headers: { 'RequestVerificationToken': getAntiForgeryToken() }
+        });
+        const data = await res.json();
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) { formFieldsLoaded = false; loadFormFields(); }
+    }
+
+    function getAntiForgeryToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
+    function escHtml(str) {
+        return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 </script>
 }

@@ -8,6 +8,7 @@ public interface ISubmissionService
     /// Lấy dữ liệu trang Submissions cho Organizer
     /// </summary>
     Task<OrganizerSubmissionsViewModel> GetSubmissionsViewAsync(
+        int organizerId,
         int? competitionId = null,
         string? searchQuery = null,
         string? statusFilter = null,

@@ -4,67 +4,103 @@
 }
 
 <style>
-    .comp-card {
-        border: none;
-        border-radius: 1rem;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-        transition: transform 0.25s, box-shadow 0.25s;
+    .comp-list-item {
+        border: 1px solid #eee !important;
+        border-radius: 12px !important;
         overflow: hidden;
+        transition: box-shadow 0.22s ease, transform 0.22s ease;
+        background: #fff;
     }
-    .comp-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.13);
-    }
-
-    .comp-thumb {
-        height: 190px;
-        object-fit: cover;
-        width: 100%;
-    }
-    .comp-thumb-placeholder {
-        height: 190px;
-        background: linear-gradient(135deg, #0A4A91 0%, #1976D2 60%, #42A5F5 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .comp-list-item:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.10) !important;
+        transform: translateY(-2px);
     }
 
-    .badge-status {
+    .comp-list-thumb {
+        width: 230px;
+        min-width: 230px;
+        height: 100%;
+        min-height: 150px;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .comp-list-thumb .thumb-bg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        transition: transform 0.4s ease;
+    }
+    .comp-list-item:hover .thumb-bg { transform: scale(1.05); }
+
+    .comp-list-thumb .thumb-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.18);
+    }
+
+    .badge-status-list {
         position: absolute;
         top: 10px;
         right: 10px;
-        font-size: .75rem;
-        padding: 5px 10px;
+        font-size: .72rem;
+        padding: 4px 10px;
         border-radius: 50px;
     }
-    .badge-reg-open {
+    .badge-reg-open-list {
         position: absolute;
         top: 10px;
         left: 10px;
         font-size: .72rem;
         padding: 4px 9px;
         border-radius: 50px;
-        background: #28a745;
+        background: #16a34a;
         color: #fff;
+        font-weight: 600;
     }
 
-    .deadline-row {
-        font-size: .82rem;
+    .info-row {
+        font-size: 12.5px;
         color: #555;
+        display: flex;
+        align-items: center;
+        gap: 6px;
         margin-bottom: 4px;
     }
-    .deadline-row i { width: 18px; }
+    .info-row i { width: 16px; flex-shrink: 0; }
+
+    .card-prize-list {
+        background: #fffbea;
+        border: 1px solid #ffe082;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: #6d4c00;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
 
     .filter-bar .form-control,
     .filter-bar .form-select { border-radius: .6rem; }
 
-    .card-prize {
-        background: #fffbea;
-        border: 1px solid #ffe082;
-        border-radius: .5rem;
-        padding: 6px 12px;
-        font-size: .82rem;
-        color: #6d4c00;
+    /* Skeleton */
+    .skel-item {
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #eee;
+        display: flex;
+        height: 150px;
+    }
+    .skel-thumb { width: 230px; min-width: 230px; background: #e9ecef; }
+    .skel-body  { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .skel-line  { border-radius: 4px; background: #e9ecef; }
+
+    @@media (max-width: 600px) {
+        .comp-list-thumb { width: 100%; min-width: unset; height: 160px; min-height: 160px; }
+        .comp-list-item .d-flex { flex-direction: column; }
     }
 </style>
 
@@ -77,6 +113,7 @@
             </h1>
             <p class="text-secondary mb-0">Khám phá các cuộc thi và đăng ký tham gia</p>
         </div>
+        <span id="resultCount" class="badge bg-light text-secondary border" style="font-size:13px; display:none;"></span>
     </div>
 
     <!-- Filter bar -->
@@ -102,19 +139,18 @@
         </div>
     </div>
 
-    <!-- Grid -->
-    <div id="competitionsContainer" class="row g-4">
+    <!-- List container -->
+    <div id="competitionsContainer" class="d-flex flex-column gap-3">
         <!-- Skeleton loaders -->
-        @for (int i = 0; i < 6; i++)
+        @for (int i = 0; i < 5; i++)
         {
-            <div class="col-12 col-md-6 col-lg-4 skeleton-card">
-                <div class="card comp-card placeholder-glow h-100">
-                    <div class="placeholder comp-thumb-placeholder" style="background:#e9ecef;"></div>
-                    <div class="card-body">
-                        <h5 class="placeholder-wave"><span class="placeholder col-8"></span></h5>
-                        <p class="placeholder-wave"><span class="placeholder col-12"></span><span class="placeholder col-10"></span></p>
-                        <div class="placeholder-wave"><span class="placeholder col-6"></span></div>
-                    </div>
+            <div class="skel-item skeleton-card placeholder-glow">
+                <div class="skel-thumb"></div>
+                <div class="skel-body">
+                    <div class="skel-line placeholder" style="height:20px; width:60%;"></div>
+                    <div class="skel-line placeholder" style="height:13px; width:35%;"></div>
+                    <div class="skel-line placeholder" style="height:13px; width:50%;"></div>
+                    <div class="skel-line placeholder" style="height:13px; width:40%;"></div>
                 </div>
             </div>
         }
@@ -146,7 +182,7 @@
             renderCompetitions(allCompetitions);
         } catch {
             document.getElementById('competitionsContainer').innerHTML =
-                '<div class="alert alert-danger col-12 rounded-3">Không thể tải danh sách cuộc thi. Vui lòng thử lại.</div>';
+                '<div class="alert alert-danger rounded-3">Không thể tải danh sách cuộc thi. Vui lòng thử lại.</div>';
         }
     }
 
@@ -155,131 +191,162 @@
         const cats = [...new Set(list.map(c => c.category).filter(Boolean))].sort();
         cats.forEach(cat => {
             const opt = document.createElement('option');
-            opt.value = cat;
-            opt.textContent = cat;
+            opt.value = cat; opt.textContent = cat;
             sel.appendChild(opt);
         });
     }
 
     function filterCompetitions() {
-        const search = document.getElementById('searchInput').value.toLowerCase().trim();
-        const status = document.getElementById('statusFilter').value;
+        const search   = document.getElementById('searchInput').value.toLowerCase().trim();
+        const status   = document.getElementById('statusFilter').value;
         const category = document.getElementById('categoryFilter').value;
-
         const filtered = allCompetitions.filter(c => {
-            const matchSearch = !search || (c.competitionName || '').toLowerCase().includes(search);
-            const matchStatus = !status || c.status === status;
-            const matchCat = !category || c.category === category;
+            const matchSearch = !search   || (c.competitionName || '').toLowerCase().includes(search);
+            const matchStatus = !status   || c.status === status;
+            const matchCat    = !category || c.category === category;
             return matchSearch && matchStatus && matchCat;
         });
-
         renderCompetitions(filtered);
     }
 
     function renderCompetitions(list) {
         const container = document.getElementById('competitionsContainer');
-        const noMsg = document.getElementById('noResultsMessage');
+        const noMsg     = document.getElementById('noResultsMessage');
+        const countEl   = document.getElementById('resultCount');
 
-        // Remove skeleton cards
         document.querySelectorAll('.skeleton-card').forEach(el => el.remove());
 
         if (!list || list.length === 0) {
             container.innerHTML = '';
             noMsg.style.display = 'block';
+            countEl.style.display = 'none';
             return;
         }
         noMsg.style.display = 'none';
-
-        const existing = new Set([...container.querySelectorAll('[data-comp-id]')].map(el => el.dataset.compId));
-        const fragment = document.createDocumentFragment();
-
-        list.forEach(c => {
-            if (existing.has(String(c.competitionId))) return; // prevent duplicates on re-render
-        });
+        countEl.style.display = 'inline-block';
+        countEl.textContent   = list.length + ' cuộc thi';
 
         container.innerHTML = list.map(c => buildCard(c)).join('');
     }
 
     function buildCard(c) {
-        const status = c.status || 'Active';
+        const status      = c.status || 'Active';
         const statusLabel = { Active: 'Đang diễn ra', Closed: 'Đã đóng', Completed: 'Hoàn thành' }[status] || status;
-        const statusClass = { Active: 'bg-success', Closed: 'bg-danger', Completed: 'bg-primary' }[status] || 'bg-secondary';
+        const statusClass = { Active: 'bg-success text-white', Closed: 'bg-danger text-white', Completed: 'bg-primary text-white' }[status] || 'bg-secondary text-white';
 
-        const thumbHtml = c.thumbnailUrl
-            ? `<img src="${c.thumbnailUrl}" class="comp-thumb" alt="${escHtml(c.competitionName)}" loading="lazy">`
-            : `<div class="comp-thumb-placeholder"><i class="bi bi-trophy-fill text-white" style="font-size:3.5rem;opacity:.35;"></i></div>`;
+        const thumbBg = c.thumbnailUrl
+            ? `background-image: url('${escHtml(c.thumbnailUrl)}')`
+            : `background: linear-gradient(135deg, #0A4A91 0%, #1976D2 60%, #42A5F5 100%)`;
 
-        const regOpenBadge = c.hasActiveRound
-            ? `<span class="badge-reg-open"><i class="bi bi-dot"></i>Đang mở đăng ký</span>`
+        const thumbIcon = !c.thumbnailUrl
+            ? `<div class="position-absolute top-50 start-50 translate-middle text-white opacity-25" style="font-size:3rem;">
+                    <i class="bi bi-trophy-fill"></i>
+               </div>`
             : '';
 
-        const prize = c.prize ? `<div class="card-prize mt-2"><i class="bi bi-gift me-1"></i>${escHtml(c.prize)}</div>` : '';
+        const regOpenBadge = c.hasActiveRound
+            ? `<span class="badge-reg-open-list"><i class="bi bi-dot"></i>Mở đăng ký</span>`
+            : '';
 
         const isTeam = c.isTeamBased;
         const formTypeBadge = isTeam
-            ? `<span class="badge bg-info text-white"><i class="bi bi-people-fill me-1"></i>Theo nhóm</span>`
-            : `<span class="badge bg-success text-white"><i class="bi bi-person-fill me-1"></i>Cá nhân</span>`;
+            ? `<span class="badge bg-info text-white" style="font-size:11px;"><i class="bi bi-people-fill me-1"></i>Nhóm</span>`
+            : `<span class="badge bg-success text-white" style="font-size:11px;"><i class="bi bi-person-fill me-1"></i>Cá nhân</span>`;
+
+        const catBadge = c.category
+            ? `<span class="badge bg-light text-dark border" style="font-size:11px;">${escHtml(c.category)}</span>`
+            : '';
 
         const maxInfo = isTeam
-            ? `Tối đa ${c.maxParticipants} đội · ${c.maxTeamSize} thành viên/đội`
+            ? `Tối đa ${c.maxParticipants} đội · ${c.maxTeamSize} TV/đội`
             : `Tối đa ${c.maxParticipants} thí sinh`;
 
-        const regDeadlineRow = c.latestRegistrationDeadline
-            ? `<div class="deadline-row"><i class="bi bi-person-check text-success"></i><strong>Hạn đăng ký:</strong> ${formatDate(c.latestRegistrationDeadline)}</div>`
+        const regRow = c.latestRegistrationDeadline
+            ? `<div class="info-row"><i class="bi bi-person-check text-success"></i><strong>Hạn đăng ký:</strong> ${formatDate(c.latestRegistrationDeadline)}</div>`
+            : '';
+
+        const prize = c.prize
+            ? `<div class="card-prize-list mt-2"><i class="bi bi-gift-fill text-warning"></i>${escHtml(c.prize)}</div>`
             : '';
 
         const canRegister = status === 'Active' && c.hasActiveRound;
         const registerBtn = canRegister
-            ? `<a href="/Competitions/Register/${c.competitionId}" class="btn btn-warning btn-sm rounded-pill py-2">
-                    <i class="bi bi-pencil-square me-1"></i>Đăng ký tham gia
+            ? `<a href="/Competitions/Register/${c.competitionId}" class="btn btn-danger btn-sm rounded-pill px-3">
+                    <i class="bi bi-pencil-square me-1"></i>Đăng ký
                </a>`
-            : `<button class="btn btn-outline-secondary btn-sm rounded-pill py-2" disabled>
-                    <i class="bi bi-lock me-1"></i>${status === 'Active' ? 'Hết hạn đăng ký' : statusLabel}
+            : `<button class="btn btn-outline-secondary btn-sm rounded-pill px-3" disabled>
+                    <i class="bi bi-lock me-1"></i>${status === 'Active' ? 'Hết hạn' : statusLabel}
                </button>`;
 
         return `
-        <div class="col-12 col-md-6 col-lg-4" data-comp-id="${c.competitionId}">
-            <div class="card comp-card h-100">
-                <div class="position-relative">
-                    ${thumbHtml}
-                    ${regOpenBadge}
-                    <span class="badge-status badge ${statusClass}">${statusLabel}</span>
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex align-items-start gap-2 mb-2">
+        <div class="comp-list-item d-flex" data-comp-id="${c.competitionId}">
+
+            <!-- Thumbnail -->
+            <div class="comp-list-thumb">
+                <div class="thumb-bg" style="${thumbBg};"></div>
+                <div class="thumb-overlay"></div>
+                ${thumbIcon}
+                ${regOpenBadge}
+                <span class="badge-status-list badge ${statusClass}">${statusLabel}</span>
+            </div>
+
+            <!-- Info -->
+            <div class="flex-grow-1 px-4 py-3 d-flex flex-column justify-content-between">
+
+                <!-- Top: badges + title -->
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                         ${formTypeBadge}
-                        <span class="badge bg-light text-dark border">${escHtml(c.category || 'Chưa xác định')}</span>
+                        ${catBadge}
                     </div>
-
-                    <h5 class="fw-bold mb-1" style="line-height:1.3;">
-                        <a href="/Competitions/${c.competitionId}" class="text-dark text-decoration-none stretched-link-title">${escHtml(c.competitionName)}</a>
-                    </h5>
-
-                    <p class="text-secondary small mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                        ${escHtml(c.description || 'Không có mô tả.')}
-                    </p>
-
-                    <div class="mb-2">
-                        <div class="deadline-row"><i class="bi bi-calendar-event text-primary"></i><strong>Bắt đầu:</strong> ${formatDate(c.startDate)}</div>
-                        ${regDeadlineRow}
-                        <div class="deadline-row"><i class="bi bi-file-earmark-text text-warning"></i><strong>Hạn nộp bài:</strong> ${formatDate(c.submissionDeadline)}</div>
-                        <div class="deadline-row"><i class="bi bi-calendar-check text-secondary"></i><strong>Kết thúc:</strong> ${formatDate(c.endDate)}</div>
-                    </div>
-
-                    <div class="small text-muted mb-2">
-                        <i class="bi bi-people me-1"></i>${maxInfo}
-                    </div>
-
-                    ${prize}
-
-                    <div class="d-grid gap-2 mt-auto pt-3">
-                        <a href="/Competitions/${c.competitionId}" class="btn btn-outline-primary btn-sm rounded-pill py-2">
-                            <i class="bi bi-eye me-1"></i>Xem chi tiết
+                    <h5 class="fw-bold mb-2" style="font-size: 16px; line-height: 1.35;">
+                        <a href="/Competitions/${c.competitionId}"
+                           class="text-dark text-decoration-none comp-title-link">
+                            ${escHtml(c.competitionName)}
                         </a>
-                        ${registerBtn}
+                    </h5>
+                    <p class="text-secondary mb-2" style="font-size: 13px;
+                       display:-webkit-box; -webkit-line-clamp:2;
+                       -webkit-box-orient:vertical; overflow:hidden; max-width: 600px;">
+                        ${escHtml(c.description || '')}
+                    </p>
+                </div>
+
+                <!-- Middle: date rows -->
+                <div class="d-flex flex-wrap gap-x-4 gap-3">
+                    <div>
+                        <div class="info-row">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                            <strong>Bắt đầu:</strong> ${formatDate(c.startDate)}
+                        </div>
+                        ${regRow}
+                        <div class="info-row">
+                            <i class="bi bi-file-earmark-text text-warning"></i>
+                            <strong>Hạn nộp bài:</strong> ${formatDate(c.submissionDeadline)}
+                        </div>
+                        <div class="info-row">
+                            <i class="bi bi-calendar-check text-secondary"></i>
+                            <strong>Kết thúc:</strong> ${formatDate(c.endDate)}
+                        </div>
                     </div>
+                    <div class="d-flex flex-column justify-content-end">
+                        <div class="info-row mb-1">
+                            <i class="bi bi-people text-muted"></i>${maxInfo}
+                        </div>
+                        ${prize}
+                    </div>
+                </div>
+
+                <!-- Bottom: action buttons -->
+                <div class="d-flex gap-2 mt-3">
+                    <a href="/Competitions/${c.competitionId}"
+                       class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                        <i class="bi bi-eye me-1"></i>Xem chi tiết
+                    </a>
+                    ${registerBtn}
                 </div>
             </div>
+
         </div>`;
     }
 

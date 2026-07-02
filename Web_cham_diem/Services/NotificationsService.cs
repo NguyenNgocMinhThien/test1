@@ -28,11 +28,12 @@ public class NotificationsService : INotificationsService
 
     // ───────── organizer page ─────────
 
-    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int? competitionId)
+    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int organizerId, int? competitionId)
     {
         var vm = new OrganizerNotificationsViewModel();
 
         var allComps = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .Include(c => c.RegistrationRounds)
             .Include(c => c.CompetitionRounds)
             .Include(c => c.Registrations)
@@ -40,14 +41,16 @@ public class NotificationsService : INotificationsService
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
+        var ownedIds = allComps.Select(c => c.CompetitionId).ToList();
+
         vm.Competitions = allComps.Select(c => new CompetitionBasicDto
         {
             CompetitionId = c.CompetitionId,
             CompetitionName = c.CompetitionName
         }).ToList();
 
-        vm.TotalSentAll = await _context.Notifications.CountAsync();
-        vm.UnreadByRecipients = await _context.Notifications.CountAsync(n => !n.IsRead);
+        vm.TotalSentAll = await _context.Notifications.CountAsync(n => n.RelatedEntityId.HasValue && ownedIds.Contains(n.RelatedEntityId.Value));
+        vm.UnreadByRecipients = await _context.Notifications.CountAsync(n => !n.IsRead && n.RelatedEntityId.HasValue && ownedIds.Contains(n.RelatedEntityId.Value));
         vm.ActiveCompetitionCount = allComps.Count(c => c.Status == "Active");
 
         if (!competitionId.HasValue && allComps.Count > 0)
@@ -139,10 +142,19 @@ public class NotificationsService : INotificationsService
 
     // ───────── send notification ─────────
 
-    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req)
+    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req, int organizerId)
     {
         if (string.IsNullOrWhiteSpace(req.Title))
             return (false, "Tiêu đề không được để trống.", 0);
+
+        // Xác nhận cuộc thi thuộc organizer này
+        if (req.CompetitionId > 0)
+        {
+            var isOwner = await _context.Competitions
+                .AnyAsync(c => c.CompetitionId == req.CompetitionId && c.CreatedByUserId == organizerId);
+            if (!isOwner)
+                return (false, "Bạn không có quyền gửi thông báo cho cuộc thi này.", 0);
+        }
 
         var userIds = await ResolveAudienceAsync(req.CompetitionId, req.Audience);
         if (userIds.Count == 0)
@@ -355,8 +367,33 @@ public class NotificationsService : INotificationsService
     {
         var ids = new HashSet<int>();
 
-        if (audience is "Students" or "All")
+        if (audience == "All")
         {
+            // Loại trừ: Admin (1), Organizer (3), và Judge không thuộc cuộc thi này
+            var excludedRoleIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == 1 || ur.RoleId == 3)
+                .Select(ur => ur.UserId).ToListAsync();
+
+            var judgesInComp = await _context.Judges
+                .Where(j => j.CompetitionId == competitionId)
+                .Select(j => j.UserId).Distinct().ToListAsync();
+
+            var judgeRoleUserIds = await _context.UserRoles
+                .Where(ur => ur.RoleId == 4)
+                .Select(ur => ur.UserId).ToListAsync();
+
+            // Giám khảo không tham gia cuộc thi này
+            var excludedJudgeIds = judgeRoleUserIds.Except(judgesInComp).ToHashSet();
+            var excluded = new HashSet<int>(excludedRoleIds.Concat(excludedJudgeIds));
+
+            var q = await _context.Users
+                .Where(u => u.IsActive && !excluded.Contains(u.UserId))
+                .Select(u => u.UserId).Distinct().ToListAsync();
+            foreach (var id in q) ids.Add(id);
+        }
+        else if (audience == "Students")
+        {
+            // Chỉ thí sinh/đội đã được duyệt trong cuộc thi
             var q = await _context.Registrations
                 .Where(r => r.CompetitionId == competitionId && r.Status == "Approved")
                 .Select(r => r.UserId).Distinct().ToListAsync();
@@ -364,16 +401,17 @@ public class NotificationsService : INotificationsService
         }
         else if (audience == "AllRegistrants")
         {
+            // Tất cả đăng ký cuộc thi bất kể trạng thái
             var q = await _context.Registrations
                 .Where(r => r.CompetitionId == competitionId)
                 .Select(r => r.UserId).Distinct().ToListAsync();
             foreach (var id in q) ids.Add(id);
         }
-
-        if (audience is "Judges" or "All")
+        else if (audience == "Judges")
         {
+            // Tất cả giám khảo của cuộc thi
             var q = await _context.Judges
-                .Where(j => j.CompetitionId == competitionId && j.Status == "Active")
+                .Where(j => j.CompetitionId == competitionId)
                 .Select(j => j.UserId).Distinct().ToListAsync();
             foreach (var id in q) ids.Add(id);
         }
@@ -430,5 +468,69 @@ public class NotificationsService : INotificationsService
         IconClass = GetIconForType(n.Type),
         TimeAgo = FormatTimeAgo(n.CreatedAt),
         CategoryLabel = GetCategoryLabel(n.RelatedEntity)
+    };
+
+    // ───────── Public Announcements ─────────
+
+    public async Task<List<PublicAnnouncementDto>> GetPublicAnnouncementsAsync(int page = 1, int pageSize = 20)
+    {
+        var items = await _context.PublicAnnouncements
+            .Where(a => a.IsPublished)
+            .Include(a => a.CreatedBy)
+            .OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return items.Select(MapToAnnouncementDto).ToList();
+    }
+
+    public async Task<(int Total, List<PublicAnnouncementDto> Items)> GetPublicAnnouncementsPagedAsync(string? search, int page, int pageSize)
+    {
+        var q = _context.PublicAnnouncements
+            .Where(a => a.IsPublished)
+            .Include(a => a.CreatedBy)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            q = q.Where(a => a.Title.Contains(search) || a.Content.Contains(search));
+
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (total, items.Select(MapToAnnouncementDto).ToList());
+    }
+
+    public async Task<PublicAnnouncementDto?> GetAnnouncementByIdAsync(int id)
+    {
+        var a = await _context.PublicAnnouncements
+            .Include(x => x.CreatedBy)
+            .FirstOrDefaultAsync(x => x.AnnouncementId == id && x.IsPublished);
+        return a is null ? null : MapToAnnouncementDto(a);
+    }
+
+    public async Task<int> CreateAnnouncementAsync(Models.PublicAnnouncements announcement)
+    {
+        _context.PublicAnnouncements.Add(announcement);
+        await _context.SaveChangesAsync();
+        return announcement.AnnouncementId;
+    }
+
+    private static PublicAnnouncementDto MapToAnnouncementDto(Models.PublicAnnouncements a) => new()
+    {
+        AnnouncementId     = a.AnnouncementId,
+        Title              = a.Title,
+        Content            = a.Content,
+        ImageUrl           = a.ImageUrl,
+        AttachmentUrl      = a.AttachmentUrl,
+        AttachmentFileName = a.AttachmentFileName,
+        Type               = a.Type,
+        IsPublished        = a.IsPublished,
+        CreatedAt          = a.CreatedAt,
+        CreatedByName      = a.CreatedBy?.FullName,
+        RelatedCompetitionId = a.RelatedCompetitionId,
+        TimeAgo            = FormatTimeAgo(a.CreatedAt),
     };
 }

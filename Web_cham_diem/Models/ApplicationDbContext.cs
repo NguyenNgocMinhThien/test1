@@ -30,6 +30,9 @@ namespace Web_cham_diem.Models
         public DbSet<TeamTasks> TeamTasks { get; set; }
         public DbSet<TaskCompletions> TaskCompletions { get; set; }
         public DbSet<RegistrationEditHistory> RegistrationEditHistories { get; set; }
+        public DbSet<PublicAnnouncements> PublicAnnouncements { get; set; }
+        public DbSet<RegistrationFormFields> RegistrationFormFields { get; set; }
+        public DbSet<RegistrationFieldValues> RegistrationFieldValues { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -86,6 +89,11 @@ namespace Web_cham_diem.Models
             modelBuilder.Entity<Competitions>()
                 .Property(c => c.MaxScore)
                 .HasPrecision(18, 2);
+            modelBuilder.Entity<Competitions>()
+                .HasOne(c => c.CreatedBy)
+                .WithMany(u => u.CreatedCompetitions)
+                .HasForeignKey(c => c.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Sponsors
             modelBuilder.Entity<Sponsors>()
@@ -503,6 +511,66 @@ namespace Web_cham_diem.Models
                 .WithMany()
                 .HasForeignKey(h => h.EditedBy)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure PublicAnnouncements
+            modelBuilder.Entity<PublicAnnouncements>()
+                .HasKey(a => a.AnnouncementId);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .Property(a => a.Title)
+                .IsRequired()
+                .HasMaxLength(300);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .Property(a => a.Type)
+                .HasMaxLength(20);
+            modelBuilder.Entity<PublicAnnouncements>()
+                .HasOne(a => a.CreatedBy)
+                .WithMany()
+                .HasForeignKey(a => a.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure RegistrationFormFields
+            modelBuilder.Entity<RegistrationFormFields>()
+                .HasKey(f => f.FieldId);
+            modelBuilder.Entity<RegistrationFormFields>()
+                .Property(f => f.FieldLabel)
+                .IsRequired()
+                .HasMaxLength(200);
+            modelBuilder.Entity<RegistrationFormFields>()
+                .Property(f => f.FieldType)
+                .IsRequired()
+                .HasMaxLength(50);
+            modelBuilder.Entity<RegistrationFormFields>()
+                .Property(f => f.Placeholder)
+                .HasMaxLength(300);
+            modelBuilder.Entity<RegistrationFormFields>()
+                .Property(f => f.HelpText)
+                .HasMaxLength(500);
+            modelBuilder.Entity<RegistrationFormFields>()
+                .HasOne(f => f.Competition)
+                .WithMany(c => c.RegistrationFormFields)
+                .HasForeignKey(f => f.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure RegistrationFieldValues
+            modelBuilder.Entity<RegistrationFieldValues>()
+                .HasKey(v => v.ValueId);
+            modelBuilder.Entity<RegistrationFieldValues>()
+                .Property(v => v.FileName)
+                .HasMaxLength(255);
+            // Một registration chỉ có một value cho mỗi field
+            modelBuilder.Entity<RegistrationFieldValues>()
+                .HasIndex(v => new { v.RegistrationId, v.FieldId })
+                .IsUnique();
+            modelBuilder.Entity<RegistrationFieldValues>()
+                .HasOne(v => v.Registration)
+                .WithMany(r => r.FieldValues)
+                .HasForeignKey(v => v.RegistrationId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RegistrationFieldValues>()
+                .HasOne(v => v.Field)
+                .WithMany(f => f.FieldValues)
+                .HasForeignKey(v => v.FieldId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Seed initial roles
             modelBuilder.Entity<Roles>().HasData(

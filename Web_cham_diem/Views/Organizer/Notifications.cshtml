@@ -58,10 +58,16 @@
             </h2>
             <p class="text-muted mb-0 small">Gửi thông báo các mốc quan trọng đến thí sinh và giám khảo</p>
         </div>
-        <button class="btn btn-warning btn-sm rounded-pill fw-semibold px-4"
-                data-bs-toggle="modal" data-bs-target="#composeModal">
-            <i class="bi bi-send-fill me-1"></i>Soạn thông báo mới
-        </button>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-warning btn-sm rounded-pill fw-semibold px-4"
+                    data-bs-toggle="modal" data-bs-target="#composeModal">
+                <i class="bi bi-send-fill me-1"></i>Thông báo nhỏ
+            </button>
+            <button class="btn btn-danger btn-sm rounded-pill fw-semibold px-4"
+                    data-bs-toggle="modal" data-bs-target="#largeNotifModal">
+                <i class="bi bi-megaphone-fill me-1"></i>Thông báo lớn
+            </button>
+        </div>
     </div>
 
     <!-- Stats Row -->
@@ -506,6 +512,103 @@
     </div>
 </div>
 
+<!-- ====== Large Announcement Modal ====== -->
+<div class="modal fade" id="largeNotifModal" tabindex="-1" aria-labelledby="largeNotifModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0" style="background:linear-gradient(135deg,#dc2626,#e87722);">
+                <h5 class="modal-title text-white fw-bold" id="largeNotifModalLabel">
+                    <i class="bi bi-megaphone-fill me-2"></i>Đăng thông báo lớn (công khai)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">
+                    <i class="bi bi-info-circle me-1 text-danger"></i>
+                    Thông báo lớn sẽ hiển thị công khai tại trang <strong>/Thông báo</strong>, kèm hình ảnh và file đính kèm (nếu có).
+                </p>
+
+                <form id="largeNotifForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <!-- Title -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" name="title" id="lnTitle" class="form-control form-control-sm"
+                                   placeholder="Nhập tiêu đề thông báo..." maxlength="300" required>
+                        </div>
+
+                        <!-- Type + Competition row -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Loại thông báo</label>
+                            <select name="type" id="lnType" class="form-select form-select-sm">
+                                <option value="Info">Thông tin</option>
+                                <option value="Success">Thành công</option>
+                                <option value="Warning">Cảnh báo</option>
+                                <option value="Error">Khẩn cấp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Cuộc thi liên quan (tuỳ chọn)</label>
+                            <select name="relatedCompetitionId" id="lnCompetition" class="form-select form-select-sm">
+                                <option value="">-- Không chọn --</option>
+                                @foreach (var c in Model.Competitions)
+                                {
+                                    <option value="@c.CompetitionId">@c.CompetitionName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Nội dung <span class="text-danger">*</span></label>
+                            <textarea name="content" id="lnContent" class="form-control form-control-sm" rows="6"
+                                      placeholder="Nhập nội dung chi tiết thông báo..." maxlength="5000" required></textarea>
+                            <div class="text-end small text-muted mt-1"><span id="lnCharCount">0</span>/5000 ký tự</div>
+                        </div>
+
+                        <!-- Image upload -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-image me-1 text-primary"></i>Hình ảnh (tuỳ chọn)
+                            </label>
+                            <input type="file" name="imageFile" id="lnImageFile" class="form-control form-control-sm"
+                                   accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewLnImage(this)">
+                            <div class="form-text">JPG, PNG, GIF, WEBP — tối đa 5MB</div>
+                            <div id="lnImagePreview" class="mt-2" style="display:none;">
+                                <img id="lnImgPreviewEl" src="" alt="preview"
+                                     style="max-height:160px;border-radius:8px;object-fit:cover;border:1px solid #dee2e6;">
+                            </div>
+                        </div>
+
+                        <!-- Attachment upload -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">
+                                <i class="bi bi-paperclip me-1 text-danger"></i>File đính kèm (tuỳ chọn)
+                            </label>
+                            <input type="file" name="attachmentFile" id="lnAttachFile" class="form-control form-control-sm"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx">
+                            <div class="form-text">PDF, Word, Excel — tối đa 20MB</div>
+                            <div id="lnAttachName" class="mt-2 small text-success" style="display:none;">
+                                <i class="bi bi-check-circle me-1"></i><span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="lnResult" class="mt-3" style="display:none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-sm btn-light rounded-pill px-4" data-bs-dismiss="modal">Huỷ</button>
+                <button type="button" class="btn btn-sm btn-danger rounded-pill px-5 fw-semibold" id="lnSendBtn"
+                        onclick="submitLargeNotif()">
+                    <i class="bi bi-megaphone me-1"></i>Đăng thông báo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
 function selectAudience(val) {
@@ -573,6 +676,68 @@ async function sendNotification() {
 
 function showResult(type, html) {
     const el = document.getElementById('sendResult');
+    el.style.display = '';
+    el.innerHTML = `<div class="alert alert-${type} alert-dismissible small py-2 mb-0">${html}<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button></div>`;
+}
+
+// ---- Large Notification ----
+document.getElementById('lnContent')?.addEventListener('input', function () {
+    document.getElementById('lnCharCount').textContent = this.value.length;
+});
+
+document.getElementById('lnAttachFile')?.addEventListener('change', function () {
+    const nameEl = document.getElementById('lnAttachName');
+    if (this.files.length > 0) {
+        nameEl.style.display = '';
+        nameEl.querySelector('span').textContent = this.files[0].name;
+    } else {
+        nameEl.style.display = 'none';
+    }
+});
+
+function previewLnImage(input) {
+    const preview = document.getElementById('lnImagePreview');
+    const img     = document.getElementById('lnImgPreviewEl');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; preview.style.display = ''; };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+async function submitLargeNotif() {
+    const title   = document.getElementById('lnTitle').value.trim();
+    const content = document.getElementById('lnContent').value.trim();
+    if (!title)   { showLnResult('danger', 'Vui lòng nhập tiêu đề.'); return; }
+    if (!content) { showLnResult('danger', 'Vui lòng nhập nội dung.'); return; }
+
+    const btn = document.getElementById('lnSendBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang đăng...';
+
+    const formData = new FormData(document.getElementById('largeNotifForm'));
+
+    try {
+        const res  = await fetch('/Organizer/CreateAnnouncement', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.ok) {
+            showLnResult('success', '<i class="bi bi-check-circle me-1"></i>Đăng thông báo thành công!');
+            setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById('largeNotifModal'))?.hide(); location.reload(); }, 1800);
+        } else {
+            showLnResult('danger', data.message ?? 'Đăng thông báo thất bại.');
+        }
+    } catch {
+        showLnResult('danger', 'Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-megaphone me-1"></i>Đăng thông báo';
+    }
+}
+
+function showLnResult(type, html) {
+    const el = document.getElementById('lnResult');
     el.style.display = '';
     el.innerHTML = `<div class="alert alert-${type} alert-dismissible small py-2 mb-0">${html}<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button></div>`;
 }

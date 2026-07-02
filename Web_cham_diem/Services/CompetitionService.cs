@@ -187,10 +187,18 @@ public class CompetitionService : ICompetitionService
             .ToListAsync();
     }
 
-    public async Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(
-        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber = 1)
+    public async Task<bool> IsCompetitionOwnerAsync(int competitionId, int organizerId)
     {
-        var query = _context.Competitions.AsQueryable();
+        return await _context.Competitions
+            .AnyAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+    }
+
+    public async Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(
+        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId)
+    {
+        var query = _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
             query = query.Where(c => c.CompetitionName.Contains(searchQuery) || c.Category.Contains(searchQuery));
@@ -275,7 +283,7 @@ public class CompetitionService : ICompetitionService
                 RoundName         = r.RoundName,
                 StartDate         = r.StartDate,
                 EndDate           = r.EndDate,
-                RegistrationCount = r.Registrations.Count
+                RegistrationCount = r.Registrations.Count(reg => reg.Status != "Withdrawn" && reg.Status != "Rejected")
             }).ToList();
 
         var images = competition.CompetitionImages
@@ -385,7 +393,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== CREATE =====
 
-    public async Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model)
+    public async Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model, int organizerId)
     {
         if (string.IsNullOrWhiteSpace(model.CompetitionName))
             throw new InvalidOperationException("Tên cuộc thi không được để trống.");
@@ -446,7 +454,8 @@ public class CompetitionService : ICompetitionService
             MaxTeamSize        = model.MaxTeamSize,
             IsTeamBased        = model.IsTeamBased,
             Status             = "Draft",
-            CreatedAt          = DateTime.UtcNow
+            CreatedAt          = DateTime.UtcNow,
+            CreatedByUserId    = organizerId
         };
 
         _context.Competitions.Add(competition);
@@ -638,7 +647,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== GET FOR EDIT =====
 
-    public async Task<EditCompetitionViewModel> GetCompetitionForEditAsync(int competitionId)
+    public async Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
@@ -649,13 +658,15 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
                 .ThenInclude(cs => cs.Sponsor)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return null;
 
         var now = DateTime.UtcNow;
         var totalRegistrations = await _context.Registrations
-            .CountAsync(r => r.CompetitionId == competitionId);
+            .CountAsync(r => r.CompetitionId == competitionId
+                          && r.Status != "Withdrawn"
+                          && r.Status != "Rejected");
         var submissionCount = await _context.Submissions
             .CountAsync(s => s.CompetitionId == competitionId);
 
@@ -667,7 +678,7 @@ public class CompetitionService : ICompetitionService
                 RoundName         = r.RoundName,
                 StartDate         = r.StartDate,
                 EndDate           = r.EndDate,
-                RegistrationCount = r.Registrations.Count
+                RegistrationCount = r.Registrations.Count(reg => reg.Status != "Withdrawn" && reg.Status != "Rejected")
             }).ToList();
 
 
@@ -765,12 +776,12 @@ public class CompetitionService : ICompetitionService
 
     // ===== UPDATE =====
 
-    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model)
+    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -886,9 +897,60 @@ public class CompetitionService : ICompetitionService
         }
     }
 
+    // ===== UPDATE SCHEDULE DATES (AJAX) =====
+
+    public async Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId)
+    {
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+
+        if (competition == null) return (false, "Cuộc thi không tìm thấy.");
+
+        var now        = DateTime.UtcNow;
+        var hasStarted = now >= competition.StartDate;
+
+        if (hasStarted)
+            return (false, "Cuộc thi đã bắt đầu — không thể thay đổi ngày.");
+
+        var startDate          = ToUtc(dto.StartDate);
+        var endDate            = ToUtc(dto.EndDate);
+        var submissionDeadline = ToUtc(dto.SubmissionDeadline);
+
+        if (endDate <= startDate)
+            return (false, "Ngày kết thúc phải sau ngày bắt đầu.");
+        if (submissionDeadline > endDate)
+            return (false, "Hạn nộp bài phải trước hoặc bằng ngày kết thúc.");
+
+        foreach (var r in competition.RegistrationRounds)
+        {
+            if (r.EndDate > startDate)
+                return (false, $"Đợt \"{r.RoundName}\" kết thúc {r.EndDate:dd/MM/yyyy HH:mm} — phải trước ngày bắt đầu mới ({startDate:dd/MM/yyyy HH:mm}).");
+        }
+
+        var hasRegistrations = await _context.Registrations.AnyAsync(r => r.CompetitionId == competitionId);
+        if (hasRegistrations)
+        {
+            var currentRegCount = await _context.Registrations.CountAsync(r => r.CompetitionId == competitionId);
+            if (dto.MaxParticipants < currentRegCount)
+                return (false, $"Không thể giảm số lượng tối đa xuống {dto.MaxParticipants} khi đã có {currentRegCount} người đăng ký.");
+        }
+
+        competition.StartDate          = startDate;
+        competition.EndDate            = endDate;
+        competition.SubmissionDeadline = submissionDeadline;
+        competition.MaxParticipants    = dto.MaxParticipants;
+        if (dto.MaxTeamSize.HasValue && competition.IsTeamBased)
+            competition.MaxTeamSize = dto.MaxTeamSize.Value;
+        competition.UpdatedAt = now;
+
+        await _context.SaveChangesAsync();
+        return (true, "Đã lưu lịch trình thành công!");
+    }
+
     // ===== ADD REGISTRATION ROUND =====
 
-    public async Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto)
+    public async Task<bool> AddRegistrationRoundAsync(int competitionId, RegistrationRoundCreateDto roundDto, DateTime? pendingStartDate = null)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
@@ -901,8 +963,11 @@ public class CompetitionService : ICompetitionService
         if (now >= competition.StartDate)
             throw new InvalidOperationException("Không thể thêm đợt đăng ký sau khi cuộc thi đã bắt đầu.");
 
+        // Dùng ngày bắt đầu đang chờ lưu (nếu có) để tránh xung đột khi user chưa save form
+        var effectiveStartDate = pendingStartDate.HasValue ? pendingStartDate.Value : competition.StartDate;
+
         var newRoundList = new List<RegistrationRoundCreateDto> { roundDto };
-        ValidateRounds(newRoundList, competition.StartDate);
+        ValidateRounds(newRoundList, effectiveStartDate);
 
         var newStart = ToUtc(roundDto.StartDate);
         var newEnd   = ToUtc(roundDto.EndDate);
@@ -927,16 +992,58 @@ public class CompetitionService : ICompetitionService
         return true;
     }
 
+    public async Task<bool> UpdateRegistrationRoundAsync(int roundId, int competitionId, RegistrationRoundUpdateDto dto)
+    {
+        var round = await _context.RegistrationRounds
+            .Include(r => r.Registrations)
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+
+        if (round == null) return false;
+
+        var competition = await _context.Competitions
+            .Include(c => c.RegistrationRounds)
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+
+        if (competition == null) return false;
+
+        if (DateTime.UtcNow >= competition.StartDate)
+            throw new InvalidOperationException("Không thể chỉnh sửa đợt đăng ký sau khi cuộc thi đã bắt đầu.");
+
+        var newStart = ToUtc(dto.StartDate);
+        var newEnd   = ToUtc(dto.EndDate);
+
+        if (newEnd <= newStart)
+            throw new InvalidOperationException("Ngày kết thúc phải sau ngày bắt đầu.");
+
+        if (newEnd > competition.StartDate)
+            throw new InvalidOperationException(
+                $"Hạn đăng ký phải trước ngày bắt đầu cuộc thi ({competition.StartDate:dd/MM/yyyy HH:mm}).");
+
+        foreach (var other in competition.RegistrationRounds.Where(r => r.RoundId != roundId))
+        {
+            if (newStart <= other.EndDate && newEnd >= other.StartDate)
+                throw new InvalidOperationException(
+                    $"Đợt đăng ký này chồng chéo với đợt \"{other.RoundName}\" ({other.StartDate:dd/MM/yyyy} - {other.EndDate:dd/MM/yyyy}).");
+        }
+
+        round.RoundName  = dto.RoundName;
+        round.StartDate  = newStart;
+        round.EndDate    = newEnd;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     // ===== DELETE =====
 
-    public async Task<bool> DeleteCompetitionAsync(int competitionId)
+    public async Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId)
     {
         var competition = await _context.Competitions
             .Include(c => c.Registrations)
             .Include(c => c.Teams)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -986,10 +1093,10 @@ public class CompetitionService : ICompetitionService
 
     // ===== CHANGE STATUS =====
 
-    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus)
+    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId)
     {
         var competition = await _context.Competitions
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
 
         if (competition == null) return false;
 
@@ -1005,18 +1112,22 @@ public class CompetitionService : ICompetitionService
 
     // ===== DASHBOARD =====
 
-    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync()
+    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId)
     {
         var now = DateTime.UtcNow;
 
         var competitions = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
             .Include(c => c.Teams)
             .ToListAsync();
 
-        var judges = await _context.Judges.ToListAsync();
+        var competitionIds = competitions.Select(c => c.CompetitionId).ToList();
+        var judges = await _context.Judges
+            .Where(j => competitionIds.Contains(j.CompetitionId))
+            .ToListAsync();
 
         // ===== COMPETITION STATUS BREAKDOWN =====
         int totalCompetitions = competitions.Count;
@@ -1267,6 +1378,7 @@ public class CompetitionService : ICompetitionService
 
         var recentScores = await _context.Scores
             .Include(s => s.Submission)
+            .Where(s => s.Submission != null && competitionIds.Contains(s.Submission.CompetitionId))
             .OrderByDescending(s => s.ScoredDate)
             .Take(5)
             .ToListAsync();
@@ -1283,7 +1395,7 @@ public class CompetitionService : ICompetitionService
 
         var recentRegistrations = await _context.Registrations
             .Include(r => r.User)
-            .Where(r => r.Status == "Pending")
+            .Where(r => r.Status == "Pending" && competitionIds.Contains(r.CompetitionId))
             .OrderByDescending(r => r.RegistrationDate)
             .Take(3)
             .ToListAsync();
@@ -1299,6 +1411,7 @@ public class CompetitionService : ICompetitionService
             });
 
         var recentSubmissions = await _context.Submissions
+            .Where(s => competitionIds.Contains(s.CompetitionId))
             .OrderByDescending(s => s.SubmissionDate)
             .Take(2)
             .ToListAsync();
@@ -1683,9 +1796,14 @@ public class CompetitionService : ICompetitionService
         _context.CompetitionRounds.Add(round);
         await _context.SaveChangesAsync();
 
-        if (dto.ScoringCriteria != null)
+        if (dto.ScoringCriteria != null && dto.ScoringCriteria.Any())
         {
             foreach (var c in dto.ScoringCriteria)
+            {
+                // Chuẩn hóa weight: nếu được gửi dạng % (> 1) thì chuyển sang phân số
+                if (c.Weight > 1m)
+                    c.Weight = c.Weight > 100m ? c.Weight / 10000m : c.Weight / 100m;
+
                 _context.ScoringCriteria.Add(new ScoringCriteria
                 {
                     RoundId      = round.RoundId,
@@ -1696,6 +1814,7 @@ public class CompetitionService : ICompetitionService
                     Order        = c.Order,
                     CreatedAt    = DateTime.UtcNow
                 });
+            }
             await _context.SaveChangesAsync();
         }
         return true;
@@ -1736,12 +1855,16 @@ public class CompetitionService : ICompetitionService
         round.Location          = dto.Location;
         round.UpdatedAt         = DateTime.UtcNow;
 
-        // Cập nhật tiêu chí chấm điểm nếu được gửi kèm
+        // Cập nhật tiêu chí chấm điểm — ghi đè toàn bộ nếu danh sách được gửi
         if (dto.ScoringCriteria != null && dto.ScoringCriteria.Any())
         {
             var existing = await _context.ScoringCriteria.Where(sc => sc.RoundId == roundId).ToListAsync();
             _context.ScoringCriteria.RemoveRange(existing);
             foreach (var c in dto.ScoringCriteria)
+            {
+                if (c.Weight > 1m)
+                    c.Weight = c.Weight > 100m ? c.Weight / 10000m : c.Weight / 100m;
+
                 _context.ScoringCriteria.Add(new ScoringCriteria
                 {
                     RoundId      = roundId,
@@ -1752,6 +1875,7 @@ public class CompetitionService : ICompetitionService
                     Order        = c.Order,
                     CreatedAt    = DateTime.UtcNow
                 });
+            }
         }
 
         await _context.SaveChangesAsync();
@@ -1767,5 +1891,109 @@ public class CompetitionService : ICompetitionService
         _context.CompetitionRounds.Remove(round);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    // ─── Registration Form Fields ─────────────────────────────────────────────
+
+    public async Task<List<FormFieldReadDto>> GetFormFieldsAsync(int competitionId)
+    {
+        return await _context.RegistrationFormFields
+            .Where(f => f.CompetitionId == competitionId)
+            .OrderBy(f => f.DisplayOrder)
+            .ThenBy(f => f.FieldId)
+            .Select(f => new FormFieldReadDto
+            {
+                FieldId      = f.FieldId,
+                FieldLabel   = f.FieldLabel,
+                FieldType    = f.FieldType,
+                IsRequired   = f.IsRequired,
+                Placeholder  = f.Placeholder,
+                Options      = f.Options,
+                HelpText     = f.HelpText,
+                DisplayOrder = f.DisplayOrder,
+                IsActive     = f.IsActive
+            })
+            .ToListAsync();
+    }
+
+    public async Task<(bool ok, string message, int fieldId)> AddFormFieldAsync(int competitionId, FormFieldCreateDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FieldLabel))
+            return (false, "Nhãn trường không được để trống.", 0);
+
+        var validTypes = new[] { "Text", "Textarea", "Select", "Checkbox", "File", "Date", "Number", "Email" };
+        if (!validTypes.Contains(dto.FieldType))
+            return (false, "Loại trường không hợp lệ.", 0);
+
+        var field = new RegistrationFormFields
+        {
+            CompetitionId = competitionId,
+            FieldLabel    = dto.FieldLabel.Trim(),
+            FieldType     = dto.FieldType,
+            IsRequired    = dto.IsRequired,
+            Placeholder   = dto.Placeholder?.Trim(),
+            Options       = dto.Options,
+            HelpText      = dto.HelpText?.Trim(),
+            DisplayOrder  = dto.DisplayOrder,
+            IsActive      = dto.IsActive,
+            CreatedAt     = DateTime.UtcNow
+        };
+
+        _context.RegistrationFormFields.Add(field);
+        await _context.SaveChangesAsync();
+        return (true, "Thêm trường thành công!", field.FieldId);
+    }
+
+    public async Task<(bool ok, string message)> UpdateFormFieldAsync(int fieldId, int competitionId, FormFieldCreateDto dto)
+    {
+        var field = await _context.RegistrationFormFields
+            .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
+        if (field == null) return (false, "Trường không tìm thấy.");
+
+        if (string.IsNullOrWhiteSpace(dto.FieldLabel))
+            return (false, "Nhãn trường không được để trống.");
+
+        var validTypes = new[] { "Text", "Textarea", "Select", "Checkbox", "File", "Date", "Number", "Email" };
+        if (!validTypes.Contains(dto.FieldType))
+            return (false, "Loại trường không hợp lệ.");
+
+        field.FieldLabel   = dto.FieldLabel.Trim();
+        field.FieldType    = dto.FieldType;
+        field.IsRequired   = dto.IsRequired;
+        field.Placeholder  = dto.Placeholder?.Trim();
+        field.Options      = dto.Options;
+        field.HelpText     = dto.HelpText?.Trim();
+        field.DisplayOrder = dto.DisplayOrder;
+        field.IsActive     = dto.IsActive;
+
+        await _context.SaveChangesAsync();
+        return (true, "Cập nhật trường thành công!");
+    }
+
+    public async Task<(bool ok, string message)> DeleteFormFieldAsync(int fieldId, int competitionId)
+    {
+        var field = await _context.RegistrationFormFields
+            .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
+        if (field == null) return (false, "Trường không tìm thấy.");
+
+        _context.RegistrationFormFields.Remove(field);
+        await _context.SaveChangesAsync();
+        return (true, "Đã xóa trường.");
+    }
+
+    public async Task<(bool ok, string message)> ReorderFormFieldsAsync(int competitionId, List<int> orderedFieldIds)
+    {
+        var fields = await _context.RegistrationFormFields
+            .Where(f => f.CompetitionId == competitionId && orderedFieldIds.Contains(f.FieldId))
+            .ToListAsync();
+
+        for (int i = 0; i < orderedFieldIds.Count; i++)
+        {
+            var field = fields.FirstOrDefault(f => f.FieldId == orderedFieldIds[i]);
+            if (field != null) field.DisplayOrder = i;
+        }
+
+        await _context.SaveChangesAsync();
+        return (true, "Đã cập nhật thứ tự.");
     }
 }

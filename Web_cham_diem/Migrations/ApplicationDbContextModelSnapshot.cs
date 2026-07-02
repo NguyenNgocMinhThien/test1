@@ -231,6 +231,9 @@ namespace Web_cham_diem.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -274,6 +277,8 @@ namespace Web_cham_diem.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("CompetitionId");
+
+                    b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Competitions");
                 });
@@ -436,6 +441,56 @@ namespace Web_cham_diem.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Web_cham_diem.Models.PublicAnnouncements", b =>
+                {
+                    b.Property<int>("AnnouncementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnnouncementId"));
+
+                    b.Property<string>("AttachmentFileName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AttachmentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("RelatedCompetitionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("AnnouncementId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("PublicAnnouncements");
+                });
+
             modelBuilder.Entity("Web_cham_diem.Models.RegistrationEditHistory", b =>
                 {
                     b.Property<int>("HistoryId")
@@ -474,6 +529,91 @@ namespace Web_cham_diem.Migrations
                     b.HasIndex("RegistrationId");
 
                     b.ToTable("RegistrationEditHistories");
+                });
+
+            modelBuilder.Entity("Web_cham_diem.Models.RegistrationFieldValues", b =>
+                {
+                    b.Property<int>("ValueId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ValueId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FieldId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("RegistrationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("ValueId");
+
+                    b.HasIndex("FieldId");
+
+                    b.HasIndex("RegistrationId", "FieldId")
+                        .IsUnique();
+
+                    b.ToTable("RegistrationFieldValues");
+                });
+
+            modelBuilder.Entity("Web_cham_diem.Models.RegistrationFormFields", b =>
+                {
+                    b.Property<int>("FieldId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FieldId"));
+
+                    b.Property<int>("CompetitionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FieldLabel")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("FieldType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("HelpText")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Options")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Placeholder")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.HasKey("FieldId");
+
+                    b.HasIndex("CompetitionId");
+
+                    b.ToTable("RegistrationFormFields");
                 });
 
             modelBuilder.Entity("Web_cham_diem.Models.RegistrationRounds", b =>
@@ -607,35 +747,35 @@ namespace Web_cham_diem.Migrations
                         new
                         {
                             RoleId = 1,
-                            CreatedAt = new DateTime(2026, 6, 16, 4, 36, 40, 950, DateTimeKind.Utc).AddTicks(8017),
+                            CreatedAt = new DateTime(2026, 6, 29, 3, 59, 59, 254, DateTimeKind.Utc).AddTicks(1194),
                             Description = "Quản trị viên hệ thống",
                             RoleName = "Admin"
                         },
                         new
                         {
                             RoleId = 2,
-                            CreatedAt = new DateTime(2026, 6, 16, 4, 36, 40, 950, DateTimeKind.Utc).AddTicks(8019),
+                            CreatedAt = new DateTime(2026, 6, 29, 3, 59, 59, 254, DateTimeKind.Utc).AddTicks(1196),
                             Description = "Sinh viên tham dự cuộc thi",
                             RoleName = "Student"
                         },
                         new
                         {
                             RoleId = 3,
-                            CreatedAt = new DateTime(2026, 6, 16, 4, 36, 40, 950, DateTimeKind.Utc).AddTicks(8022),
+                            CreatedAt = new DateTime(2026, 6, 29, 3, 59, 59, 254, DateTimeKind.Utc).AddTicks(1198),
                             Description = "Ban tổ chức cuộc thi",
                             RoleName = "Organizer"
                         },
                         new
                         {
                             RoleId = 4,
-                            CreatedAt = new DateTime(2026, 6, 16, 4, 36, 40, 950, DateTimeKind.Utc).AddTicks(8023),
+                            CreatedAt = new DateTime(2026, 6, 29, 3, 59, 59, 254, DateTimeKind.Utc).AddTicks(1199),
                             Description = "Giám khảo",
                             RoleName = "Judge"
                         },
                         new
                         {
                             RoleId = 5,
-                            CreatedAt = new DateTime(2026, 6, 16, 4, 36, 40, 950, DateTimeKind.Utc).AddTicks(8025),
+                            CreatedAt = new DateTime(2026, 6, 29, 3, 59, 59, 254, DateTimeKind.Utc).AddTicks(1200),
                             Description = "Giảng viên hướng dẫn",
                             RoleName = "Lecturer"
                         });
@@ -1150,6 +1290,16 @@ namespace Web_cham_diem.Migrations
                     b.Navigation("Sponsor");
                 });
 
+            modelBuilder.Entity("Web_cham_diem.Models.Competitions", b =>
+                {
+                    b.HasOne("Web_cham_diem.Models.Users", "CreatedBy")
+                        .WithMany("CreatedCompetitions")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("Web_cham_diem.Models.JudgeAssignments", b =>
                 {
                     b.HasOne("Web_cham_diem.Models.Users", "AssignedByUser")
@@ -1229,6 +1379,16 @@ namespace Web_cham_diem.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Web_cham_diem.Models.PublicAnnouncements", b =>
+                {
+                    b.HasOne("Web_cham_diem.Models.Users", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("Web_cham_diem.Models.RegistrationEditHistory", b =>
                 {
                     b.HasOne("Web_cham_diem.Models.Users", "Editor")
@@ -1246,6 +1406,36 @@ namespace Web_cham_diem.Migrations
                     b.Navigation("Editor");
 
                     b.Navigation("Registration");
+                });
+
+            modelBuilder.Entity("Web_cham_diem.Models.RegistrationFieldValues", b =>
+                {
+                    b.HasOne("Web_cham_diem.Models.RegistrationFormFields", "Field")
+                        .WithMany("FieldValues")
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Web_cham_diem.Models.Registrations", "Registration")
+                        .WithMany("FieldValues")
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Field");
+
+                    b.Navigation("Registration");
+                });
+
+            modelBuilder.Entity("Web_cham_diem.Models.RegistrationFormFields", b =>
+                {
+                    b.HasOne("Web_cham_diem.Models.Competitions", "Competition")
+                        .WithMany("RegistrationFormFields")
+                        .HasForeignKey("CompetitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Competition");
                 });
 
             modelBuilder.Entity("Web_cham_diem.Models.RegistrationRounds", b =>
@@ -1517,6 +1707,8 @@ namespace Web_cham_diem.Migrations
 
                     b.Navigation("Judges");
 
+                    b.Navigation("RegistrationFormFields");
+
                     b.Navigation("RegistrationRounds");
 
                     b.Navigation("Registrations");
@@ -1533,9 +1725,19 @@ namespace Web_cham_diem.Migrations
                     b.Navigation("Scores");
                 });
 
+            modelBuilder.Entity("Web_cham_diem.Models.RegistrationFormFields", b =>
+                {
+                    b.Navigation("FieldValues");
+                });
+
             modelBuilder.Entity("Web_cham_diem.Models.RegistrationRounds", b =>
                 {
                     b.Navigation("Registrations");
+                });
+
+            modelBuilder.Entity("Web_cham_diem.Models.Registrations", b =>
+                {
+                    b.Navigation("FieldValues");
                 });
 
             modelBuilder.Entity("Web_cham_diem.Models.Roles", b =>
@@ -1578,6 +1780,8 @@ namespace Web_cham_diem.Migrations
 
             modelBuilder.Entity("Web_cham_diem.Models.Users", b =>
                 {
+                    b.Navigation("CreatedCompetitions");
+
                     b.Navigation("Judges");
 
                     b.Navigation("Notifications");

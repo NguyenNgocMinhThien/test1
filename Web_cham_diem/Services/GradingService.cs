@@ -15,9 +15,10 @@ public class GradingService : IGradingService
         _logger = logger;
     }
 
-    public async Task<OrganizerGradingViewModel> GetGradingViewAsync(int? competitionId)
+    public async Task<OrganizerGradingViewModel> GetGradingViewAsync(int organizerId, int? competitionId)
     {
         var competitions = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => new CompetitionBasicDto
             {

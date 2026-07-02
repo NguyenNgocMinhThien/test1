@@ -339,8 +339,8 @@
         <!-- Header Page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="fw-bold mb-1 text-dark">Quản lý Cuộc thi</h3>
-                <p class="text-muted small mb-0">Thiết lập, theo dõi và cấu hình toàn bộ vòng đời các cuộc thi.</p>
+                <h3 class="fw-bold mb-1 text-dark">Cuộc thi của tôi</h3>
+                <p class="text-muted small mb-0">Thiết lập, theo dõi và quản lý các cuộc thi do bạn tổ chức.</p>
             </div>
             <a href="/Organizer/Create" class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
                 <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi
@@ -569,6 +569,13 @@
                                         }
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
+                                            <a class="dropdown-item" href="/Organizer/Edit/@comp.CompetitionId"
+                                               onclick="sessionStorage.setItem('editCompetitionTab_@comp.CompetitionId','#tab-form')">
+                                                <i class="bi bi-ui-checks me-2 text-primary"></i>Tạo biểu mẫu đăng ký
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
                                             <button type="button" class="dropdown-item delete-action" onclick="deleteCompetition(@comp.CompetitionId, '@comp.CompetitionName')">
                                                 <i class="bi bi-trash me-2"></i>Xóa cuộc thi
                                             </button>
@@ -585,7 +592,7 @@
         {
             <div class="alert alert-info text-center py-5" role="alert">
                 <i class="bi bi-inbox fs-1"></i>
-                <p class="mt-3 mb-0">Chưa có cuộc thi nào. <a href="/Organizer/Create" class="alert-link">Tạo cuộc thi mới</a></p>
+                <p class="mt-3 mb-0">Bạn chưa tạo cuộc thi nào. <a href="/Organizer/Create" class="alert-link">Tạo cuộc thi đầu tiên</a></p>
             </div>
         }
 

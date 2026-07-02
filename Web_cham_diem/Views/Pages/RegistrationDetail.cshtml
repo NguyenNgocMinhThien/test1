@@ -294,10 +294,24 @@
                                 <div class="fw-semibold">@Model.Advisor.FullName</div>
                             </div>
                         }
+                        @if (Model.RegistrationRound != null)
+                        {
+                            <div class="col-sm-6">
+                                <div class="small text-muted">Đợt đăng ký</div>
+                                <div>@Model.RegistrationRound.RoundName</div>
+                            </div>
+                        }
                         <div class="col-12">
                             <div class="small text-muted">Ngày đăng ký</div>
                             <div>@TimeZoneInfo.ConvertTimeFromUtc(Model.RegistrationDate, tz).ToString("dd/MM/yyyy HH:mm")</div>
                         </div>
+                        @if (!string.IsNullOrEmpty(Model.Notes))
+                        {
+                            <div class="col-12">
+                                <div class="small text-muted">Ghi chú</div>
+                                <div style="white-space:pre-wrap; word-break:break-word;">@Model.Notes</div>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -331,10 +345,19 @@
                     @if (files.Any())
                     {
                         <ul class="list-group list-group-flush">
-                            @foreach (var file in files)
+                            @for (int fi = 0; fi < files.Count; fi++)
                             {
+                                var file = files[fi];
+                                var fileExt = System.IO.Path.GetExtension(file).TrimStart('.').ToUpper();
                                 <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                                    <span class="small"><i class="bi bi-file-earmark me-1 text-muted"></i>@System.IO.Path.GetFileName(file)</span>
+                                    <span class="small">
+                                        <i class="bi bi-file-earmark me-1 text-muted"></i>
+                                        File đính kèm @(fi + 1)
+                                        @if (!string.IsNullOrEmpty(fileExt))
+                                        {
+                                            <span class="badge bg-light text-dark border ms-1" style="font-size:.7rem;">@fileExt</span>
+                                        }
+                                    </span>
                                     <a href="@file" class="btn btn-sm btn-outline-primary" target="_blank">
                                         <i class="bi bi-eye me-1"></i>Xem
                                     </a>
@@ -347,6 +370,49 @@
                         <p class="text-muted fst-italic small">Chưa có file đính kèm.</p>
                     }
                 </div>
+
+                @* ── Thông tin bổ sung (custom fields) ── *@
+                @{
+                    var compFormFields = ViewBag.CompetitionFormFields as List<Web_cham_diem.Models.ViewModels.FormFieldReadDto> ?? new();
+                    var fieldValMap = Model.FieldValues.ToDictionary(v => v.FieldId, v => v);
+                }
+                @if (compFormFields.Any())
+                {
+                    <hr class="my-2" />
+                    <div>
+                        <p class="section-heading"><i class="bi bi-ui-checks me-1"></i>Thông tin bổ sung</p>
+                        <div class="row g-2">
+                            @foreach (var cf in compFormFields)
+                            {
+                                fieldValMap.TryGetValue(cf.FieldId, out var cfv);
+                                <div class="col-sm-6">
+                                    <div class="small text-muted">@cf.FieldLabel</div>
+                                    @if (cfv == null || string.IsNullOrEmpty(cfv.Value))
+                                    {
+                                        <div class="text-muted fst-italic small">—</div>
+                                    }
+                                    else if (cf.FieldType == "File")
+                                    {
+                                        <a href="@cfv.Value" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+                                            <i class="bi bi-file-earmark me-1"></i>@(cfv.FileName ?? System.IO.Path.GetFileName(cfv.Value))
+                                        </a>
+                                    }
+                                    else if (cf.FieldType == "Checkbox")
+                                    {
+                                        @if (cfv.Value == "true")
+                                        { <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i>Có</span> }
+                                        else
+                                        { <span class="badge bg-secondary">Không</span> }
+                                    }
+                                    else
+                                    {
+                                        <div class="fw-semibold" style="word-break:break-word;">@cfv.Value</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
 
             </div>
         </div>
@@ -823,6 +889,106 @@
                             </div>
                         }
 
+                        @* ── Trường biểu mẫu tùy chỉnh (render server-side) ── *@
+                        @{
+                            var editCompFields = ViewBag.CompetitionFormFields as List<Web_cham_diem.Models.ViewModels.FormFieldReadDto> ?? new();
+                            var editFieldValMap = Model.FieldValues.ToDictionary(v => v.FieldId, v => v);
+                        }
+                        @if (editCompFields.Any())
+                        {
+                            <hr class="my-2" />
+                            <div class="fw-semibold small text-muted mb-2">
+                                <i class="bi bi-ui-checks me-1"></i>Thông tin bổ sung
+                            </div>
+                            @foreach (var ef in editCompFields)
+                            {
+                                editFieldValMap.TryGetValue(ef.FieldId, out var efv);
+                                var efCurVal = efv?.Value ?? "";
+                                <div class="mb-3"
+                                     id="edit-df-wrapper-@ef.FieldId"
+                                     data-df-id="@ef.FieldId"
+                                     data-df-required="@ef.IsRequired.ToString().ToLower()"
+                                     data-df-label="@ef.FieldLabel"
+                                     data-df-type="@ef.FieldType">
+                                    <label class="form-label fw-semibold small">
+                                        @ef.FieldLabel
+                                        @if (ef.IsRequired) { <span class="text-danger">*</span> }
+                                    </label>
+                                    @if (ef.FieldType == "Text")
+                                    {
+                                        <input type="text" name="df_@ef.FieldId" class="form-control form-control-sm"
+                                               placeholder="@ef.Placeholder" value="@efCurVal" />
+                                    }
+                                    else if (ef.FieldType == "Textarea")
+                                    {
+                                        <textarea name="df_@ef.FieldId" class="form-control form-control-sm" rows="3"
+                                                  placeholder="@ef.Placeholder">@efCurVal</textarea>
+                                    }
+                                    else if (ef.FieldType == "Email")
+                                    {
+                                        <input type="email" name="df_@ef.FieldId" class="form-control form-control-sm"
+                                               placeholder="@ef.Placeholder" value="@efCurVal" />
+                                    }
+                                    else if (ef.FieldType == "Number")
+                                    {
+                                        <input type="number" name="df_@ef.FieldId" class="form-control form-control-sm"
+                                               placeholder="@ef.Placeholder" value="@efCurVal" />
+                                    }
+                                    else if (ef.FieldType == "Date")
+                                    {
+                                        <input type="date" name="df_@ef.FieldId" class="form-control form-control-sm"
+                                               value="@efCurVal" />
+                                    }
+                                    else if (ef.FieldType == "Select" && !string.IsNullOrEmpty(ef.Options))
+                                    {
+                                        var efOpts = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ef.Options) ?? new();
+                                        <select name="df_@ef.FieldId" class="form-select form-select-sm">
+                                            <option value="">-- Chọn --</option>
+                                            @foreach (var opt in efOpts)
+                                            {
+                                                <option value="@opt" selected="@(opt == efCurVal)">@opt</option>
+                                            }
+                                        </select>
+                                    }
+                                    else if (ef.FieldType == "Checkbox")
+                                    {
+                                        <div class="form-check">
+                                            <input type="hidden" name="df_@ef.FieldId" value="false" />
+                                            <input type="checkbox" name="df_@ef.FieldId" value="true"
+                                                   class="form-check-input" id="edit_df_cb_@ef.FieldId"
+                                                   @(efCurVal == "true" ? "checked" : "") />
+                                            <label class="form-check-label small" for="edit_df_cb_@ef.FieldId">
+                                                @(string.IsNullOrEmpty(ef.Placeholder) ? "Có" : ef.Placeholder)
+                                            </label>
+                                        </div>
+                                    }
+                                    else if (ef.FieldType == "File")
+                                    {
+                                        @if (!string.IsNullOrEmpty(efv?.Value))
+                                        {
+                                            <div class="d-flex align-items-center gap-2 p-2 rounded mb-1"
+                                                 style="background:#f8f9fa;border:1px solid #e0e0e0;">
+                                                <i class="bi bi-file-earmark text-muted"></i>
+                                                <span class="small flex-grow-1">@(efv.FileName ?? System.IO.Path.GetFileName(efv.Value))</span>
+                                                <a href="@efv.Value" target="_blank"
+                                                   class="btn btn-outline-secondary btn-sm" style="padding:2px 8px;font-size:.75rem;">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </div>
+                                            <div class="form-text text-muted">Để trống để giữ nguyên file cũ</div>
+                                        }
+                                        <input type="file" name="df_file_@ef.FieldId" class="form-control form-control-sm" />
+                                    }
+                                    <div class="invalid-feedback" id="edit-df-err-@ef.FieldId"></div>
+                                    @if (!string.IsNullOrEmpty(ef.HelpText))
+                                    {
+                                        <div class="form-text text-muted">@ef.HelpText</div>
+                                    }
+                                </div>
+                            }
+                            <hr class="my-2" />
+                        }
+
                         @* ── Hồ sơ đính kèm hiện tại ─────────────────────── *@
                         @if (files.Any())
                         {
@@ -1089,6 +1255,48 @@
         const saveBtn = document.getElementById('saveEditBtn');
         if (!form) return;
 
+        // Validate required dynamic fields
+        let dfValid = true;
+        form.querySelectorAll('[data-df-required="true"]').forEach(wrapper => {
+            const fieldId   = wrapper.dataset.dfId;
+            const fieldType = wrapper.dataset.dfType;
+            const label     = wrapper.dataset.dfLabel;
+            const errEl     = document.getElementById(`edit-df-err-${fieldId}`);
+            wrapper.querySelectorAll('input:not([type=hidden]), textarea, select')
+                   .forEach(el => el.classList.remove('is-invalid'));
+            if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+            let empty = false;
+            let targetEl = null;
+            if (fieldType === 'File') {
+                targetEl = wrapper.querySelector(`[name="df_file_${fieldId}"]`);
+                // File bắt buộc chỉ cần check nếu chưa có file cũ (server xử lý)
+                empty = targetEl && targetEl.files.length === 0 && !wrapper.querySelector('.bi-file-earmark');
+            } else if (fieldType === 'Checkbox') {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"][type="checkbox"]`);
+                empty = !targetEl || !targetEl.checked;
+            } else {
+                targetEl = wrapper.querySelector(`[name="df_${fieldId}"]`);
+                empty = !targetEl || !targetEl.value.trim();
+            }
+
+            if (empty) {
+                dfValid = false;
+                if (targetEl) targetEl.classList.add('is-invalid');
+                if (errEl) {
+                    errEl.textContent = fieldType === 'Checkbox'
+                        ? `Vui lòng xác nhận "${label}".`
+                        : `"${label}" là trường bắt buộc.`;
+                    errEl.style.display = 'block';
+                }
+            }
+        });
+        if (!dfValid) {
+            const first = form.querySelector('.is-invalid');
+            if (first) first.closest('[data-df-id]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
         alertEl.classList.add('d-none');
         alertEl.textContent = '';
         saveBtn.disabled = true;
@@ -1163,5 +1371,23 @@
             msgEl.innerHTML = '<span class="text-danger">Lỗi kết nối.</span>';
         }
     }
+
+    // ── Xóa lỗi khi người dùng nhập vào custom fields (edit modal) ─────────────
+    function clearDfError(el) {
+        el.classList.remove('is-invalid');
+        const wrapper = el.closest('[data-df-id]');
+        if (wrapper) {
+            const errEl = document.getElementById(`edit-df-err-${wrapper.dataset.dfId}`);
+            if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+        }
+    }
+
+    // Gắn event listener xóa lỗi cho custom fields trong edit modal (render server-side)
+    document.querySelectorAll('#editRegForm [data-df-id]').forEach(wrapper => {
+        wrapper.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(el => {
+            el.addEventListener('input', () => clearDfError(el));
+            el.addEventListener('change', () => clearDfError(el));
+        });
+    });
 </script>
 }
