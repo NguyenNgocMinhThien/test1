@@ -904,6 +904,30 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        // === CÔNG BỐ / ẨN KẾT QUẢ THEO VÒNG THI (trang công khai /Results) ===
+        [HttpPost]
+        public async Task<IActionResult> PublishRoundResults(int roundId, int competitionId, bool publish)
+        {
+            if (!await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
+            {
+                TempData["ErrorMessage"] = "Bạn không có quyền thực hiện thao tác này.";
+                return RedirectToAction("Results", new { competitionId });
+            }
+
+            try
+            {
+                var (ok, msg) = await _resultsService.SetRoundResultsPublishedAsync(roundId, competitionId, publish);
+                TempData[ok ? "SuccessMessage" : "ErrorMessage"] = msg;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling results publish for round {RoundId}", roundId);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+            }
+
+            return RedirectToAction("Results", new { competitionId });
+        }
+
         [HttpGet]
         public async Task<IActionResult> ExportResultsCsv(int competitionId, int? roundId = null)
         {

@@ -88,6 +88,8 @@ public class RoundResultDetailDto
     public string RoundName { get; set; } = string.Empty;
     public int RoundOrder { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool IsResultsPublished { get; set; }
+    public DateTime? ResultsPublishedAt { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int SubmissionCount { get; set; }

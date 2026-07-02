@@ -5,4 +5,5 @@ namespace Web_cham_diem.Services;
 public interface IResultsService
 {
     Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId);
+    Task<(bool ok, string msg)> SetRoundResultsPublishedAsync(int roundId, int competitionId, bool publish);
 }

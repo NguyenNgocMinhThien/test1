@@ -1248,7 +1248,8 @@ public class CompetitiveController : Controller
             .Include(c => c.CompetitionImages)
             .Include(c => c.CompetitionRounds.OrderBy(r => r.RoundOrder))
                 .ThenInclude(r => r.ScoringCriteria.OrderBy(sc => sc.Order))
-            .Where(c => c.Status != "Draft");
+            // Chỉ hiện cuộc thi đã có ít nhất 1 vòng được Ban tổ chức công bố kết quả
+            .Where(c => c.Status != "Draft" && c.CompetitionRounds.Any(r => r.IsResultsPublished));
 
         if (!string.IsNullOrWhiteSpace(search))
             competitionsQuery = competitionsQuery.Where(c => c.CompetitionName.Contains(search));
@@ -1308,9 +1309,11 @@ public class CompetitiveController : Controller
                         }).ToList();
 
                     var key = (competition.CompetitionId, (int?)round.RoundId);
-                    var roundSubmissions = submissionsByRound.GetValueOrDefault(key, new())
-                        .Where(s => s.Scores.Any())  // chỉ hiện bài có ít nhất 1 điểm
-                        .ToList();
+                    var roundSubmissions = round.IsResultsPublished
+                        ? submissionsByRound.GetValueOrDefault(key, new())
+                            .Where(s => s.Scores.Any())  // chỉ hiện bài có ít nhất 1 điểm
+                            .ToList()
+                        : new List<Submissions>();  // Ban tổ chức chưa công bố kết quả vòng này
 
                     var rankings = roundSubmissions.Select(submission =>
                     {
@@ -1359,6 +1362,7 @@ public class CompetitiveController : Controller
                         RoundName = round.RoundName,
                         RoundOrder = round.RoundOrder,
                         Status = round.Status,
+                        IsResultsPublished = round.IsResultsPublished,
                         Criteria = criteria,
                         Rankings = rankings
                     };
@@ -1387,8 +1391,8 @@ public class CompetitiveController : Controller
             CategoryFilter = category,
             AvailableCategories = categories,
             Results = results,
-            TotalCompetitions = competitions.Count,
-            TotalRankedRounds = results.Sum(r => r.Rounds.Count(ro => ro.Rankings.Any()))
+            TotalCompetitions = results.Count,
+            TotalRankedRounds = results.Sum(r => r.Rounds.Count(ro => ro.IsResultsPublished && ro.Rankings.Any()))
         };
 
         return View("~/Views/Pages/Results.cshtml", vm);
