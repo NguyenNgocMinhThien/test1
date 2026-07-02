@@ -502,9 +502,16 @@
                                                 data-bs-toggle="tab"
                                                 data-bs-target="#@tabId"
                                                 type="button" role="tab">
-                                            <i class="bi bi-circle-fill me-1 @RoundStatusClass(round.Status)" style="font-size: 7px;"></i>
+                                            @if (!round.IsResultsPublished)
+                                            {
+                                                <i class="bi bi-lock-fill me-1 text-muted" style="font-size: 10px;" title="Chưa công bố"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-circle-fill me-1 @RoundStatusClass(round.Status)" style="font-size: 7px;"></i>
+                                            }
                                             @round.RoundName
-                                            @if (round.Rankings.Any())
+                                            @if (round.IsResultsPublished && round.Rankings.Any())
                                             {
                                                 <span class="badge bg-danger rounded-pill ms-1" style="font-size: 10px;">@round.Rankings.Count</span>
                                             }
@@ -522,7 +529,15 @@
                                     <div class="tab-pane fade @(ri == 0 ? "show active" : "")"
                                          id="@tabId" role="tabpanel">
 
-                                        @if (!round.Rankings.Any())
+                                        @if (!round.IsResultsPublished)
+                                        {
+                                            <div class="empty-round">
+                                                <i class="bi bi-lock-fill"></i>
+                                                <p class="mb-0 fw-semibold">Kết quả chưa được công bố</p>
+                                                <small class="text-muted">Ban tổ chức chưa công bố kết quả vòng này. Vui lòng quay lại sau.</small>
+                                            </div>
+                                        }
+                                        else if (!round.Rankings.Any())
                                         {
                                             <div class="empty-round">
                                                 <i class="bi bi-hourglass-split"></i>

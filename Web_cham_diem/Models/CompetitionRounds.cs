@@ -16,6 +16,9 @@ namespace Web_cham_diem.Models
         public int? MaxAdvancing { get; set; }                      // Số người/đội vào vòng tiếp (null = tất cả)
         public string Status { get; set; } = "Upcoming";            // Upcoming | Active | Completed
 
+        public bool IsResultsPublished { get; set; } = false;       // Ban tổ chức đã công bố kết quả vòng này ra trang công khai chưa
+        public DateTime? ResultsPublishedAt { get; set; }           // Thời điểm công bố
+
         // Yêu cầu bài nộp
         public bool RequiresFile { get; set; } = true;              // Yêu cầu nộp file
         public bool RequiresVideo { get; set; } = false;            // Yêu cầu link video

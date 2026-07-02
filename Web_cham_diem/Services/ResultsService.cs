@@ -105,6 +105,22 @@ public class ResultsService : IResultsService
         return vm;
     }
 
+    public async Task<(bool ok, string msg)> SetRoundResultsPublishedAsync(int roundId, int competitionId, bool publish)
+    {
+        var round = await _context.CompetitionRounds
+            .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
+        if (round == null) return (false, "Vòng thi không tìm thấy.");
+
+        round.IsResultsPublished = publish;
+        round.ResultsPublishedAt = publish ? DateTime.UtcNow : null;
+        round.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return (true, publish
+            ? $"Đã công bố kết quả vòng '{round.RoundName}' ra trang công khai."
+            : $"Đã ẩn kết quả vòng '{round.RoundName}' khỏi trang công khai.");
+    }
+
     private async Task<CompetitionResultDetailDto> BuildDetailAsync(Competitions comp)
     {
         int cid = comp.CompetitionId;
@@ -176,6 +192,8 @@ public class ResultsService : IResultsService
                     RoundName = round.RoundName,
                     RoundOrder = round.RoundOrder,
                     Status = round.Status,
+                    IsResultsPublished = round.IsResultsPublished,
+                    ResultsPublishedAt = round.ResultsPublishedAt,
                     StartDate = round.StartDate,
                     EndDate = round.EndDate,
                     SubmissionCount = roundSubs.Count,
@@ -205,6 +223,7 @@ public class ResultsService : IResultsService
                 RoundName = "Tổng hợp",
                 RoundOrder = 1,
                 Status = comp.Status,
+                IsResultsPublished = true,
                 StartDate = comp.StartDate,
                 EndDate = comp.EndDate,
                 SubmissionCount = submissions.Count,

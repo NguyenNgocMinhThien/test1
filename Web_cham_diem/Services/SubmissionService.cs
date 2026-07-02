@@ -72,7 +72,9 @@ public class SubmissionService : ISubmissionService
             if (!string.IsNullOrWhiteSpace(registrationTypeFilter))
                 registrationsQuery = registrationsQuery.Where(r => r.RegistrationType == registrationTypeFilter);
 
-            var registrations = await registrationsQuery.ToListAsync();
+            var registrations = await registrationsQuery
+                .OrderByDescending(r => r.RegistrationDate)
+                .ToListAsync();
 
             // Lấy tiêu đề bài nộp liên kết với từng hồ sơ đăng ký (Registration → Submission.Title)
             var registrationIds = registrations.Select(r => r.RegistrationId).ToList();
@@ -117,7 +119,9 @@ public class SubmissionService : ISubmissionService
             if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
                 submissionsQuery = submissionsQuery.Where(s => s.CompetitionId == competitionId.Value);
 
-            var submissions = await submissionsQuery.ToListAsync();
+            var submissions = await submissionsQuery
+                .OrderByDescending(s => s.SubmissionDate)
+                .ToListAsync();
 
             var deadline = selectedCompetition?.SubmissionDeadline;
             var submissionDtos = submissions.Select(s => new SubmissionDetailDto

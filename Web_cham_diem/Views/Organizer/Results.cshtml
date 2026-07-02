@@ -148,6 +148,13 @@ string ScoreTextCss(decimal pct) => pct >= 90 ? "text-success" : pct >= 75 ? "te
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <!-- ══ OVERALL STATS (tất cả cuộc thi) ══════════════════════════════════ -->
     <div class="row g-3 mb-4">
@@ -356,6 +363,47 @@ string ScoreTextCss(decimal pct) => pct >= 90 ? "text-success" : pct >= 75 ? "te
                                     Điểm TB: <strong>@round.AverageScore</strong>
                                     @if (round.MaxPossibleScore > 0) { <span> / @round.MaxPossibleScore</span> }
                                 </div>
+
+                                @if (round.RoundId != 0)
+                                {
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (round.IsResultsPublished)
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                                                <i class="bi bi-broadcast me-1"></i>Đã công bố
+                                                @if (round.ResultsPublishedAt.HasValue)
+                                                {
+                                                    <span>— @round.ResultsPublishedAt.Value.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</span>
+                                                }
+                                            </span>
+                                            <form method="post" action="@Url.Action("PublishRoundResults", "Organizer")" class="d-inline">
+                                                <input type="hidden" name="roundId" value="@round.RoundId" />
+                                                <input type="hidden" name="competitionId" value="@detail!.CompetitionId" />
+                                                <input type="hidden" name="publish" value="false" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary fw-semibold"
+                                                        onclick="return confirm('Ẩn kết quả vòng &quot;@round.RoundName&quot; khỏi trang công khai?');">
+                                                    <i class="bi bi-eye-slash me-1"></i>Ẩn kết quả
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
+                                                <i class="bi bi-lock me-1"></i>Chưa công bố
+                                            </span>
+                                            <form method="post" action="@Url.Action("PublishRoundResults", "Organizer")" class="d-inline">
+                                                <input type="hidden" name="roundId" value="@round.RoundId" />
+                                                <input type="hidden" name="competitionId" value="@detail!.CompetitionId" />
+                                                <input type="hidden" name="publish" value="true" />
+                                                <button type="submit" class="btn btn-sm btn-success fw-semibold"
+                                                        @(round.Rankings.Any() ? "" : "disabled")
+                                                        title="@(round.Rankings.Any() ? "Công bố kết quả vòng này ra trang công khai" : "Vòng này chưa có bài được chấm điểm")">
+                                                    <i class="bi bi-broadcast me-1"></i>Công bố kết quả
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
                             </div>
 
                             @if (!round.Rankings.Any())
