@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace Web_cham_diem.Controllers;
 
@@ -14,6 +17,112 @@ public class AccountController : Controller
     public AccountController(ApplicationDbContext context)
     {
         _context = context;
+    }
+
+    // ==========================================
+    // KHÔNG GIAN ĐĂNG NHẬP / ĐĂNG XUẤT (CÔNG KHAI)
+    // ==========================================
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult Login()
+    {
+        if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            if (User.IsInRole("Admin")) return RedirectToAction("Admin");
+            return RedirectToAction("UserDashboard");
+        }
+        return View();
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ Email và Mật khẩu." });
+        }
+
+        try
+        {
+            var emailTrim = request.Email.ToLower().Trim();
+            // Tìm user dựa trên Email từ DB
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == emailTrim);
+
+            if (user == null)
+            {
+                return Json(new { success = false, message = "Tài khoản Email không tồn tại trên hệ thống." });
+            }
+
+            if (user.IsActive == false)
+            {
+                return Json(new { success = false, message = "Tài khoản của bạn hiện đang bị khóa." });
+            }
+
+            // 🔥 SỬA LỖI TẠI ĐÂY: Chỉ dùng duy nhất trường dữ liệu chuẩn u.PasswordHash từ Model của bạn
+            string dbPasswordHash = user.PasswordHash;
+
+            if (string.IsNullOrEmpty(dbPasswordHash))
+            {
+                return Json(new { success = false, message = "Tài khoản này chưa được cấu hình mật khẩu băm hợp lệ." });
+            }
+
+            // Tiến hành đối chiếu chuỗi mã hóa BCrypt
+            bool isValidPassword = false;
+            try
+            {
+                isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, dbPasswordHash);
+            }
+            catch
+            {
+                // Phòng trường hợp dữ liệu cũ lưu dạng text thuần không băm bằng BCrypt
+                isValidPassword = (request.Password == dbPasswordHash);
+            }
+
+            if (!isValidPassword)
+            {
+                return Json(new { success = false, message = "Mật khẩu nhập vào không chính xác." });
+            }
+
+            // Lấy tên quyền (Role) của User từ DB để nạp vào hệ thống Authentication Cookie
+            var roleName = await _context.UserRoles
+                .Where(ur => ur.UserId == user.UserId)
+                .Select(ur => ur.Role.RoleName)
+                .FirstOrDefaultAsync() ?? "Student";
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.FullName ?? ""),
+                new Claim(ClaimTypes.Email, user.Email ?? ""),
+                new Claim(ClaimTypes.Role, roleName)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties { IsPersistent = true };
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
+
+            return Json(new { success = true, message = "Đăng nhập thành công!", role = roleName });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Lỗi hệ thống đăng nhập: " + ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return RedirectToAction("Login");
     }
 
     // ==========================================
@@ -360,15 +469,38 @@ public class AccountController : Controller
         }
     }
 
+    public class CreateUserRequest
+    {
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string Role { get; set; }
+
+    }
+    // 1. Tạo một class nhỏ này ngay trên đầu hoặc cùng file với Controller để nhận trọn gói Form dữ liệu
+    public class AdminCreateUserForm
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? StudentId { get; set; }
+        public string? RoleName { get; set; }
+        public string? Password { get; set; } // Nhận mật khẩu Admin tự nhập từ giao diện
+    }
+
+    // 2. Hàm xử lý chính thức
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateUser(string fullName, string email, string studentId, string roleName, string? password)
     {
+        if (string.IsNullOrEmpty(model.FullName) || string.IsNullOrEmpty(model.Email))
+        {
+            return Json(new { success = false, message = "Họ tên và Email không được để trống." });
+        }
+
         try
         {
-            if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email))
-                return Json(new { success = false, message = "Họ tên và Email không được để trống." });
+            var emailTrim = model.Email.ToLower().Trim();
 
             var plainPassword = string.IsNullOrWhiteSpace(password) ? "UEF@12345" : password.Trim();
             if (plainPassword.Length < 6)
@@ -376,19 +508,31 @@ public class AccountController : Controller
 
             var emailTrim = email.ToLower().Trim();
             bool isEmailExist = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailTrim);
-            if (isEmailExist) return Json(new { success = false, message = "Email này đã được sử dụng bởi một tài khoản khác." });
+            if (isEmailExist)
+            {
+                return Json(new { success = false, message = $"Email '{model.Email}' đã được sử dụng bởi một tài khoản khác!" });
+            }
 
             string? studentIdUpper = null;
-            if (!string.IsNullOrEmpty(studentId))
+            if (!string.IsNullOrEmpty(model.StudentId))
             {
-                studentIdUpper = studentId.ToUpper().Trim();
+                studentIdUpper = model.StudentId.ToUpper().Trim();
+                // Kiểm tra trùng mã số
                 bool isIdExist = await _context.Users.AnyAsync(u => u.StudentId != null && u.StudentId.ToUpper() == studentIdUpper);
-                if (isIdExist) return Json(new { success = false, message = "Mã số sinh viên/nhân viên này đã tồn tại." });
+                if (isIdExist)
+                {
+                    return Json(new { success = false, message = $"Mã số sinh viên/nhân viên '{studentIdUpper}' đã tồn tại từ trước." });
+                }
             }
+
+            // --- ĐÚNG YÊU CẦU CỦA BẠN: LẤY MẬT KHẨU ADMIN ĐƯA CHO ---
+            // Nếu trên giao diện Admin điền mật khẩu thì lấy, nếu để trống hoàn toàn thì dùng "UEF@12345"
+            var actualPassword = string.IsNullOrEmpty(model.Password) ? "UEF@12345" : model.Password;
+            string finalHash = BCrypt.Net.BCrypt.HashPassword(actualPassword);
 
             var newUser = new Users
             {
-                FullName = fullName.Trim(),
+                FullName = model.FullName.Trim(),
                 Email = emailTrim,
                 StudentId = studentIdUpper,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword),
@@ -399,9 +543,12 @@ public class AccountController : Controller
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrEmpty(roleName))
+            // Phân quyền cho tài khoản mới tạo
+            if (!string.IsNullOrEmpty(model.RoleName))
             {
-                var selectedRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == roleName.ToLower());
+                // Tìm vai trò khớp (Ví dụ Admin gửi lên tiếng Việt hoặc tiếng Anh thì so khớp logic của bạn)
+                // Lưu ý: Nếu trong DB lưu 'Student' mà form gửi lên 'Sinh viên', bạn có thể cần map lại đoạn này.
+                var selectedRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.ToLower() == model.RoleName.ToLower());
                 if (selectedRole != null)
                 {
                     var userRole = new UserRoles
@@ -415,11 +562,51 @@ public class AccountController : Controller
                 }
             }
 
-            return Json(new { success = true, message = "Thêm mới tài khoản thành công!" });
+            return Json(new { success = true, message = $"Thêm mới tài khoản thành công! Mật khẩu là: {actualPassword}" });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Lỗi hệ thống khi thêm tài khoản: " + ex.InnerException?.Message ?? ex.Message });
+            var innerMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+            return Json(new { success = false, message = "Lỗi Database: " + innerMsg });
+        }
+    }
+
+    // 2. FIX LỖI 404 KHI XÓA TÀI KHOẢN
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteUser([FromForm] int id)
+    {
+        if (id <= 0)
+        {
+            return Json(new { success = false, message = "ID tài khoản không hợp lệ." });
+        }
+
+        try
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy người dùng này trên hệ thống." });
+            }
+
+            // Xóa sạch bảng phụ để tránh lỗi khóa ngoại
+            var userRoles = _context.UserRoles.Where(ur => ur.UserId == id);
+            _context.UserRoles.RemoveRange(userRoles);
+
+            var teamMembers = _context.TeamMembers.Where(tm => tm.UserId == id);
+            _context.TeamMembers.RemoveRange(teamMembers);
+
+            var taskCompletions = _context.TaskCompletions.Where(tc => tc.CompletedBy == id);
+            _context.TaskCompletions.RemoveRange(taskCompletions);
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Đã xóa người dùng thành công." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Lỗi không thể xóa: {ex.Message}" });
         }
     }
 
@@ -508,9 +695,6 @@ public class AccountController : Controller
         }
     }
 
-    // XÓA TOÀN BỘ method GetReportData cũ (cái không có [Authorize] và thiếu params)
-    // Chỉ giữ lại method này, sửa lại return Json với lowercase key:
-
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetReportData(string schoolYear, string department, string contestType, DateTime? fromDate, DateTime? toDate)
@@ -550,7 +734,6 @@ public class AccountController : Controller
             var rejectedCount = await _context.Submissions.CountAsync(s => s.Status == "Từ chối" || s.Status == "Rejected");
             var pendingCount = totalSubmissions - (approvedCount + rejectedCount);
 
-            // ✅ Dùng anonymous object lowercase để match với JS
             return Json(new
             {
                 success = true,
@@ -594,10 +777,6 @@ public class AccountController : Controller
         }
     }
 
-
-    // ==========================================
-    // CÁC ĐƯỜNG DẪN BỔ SUNG CHO HỆ THỐNG
-    // ==========================================
     [Authorize(Roles = "Admin")]
     public IActionResult SystemSettings() { return View(); }
 

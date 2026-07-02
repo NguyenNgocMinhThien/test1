@@ -41,16 +41,13 @@ builder.Services.AddScoped<IGradingService, GradingService>();
 builder.Services.AddScoped<IResultsService, ResultsService>();
 builder.Services.AddScoped<INotificationsService, NotificationsService>();
 
-
-
-// Add Authentication with Cookie
 // Add Authentication with Cookie
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
-        options.LoginPath = "/Login";
-        options.LogoutPath = "/Login/Logout";
-        options.AccessDeniedPath = "/Access-Denied";
+        options.LoginPath = "/Account/Login"; // 🌟 SỬA TẠI ĐÂY: Khớp chính xác với Controller Account của bạn
+        options.LogoutPath = "/Account/Logout"; // 🌟 SỬA TẠI ĐÂY: Khớp với hàm Logout trong AccountController
+        options.AccessDeniedPath = "/Home/Error"; // Hoặc trang báo lỗi quyền của bạn
         options.Cookie.Name = "AuthCookie";
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;

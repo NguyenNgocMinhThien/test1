@@ -141,6 +141,97 @@
                 color: #0ea5e9;
             }
 
+            /* --- NOTIFICATION BELL --- */
+            .notif-bell-btn {
+                position: relative; background: #f8fafc; border: none; border-radius: 50%;
+                width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+                cursor: pointer; transition: all .2s ease; color: #64748b; font-size: 18px; padding: 0;
+            }
+            .notif-bell-btn:hover { background: #e9ecef; color: var(--accent-blue); }
+            .notif-badge {
+                position: absolute; top: 1px; right: 1px; background: #dc3545; color: #fff;
+                border-radius: 50%; min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+                display: none; align-items: center; justify-content: center; border: 2px solid #fff; padding: 0 2px;
+            }
+            .notif-badge.visible { display: flex; }
+            .notif-dropdown-menu {
+                width: 360px; border: none; box-shadow: 0 8px 28px rgba(0,0,0,.14);
+                border-radius: 12px; overflow: hidden; padding: 0; margin-top: 8px !important;
+            }
+            .notif-hdr {
+                background: linear-gradient(135deg, var(--navy-blue), var(--accent-blue)); color: #fff;
+                padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+            }
+            .notif-hdr-title { font-size: 14px; font-weight: 600; }
+            .notif-hdr-count { font-size: 12px; background: rgba(255,255,255,.2); border-radius: 20px; padding: 2px 8px; }
+            .notif-item {
+                display: flex; align-items: flex-start; gap: 10px; padding: 11px 16px;
+                border-bottom: 1px solid #f1f3f5; cursor: pointer; transition: background .15s;
+                text-decoration: none; color: inherit;
+            }
+            .notif-item:hover { background: #f8fafc; color: inherit; text-decoration: none; }
+            .notif-item.unread { background: #eff6ff; border-left: 3px solid var(--accent-blue); }
+            .notif-item.unread:hover { background: #dbeafe; }
+            .notif-icon-wrap {
+                width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+                justify-content: center; flex-shrink: 0; font-size: 14px;
+            }
+            .ni-info    { background: #dbeafe; color: #2563eb; }
+            .ni-success { background: #dcfce7; color: #16a34a; }
+            .ni-warning { background: #fef3c7; color: #d97706; }
+            .ni-error   { background: #fee2e2; color: #dc2626; }
+            .notif-title { font-size: 12.5px; font-weight: 600; color: #1e293b; margin: 0; line-height: 1.3; }
+            .notif-msg   { font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 255px; margin: 2px 0 0; }
+            .notif-time  { font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+            .notif-empty { padding: 28px 16px; text-align: center; color: #94a3b8; font-size: 13px; }
+            .notif-footer { padding: 10px 16px; text-align: center; border-top: 1px solid #f1f3f5; }
+            .notif-footer a { font-size: 13px; color: var(--accent-blue); text-decoration: none; font-weight: 500; }
+            .notif-footer a:hover { text-decoration: underline; }
+
+            /* --- USER PROFILE DROPDOWN --- */
+            .user-profile-btn {
+                display: flex; align-items: center; gap: 10px; padding: 6px 12px;
+                border-radius: 25px; background: #f8fafc; border: none; cursor: pointer;
+                transition: all 0.2s;
+            }
+            .user-profile-btn:hover { background: #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .user-avatar-sm {
+                width: 36px; height: 36px; border-radius: 50%;
+                background: linear-gradient(135deg, var(--navy-blue), var(--accent-blue));
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-weight: 700; font-size: 13px; flex-shrink: 0;
+            }
+            .user-avatar-lg {
+                width: 50px; height: 50px; border-radius: 50%;
+                background: rgba(255,255,255,0.25);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-weight: 700; font-size: 20px;
+                border: 2px solid rgba(255,255,255,0.6); flex-shrink: 0;
+            }
+            .dropdown-header-admin {
+                padding: 1.25rem;
+                background: linear-gradient(135deg, var(--navy-blue) 0%, var(--accent-blue) 100%);
+                color: white;
+            }
+            .dropdown-menu-user {
+                min-width: 300px; border: 1px solid #dee2e6; border-radius: 8px;
+                box-shadow: 0 6px 20px rgba(0,0,0,0.15); margin-top: 8px;
+                overflow: hidden; padding: 0 !important;
+            }
+            .dropdown-item-user {
+                padding: 0.75rem 1.25rem !important; font-size: 13px;
+                display: flex; align-items: center; gap: 10px;
+                border-left: 3px solid transparent; transition: all 0.2s; color: #212529;
+            }
+            .dropdown-item-user:hover {
+                background: #f8fafc; color: var(--accent-blue);
+                border-left-color: var(--accent-blue); transform: translateX(2px);
+            }
+            .dropdown-item-user i { width: 18px; font-size: 14px; color: var(--accent-blue); }
+            .dropdown-item-logout { color: #dc3545 !important; }
+            .dropdown-item-logout:hover { background: #ffe5e5 !important; color: #dc3545 !important; border-left-color: #dc3545 !important; }
+            .dropdown-item-logout i { color: #dc3545 !important; }
+
             /* Sử dụng @@media thay vì media trong file .cshtml */
             @@media (max-width: 992px) {
                 .sidebar {
@@ -573,6 +664,99 @@
                 }, 400);
             }
         });
+    </script>
+
+    <script>
+    (function () {
+        let _loaded = false;
+
+        function iconClass(type) {
+            const m = { 'Success': ['bi-check-circle-fill', 'ni-success'], 'Warning': ['bi-exclamation-triangle-fill', 'ni-warning'], 'Error': ['bi-x-circle-fill', 'ni-error'] };
+            return m[type] ?? ['bi-info-circle-fill', 'ni-info'];
+        }
+
+        window.loadNotifications = async function (force = false) {
+            if (_loaded && !force) return;
+            try {
+                const res = await fetch('/api/user/notifications?take=8');
+                if (!res.ok) return;
+                const data = await res.json();
+                _loaded = true;
+                updateBadge(data.unread);
+                renderList(data.items ?? [], data.unread);
+            } catch { /* silent */ }
+        };
+
+        function updateBadge(count) {
+            const badge = document.getElementById('notifBadge');
+            const markBtn = document.getElementById('markAllBtn');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.add('visible');
+                if (markBtn) markBtn.style.display = 'inline-block';
+            } else {
+                badge.classList.remove('visible');
+                if (markBtn) markBtn.style.display = 'none';
+            }
+            const hdr = document.getElementById('notifHdrCount');
+            if (hdr) hdr.textContent = count > 0 ? count + ' chưa đọc' : 'Đã đọc hết';
+        }
+
+        function renderList(items, unreadCount) {
+            const el = document.getElementById('notifList');
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = '<div class="notif-empty"><i class="bi bi-bell-slash fs-4 d-block mb-2 text-muted"></i>Chưa có thông báo</div>';
+                return;
+            }
+            el.innerHTML = items.map(n => {
+                const [ic, cls] = iconClass(n.type);
+                const unread = !n.isRead ? ' unread' : '';
+                return `<a class="notif-item${unread}" href="#" onclick="readNotif(event,${n.notificationId})">
+                    <div class="notif-icon-wrap ${cls}"><i class="bi ${ic}"></i></div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="notif-title">${escHtml(n.title)}</div>
+                        <div class="notif-msg">${escHtml(n.message)}</div>
+                        <div class="notif-time"><i class="bi bi-clock me-1"></i>${escHtml(n.timeAgo)}</div>
+                    </div>
+                </a>`;
+            }).join('');
+        }
+
+        window.readNotif = async function (e, id) {
+            e.preventDefault();
+            await fetch(`/api/user/notifications/${id}/read`, { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgery() } });
+            _loaded = false;
+            loadNotifications(true);
+        };
+
+        window.markAllRead = async function (e) {
+            e.stopPropagation();
+            await fetch('/api/user/notifications/read-all', { method: 'POST', headers: { 'RequestVerificationToken': getAntiForgery() } });
+            _loaded = false;
+            loadNotifications(true);
+        };
+
+        function getAntiForgery() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        function escHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Load badge count on page load (silent)
+        fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && updateBadge(d.unread)).catch(() => {});
+
+        // Refresh count every 3 minutes
+        setInterval(() => {
+            _loaded = false;
+            fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && updateBadge(d.unread)).catch(() => {});
+        }, 180000);
+    })();
     </script>
 </body>
 

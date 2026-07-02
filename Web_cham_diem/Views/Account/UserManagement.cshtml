@@ -163,9 +163,9 @@
                     <div id="bulkActions" class="d-none animate__animated animate__fadeIn">
                         <span class="text-muted small me-2"><span id="selectedCount">0</span> mục đã chọn:</span>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-danger"><i class="bi bi-lock"></i> Khóa</button>
-                            <button class="btn btn-outline-primary"><i class="bi bi-key"></i> Reset Pass</button>
-                            <button class="btn btn-outline-dark"><i class="bi bi-trash"></i> Xóa</button>
+                            <button class="btn btn-outline-danger" onclick="bulkLock()"><i class="bi bi-lock"></i> Khóa</button>
+                            <button class="btn btn-outline-primary" onclick="bulkResetPassword()"><i class="bi bi-key"></i> Reset Pass</button>
+                            <button class="btn btn-outline-dark" onclick="bulkDelete()"><i class="bi bi-trash"></i> Xóa</button>
                         </div>
                     </div>
                 </div>
@@ -428,6 +428,9 @@
 </style>
 
 <script>
+    let currentTargetUserId = null;
+    let currentMode = "";
+
     document.addEventListener('DOMContentLoaded', function() {
         const selectAll = document.getElementById('selectAll');
         const bulkActions = document.getElementById('bulkActions');
@@ -476,116 +479,6 @@
             });
         }
 
-        function loadUserTable() {
-            const tableBody = document.getElementById('userTableBody');
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">
-                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                        Đang lọc danh sách người dùng...
-                    </td>
-                </tr>`;
-
-            const searchVal = document.getElementById('filterSearch').value.trim();
-            const roleVal = document.getElementById('filterRole').value;
-            const statusVal = document.getElementById('filterStatus').value;
-            const deptVal = document.getElementById('filterDepartment').value;
-
-            const queryParams = new URLSearchParams({
-                search: searchVal,
-                role: roleVal,
-                status: statusVal,
-                department: deptVal
-            });
-
-            fetch(`/Account/GetUserList?${queryParams.toString()}`, { method: 'GET' })
-            .then(response => response.json())
-            .then(data => {
-                tableBody.innerHTML = '';
-
-                if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-warning fw-600">Không tìm thấy người dùng nào khớp với bộ lọc.</td></tr>';
-                    updateStatCards(0, 0, 0, 0, 0, 0);
-                    return;
-                }
-
-                let total = data.length;
-                let students = 0, lecturers = 0, organizers = 0, judges = 0, locked = 0;
-
-                data.forEach(user => {
-                    if (!user.isActive) locked++;
-                    if (user.roleName === 'Student') students++;
-                    else if (user.roleName === 'Lecturer') lecturers++;
-                    else if (user.roleName === 'Organizer') organizers++;
-                    else if (user.roleName === 'Judge') judges++;
-
-                    let roleBadgeClass = 'bg-secondary';
-                    if (user.roleName === 'Student') roleBadgeClass = 'bg-info-subtle text-info';
-                    else if (user.roleName === 'Lecturer') roleBadgeClass = 'bg-warning-subtle text-warning';
-                    else if (user.roleName === 'Admin') roleBadgeClass = 'bg-danger-subtle text-danger';
-
-                    let statusBadge = user.isActive ?
-                        '<span class="badge bg-success-subtle text-success badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active</span>' :
-                        '<span class="badge bg-danger-subtle text-danger badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Locked</span>';
-
-                    let initials = user.fullName ? user.fullName.substring(0, 2).toUpperCase() : 'US';
-
-                    // ================================================================
-                    // 🔥 THAY ĐỔI QUAN TRỌNG: Sửa href="#" sang hàm javascript:void(0)
-                    // ================================================================
-                    let row = `
-                        <tr>
-                            <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox" value="${user.userId}"></td>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="user-avatar-initials bg-primary-subtle text-primary fw-bold">${initials}</div>
-                                    <div>
-                                        <div class="fw-bold mb-0">${user.fullName}</div>
-                                        <div class="text-muted small">${user.email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge ${roleBadgeClass} rounded-pill px-3">${user.roleName}</span>
-                                <div class="small text-muted mt-1">Mã: ${user.studentId || 'N/A'}</div>
-                            </td>
-                            <td>${statusBadge}</td>
-                            <td><span class="small text-muted">${user.createdAt}</span></td>
-                            <td class="text-end pe-4">
-                                <div class="dropdown">
-                                    <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'VIEW')"><i class="bi bi-eye me-2"></i> Chi tiết</a></li>
-                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'EDIT')"><i class="bi bi-pencil me-2 text-primary"></i> Sửa thông tin</a></li>
-                                        <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openRoleModal(${user.userId}, '${user.roleName}')"><i class="bi bi-shield-check me-2 text-success"></i> Phân quyền</a></li>
-                                        <li><a class="dropdown-item py-2 text-warning" href="javascript:void(0);" onclick="toggleLockUser(${user.userId}, ${user.isActive})"><i class="bi bi-lock me-2"></i> ${user.isActive ? 'Khóa tài khoản' : 'Mở khóa'}</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0);" onclick="deleteUser(${user.userId})"><i class="bi bi-trash me-2"></i> Xóa</a></li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>`;
-                    tableBody.insertAdjacentHTML('beforeend', row);
-                });
-
-                updateStatCards(total, students, lecturers, organizers, judges, locked);
-            })
-            .catch(error => {
-                console.error('Lỗi khi tải danh sách người dùng:', error);
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Không thể nạp dữ liệu từ máy chủ.</td></tr>';
-            });
-        }
-
-        function updateStatCards(total, students, lecturers, organizers, judges, locked) {
-            document.getElementById('statTotalUsers').textContent = total.toLocaleString();
-            document.getElementById('statStudents').textContent = students.toLocaleString();
-            document.getElementById('statLecturers').textContent = lecturers.toLocaleString();
-            document.getElementById('statOrganizers').textContent = organizers.toLocaleString();
-            document.getElementById('statJudges').textContent = judges.toLocaleString();
-            document.getElementById('statLocked').textContent = locked.toLocaleString();
-            document.getElementById('tableSummary').textContent = `Hiển thị 1 - ${total} trên ${total} người dùng phù hợp`;
-        }
-
         loadUserTable();
 
         const addUserForm = document.getElementById('addUserForm');
@@ -623,194 +516,349 @@
         }
     });
 
-    function toggleAddPassword(btn) {
-        const input = document.getElementById('addUserPassword');
-        const icon  = btn.querySelector('i');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.className = 'bi bi-eye-slash';
-        } else {
-            input.type = 'password';
-            icon.className = 'bi bi-eye';
-        }
+    function loadUserTable() {
+        const tableBody = document.getElementById('userTableBody');
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                    Đang lọc danh sách người dùng...
+                </td>
+            </tr>`;
+
+        const searchVal = document.getElementById('filterSearch').value.trim();
+        const roleVal = document.getElementById('filterRole').value;
+        const statusVal = document.getElementById('filterStatus').value;
+        const deptVal = document.getElementById('filterDepartment').value;
+
+        const queryParams = new URLSearchParams({
+            search: searchVal,
+            role: roleVal,
+            status: statusVal,
+            department: deptVal
+        });
+
+        fetch(`/Account/GetUserList?${queryParams.toString()}`, { method: 'GET' })
+        .then(response => response.json())
+        .then(data => {
+            tableBody.innerHTML = '';
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-warning fw-600">Không tìm thấy người dùng nào khớp với bộ lọc.</td></tr>';
+                updateStatCards(0, 0, 0, 0, 0, 0);
+                return;
+            }
+
+            let total = data.length;
+            let students = 0, lecturers = 0, organizers = 0, judges = 0, locked = 0;
+
+            data.forEach(user => {
+                if (!user.isActive) locked++;
+                if (user.roleName === 'Student') students++;
+                else if (user.roleName === 'Lecturer') lecturers++;
+                else if (user.roleName === 'Organizer') organizers++;
+                else if (user.roleName === 'Judge') judges++;
+
+                let roleBadgeClass = 'bg-secondary';
+                if (user.roleName === 'Student') roleBadgeClass = 'bg-info-subtle text-info';
+                else if (user.roleName === 'Lecturer') roleBadgeClass = 'bg-warning-subtle text-warning';
+                else if (user.roleName === 'Admin') roleBadgeClass = 'bg-danger-subtle text-danger';
+
+                let statusBadge = user.isActive ?
+                    '<span class="badge bg-success-subtle text-success badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active</span>' :
+                    '<span class="badge bg-danger-subtle text-danger badge-status"><i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Locked</span>';
+
+                let initials = user.fullName ? user.fullName.substring(0, 2).toUpperCase() : 'US';
+
+                let row = `
+                    <tr>
+                        <td class="ps-4"><input type="checkbox" class="form-check-input row-checkbox" value="${user.userId}"></td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="user-avatar-initials bg-primary-subtle text-primary fw-bold">${initials}</div>
+                                <div>
+                                    <div class="fw-bold mb-0">${user.fullName}</div>
+                                    <div class="text-muted small">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge ${roleBadgeClass} rounded-pill px-3">${user.roleName}</span>
+                            <div class="small text-muted mt-1">Mã: ${user.studentId || 'N/A'}</div>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td><span class="small text-muted">${user.createdAt}</span></td>
+                        <td class="text-end pe-4">
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                    <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'VIEW')"><i class="bi bi-eye me-2"></i> Chi tiết</a></li>
+                                    <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openUserModal(${user.userId}, 'EDIT')"><i class="bi bi-pencil me-2 text-primary"></i> Sửa thông tin</a></li>
+                                    <li><a class="dropdown-item py-2" href="javascript:void(0);" onclick="openRoleModal(${user.userId}, '${user.roleName}')"><i class="bi bi-shield-check me-2 text-success"></i> Phân quyền</a></li>
+                                    <li><a class="dropdown-item py-2 text-warning" href="javascript:void(0);" onclick="toggleLockUser(${user.userId}, ${user.isActive})"><i class="bi bi-lock me-2"></i> ${user.isActive ? 'Khóa tài khoản' : 'Mở khóa'}</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item py-2 text-danger" href="javascript:void(0);" onclick="deleteUser(${user.userId})"><i class="bi bi-trash me-2"></i> Xóa</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>`;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            updateStatCards(total, students, lecturers, organizers, judges, locked);
+        })
+        .catch(error => {
+            console.error('Lỗi khi tải danh sách người dùng:', error);
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-danger">Không thể nạp dữ liệu từ máy chủ.</td></tr>';
+        });
+    }
+
+    function updateStatCards(total, students, lecturers, organizers, judges, locked) {
+        document.getElementById('statTotalUsers').textContent = total.toLocaleString();
+        document.getElementById('statStudents').textContent = students.toLocaleString();
+        document.getElementById('statLecturers').textContent = lecturers.toLocaleString();
+        document.getElementById('statOrganizers').textContent = organizers.toLocaleString();
+        document.getElementById('statJudges').textContent = judges.toLocaleString();
+        document.getElementById('statLocked').textContent = locked.toLocaleString();
+        document.getElementById('tableSummary').textContent = `Hiển thị 1 - ${total} trên ${total} người dùng phù hợp`;
     }
 
     function exportData() {
         alert('Đang chuẩn bị trích xuất dữ liệu người dùng ra tệp Excel...');
+        window.location.href = '/Account/ExportUsers'; // Bạn có thể cấu hình route tải file tại đây
     }
 
-    let currentTargetUserId = null;
-    let currentMode = "";
-
-    // ==========================================
-    // CHỨC NĂNG 1 & 2: XEM CHI TIẾT & SỬA THÔNG TIN (Đã đổi cú pháp hiển thị Modal)
-    // ==========================================
+    // --- Xử lý Chi tiết & Chỉnh sửa Người dùng ---
     function openUserModal(userId, mode) {
         currentTargetUserId = userId;
         currentMode = mode;
 
-        fetch(`/Account/GetUserDetail?id=${userId}`)
-            .then(res => res.json())
-            .then(response => {
-                if (response.success) {
-                    const user = response.data;
+        fetch(`/Account/GetUserDetails/${userId}`)
+        .then(res => res.json())
+        .then(user => {
+            document.getElementById('modalFullName').value = user.fullName || '';
+            document.getElementById('modalEmail').value = user.email || '';
+            document.getElementById('modalStudentId').value = user.studentId || '';
+            document.getElementById('modalDepartment').value = user.department || 'Công nghệ thông tin';
+            document.getElementById('modalRoleName').value = user.roleName || '';
 
-                    document.getElementById("modalFullName").value = user.fullName;
-                    document.getElementById("modalEmail").value = user.email;
-                    document.getElementById("modalStudentId").value = user.studentId;
-                    document.getElementById("modalDepartment").value = user.department;
-                    document.getElementById("modalRoleName").value = user.roleName;
+            const isEdit = (mode === 'EDIT');
+            document.getElementById('modalTitle').textContent = isEdit ? "Chỉnh sửa thông tin người dùng" : "Chi tiết người dùng";
 
-                    document.getElementById("passwordWrapper").style.display = "none";
+            // Bật/tắt trạng thái readonly cho các input dựa trên chế độ xem/sửa
+            document.getElementById('modalFullName').readOnly = !isEdit;
+            document.getElementById('modalEmail').readOnly = !isEdit;
+            document.getElementById('modalStudentId').readOnly = !isEdit;
+            document.getElementById('modalDepartment').disabled = !isEdit;
 
-                    if (mode === "VIEW") {
-                        document.getElementById("modalTitle").innerText = "Chi tiết người dùng";
-                        document.getElementById("modalFullName").disabled = true;
-                        document.getElementById("modalEmail").disabled = true;
-                        document.getElementById("modalStudentId").disabled = true;
-                        document.getElementById("modalDepartment").disabled = true;
-                        document.getElementById("modalRoleName").disabled = true;
-                        document.getElementById("btnSubmitModal").style.display = "none";
-                    }
-                    else if (mode === "EDIT") {
-                        document.getElementById("modalTitle").innerText = "Chỉnh sửa thông tin";
-                        document.getElementById("modalFullName").disabled = false;
-                        document.getElementById("modalStudentId").disabled = false;
-                        document.getElementById("modalDepartment").disabled = false;
-                        document.getElementById("modalEmail").disabled = true;
-                        document.getElementById("modalRoleName").disabled = true;
-                        document.getElementById("btnSubmitModal").style.display = "block";
-                    }
+            // Ẩn/Hiện nút Lưu
+            document.getElementById('btnSubmitModal').style.display = isEdit ? 'inline-block' : 'none';
 
-                    // 👉 SỬA ĐỔI: Sử dụng thuần Bootstrap 5 Modal thay vì JQuery
-                    var myModal = new bootstrap.Modal(document.getElementById('userModal'));
-                    myModal.show();
-                } else {
-                    alert(response.message);
-                }
-            });
+            const userModal = new bootstrap.Modal(document.getElementById('userModal'));
+            userModal.show();
+        })
+        .catch(err => alert('Không thể lấy thông tin chi tiết người dùng này.'));
     }
 
     function saveUserChanges() {
-        if (currentMode !== "EDIT") return;
+        if (currentMode !== 'EDIT' || !currentTargetUserId) return;
 
-        const fullName = document.getElementById("modalFullName").value;
-        const studentId = document.getElementById("modalStudentId").value;
-        const department = document.getElementById("modalDepartment").value;
-
-        const formData = new FormData();
-        formData.append("userId", currentTargetUserId);
-        formData.append("fullName", fullName);
-        formData.append("studentId", studentId);
-        formData.append("department", department);
-        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+        const data = {
+            UserId: currentTargetUserId,
+            FullName: document.getElementById('modalFullName').value,
+            Email: document.getElementById('modalEmail').value,
+            StudentId: document.getElementById('modalStudentId').value,
+            Department: document.getElementById('modalDepartment').value
+        };
 
         fetch('/Account/UpdateUser', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify(data)
         })
         .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("Cập nhật thông tin thành công!");
-
-                // Đóng Modal chuẩn Bootstrap 5
-                var modalEl = document.getElementById('userModal');
-                var modal = bootstrap.Modal.getInstance(modalEl);
-                if(modal) modal.hide();
-
-                location.reload(); // Reload nhẹ để tải lại dữ liệu tổng quan
+        .then(resData => {
+            if(resData.success) {
+                alert(resData.message);
+                bootstrap.Modal.getInstance(document.getElementById('userModal')).hide();
+                loadUserTable();
             } else {
-                alert("Lỗi: " + data.message);
+                alert('Lỗi: ' + resData.message);
             }
-        });
+        })
+        .catch(() => alert('Có lỗi xảy ra khi lưu thay đổi.'));
     }
 
-    // ==========================================
-    // CHỨC NĂNG 3: BẬT MODAL PHÂN QUYỀN
-    // ==========================================
+    // --- Xử lý Phân quyền ---
     function openRoleModal(userId, currentRole) {
         currentTargetUserId = userId;
-        document.getElementById("roleSelectHUD").value = currentRole;
-
-        var rModal = new bootstrap.Modal(document.getElementById('roleModal'));
-        rModal.show();
+        document.getElementById('roleSelectHUD').value = currentRole;
+        const roleModal = new bootstrap.Modal(document.getElementById('roleModal'));
+        roleModal.show();
     }
 
     function saveNewRole() {
-        const newRole = document.getElementById("roleSelectHUD").value;
-        const formData = new FormData();
-        formData.append("userId", currentTargetUserId);
-        formData.append("roleName", newRole);
-        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+        if(!currentTargetUserId) return;
+        const newRole = document.getElementById('roleSelectHUD').value;
 
-        fetch('/Account/UpdateUserRole', {
+        fetch('/Account/UpdateRole', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ UserId: currentTargetUserId, RoleName: newRole })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                alert("Phân quyền thành công!");
-                var modalEl = document.getElementById('roleModal');
-                var modal = bootstrap.Modal.getInstance(modalEl);
-                if(modal) modal.hide();
-                location.reload();
+            if(data.success) {
+                alert(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('roleModal')).hide();
+                loadUserTable();
             } else {
-                alert("Lỗi: " + data.message);
+                alert('Lỗi: ' + data.message);
             }
         });
     }
 
-    // ==========================================
-    // CHỨC NĂNG 4: KHÓA / MỞ KHÓA TÀI KHOẢN
-    // ==========================================
-    function toggleLockUser(userId, currentStatus) {
-        const msg = currentStatus
-            ? "Bạn chắc chắn muốn KHÓA tài khoản này?"
-            : "Bạn muốn MỞ KHÓA cho tài khoản này?";
-        if (!confirm(msg)) return;
+    // --- Xử lý Khóa / Mở khóa tài khoản đơn lẻ ---
+    function toggleLockUser(userId, isActive) {
+        const actionText = isActive ? 'Khóa' : 'Mở khóa';
+        if(!confirm(`Bạn có chắc chắn muốn ${actionText.toLowerCase()} tài khoản này?`)) return;
 
-        const formData = new FormData();
-        formData.append("id", userId);
-        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
-
-        fetch('/Account/ToggleUserStatus', {
+        fetch('/Account/ToggleLock', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ UserId: userId, Lock: isActive })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
+            if(data.success) {
                 alert(data.message);
-                location.reload();
+                loadUserTable();
             } else {
-                alert("Thao tác thất bại: " + data.message);
+                alert('Lỗi: ' + data.message);
             }
-        })
-        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
+        });
     }
 
-    function deleteUser(userId) {
-        if (!confirm("Hành động này KHÔNG THỂ HOÀN TÁC!\nToàn bộ dữ liệu liên quan của tài khoản sẽ bị xóa.\n\nBạn có chắc chắn muốn xóa?")) return;
+    // --- Xử lý Xóa người dùng đơn lẻ ---
+                    function deleteUser(userId) {
+        if (!confirm("Bạn có chắc chắn muốn xóa người dùng này không?")) {
+            return;
+        }
 
+        // Đóng gói data dạng Form để đồng bộ với [FromForm] ở Backend
         const formData = new FormData();
-        formData.append("id", userId);
-        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+        formData.append('id', userId);
+
+        // Lấy Token chống giả mạo của ASP.NET Core gắn trong trang
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        if (token) {
+            formData.append('__RequestVerificationToken', token);
+        }
 
         fetch('/Account/DeleteUser', {
             method: 'POST',
             body: formData
         })
-        .then(res => res.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Lỗi kết nối từ Server (Mã lỗi ' + response.status + ')');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert(data.message);
                 location.reload();
             } else {
-                alert("Xóa thất bại: " + data.message);
+                alert("Thất bại: " + data.message);
             }
         })
-        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
+        .catch(error => {
+            // CHÚ Ý: Đã sửa chữ "console" viết thường hoàn toàn để không bị lỗi ReferenceError
+            console.error('Lỗi khi xóa người dùng:', error);
+            alert('Đã xảy ra lỗi khi gửi yêu cầu xóa!');
+        });
+    }
+    function submitLogin(email, password) {
+    if(!email || !password) {
+        alert("Vui lòng điền đầy đủ Email và Mật khẩu!");
+        return;
+    }
+
+    fetch('/Account/Login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+            // Lưu ý: Ở trang công khai [AllowAnonymous] này, ta gửi JSON thẳng không cần Token chống giả mạo CSRF trong Header
+        },
+        body: JSON.stringify({
+            Email: email,
+            Password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert(data.message);
+            // Dựa vào phân quyền trả về để điều hướng người dùng đến đúng trang đích
+            if(data.role === "Admin") {
+                window.location.href = '/Account/Admin';
+            } else {
+                window.location.href = '/Account/UserDashboard';
+            }
+        } else {
+            alert('Đăng nhập thất bại: ' + data.message);
+        }
+    })
+    .catch(err => console.error("Lỗi kết nối đăng nhập:", err));
+}
+    // --- Các hàm xử lý Hàng loạt (Bulk Actions) ---
+    function getSelectedUserIds() {
+        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value));
+    }
+
+    function bulkLock() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Bạn có chắc muốn KHÓA ${ids.length} tài khoản đã chọn?`)) return;
+
+        fetch('/Account/BulkLock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
+    }
+
+    function bulkResetPassword() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Đặt lại mật khẩu về mặc định (UEF@12345) cho ${ids.length} tài khoản?`)) return;
+
+        fetch('/Account/BulkResetPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); });
+    }
+
+    function bulkDelete() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`CẢNH BÁO: Xóa hàng loạt ${ids.length} người dùng? Hành động này không thể hoàn tác.`)) return;
+
+        fetch('/Account/BulkDelete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
     }
 </script>
