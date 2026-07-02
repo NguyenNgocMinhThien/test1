@@ -633,9 +633,15 @@
         currentTargetUserId = userId;
         currentMode = mode;
 
-        fetch(`/Account/GetUserDetails/${userId}`)
+        fetch(`/Account/GetUserDetail?id=${userId}`)
         .then(res => res.json())
-        .then(user => {
+        .then(response => {
+            if (!response.success) {
+                alert(response.message);
+                return;
+            }
+            const user = response.data;
+
             document.getElementById('modalFullName').value = user.fullName || '';
             document.getElementById('modalEmail').value = user.email || '';
             document.getElementById('modalStudentId').value = user.studentId || '';
@@ -663,13 +669,11 @@
     function saveUserChanges() {
         if (currentMode !== 'EDIT' || !currentTargetUserId) return;
 
-        const data = {
-            UserId: currentTargetUserId,
-            FullName: document.getElementById('modalFullName').value,
-            Email: document.getElementById('modalEmail').value,
-            StudentId: document.getElementById('modalStudentId').value,
-            Department: document.getElementById('modalDepartment').value
-        };
+        const formData = new FormData();
+        formData.append('userId', currentTargetUserId);
+        formData.append('fullName', document.getElementById('modalFullName').value);
+        formData.append('studentId', document.getElementById('modalStudentId').value);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
         fetch('/Account/UpdateUser', {
             method: 'POST',
@@ -704,6 +708,11 @@
         if(!currentTargetUserId) return;
         const newRole = document.getElementById('roleSelectHUD').value;
 
+        const formData = new FormData();
+        formData.append('userId', currentTargetUserId);
+        formData.append('roleName', newRole);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
         fetch('/Account/UpdateRole', {
             method: 'POST',
             headers: {
@@ -725,11 +734,15 @@
     }
 
     // --- Xử lý Khóa / Mở khóa tài khoản đơn lẻ ---
-    function toggleLockUser(userId, isActive) {
-        const actionText = isActive ? 'Khóa' : 'Mở khóa';
-        if(!confirm(`Bạn có chắc chắn muốn ${actionText.toLowerCase()} tài khoản này?`)) return;
+    function toggleLockUser(userId, currentStatus) {
+        const msg = currentStatus ? "Bạn chắc chắn muốn KHÓA tài khoản này?" : "Bạn muốn MỞ KHÓA cho tài khoản này?";
+        if (!confirm(msg)) return;
 
-        fetch('/Account/ToggleLock', {
+        const formData = new FormData();
+        formData.append('id', userId);
+        formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+        fetch('/Account/ToggleUserStatus', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -746,6 +759,79 @@
                 alert('Lỗi: ' + data.message);
             }
         });
+    }
+    function submitLogin(email, password) {
+    if(!email || !password) {
+        alert("Vui lòng điền đầy đủ Email và Mật khẩu!");
+        return;
+    }
+
+    fetch('/Account/Login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+            // Lưu ý: Ở trang công khai [AllowAnonymous] này, ta gửi JSON thẳng không cần Token chống giả mạo CSRF trong Header
+        },
+        body: JSON.stringify({
+            Email: email,
+            Password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert(data.message);
+            // Dựa vào phân quyền trả về để điều hướng người dùng đến đúng trang đích
+            if(data.role === "Admin") {
+                window.location.href = '/Account/Admin';
+            } else {
+                window.location.href = '/Account/UserDashboard';
+            }
+        } else {
+            alert('Đăng nhập thất bại: ' + data.message);
+        }
+    })
+    .catch(err => console.error("Lỗi kết nối đăng nhập:", err));
+}
+    // --- Các hàm xử lý Hàng loạt (Bulk Actions) ---
+    function getSelectedUserIds() {
+        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value));
+    }
+
+    function bulkLock() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Bạn có chắc muốn KHÓA ${ids.length} tài khoản đã chọn?`)) return;
+
+        fetch('/Account/BulkLock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
+    }
+
+    function bulkResetPassword() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Đặt lại mật khẩu về mặc định (UEF@12345) cho ${ids.length} tài khoản?`)) return;
+
+        fetch('/Account/BulkResetPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); });
+    }
+
+    function bulkDelete() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`CẢNH BÁO: Xóa hàng loạt ${ids.length} người dùng? Hành động này không thể hoàn tác.`)) return;
+
+        fetch('/Account/BulkDelete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
     }
 
     // --- Xử lý Xóa người dùng đơn lẻ ---

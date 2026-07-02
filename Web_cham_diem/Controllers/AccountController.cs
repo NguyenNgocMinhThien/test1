@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
@@ -491,7 +494,7 @@ public class AccountController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> CreateUser(string fullName, string email, string studentId, string roleName, string? password)
+    public async Task<IActionResult> CreateUser([FromForm] AdminCreateUserForm model) // Nhận dạng đối tượng giúp xử lý triệt để lỗi 415
     {
         if (string.IsNullOrEmpty(model.FullName) || string.IsNullOrEmpty(model.Email))
         {
@@ -502,11 +505,7 @@ public class AccountController : Controller
         {
             var emailTrim = model.Email.ToLower().Trim();
 
-            var plainPassword = string.IsNullOrWhiteSpace(password) ? "UEF@12345" : password.Trim();
-            if (plainPassword.Length < 6)
-                return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự." });
-
-            var emailTrim = email.ToLower().Trim();
+            // Kiểm tra trùng Email
             bool isEmailExist = await _context.Users.AnyAsync(u => u.Email.ToLower() == emailTrim);
             if (isEmailExist)
             {
@@ -535,7 +534,7 @@ public class AccountController : Controller
                 FullName = model.FullName.Trim(),
                 Email = emailTrim,
                 StudentId = studentIdUpper,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword),
+                PasswordHash = finalHash, // Lưu mật khẩu đúng ý Admin nhập
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -571,8 +570,9 @@ public class AccountController : Controller
         }
     }
 
-    // 2. FIX LỖI 404 KHI XÓA TÀI KHOẢN
+    // FIX LỖI 404 KHI XÓA TÀI KHOẢN + chặn xóa chính mình / xóa Admin + dọn dữ liệu liên quan
     [HttpPost]
+    [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteUser([FromForm] int id)
     {
@@ -583,11 +583,22 @@ public class AccountController : Controller
 
         try
         {
-            var user = await _context.Users.FindAsync(id);
+            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (id == currentUserId)
+                return Json(new { success = false, message = "Không thể xóa tài khoản của chính mình." });
+
+            var user = await _context.Users
+                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserId == id);
+
             if (user == null)
             {
                 return Json(new { success = false, message = "Không tìm thấy người dùng này trên hệ thống." });
             }
+
+            bool isAdmin = user.UserRoles.Any(ur => ur.Role != null && ur.Role.RoleName == "Admin");
+            if (isAdmin)
+                return Json(new { success = false, message = "Không thể xóa tài khoản Admin." });
 
             // Xóa sạch bảng phụ để tránh lỗi khóa ngoại
             var userRoles = _context.UserRoles.Where(ur => ur.UserId == id);
@@ -606,7 +617,8 @@ public class AccountController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Lỗi không thể xóa: {ex.Message}" });
+            var inner = ex.InnerException?.Message ?? ex.Message;
+            return Json(new { success = false, message = $"Lỗi không thể xóa: {inner}" });
         }
     }
 
@@ -629,40 +641,6 @@ public class AccountController : Controller
         catch (Exception ex)
         {
             return Json(new { success = false, message = "Thao tác thất bại: " + ex.Message });
-        }
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DeleteUser(int id)
-    {
-        try
-        {
-            var currentUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-            if (id == currentUserId)
-                return Json(new { success = false, message = "Không thể xóa tài khoản của chính mình." });
-
-            var user = await _context.Users
-                .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.UserId == id);
-
-            if (user == null)
-                return Json(new { success = false, message = "Không tìm thấy tài khoản." });
-
-            bool isAdmin = user.UserRoles.Any(ur => ur.Role != null && ur.Role.RoleName == "Admin");
-            if (isAdmin)
-                return Json(new { success = false, message = "Không thể xóa tài khoản Admin." });
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Đã xóa tài khoản thành công." });
-        }
-        catch (Exception ex)
-        {
-            var inner = ex.InnerException?.Message ?? ex.Message;
-            return Json(new { success = false, message = "Lỗi khi xóa: " + inner });
         }
     }
 

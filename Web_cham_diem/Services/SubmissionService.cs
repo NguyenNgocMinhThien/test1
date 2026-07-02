@@ -103,7 +103,7 @@ public class SubmissionService : ISubmissionService
                 RegistrationId_FK = r.RegistrationId
             }).ToList();
 
-            // 4. Lấy dữ liệu bài nộp
+            // 4. Lấy dữ liệu bài nộp (chỉ trong phạm vi cuộc thi của organizer)
             var submissionsQuery = _context.Submissions
                 .Include(s => s.Registration)
                     .ThenInclude(r => r!.User)
@@ -111,9 +111,10 @@ public class SubmissionService : ISubmissionService
                     .ThenInclude(t => t!.Leader)
                 .Include(s => s.Competition)
                 .Include(s => s.CompetitionRound)
+                .Where(s => ownedIds.Contains(s.CompetitionId))
                 .AsQueryable();
 
-            if (competitionId.HasValue)
+            if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
                 submissionsQuery = submissionsQuery.Where(s => s.CompetitionId == competitionId.Value);
 
             var submissions = await submissionsQuery.ToListAsync();
