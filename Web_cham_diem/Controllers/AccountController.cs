@@ -426,6 +426,7 @@ public class AccountController : Controller
             }
 
             user.FullName = fullName.Trim();
+            user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Cập nhật thông tin tài khoản thành công!" });
         }
@@ -633,6 +634,7 @@ public class AccountController : Controller
             if (user == null) return Json(new { success = false, message = "Không tìm thấy tài khoản cần xử lý." });
 
             user.IsActive = !user.IsActive;
+            user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             string msg = user.IsActive ? "Đã mở khóa tài khoản thành công!" : "Đã khóa tài khoản thành công!";
@@ -766,4 +768,399 @@ public class AccountController : Controller
 
     [Authorize(Roles = "Admin")]
     public IActionResult ActivityLogs() { return View(); }
+
+    // ==========================================
+    // NHẬT KÝ HOẠT ĐỘNG (TỔNG HỢP TỪ DỮ LIỆU THỰC CÓ TIMESTAMP)
+    // Hệ thống chưa có bảng AuditLog riêng nên các mốc thời gian sẵn có
+    // trên Users, UserRoles, Competitions, Registrations,
+    // RegistrationEditHistory, Submissions, TaskCompletions,
+    // PublicAnnouncements được gộp lại thành một dòng thời gian duy nhất.
+    // ==========================================
+
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetActivityLogs(string search, string module, [FromQuery(Name = "action")] string actionType, DateTime? date, int page = 1, int pageSize = 15)
+    {
+        try
+        {
+            var events = new List<ActivityLogEntry>();
+
+            var users = await _context.Users
+                .Select(u => new { u.UserId, u.FullName, u.Email, u.IsActive, u.CreatedAt, u.UpdatedAt, u.LastLogin })
+                .ToListAsync();
+            var userDict = users.ToDictionary(u => u.UserId, u => u);
+
+            var roleAssignments = await _context.UserRoles
+                .Select(ur => new { ur.UserId, ur.AssignedAt, RoleName = ur.Role.RoleName })
+                .ToListAsync();
+            var roleLookup = roleAssignments
+                .GroupBy(x => x.UserId)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.AssignedAt).First().RoleName);
+
+            string RoleOf(int userId) => roleLookup.TryGetValue(userId, out var r) ? r : "Chưa phân quyền";
+
+            // 1. Users: tạo tài khoản / đăng nhập gần nhất / cập nhật hồ sơ hoặc khóa-mở khóa
+            foreach (var u in users)
+            {
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = u.CreatedAt,
+                    UserName = u.FullName,
+                    UserEmail = u.Email,
+                    RoleName = RoleOf(u.UserId),
+                    ActionType = "CREATE",
+                    Module = "Tài khoản",
+                    Description = "Tài khoản được tạo mới trên hệ thống"
+                });
+
+                if (u.LastLogin.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = u.LastLogin.Value,
+                        UserName = u.FullName,
+                        UserEmail = u.Email,
+                        RoleName = RoleOf(u.UserId),
+                        ActionType = "LOGIN",
+                        Module = "Đăng nhập",
+                        Description = "Đăng nhập vào hệ thống"
+                    });
+                }
+
+                if (u.UpdatedAt.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = u.UpdatedAt.Value,
+                        UserName = u.FullName,
+                        UserEmail = u.Email,
+                        RoleName = RoleOf(u.UserId),
+                        ActionType = "UPDATE",
+                        Module = "Tài khoản",
+                        Description = u.IsActive
+                            ? "Thông tin tài khoản được cập nhật (hồ sơ hoặc mở khóa)"
+                            : "Thông tin tài khoản được cập nhật (hồ sơ hoặc bị khóa)"
+                    });
+                }
+            }
+
+            // 2. Phân quyền
+            foreach (var ra in roleAssignments)
+            {
+                var u = userDict.TryGetValue(ra.UserId, out var uu) ? uu : null;
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = ra.AssignedAt,
+                    UserName = u?.FullName ?? "Không rõ",
+                    UserEmail = u?.Email ?? "",
+                    RoleName = ra.RoleName,
+                    ActionType = "UPDATE",
+                    Module = "Phân quyền",
+                    Description = $"Được gán quyền '{ra.RoleName}'"
+                });
+            }
+
+            // 3. Cuộc thi
+            var competitions = await _context.Competitions
+                .Select(c => new { c.CompetitionName, c.CreatedAt, c.UpdatedAt, c.CreatedByUserId })
+                .ToListAsync();
+            foreach (var c in competitions)
+            {
+                string creatorName = "Hệ thống", creatorEmail = "", creatorRole = "";
+                if (c.CreatedByUserId.HasValue && userDict.TryGetValue(c.CreatedByUserId.Value, out var creator))
+                {
+                    creatorName = creator.FullName;
+                    creatorEmail = creator.Email;
+                    creatorRole = RoleOf(creator.UserId);
+                }
+
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = c.CreatedAt,
+                    UserName = creatorName,
+                    UserEmail = creatorEmail,
+                    RoleName = creatorRole,
+                    ActionType = "CREATE",
+                    Module = "Cuộc thi",
+                    Description = $"Tạo mới cuộc thi '{c.CompetitionName}'"
+                });
+
+                if (c.UpdatedAt.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = c.UpdatedAt.Value,
+                        UserName = creatorName,
+                        UserEmail = creatorEmail,
+                        RoleName = creatorRole,
+                        ActionType = "UPDATE",
+                        Module = "Cuộc thi",
+                        Description = $"Cập nhật thông tin cuộc thi '{c.CompetitionName}'"
+                    });
+                }
+            }
+
+            // 4. Đăng ký
+            var registrations = await _context.Registrations
+                .Select(r => new { r.UserId, r.RegistrationDate, r.ApprovalDate, r.Status, CompetitionName = r.Competition.CompetitionName })
+                .ToListAsync();
+            foreach (var r in registrations)
+            {
+                var u = userDict.TryGetValue(r.UserId, out var uu) ? uu : null;
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = r.RegistrationDate,
+                    UserName = u?.FullName ?? "Không rõ",
+                    UserEmail = u?.Email ?? "",
+                    RoleName = RoleOf(r.UserId),
+                    ActionType = "CREATE",
+                    Module = "Đăng ký",
+                    Description = $"Đăng ký tham gia cuộc thi '{r.CompetitionName}'"
+                });
+
+                if (r.ApprovalDate.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = r.ApprovalDate.Value,
+                        UserName = u?.FullName ?? "Không rõ",
+                        UserEmail = u?.Email ?? "",
+                        RoleName = RoleOf(r.UserId),
+                        ActionType = r.Status == "Rejected" ? "DELETE" : "UPDATE",
+                        Module = "Đăng ký",
+                        Description = $"Hồ sơ đăng ký '{r.CompetitionName}' được " +
+                            (r.Status == "Approved" ? "duyệt" : r.Status == "Rejected" ? "từ chối" : "cập nhật")
+                    });
+                }
+            }
+
+            // 5. Lịch sử chỉnh sửa đăng ký (bảng audit thực sự đã có sẵn)
+            var editHistory = await _context.RegistrationEditHistories
+                .Select(h => new
+                {
+                    h.EditedAt,
+                    h.ActionType,
+                    h.ChangesSummary,
+                    h.EditedBy,
+                    EditorName = h.Editor.FullName,
+                    EditorEmail = h.Editor.Email,
+                    CompetitionName = h.Registration.Competition.CompetitionName
+                })
+                .ToListAsync();
+            foreach (var h in editHistory)
+            {
+                string mappedAction = h.ActionType switch
+                {
+                    "OrganizerRejected" => "DELETE",
+                    _ => "UPDATE"
+                };
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = h.EditedAt,
+                    UserName = h.EditorName,
+                    UserEmail = h.EditorEmail,
+                    RoleName = RoleOf(h.EditedBy),
+                    ActionType = mappedAction,
+                    Module = "Đăng ký",
+                    Description = h.ChangesSummary ?? $"Chỉnh sửa hồ sơ đăng ký '{h.CompetitionName}'"
+                });
+            }
+
+            // 6. Bài dự thi
+            var submissions = await _context.Submissions
+                .Select(s => new
+                {
+                    s.Title,
+                    s.SubmissionDate,
+                    s.UpdatedAt,
+                    CompetitionName = s.Competition.CompetitionName,
+                    SubmitterUserId = s.Registration != null ? (int?)s.Registration.UserId : null,
+                    SubmitterName = s.Registration != null ? s.Registration.User.FullName : (s.Team != null ? s.Team.TeamName : "Không rõ"),
+                    SubmitterEmail = s.Registration != null ? s.Registration.User.Email : ""
+                })
+                .ToListAsync();
+            foreach (var s in submissions)
+            {
+                var role = s.SubmitterUserId.HasValue ? RoleOf(s.SubmitterUserId.Value) : "";
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = s.SubmissionDate,
+                    UserName = s.SubmitterName,
+                    UserEmail = s.SubmitterEmail,
+                    RoleName = role,
+                    ActionType = "CREATE",
+                    Module = "Bài dự thi",
+                    Description = $"Nộp bài dự thi '{s.Title}' cho cuộc thi '{s.CompetitionName}'"
+                });
+
+                if (s.UpdatedAt.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = s.UpdatedAt.Value,
+                        UserName = s.SubmitterName,
+                        UserEmail = s.SubmitterEmail,
+                        RoleName = role,
+                        ActionType = "UPDATE",
+                        Module = "Bài dự thi",
+                        Description = $"Cập nhật bài dự thi '{s.Title}'"
+                    });
+                }
+            }
+
+            // 7. Nhiệm vụ nhóm
+            var completions = await _context.TaskCompletions
+                .Select(tc => new
+                {
+                    tc.CompletedAt,
+                    tc.IsVerified,
+                    tc.VerifiedAt,
+                    tc.CompletedBy,
+                    tc.VerifiedBy,
+                    CompletedByName = tc.CompletedByUser.FullName,
+                    CompletedByEmail = tc.CompletedByUser.Email,
+                    TaskTitle = tc.Task.Title,
+                    VerifiedByName = tc.VerifiedByUser != null ? tc.VerifiedByUser.FullName : null,
+                    VerifiedByEmail = tc.VerifiedByUser != null ? tc.VerifiedByUser.Email : null
+                })
+                .ToListAsync();
+            foreach (var tc in completions)
+            {
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = tc.CompletedAt,
+                    UserName = tc.CompletedByName,
+                    UserEmail = tc.CompletedByEmail,
+                    RoleName = RoleOf(tc.CompletedBy),
+                    ActionType = "UPDATE",
+                    Module = "Nhiệm vụ nhóm",
+                    Description = $"Đánh dấu hoàn thành nhiệm vụ '{tc.TaskTitle}'"
+                });
+
+                if (tc.IsVerified && tc.VerifiedAt.HasValue && tc.VerifiedBy.HasValue)
+                {
+                    events.Add(new ActivityLogEntry
+                    {
+                        Timestamp = tc.VerifiedAt.Value,
+                        UserName = tc.VerifiedByName ?? "Giảng viên",
+                        UserEmail = tc.VerifiedByEmail ?? "",
+                        RoleName = RoleOf(tc.VerifiedBy.Value),
+                        ActionType = "UPDATE",
+                        Module = "Nhiệm vụ nhóm",
+                        Description = $"Xác nhận hoàn thành nhiệm vụ '{tc.TaskTitle}'"
+                    });
+                }
+            }
+
+            // 8. Thông báo công khai
+            var announcements = await _context.PublicAnnouncements
+                .Select(a => new { a.Title, a.CreatedAt, a.CreatedByUserId })
+                .ToListAsync();
+            foreach (var a in announcements)
+            {
+                string name = "Hệ thống", email = "", role = "";
+                if (a.CreatedByUserId.HasValue && userDict.TryGetValue(a.CreatedByUserId.Value, out var creator))
+                {
+                    name = creator.FullName;
+                    email = creator.Email;
+                    role = RoleOf(creator.UserId);
+                }
+                events.Add(new ActivityLogEntry
+                {
+                    Timestamp = a.CreatedAt,
+                    UserName = name,
+                    UserEmail = email,
+                    RoleName = role,
+                    ActionType = "CREATE",
+                    Module = "Thông báo",
+                    Description = $"Đăng thông báo '{a.Title}'"
+                });
+            }
+
+            // --- Thống kê tổng quan (tính trên toàn bộ dữ liệu, không áp bộ lọc) ---
+            var now = DateTime.UtcNow;
+            var todayLocal = now.ToLocalTime().Date;
+            var stats = new
+            {
+                Last24h = events.Count(e => e.Timestamp >= now.AddHours(-24)),
+                LoginsToday = users.Count(u => u.LastLogin.HasValue && u.LastLogin.Value.ToLocalTime().Date == todayLocal),
+                PendingRegistrations = await _context.Registrations.CountAsync(r => r.Status == "Pending"),
+                LockedAccounts = users.Count(u => u.IsActive == false)
+            };
+
+            // --- Hoạt động quan trọng gần đây (xóa / phân quyền) cho panel bên phải ---
+            var importantList = events
+                .Where(e => e.ActionType == "DELETE" || e.Module == "Phân quyền")
+                .OrderByDescending(e => e.Timestamp)
+                .Take(5)
+                .Select(e => new
+                {
+                    e.UserName,
+                    e.Description,
+                    e.ActionType,
+                    TimeAgo = FormatTimeAgo(now - e.Timestamp)
+                })
+                .ToList();
+
+            // --- Áp bộ lọc & phân trang ---
+            IEnumerable<ActivityLogEntry> filtered = events;
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                var s = search.ToLower().Trim();
+                filtered = filtered.Where(e => (e.UserName ?? "").ToLower().Contains(s) || (e.UserEmail ?? "").ToLower().Contains(s));
+            }
+            if (!string.IsNullOrEmpty(module))
+                filtered = filtered.Where(e => e.Module == module);
+            if (!string.IsNullOrEmpty(actionType))
+                filtered = filtered.Where(e => e.ActionType == actionType);
+            if (date.HasValue)
+                filtered = filtered.Where(e => e.Timestamp.ToLocalTime().Date == date.Value.Date);
+
+            var ordered = filtered.OrderByDescending(e => e.Timestamp).ToList();
+            var totalRecords = ordered.Count;
+            var totalPages = totalRecords == 0 ? 1 : (int)Math.Ceiling(totalRecords / (double)pageSize);
+            page = Math.Max(1, Math.Min(page, totalPages));
+
+            var pagedItems = ordered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(e => new
+                {
+                    Time = e.Timestamp.ToLocalTime().ToString("HH:mm:ss"),
+                    DateText = e.Timestamp.ToLocalTime().ToString("dd/MM/yyyy"),
+                    e.UserName,
+                    e.UserEmail,
+                    e.RoleName,
+                    e.ActionType,
+                    e.Module,
+                    e.Description
+                })
+                .ToList();
+
+            return Json(new
+            {
+                success = true,
+                stats,
+                important = importantList,
+                totalRecords,
+                totalPages,
+                page,
+                items = pagedItems
+            });
+        }
+        catch (Exception ex)
+        {
+            var inner = ex.InnerException?.Message ?? ex.Message;
+            return Json(new { success = false, message = "Lỗi tải nhật ký hoạt động: " + inner });
+        }
+    }
+
+    private static string FormatTimeAgo(TimeSpan span)
+    {
+        if (span.TotalMinutes < 1) return "Vừa xong";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} phút trước";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} giờ trước";
+        return $"{(int)span.TotalDays} ngày trước";
+    }
 }
