@@ -80,6 +80,12 @@
     .assign-chip-remove:hover { opacity: 1; }
     .assign-btn { font-size: .78rem; white-space: nowrap; }
     .sub-row:hover td { background: #f0f4ff !important; }
+
+    /* Bulk assignment bar */
+    .bulk-action-bar { background: linear-gradient(135deg,#1d4ed8,#2563eb); color:#fff; border-radius:10px; padding:10px 14px; margin-top:10px; }
+    .bulk-action-bar .btn-light { color:#1d4ed8; font-weight:700; }
+    .sub-checkbox { cursor:pointer; width:16px; height:16px; }
+    .select-all-sub { cursor:pointer; width:16px; height:16px; }
 </style>
 }
 
@@ -466,17 +472,42 @@
                                     </div>
                                     @if (submissionsInRound.Any())
                                     {
-                                        <div class="position-relative">
-                                            <input type="text"
-                                                   class="form-control form-control-sm sub-filter-input"
-                                                   data-round="@r.RoundId"
-                                                   placeholder="Tìm bài nộp..."
-                                                   style="width:200px; padding-left: 30px;">
-                                            <i class="bi bi-search position-absolute text-muted"
-                                               style="left:9px; top:50%; transform:translateY(-50%); font-size:.75rem; pointer-events:none;"></i>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="position-relative">
+                                                <input type="text"
+                                                       class="form-control form-control-sm sub-filter-input"
+                                                       data-round="@r.RoundId"
+                                                       placeholder="Tìm bài nộp..."
+                                                       style="width:190px; padding-left: 30px;">
+                                                <i class="bi bi-search position-absolute text-muted"
+                                                   style="left:9px; top:50%; transform:translateY(-50%); font-size:.75rem; pointer-events:none;"></i>
+                                            </div>
+                                            @if (roundJudges.Any())
+                                            {
+                                                <button class="btn btn-sm btn-success fw-bold"
+                                                        onclick="openBulkAssignModal(@r.RoundId, '@r.RoundName.Replace("'","\\'")')">
+                                                    <i class="bi bi-people me-1"></i>Phân công hàng loạt
+                                                </button>
+                                            }
                                         </div>
                                     }
                                 </div>
+
+                                @if (submissionsInRound.Any() && roundJudges.Any())
+                                {
+                                    <div id="bulk-bar-@r.RoundId" class="bulk-action-bar d-none d-flex align-items-center gap-2 flex-wrap">
+                                        <i class="bi bi-check2-square fs-5"></i>
+                                        <span class="fw-bold small">Đã chọn <span class="selected-count-@r.RoundId">0</span> bài</span>
+                                        <button class="btn btn-sm btn-light fw-bold"
+                                                onclick="submitBulkFromBar(@r.RoundId, '@r.RoundName.Replace("'","\\'")')">
+                                            <i class="bi bi-person-check me-1"></i>Phân công cho giám khảo
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-light"
+                                                onclick="clearSelection(@r.RoundId)">
+                                            <i class="bi bi-x-circle me-1"></i>Bỏ chọn tất cả
+                                        </button>
+                                    </div>
+                                }
 
                                 @if (!submissionsInRound.Any())
                                 {
@@ -492,6 +523,13 @@
                                         <table class="table grade-table mb-0 sub-assign-table" data-round="@r.RoundId">
                                             <thead>
                                                 <tr>
+                                                    @if (roundJudges.Any())
+                                                    {
+                                                        <th style="width:42px" class="text-center">
+                                                            <input type="checkbox" class="select-all-sub"
+                                                                   data-round="@r.RoundId" title="Chọn tất cả">
+                                                        </th>
+                                                    }
                                                     <th style="width:30%">Tên bài / Thí sinh</th>
                                                     <th style="width:12%">Trạng thái</th>
                                                     <th>Đã phân công cho</th>
@@ -521,6 +559,13 @@
                                                         .Where(a => a.Status != "Reassigned")
                                                         .ToList();
                                                     <tr class="sub-row">
+                                                        @if (roundJudges.Any())
+                                                        {
+                                                            <td class="text-center" style="width:42px">
+                                                                <input type="checkbox" class="sub-checkbox"
+                                                                       data-round="@r.RoundId" value="@sub.SubmissionId">
+                                                            </td>
+                                                        }
                                                         <td>
                                                             <div class="fw-bold text-dark" style="font-size:.85rem;">@sub.Title</div>
                                                             <div class="text-muted" style="font-size:.75rem;">
@@ -921,6 +966,71 @@
     </div>
 </div>
 
+<!-- ═══ Modal: Phân công Hàng loạt ═══ -->
+<div class="modal fade" id="bulkAssignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:560px;">
+        <div class="modal-content border-0" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-people me-2 text-success"></i>Phân công Hàng loạt
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+
+                <!-- Round info -->
+                <div class="mb-3 p-3 rounded-3" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+                    <div class="small text-muted mb-1 fw-semibold text-uppercase" style="font-size:.7rem; letter-spacing:.4px;">Vòng thi</div>
+                    <div id="bulk-round-label" class="fw-bold text-dark" style="font-size:.9rem;">—</div>
+                </div>
+
+                <!-- Selected submissions summary -->
+                <div class="mb-3 p-3 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="small fw-semibold text-muted text-uppercase" style="font-size:.7rem; letter-spacing:.4px;">Bài nộp được phân công</div>
+                        <span class="badge bg-primary" id="bulk-count-badge">0 bài</span>
+                    </div>
+                    <div id="bulk-submission-list" style="max-height:130px; overflow-y:auto; font-size:.82rem;"></div>
+                </div>
+
+                <input type="hidden" id="bulk-round-id">
+
+                <!-- Judge select -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">
+                        <i class="bi bi-person-badge me-1"></i>Chọn Giám khảo <span class="text-danger">*</span>
+                    </label>
+                    <select id="bulk-judge-select" class="form-select">
+                        <option value="">— Chọn giám khảo —</option>
+                    </select>
+                    <div id="bulk-judge-workload" class="small text-muted mt-1 d-none">
+                        <i class="bi bi-bar-chart me-1"></i><span id="bulk-workload-text"></span>
+                    </div>
+                </div>
+
+                <!-- Deadline -->
+                <div class="mb-1">
+                    <label class="form-label small fw-bold text-muted">
+                        <i class="bi bi-calendar-event me-1"></i>Hạn chấm điểm <span class="text-muted fw-normal">(tùy chọn)</span>
+                    </label>
+                    <input type="datetime-local" id="bulk-deadline" class="form-control">
+                    <div class="form-text">Bỏ trống nếu không có hạn cụ thể.</div>
+                </div>
+
+            </div>
+            <div class="modal-footer bg-light justify-content-between">
+                <small class="text-muted" id="bulk-footer-hint">Tất cả bài đã chọn sẽ được giao cho cùng 1 giám khảo.</small>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success fw-bold" onclick="submitBulkAssign()">
+                        <i class="bi bi-people me-1"></i>Xác nhận Phân công
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
     <div id="actionToast" class="toast align-items-center text-white border-0">
@@ -1284,6 +1394,161 @@
         showToast(data.message, data.success ? 'success' : 'danger');
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('judgeAssignmentsModal'))?.hide();
+            setTimeout(() => location.reload(), 900);
+        }
+    }
+
+    // ── Bulk Assignment ────────────────────────────────────────────
+    // Track selected submission IDs per round
+    const bulkSelected = {};  // { roundId: Set<submissionId> }
+
+    function getOrCreateSet(roundId) {
+        if (!bulkSelected[roundId]) bulkSelected[roundId] = new Set();
+        return bulkSelected[roundId];
+    }
+
+    function updateBulkBar(roundId) {
+        const sel = getOrCreateSet(roundId);
+        const bar = document.getElementById('bulk-bar-' + roundId);
+        const countEl = document.querySelector('.selected-count-' + roundId);
+        if (!bar) return;
+        if (sel.size > 0) {
+            bar.classList.remove('d-none');
+            if (countEl) countEl.textContent = sel.size;
+        } else {
+            bar.classList.add('d-none');
+        }
+        // Sync "select all" checkbox state
+        const allChecks = document.querySelectorAll(`.sub-checkbox[data-round="${roundId}"]`);
+        const allBox = document.querySelector(`.select-all-sub[data-round="${roundId}"]`);
+        if (allBox) {
+            const allChecked = allChecks.length > 0 && [...allChecks].every(c => c.checked);
+            allBox.indeterminate = sel.size > 0 && !allChecked;
+            allBox.checked = allChecked;
+        }
+    }
+
+    // Checkbox individual change
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('sub-checkbox')) return;
+        const roundId = e.target.dataset.round;
+        const subId   = parseInt(e.target.value);
+        const sel     = getOrCreateSet(roundId);
+        if (e.target.checked) sel.add(subId); else sel.delete(subId);
+        updateBulkBar(roundId);
+    });
+
+    // Select-all checkbox change
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('select-all-sub')) return;
+        const roundId = e.target.dataset.round;
+        const checks  = document.querySelectorAll(`.sub-checkbox[data-round="${roundId}"]`);
+        const sel     = getOrCreateSet(roundId);
+        checks.forEach(c => {
+            c.checked = e.target.checked;
+            if (e.target.checked) sel.add(parseInt(c.value)); else sel.delete(parseInt(c.value));
+        });
+        updateBulkBar(roundId);
+    });
+
+    function clearSelection(roundId) {
+        const sel = getOrCreateSet(roundId);
+        sel.clear();
+        document.querySelectorAll(`.sub-checkbox[data-round="${roundId}"]`).forEach(c => c.checked = false);
+        const allBox = document.querySelector(`.select-all-sub[data-round="${roundId}"]`);
+        if (allBox) { allBox.checked = false; allBox.indeterminate = false; }
+        updateBulkBar(roundId);
+    }
+
+    // Pre-fill bulk modal judge list and submission list
+    function openBulkAssignModal(roundId, roundName) {
+        const sel = getOrCreateSet(roundId);
+
+        document.getElementById('bulk-round-id').value  = roundId;
+        document.getElementById('bulk-round-label').textContent = '🏆 ' + roundName;
+
+        // Fill submission list
+        const listEl    = document.getElementById('bulk-submission-list');
+        const countBadge= document.getElementById('bulk-count-badge');
+        listEl.innerHTML = '';
+
+        if (sel.size === 0) {
+            // If nothing selected → select all visible
+            document.querySelectorAll(`.sub-checkbox[data-round="${roundId}"]`).forEach(c => {
+                if (c.closest('tr').style.display !== 'none') {
+                    c.checked = true;
+                    sel.add(parseInt(c.value));
+                }
+            });
+            updateBulkBar(roundId);
+        }
+
+        countBadge.textContent = sel.size + ' bài';
+
+        // Build readable list from DOM rows
+        sel.forEach(subId => {
+            const cb  = document.querySelector(`.sub-checkbox[data-round="${roundId}"][value="${subId}"]`);
+            const row = cb ? cb.closest('tr') : null;
+            const title = row ? row.querySelector('.fw-bold.text-dark')?.textContent?.trim() : ('#' + subId);
+            const div = document.createElement('div');
+            div.className = 'text-dark mb-1';
+            div.innerHTML = `<i class="bi bi-file-earmark me-1 text-primary"></i>${escHtml(title)}`;
+            listEl.appendChild(div);
+        });
+
+        // Fill judges
+        const select = document.getElementById('bulk-judge-select');
+        select.innerHTML = '<option value="">— Chọn giám khảo —</option>';
+        const judges = ROUND_JUDGES[roundId] || [];
+        const roleLabel = { HeadJudge: 'Trưởng ban', ViceHead: 'Phó ban', Member: 'Thành viên' };
+        judges.forEach(j => {
+            const opt = document.createElement('option');
+            opt.value = j.id;
+            opt.dataset.assigned = j.assigned;
+            opt.dataset.done     = j.done;
+            opt.textContent      = `${j.name} (${roleLabel[j.role] || j.role}) — ${j.done}/${j.assigned} bài`;
+            select.appendChild(opt);
+        });
+
+        document.getElementById('bulk-deadline').value = '';
+        document.getElementById('bulk-judge-workload').classList.add('d-none');
+        new bootstrap.Modal(document.getElementById('bulkAssignModal')).show();
+    }
+
+    // Called from the bulk bar button (may re-open with current selection)
+    function submitBulkFromBar(roundId, roundName) {
+        openBulkAssignModal(roundId, roundName);
+    }
+
+    document.getElementById('bulk-judge-select')?.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const wl  = document.getElementById('bulk-judge-workload');
+        const wt  = document.getElementById('bulk-workload-text');
+        if (!this.value) { wl.classList.add('d-none'); return; }
+        wt.textContent = `Đã được phân công ${opt.dataset.assigned} bài, hoàn thành ${opt.dataset.done} bài.`;
+        wl.classList.remove('d-none');
+    });
+
+    async function submitBulkAssign() {
+        const roundId  = parseInt(document.getElementById('bulk-round-id').value);
+        const judgeId  = parseInt(document.getElementById('bulk-judge-select').value);
+        const deadline = document.getElementById('bulk-deadline').value;
+        const sel      = getOrCreateSet(roundId);
+
+        if (!judgeId) { showToast('Vui lòng chọn giám khảo.', 'warning'); return; }
+        if (sel.size === 0) { showToast('Chưa có bài nào được chọn.', 'warning'); return; }
+
+        const body = {
+            submissionIds:  [...sel],
+            judgeId,
+            roundId,
+            gradingDeadline: deadline ? new Date(deadline).toISOString() : null
+        };
+
+        const data = await postJson(`/Organizer/AssignSubmissions?competitionId=${CID}`, body);
+        showToast(data.message, data.success ? 'success' : 'danger');
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('bulkAssignModal'))?.hide();
             setTimeout(() => location.reload(), 900);
         }
     }

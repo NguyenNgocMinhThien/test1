@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Web_cham_diem.Services;
 using Web_cham_diem.Models.ViewModels;
@@ -6,6 +7,7 @@ using System.Security.Claims;
 
 namespace Web_cham_diem.Controllers
 {
+    [Authorize(Roles = "Organizer")]
     public class OrganizerController : Controller
     {
         private readonly ICompetitionService _competitionService;
@@ -31,6 +33,21 @@ namespace Web_cham_diem.Controllers
             _logger               = logger;
         }
 
+        private int GetCurrentUserId()
+        {
+            var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(value, out var id) ? id : 0;
+        }
+
+        // Kiểm tra quyền sở hữu cuộc thi; nếu không phải chủ trả về Json lỗi
+        private async Task<IActionResult?> RequireOwnerJson(int competitionId)
+        {
+            var isOwner = await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId());
+            if (!isOwner)
+                return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
+            return null;
+        }
+
         public IActionResult Index() => View();
 
         // 1. Dashboard
@@ -38,7 +55,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var data = await _competitionService.GetOrganizerDashboardDataAsync();
+                var data = await _competitionService.GetOrganizerDashboardDataAsync(GetCurrentUserId());
                 return View(data);
             }
             catch (Exception ex)
@@ -52,7 +69,7 @@ namespace Web_cham_diem.Controllers
         // 2. Danh sách cuộc thi
         public async Task<IActionResult> Contests(string? search, string? status, string? category, int page = 1)
         {
-            var viewModel = await _competitionService.GetOrganizerContestsAsync(search, status, category, page);
+            var viewModel = await _competitionService.GetOrganizerContestsAsync(search, status, category, page, GetCurrentUserId());
             return View(viewModel);
         }
 
@@ -85,7 +102,7 @@ namespace Web_cham_diem.Controllers
 
             try
             {
-                var competitionId = await _competitionService.CreateCompetitionAsync(model);
+                var competitionId = await _competitionService.CreateCompetitionAsync(model, GetCurrentUserId());
                 TempData["SuccessMessage"] = "Tạo cuộc thi thành công!";
                 return RedirectToAction("Edit", new { id = competitionId });
             }
@@ -109,7 +126,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var model = await _competitionService.GetCompetitionForEditAsync(id);
+                var model = await _competitionService.GetCompetitionForEditAsync(id, GetCurrentUserId());
                 if (model == null) return NotFound();
                 return View(model);
             }
@@ -126,15 +143,17 @@ namespace Web_cham_diem.Controllers
         {
             if (model.CompetitionId != id) return BadRequest();
 
+            var organizerId = GetCurrentUserId();
+
             if (!ModelState.IsValid)
             {
-                await ReloadReadonlyData(id, model);
+                await ReloadReadonlyData(id, model, organizerId);
                 return View(model);
             }
 
             try
             {
-                var result = await _competitionService.UpdateCompetitionAsync(id, model);
+                var result = await _competitionService.UpdateCompetitionAsync(id, model, organizerId);
                 if (!result) return NotFound();
 
                 TempData["SuccessMessage"] = "Cập nhật cuộc thi thành công!";
@@ -144,23 +163,23 @@ namespace Web_cham_diem.Controllers
             {
                 ModelState.AddModelError("", ex.Message);
                 _logger.LogWarning("Validation error updating competition {Id}: {Message}", id, ex.Message);
-                await ReloadReadonlyData(id, model);
+                await ReloadReadonlyData(id, model, organizerId);
                 return View(model);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Có lỗi xảy ra. Vui lòng thử lại.");
                 _logger.LogError(ex, "Error updating competition {Id}", id);
-                await ReloadReadonlyData(id, model);
+                await ReloadReadonlyData(id, model, organizerId);
                 return View(model);
             }
         }
 
-        private async Task ReloadReadonlyData(int competitionId, EditCompetitionViewModel model)
+        private async Task ReloadReadonlyData(int competitionId, EditCompetitionViewModel model, int organizerId)
         {
             try
             {
-                var fresh = await _competitionService.GetCompetitionForEditAsync(competitionId);
+                var fresh = await _competitionService.GetCompetitionForEditAsync(competitionId, organizerId);
                 if (fresh == null) return;
                 model.ExistingRounds              = fresh.ExistingRounds;
                 model.Images                      = fresh.Images;
@@ -174,16 +193,39 @@ namespace Web_cham_diem.Controllers
             catch { /* không làm hỏng luồng chính */ }
         }
 
+        // === CẬP NHẬT LỊCH TRÌNH CHUNG (API) ===
+        [HttpPost]
+        public async Task<IActionResult> UpdateScheduleDates(int competitionId, [FromBody] UpdateScheduleDatesDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _competitionService.UpdateScheduleDatesAsync(competitionId, dto, GetCurrentUserId());
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating schedule dates for competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
+            }
+        }
+
         // === THÊM ĐỢT ĐĂNG KÝ MỚI (API) ===
         [HttpPost]
-        public async Task<IActionResult> AddRegistrationRound(int competitionId, [FromBody] RegistrationRoundCreateDto roundDto)
+        public async Task<IActionResult> AddRegistrationRound(int competitionId, DateTime? pendingStartDate, [FromBody] RegistrationRoundCreateDto roundDto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (roundDto == null || string.IsNullOrWhiteSpace(roundDto.RoundName))
                     return Json(new { success = false, message = "Thông tin đợt đăng ký không hợp lệ." });
 
-                var result = await _competitionService.AddRegistrationRoundAsync(competitionId, roundDto);
+                var result = await _competitionService.AddRegistrationRoundAsync(competitionId, roundDto, pendingStartDate);
                 if (!result) return Json(new { success = false, message = "Cuộc thi không tìm thấy." });
 
                 return Json(new { success = true, message = "Thêm đợt đăng ký thành công!" });
@@ -200,13 +242,42 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        // === CẬP NHẬT ĐỢT ĐĂNG KÝ (API) ===
+        [HttpPost]
+        public async Task<IActionResult> UpdateRegistrationRound(int roundId, int competitionId, [FromBody] RegistrationRoundUpdateDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
+                    return Json(new { success = false, message = "Tên đợt đăng ký không được để trống." });
+
+                var result = await _competitionService.UpdateRegistrationRoundAsync(roundId, competitionId, dto);
+                if (!result) return Json(new { success = false, message = "Đợt đăng ký không tìm thấy." });
+
+                return Json(new { success = true, message = "Cập nhật đợt đăng ký thành công!" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning("Validation error updating round {RoundId}: {Message}", roundId, ex.Message);
+                return Json(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating registration round {RoundId}", roundId);
+                return Json(new { success = false, message = "Có lỗi xảy ra. Vui lòng thử lại." });
+            }
+        }
+
         // === XÓA CUỘC THI ===
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                var result = await _competitionService.DeleteCompetitionAsync(id);
+                var result = await _competitionService.DeleteCompetitionAsync(id, GetCurrentUserId());
                 if (!result) return NotFound();
 
                 TempData["SuccessMessage"] = "Xóa cuộc thi thành công!";
@@ -232,7 +303,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _competitionService.ChangeCompetitionStatusAsync(id, status);
+                var result = await _competitionService.ChangeCompetitionStatusAsync(id, status, GetCurrentUserId());
                 if (!result) return NotFound();
                 return Json(new { success = true, message = "Cập nhật trạng thái thành công!" });
             }
@@ -241,6 +312,15 @@ namespace Web_cham_diem.Controllers
                 _logger.LogError(ex, "Error changing competition status {Id}", id);
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        // API: Chi tiết hồ sơ đăng ký (dùng cho modal, bao gồm custom fields)
+        [HttpGet]
+        public async Task<IActionResult> GetRegistrationDetail(int registrationId)
+        {
+            var detail = await _submissionService.GetRegistrationDetailAsync(registrationId);
+            if (detail == null) return NotFound();
+            return Json(detail);
         }
 
         // API: Chi tiết cuộc thi (dùng cho modal)
@@ -259,7 +339,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var viewModel = await _submissionService.GetSubmissionsViewAsync(competitionId, search, status, department, type);
+                var viewModel = await _submissionService.GetSubmissionsViewAsync(GetCurrentUserId(), competitionId, search, status, department, type);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -275,8 +355,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-                var result = await _submissionService.ApproveRegistrationAsync(registrationId, editorId, feedback);
+                var result = await _submissionService.ApproveRegistrationAsync(registrationId, GetCurrentUserId(), feedback);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Duyệt hồ sơ thành công!" });
             }
@@ -292,8 +371,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-                var result = await _submissionService.RejectRegistrationAsync(registrationId, editorId, reason);
+                var result = await _submissionService.RejectRegistrationAsync(registrationId, GetCurrentUserId(), reason);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Từ chối hồ sơ thành công!" });
             }
@@ -309,8 +387,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var editorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-                var result = await _submissionService.RequestSupplementAsync(registrationId, editorId, feedback);
+                var result = await _submissionService.RequestSupplementAsync(registrationId, GetCurrentUserId(), feedback);
                 if (!result) return Json(new { success = false, message = "Hồ sơ không tìm thấy." });
                 return Json(new { success = true, message = "Yêu cầu bổ sung đã gửi!" });
             }
@@ -326,6 +403,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteRound(int roundId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.DeleteRegistrationRoundAsync(roundId, competitionId);
@@ -348,6 +428,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> AddCompetitionRound(int competitionId, [FromBody] CompetitionRoundCreateDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
@@ -371,6 +454,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateCompetitionRound(int roundId, int competitionId, [FromBody] UpdateCompetitionRoundDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null || string.IsNullOrWhiteSpace(dto.RoundName))
@@ -394,6 +480,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteCompetitionRound(int roundId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.DeleteCompetitionRoundAsync(roundId, competitionId);
@@ -412,6 +501,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> UploadImages(int competitionId, [FromBody] List<string> imageDataList)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (imageDataList == null || !imageDataList.Any())
@@ -430,6 +522,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteImage(int imageId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.DeleteImageAsync(imageId, competitionId);
@@ -446,6 +541,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> SetThumbnail(int imageId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.SetThumbnailAsync(imageId, competitionId);
@@ -464,6 +562,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> UploadDocuments(int competitionId, [FromBody] UploadDocumentsRequest request)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (request?.DataList == null || !request.DataList.Any())
@@ -482,6 +583,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteDocument(int documentId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.DeleteDocumentAsync(documentId, competitionId);
@@ -523,6 +627,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> AddSponsor(int competitionId, [FromBody] AddSponsorToCompetitionDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -543,6 +650,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateSponsor(int competitionId, [FromBody] SponsorCreateDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -563,6 +673,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> RemoveSponsor(int competitionSponsorId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var result = await _competitionService.RemoveSponsorFromCompetitionAsync(competitionSponsorId, competitionId);
@@ -599,7 +712,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _gradingService.GetGradingViewAsync(competitionId);
+                var vm = await _gradingService.GetGradingViewAsync(GetCurrentUserId(), competitionId);
                 return View(vm);
             }
             catch (Exception ex)
@@ -678,6 +791,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> AddJudge(int competitionId, [FromBody] AddJudgeDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -694,6 +810,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> RemoveJudge(int judgeId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var (ok, msg) = await _gradingService.RemoveJudgeAsync(judgeId, competitionId);
@@ -709,6 +828,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateJudgeRole(int judgeId, int competitionId, [FromBody] UpdateJudgeRoleDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
@@ -725,13 +847,14 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignSubmissions(int competitionId, [FromBody] AssignSubmissionsDto dto)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 if (dto == null || !dto.SubmissionIds.Any())
                     return Json(new { success = false, message = "Chưa chọn bài thi nào." });
-                var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                int assignedById = int.TryParse(userIdStr, out var uid) ? uid : 1;
-                var (ok, msg) = await _gradingService.AssignSubmissionsAsync(competitionId, dto, assignedById);
+                var (ok, msg) = await _gradingService.AssignSubmissionsAsync(competitionId, dto, GetCurrentUserId());
                 return Json(new { success = ok, message = msg });
             }
             catch (Exception ex)
@@ -744,6 +867,9 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> RevokeAssignment(int assignmentId, int competitionId)
         {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
             try
             {
                 var (ok, msg) = await _gradingService.RevokeAssignmentAsync(assignmentId, competitionId);
@@ -759,15 +885,15 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public IActionResult SendJudgeReminder(int judgeId)
         {
-            // TODO: implement email sending
             _logger.LogInformation("Reminder sent for judge {JudgeId}", judgeId);
             return Json(new { success = true, message = "Đã gửi nhắc nhở đến giám khảo." });
         }
+
         public async Task<IActionResult> Results(int? competitionId = null)
         {
             try
             {
-                var vm = await _resultsService.GetResultsViewAsync(competitionId);
+                var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId);
                 return View(vm);
             }
             catch (Exception ex)
@@ -783,7 +909,11 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _resultsService.GetResultsViewAsync(competitionId);
+                // Kiểm tra quyền sở hữu
+                if (!await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
+                    return Forbid();
+
+                var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId);
                 var detail = vm.SelectedDetail;
                 if (detail == null) return NotFound();
 
@@ -841,7 +971,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _notificationsService.GetOrganizerViewAsync(competitionId);
+                var vm = await _notificationsService.GetOrganizerViewAsync(GetCurrentUserId(), competitionId);
                 return View(vm);
             }
             catch (Exception ex)
@@ -857,7 +987,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var (ok, msg, count) = await _notificationsService.SendNotificationAsync(req);
+                var (ok, msg, count) = await _notificationsService.SendNotificationAsync(req, GetCurrentUserId());
                 return Json(new { ok, message = msg, count });
             }
             catch (Exception ex)
@@ -866,7 +996,167 @@ namespace Web_cham_diem.Controllers
                 return Json(new { ok = false, message = "Lỗi hệ thống khi gửi thông báo." });
             }
         }
-        public IActionResult Progress()      => View();
+
+        [HttpPost]
+        [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB
+        public async Task<IActionResult> CreateAnnouncement(
+            [FromForm] string title,
+            [FromForm] string content,
+            [FromForm] string type,
+            [FromForm] int? relatedCompetitionId,
+            IFormFile? imageFile,
+            IFormFile? attachmentFile)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
+                    return Json(new { ok = false, message = "Tiêu đề và nội dung không được để trống." });
+
+                var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "announcements");
+                Directory.CreateDirectory(uploadsDir);
+
+                string? imageUrl = null;
+                if (imageFile != null && imageFile.Length > 0)
+                {
+                    var ext = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+                    var allowedImg = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                    if (!allowedImg.Contains(ext))
+                        return Json(new { ok = false, message = "Chỉ chấp nhận ảnh JPG, PNG, GIF, WEBP." });
+
+                    var imgName = $"img_{Guid.NewGuid():N}{ext}";
+                    var imgPath = Path.Combine(uploadsDir, imgName);
+                    await using var fs = System.IO.File.Create(imgPath);
+                    await imageFile.CopyToAsync(fs);
+                    imageUrl = $"/uploads/announcements/{imgName}";
+                }
+
+                string? attachUrl = null;
+                string? attachName = null;
+                if (attachmentFile != null && attachmentFile.Length > 0)
+                {
+                    var ext = Path.GetExtension(attachmentFile.FileName).ToLowerInvariant();
+                    var allowedFile = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx" };
+                    if (!allowedFile.Contains(ext))
+                        return Json(new { ok = false, message = "Chỉ chấp nhận file PDF, Word, Excel." });
+
+                    var fileName = $"attach_{Guid.NewGuid():N}{ext}";
+                    var filePath = Path.Combine(uploadsDir, fileName);
+                    await using var fs = System.IO.File.Create(filePath);
+                    await attachmentFile.CopyToAsync(fs);
+                    attachUrl  = $"/uploads/announcements/{fileName}";
+                    attachName = attachmentFile.FileName;
+                }
+
+                var announcement = new Web_cham_diem.Models.PublicAnnouncements
+                {
+                    Title                = title.Trim(),
+                    Content              = content.Trim(),
+                    Type                 = type ?? "Info",
+                    ImageUrl             = imageUrl,
+                    AttachmentUrl        = attachUrl,
+                    AttachmentFileName   = attachName,
+                    RelatedCompetitionId = relatedCompetitionId,
+                    CreatedByUserId      = GetCurrentUserId(),
+                    CreatedAt            = DateTime.UtcNow,
+                    IsPublished          = true
+                };
+
+                var id = await _notificationsService.CreateAnnouncementAsync(announcement);
+                return Json(new { ok = true, message = "Đã đăng thông báo thành công.", id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating announcement");
+                return Json(new { ok = false, message = "Lỗi hệ thống khi tạo thông báo." });
+            }
+        }
+
+        public IActionResult Progress() => View();
+
+        // ====== REGISTRATION FORM FIELDS ======
+
+        [HttpGet]
+        public async Task<IActionResult> GetFormFields(int competitionId)
+        {
+            var fields = await _competitionService.GetFormFieldsAsync(competitionId);
+            return Json(fields);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddFormField(int competitionId, [FromBody] FormFieldCreateDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg, fieldId) = await _competitionService.AddFormFieldAsync(competitionId, dto);
+                return Json(new { success = ok, message = msg, fieldId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding form field to competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateFormField(int fieldId, int competitionId, [FromBody] FormFieldCreateDto dto)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+                var (ok, msg) = await _competitionService.UpdateFormFieldAsync(fieldId, competitionId, dto);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating form field {FieldId}", fieldId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteFormField(int fieldId, int competitionId)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                var (ok, msg) = await _competitionService.DeleteFormFieldAsync(fieldId, competitionId);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting form field {FieldId}", fieldId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReorderFormFields(int competitionId, [FromBody] List<int> orderedIds)
+        {
+            var guard = await RequireOwnerJson(competitionId);
+            if (guard != null) return guard;
+
+            try
+            {
+                if (orderedIds == null || !orderedIds.Any())
+                    return Json(new { success = false, message = "Danh sách trống." });
+                var (ok, msg) = await _competitionService.ReorderFormFieldsAsync(competitionId, orderedIds);
+                return Json(new { success = ok, message = msg });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reordering form fields for competition {Id}", competitionId);
+                return Json(new { success = false, message = "Có lỗi xảy ra." });
+            }
+        }
     }
 
     // Request DTO cho upload documents

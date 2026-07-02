@@ -119,33 +119,6 @@ namespace Web_cham_diem.Controllers
                 })
                 .ToList();
 
-            // ── Latest notifications (distinct broadcasts, up to 4) ────────────
-            var rawNotifs = await _context.Notifications
-                .OrderByDescending(n => n.CreatedAt)
-                .Take(200)
-                .Select(n => new
-                {
-                    n.Title, n.Message, n.Type,
-                    n.RelatedEntity, n.RelatedEntityId, n.CreatedAt
-                })
-                .ToListAsync();
-
-            var latestNotifs = rawNotifs
-                .GroupBy(n => (n.Title, n.RelatedEntity, n.RelatedEntityId))
-                .Select(g => g.OrderByDescending(n => n.CreatedAt).First())
-                .OrderByDescending(n => n.CreatedAt)
-                .Take(4)
-                .Select(n => new HomeNotificationDto
-                {
-                    Title           = n.Title,
-                    Message         = n.Message,
-                    Type            = n.Type,
-                    CreatedAt       = n.CreatedAt,
-                    CategoryLabel   = GetNotifCategoryLabel(n.RelatedEntity),
-                    RelatedEntityId = n.RelatedEntityId
-                })
-                .ToList();
-
             var vm = new HomeViewModel
             {
                 ActiveCompetitionsCount = activeCompCount,
@@ -154,7 +127,7 @@ namespace Web_cham_diem.Controllers
                 TotalEvaluatedCount     = totalEvaluated,
                 FeaturedCompetitions    = featuredComps,
                 TopResults              = topResults,
-                LatestNotifications     = latestNotifs
+                LatestNotifications     = new List<HomeNotificationDto>()
             };
 
             return View(vm);

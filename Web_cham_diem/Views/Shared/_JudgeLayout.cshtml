@@ -203,6 +203,21 @@
 
         .judge-alert { border-radius: 10px; border: none; }
 
+        /* Notification bell */
+        .judge-notif-badge {
+            display: none; position: absolute; top: 1px; right: 1px;
+            background: #dc3545; color: #fff; border-radius: 50%;
+            min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+            align-items: center; justify-content: center;
+            border: 2px solid #fff; padding: 0 2px;
+        }
+        .judge-notif-badge.visible { display: flex; }
+        .judge-noti-dropdown { width: 370px; max-height: 460px; overflow-y: auto; padding: 0 !important; }
+        .judge-noti-item { padding: 12px 16px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s; }
+        .judge-noti-item:hover { background: #f8fafc; }
+        .judge-noti-item.unread { background: #f5f3ff; border-left: 3px solid var(--judge-accent); }
+        .judge-noti-item.unread:hover { background: #ede9fe; }
+
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1029; }
         .sidebar-overlay.show { display: block; }
 
@@ -259,6 +274,18 @@
             <a href="/Judge/ScoreHistory" class="nav-link @(currentAction == "ScoreHistory" ? "active" : "")">
                 <i class="bi bi-clock-history"></i> Lịch sử chấm điểm
             </a>
+
+            <div class="nav-section-title">Thông tin</div>
+            <a href="/Judge/Notifications" class="nav-link @(currentAction == "Notifications" ? "active" : "")">
+                <i class="bi bi-bell"></i> Thông báo
+                @{
+                    var judgeUnreadCount = ViewBag.UnreadNotificationCount as int?;
+                }
+                @if (judgeUnreadCount > 0)
+                {
+                    <span class="badge rounded-pill ms-auto" style="background:var(--judge-accent);font-size:0.65rem;">@judgeUnreadCount</span>
+                }
+            </a>
         </div>
 
         <div class="p-4 border-top flex-shrink-0">
@@ -290,9 +317,46 @@
             </div>
 
             <div class="d-flex align-items-center gap-3">
+                <!-- Notification Bell -->
+                <div class="dropdown" id="judgeNotifWrapper">
+                    <button class="btn btn-light border-0 position-relative rounded-circle p-2"
+                            style="width:38px;height:38px;"
+                            data-bs-toggle="dropdown"
+                            onclick="judgeLoadNotifications()"
+                            title="Thông báo">
+                        <i class="bi bi-bell fs-6 text-muted"></i>
+                        <span id="judgeNotifBadge" class="judge-notif-badge"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 judge-noti-dropdown">
+                        <li class="px-3 py-2 border-bottom bg-light d-flex justify-content-between align-items-center sticky-top">
+                            <span class="fw-bold text-dark"><i class="bi bi-bell-fill me-2"></i>Thông báo</span>
+                            <span id="judgeNotifHdrCount" class="small text-muted">...</span>
+                        </li>
+                        <li>
+                            <div id="judgeNotifList">
+                                <div class="text-center py-4 text-muted" style="font-size:13px;">
+                                    <i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo
+                                </div>
+                            </div>
+                        </li>
+                        <li class="border-top d-flex align-items-center justify-content-between px-3 py-2">
+                            <button id="judgeMarkAllBtn" onclick="judgeMarkAllRead(event)"
+                                    class="btn btn-sm btn-link p-0"
+                                    style="color:var(--judge-accent);font-size:12px;display:none;">
+                                <i class="bi bi-check-all me-1"></i>Đánh dấu đã đọc
+                            </button>
+                            <a href="/Notifications" class="small text-decoration-none fw-semibold"
+                               style="color:var(--judge-accent);">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Xem tất cả
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- User Dropdown -->
                 <div class="dropdown">
                     <button type="button" class="user-profile-btn dropdown-toggle"
-                            data-bs-toggle="dropdown" aria-expanded="false">
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         <div class="user-avatar-sm">@userInitials</div>
                         <div class="d-none d-lg-block text-start lh-1">
                             <div class="fw-bold small text-dark" style="font-size:13px;">@userFullName</div>
@@ -317,6 +381,27 @@
                         <li>
                             <a class="dropdown-item dropdown-item-user" href="/Judge/Dashboard">
                                 <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Judge/Assignments">
+                                <i class="bi bi-clipboard-check"></i><span>Phân công chấm điểm</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Judge/ScoreHistory">
+                                <i class="bi bi-clock-history"></i><span>Lịch sử chấm điểm</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider m-0"></li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/Profile">
+                                <i class="bi bi-person-circle"></i><span>Hồ sơ cá nhân</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item dropdown-item-user" href="/HuongDan">
+                                <i class="bi bi-question-circle"></i><span>Trợ giúp</span>
                             </a>
                         </li>
                         <li><hr class="dropdown-divider m-0"></li>
@@ -368,6 +453,99 @@
         document.querySelectorAll('.judge-alert').forEach(a => {
             setTimeout(() => bootstrap.Alert.getOrCreateInstance(a).close(), 5000);
         });
+    </script>
+    <script>
+    (function () {
+        let _judgeLoaded = false;
+
+        function judgeIconClass(type) {
+            const m = { 'Success': ['bi-check-circle-fill','#16a34a','#dcfce7'], 'Warning': ['bi-exclamation-triangle-fill','#d97706','#fef3c7'], 'Error': ['bi-x-circle-fill','#dc2626','#fee2e2'] };
+            return m[type] ?? ['bi-info-circle-fill','#7c3aed','#ede9fe'];
+        }
+
+        window.judgeLoadNotifications = async function (force = false) {
+            if (_judgeLoaded && !force) return;
+            try {
+                const res = await fetch('/api/user/notifications?take=8');
+                if (!res.ok) return;
+                const data = await res.json();
+                _judgeLoaded = true;
+                judgeUpdateBadge(data.unread);
+                judgeRenderList(data.items ?? []);
+            } catch { }
+        };
+
+        function judgeUpdateBadge(count) {
+            const badge = document.getElementById('judgeNotifBadge');
+            const markBtn = document.getElementById('judgeMarkAllBtn');
+            const hdr = document.getElementById('judgeNotifHdrCount');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.add('visible');
+                if (markBtn) markBtn.style.display = 'inline-block';
+            } else {
+                badge.classList.remove('visible');
+                if (markBtn) markBtn.style.display = 'none';
+            }
+            if (hdr) hdr.textContent = count > 0 ? count + ' chưa đọc' : 'Đã đọc hết';
+        }
+
+        function judgeRenderList(items) {
+            const el = document.getElementById('judgeNotifList');
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = '<div class="text-center py-4 text-muted" style="font-size:13px;"><i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo</div>';
+                return;
+            }
+            el.innerHTML = items.map(n => {
+                const [ic, color, bg] = judgeIconClass(n.type);
+                const unreadCls = !n.isRead ? ' unread' : '';
+                return `<div class="judge-noti-item${unreadCls}" onclick="judgeReadNotif(event,${n.notificationId})">
+                    <div class="d-flex gap-2 align-items-start">
+                        <div style="width:30px;height:30px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi ${ic}" style="color:${color};font-size:13px;"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="small fw-bold text-dark mb-1">${escHtml(n.title)}</div>
+                            <div class="text-muted" style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px;">${escHtml(n.message)}</div>
+                            <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>${escHtml(n.timeAgo)}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.judgeReadNotif = async function (e, id) {
+            e.preventDefault();
+            await fetch(`/api/user/notifications/${id}/read`, { method: 'POST', headers: { 'RequestVerificationToken': getJudgeAntiForgery() } });
+            _judgeLoaded = false;
+            judgeLoadNotifications(true);
+        };
+
+        window.judgeMarkAllRead = async function (e) {
+            e.stopPropagation();
+            await fetch('/api/user/notifications/read-all', { method: 'POST', headers: { 'RequestVerificationToken': getJudgeAntiForgery() } });
+            _judgeLoaded = false;
+            judgeLoadNotifications(true);
+        };
+
+        function getJudgeAntiForgery() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        function escHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && judgeUpdateBadge(d.unread)).catch(() => {});
+        setInterval(() => {
+            _judgeLoaded = false;
+            fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && judgeUpdateBadge(d.unread)).catch(() => {});
+        }, 180000);
+    })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

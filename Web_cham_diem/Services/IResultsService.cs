@@ -4,5 +4,5 @@ namespace Web_cham_diem.Services;
 
 public interface IResultsService
 {
-    Task<ResultsPageViewModel> GetResultsViewAsync(int? competitionId);
+    Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId);
 }

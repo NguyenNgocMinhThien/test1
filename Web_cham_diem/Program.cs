@@ -68,22 +68,6 @@ builder.Services.AddLogging(config =>
 
 var app = builder.Build();
 
-// Chỉ chạy một khối Seed mẫu này để đảm bảo dữ liệu không bị xung đột luồng
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        // Khởi tạo dữ liệu ban đầu an toàn thông qua Scope
-        await Web_cham_diem.Data.DbSeeder.SeedAsync(app);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Lỗi xảy ra trong quá trình đổ dữ liệu mẫu (Seed Data).");
-    }
-}
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -116,6 +100,16 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// 🌟 ĐÃ XÓA dòng trùng lặp "await DbSeeder.SeedAsync(app);" sai vị trí ở cuối tệp gây crash ứng dụng.
+try
+{
+    await DbSeeder.SeedAsync(app);
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "Seed data thất bại: {Message}", ex.Message);
+    if (ex.InnerException != null)
+        logger.LogError("Inner: {Inner}", ex.InnerException.Message);
+}
 
 app.Run();

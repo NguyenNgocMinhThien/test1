@@ -16,6 +16,7 @@ public class SubmissionService : ISubmissionService
     }
 
     public async Task<OrganizerSubmissionsViewModel> GetSubmissionsViewAsync(
+        int organizerId,
         int? competitionId = null,
         string? searchQuery = null,
         string? statusFilter = null,
@@ -24,9 +25,9 @@ public class SubmissionService : ISubmissionService
     {
         try
         {
-            // 1. Lấy danh sách cuộc thi
+            // 1. Lấy danh sách cuộc thi của organizer hiện tại
             var competitions = await _context.Competitions
-                .Where(c => c.Status == "Active")
+                .Where(c => c.CreatedByUserId == organizerId)
                 .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new CompetitionBasicDto
                 {
@@ -35,22 +36,25 @@ public class SubmissionService : ISubmissionService
                 })
                 .ToListAsync();
 
-            // 2. Lấy thông tin cuộc thi được chọn (bao gồm Registrations để tính thống kê)
+            var ownedIds = competitions.Select(c => c.CompetitionId).ToList();
+
+            // 2. Lấy thông tin cuộc thi được chọn (phải thuộc organizer)
             Competitions? selectedCompetition = null;
-            if (competitionId.HasValue)
+            if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
             {
                 selectedCompetition = await _context.Competitions
                     .Include(c => c.Registrations)
                     .FirstOrDefaultAsync(c => c.CompetitionId == competitionId.Value);
             }
 
-            // 3. Lấy dữ liệu hồ sơ đăng ký
+            // 3. Lấy dữ liệu hồ sơ đăng ký (chỉ trong phạm vi cuộc thi của organizer)
             var registrationsQuery = _context.Registrations
                 .Include(r => r.User)
                 .Include(r => r.Team)
+                .Where(r => ownedIds.Contains(r.CompetitionId))
                 .AsQueryable();
 
-            if (competitionId.HasValue)
+            if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
                 registrationsQuery = registrationsQuery.Where(r => r.CompetitionId == competitionId.Value);
 
             if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -305,26 +309,45 @@ public class SubmissionService : ISubmissionService
         var registration = await _context.Registrations
             .Include(r => r.User)
             .Include(r => r.Team)
+            .Include(r => r.Advisor)
+            .Include(r => r.FieldValues)
+                .ThenInclude(v => v.Field)
             .FirstOrDefaultAsync(r => r.RegistrationId == registrationId);
 
         if (registration == null)
             return null;
 
+        var customValues = registration.FieldValues
+            .Where(v => v.Field.IsActive)
+            .OrderBy(v => v.Field.DisplayOrder)
+            .Select(v => new FormFieldValueDto
+            {
+                FieldId    = v.FieldId,
+                FieldLabel = v.Field.FieldLabel,
+                FieldType  = v.Field.FieldType,
+                Value      = v.Value,
+                FileName   = v.FileName
+            })
+            .ToList();
+
         return new RegistrationDetailDto
         {
-            RegistrationId = registration.RegistrationId,
+            RegistrationId     = registration.RegistrationId,
             RepresentativeName = registration.User.FullName,
-            Email = registration.User.Email,
-            StudentId = registration.User.StudentId,
-            Department = "Công nghệ Thông tin",
-            TeamName = registration.Team?.TeamName ?? registration.User.FullName,
-            Topic = registration.SubmissionDocument ?? "Không có thông tin",
+            Email              = registration.User.Email,
+            StudentId          = registration.User.StudentId,
+            Department         = "Công nghệ Thông tin",
+            TeamName           = registration.Team?.TeamName ?? registration.User.FullName,
+            Topic              = registration.SubmissionDocument ?? "Không có thông tin",
             SubmissionDocument = registration.SubmissionDocument,
-            Status = registration.Status,
-            RegistrationDate = registration.RegistrationDate,
-            ApprovalDate = registration.ApprovalDate,
-            Notes = registration.Notes ?? string.Empty,
-            RegistrationId_FK = registration.RegistrationId
+            Status             = registration.Status,
+            RegistrationDate   = registration.RegistrationDate,
+            ApprovalDate       = registration.ApprovalDate,
+            Notes              = registration.Notes ?? string.Empty,
+            RegistrationId_FK  = registration.RegistrationId,
+            RegistrationType   = registration.RegistrationType,
+            AdvisorName        = registration.Advisor?.FullName,
+            CustomFieldValues  = customValues
         };
     }
 

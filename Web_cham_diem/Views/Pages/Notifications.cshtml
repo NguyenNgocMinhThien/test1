@@ -1,484 +1,199 @@
-@using Web_cham_diem.Services
-@model Web_cham_diem.Services.UserNotificationsPageViewModel
+@model List<Web_cham_diem.Models.ViewModels.PublicAnnouncementDto>
 @{
-    ViewData["Title"] = "Thông báo của tôi";
+    ViewData["Title"] = "Thông báo";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    string TypeBadgeCss(string type) => type switch
-    {
-        "Success" => "bg-success",
-        "Warning" => "bg-warning text-dark",
-        "Error"   => "bg-danger",
-        _         => "bg-info"
-    };
-    string TypeTextCss(string type) => type switch
-    {
-        "Success" => "text-success",
-        "Warning" => "text-warning",
-        "Error"   => "text-danger",
-        _         => "text-info"
-    };
-    string TypeLabel(string type) => type switch
-    {
-        "Success" => "Thành công",
-        "Warning" => "Cảnh báo",
-        "Error"   => "Khẩn cấp",
-        _         => "Thông tin"
-    };
-    string TypeIcon(string type) => type switch
-    {
-        "Success" => "bi-check-circle-fill",
-        "Warning" => "bi-exclamation-triangle-fill",
-        "Error"   => "bi-x-circle-fill",
-        _         => "bi-info-circle-fill"
-    };
-    string BgIconCss(string type) => type switch
-    {
-        "Success" => "notif-icon-success",
-        "Warning" => "notif-icon-warning",
-        "Error"   => "notif-icon-error",
-        _         => "notif-icon-info"
-    };
-
-    string BuildUrl(string? t, bool u, int p)
-    {
-        var parts = new List<string>();
-        if (!string.IsNullOrEmpty(t)) parts.Add($"type={Uri.EscapeDataString(t)}");
-        if (u) parts.Add("unreadOnly=true");
-        if (p > 1) parts.Add($"page={p}");
-        return "/Notifications" + (parts.Count > 0 ? "?" + string.Join("&", parts) : "");
-    }
+    var search      = ViewBag.Search as string;
+    var currentPage = (int)(ViewBag.Page ?? 1);
+    var totalPages  = (int)(ViewBag.TotalPages ?? 1);
+    var total       = (int)(ViewBag.Total ?? 0);
 }
 
 <style>
-    .notif-page-wrap {
-        max-width: 820px;
-        margin: 0 auto;
+    .notif-page-wrap { background: #f0f4fa; min-height: 70vh; }
+
+    .notif-breadcrumb { font-size: 13px; color: #6c757d; padding: 14px 0 6px; }
+    .notif-breadcrumb a { color: #6c757d; text-decoration: none; }
+    .notif-breadcrumb a:hover { color: #dc3545; }
+
+    .notif-search-wrap { position: relative; width: 280px; }
+    .notif-search-wrap .bi-search {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: #9ca3af; font-size: 14px;
+    }
+    .notif-search-wrap input {
+        padding-left: 36px; border-radius: 30px;
+        border: 1px solid #dee2e6; background: #fff;
+        font-size: 13px; height: 38px; width: 100%;
+    }
+    .notif-search-wrap input:focus {
+        outline: none; border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220,53,69,0.1);
     }
 
-    /* Hero Banner */
-    .notif-hero {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a78bfa 100%);
-        border-radius: 16px;
-        padding: 28px 32px;
-        color: #fff;
-        margin-bottom: 28px;
-        position: relative;
-        overflow: hidden;
+    .notif-item-card {
+        background: #fff; border-radius: 14px; overflow: hidden;
+        display: flex; align-items: stretch;
+        border: 1px solid #eef0f4;
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+        text-decoration: none; color: inherit;
     }
-    .notif-hero::before {
-        content: '';
-        position: absolute;
-        right: -30px; top: -30px;
-        width: 200px; height: 200px;
-        border-radius: 50%;
-        background: rgba(255,255,255,.08);
-    }
-    .notif-hero::after {
-        content: '';
-        position: absolute;
-        right: 40px; bottom: -50px;
-        width: 140px; height: 140px;
-        border-radius: 50%;
-        background: rgba(255,255,255,.05);
-    }
-    .notif-hero-title { font-size: 1.4rem; font-weight: 700; margin: 0; }
-    .notif-hero-sub   { font-size: 13px; opacity: .85; margin-top: 4px; }
-    .notif-stat-chip {
-        background: rgba(255,255,255,.18);
-        border-radius: 20px;
-        padding: 6px 14px;
-        font-size: 13px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+    .notif-item-card:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+        transform: translateY(-2px);
+        text-decoration: none; color: inherit;
     }
 
-    /* Filters */
-    .filter-bar {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
-        background: #fff;
-        border-radius: 12px;
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        margin-bottom: 16px;
+    .notif-thumb {
+        width: 220px; min-width: 220px; height: 130px;
+        overflow: hidden; flex-shrink: 0; position: relative;
+        background: linear-gradient(135deg,#1a3559 0%,#2563eb 100%);
     }
-    .filter-chip {
-        border: 1.5px solid #e5e7eb;
-        border-radius: 20px;
-        padding: 5px 14px;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-        text-decoration: none;
-        color: #6b7280;
-        background: #fff;
-        transition: all .15s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
+    .notif-thumb img { width:100%;height:100%;object-fit:cover;transition:transform .4s ease; }
+    .notif-item-card:hover .notif-thumb img { transform: scale(1.06); }
+    .notif-thumb-placeholder {
+        width:100%;height:100%;display:flex;align-items:center;
+        justify-content:center;font-size:2.2rem;color:rgba(255,255,255,0.4);
     }
-    .filter-chip:hover {
-        border-color: #6366f1;
-        color: #6366f1;
-        background: #f5f3ff;
-        text-decoration: none;
+    .notif-type-ribbon {
+        position:absolute;top:0;left:0;width:5px;height:100%;
     }
-    .filter-chip.active {
-        border-color: #6366f1;
-        background: #6366f1;
-        color: #fff;
+    .type-info    { background:#2563eb; }
+    .type-success { background:#16a34a; }
+    .type-warning { background:#d97706; }
+    .type-error   { background:#dc2626; }
+
+    .notif-info { padding:18px 22px;display:flex;flex-direction:column;justify-content:center;flex:1;gap:6px; }
+    .notif-info-title {
+        font-size:15.5px;font-weight:700;color:#1a1a2e;line-height:1.35;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
     }
-    .filter-chip .chip-count {
-        background: rgba(255,255,255,.3);
-        border-radius: 10px;
-        padding: 1px 7px;
-        font-size: 11px;
-    }
-    .filter-chip:not(.active) .chip-count {
-        background: #f3f4f6;
-        color: #374151;
+    .notif-item-card:hover .notif-info-title { color:#dc3545; }
+    .notif-info-meta { display:flex;align-items:center;gap:14px;font-size:12.5px;color:#6c757d;flex-wrap:wrap; }
+    .notif-info-excerpt {
+        font-size:13px;color:#6c757d;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;
     }
 
-    /* Notification Card */
-    .notif-card {
-        background: #fff;
-        border-radius: 12px;
-        border: 1.5px solid #e5e7eb;
-        padding: 16px 20px;
-        margin-bottom: 10px;
-        display: flex;
-        gap: 14px;
-        align-items: flex-start;
-        cursor: pointer;
-        transition: all .18s;
-        text-decoration: none;
-        color: inherit;
+    .notif-pagination .page-link {
+        border-radius:8px!important;margin:0 2px;border:1px solid #dee2e6;
+        color:#333;font-size:13px;padding:5px 12px;
     }
-    .notif-card:hover {
-        border-color: #a5b4fc;
-        box-shadow: 0 4px 14px rgba(99,102,241,.1);
-        transform: translateY(-1px);
-        text-decoration: none;
-        color: inherit;
-    }
-    .notif-card.unread {
-        background: #f5f3ff;
-        border-color: #c4b5fd;
-    }
-    .notif-card.unread:hover {
-        background: #ede9fe;
-    }
-    .unread-dot {
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        background: #6366f1;
-        flex-shrink: 0;
-        margin-top: 6px;
-    }
+    .notif-pagination .page-item.active .page-link { background:#dc3545;border-color:#dc3545;color:#fff; }
+    .notif-pagination .page-link:hover { background:#fff5f5;color:#dc3545; }
 
-    /* Icon circle */
-    .notif-icon-wrap {
-        width: 44px; height: 44px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-        font-size: 18px;
-    }
-    .notif-icon-info    { background: #dbeafe; color: #2563eb; }
-    .notif-icon-success { background: #dcfce7; color: #16a34a; }
-    .notif-icon-warning { background: #fef3c7; color: #d97706; }
-    .notif-icon-error   { background: #fee2e2; color: #dc2626; }
-
-    .notif-title  { font-size: 14px; font-weight: 600; color: #111827; margin: 0 0 4px; line-height: 1.4; }
-    .notif-msg    { font-size: 12.5px; color: #6b7280; margin: 0 0 6px; line-height: 1.5; }
-    .notif-meta   { font-size: 11.5px; color: #9ca3af; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .notif-meta i { font-size: 11px; }
-
-    /* Empty state */
-    .notif-empty {
-        text-align: center;
-        padding: 64px 24px;
-        color: #9ca3af;
-        background: #fff;
-        border-radius: 16px;
-        border: 1.5px dashed #e5e7eb;
-    }
-    .notif-empty-icon {
-        font-size: 56px;
-        margin-bottom: 16px;
-        display: block;
-    }
-
-    /* Pagination */
-    .pager .page-link {
-        border-radius: 8px !important;
-        font-size: 13px;
-        margin: 0 2px;
-        padding: 6px 12px;
-    }
-    .pager .page-item.active .page-link {
-        background: #6366f1;
-        border-color: #6366f1;
-    }
-    .pager .page-link:hover:not(.disabled) {
-        background: #f5f3ff;
-        color: #6366f1;
-        border-color: #c4b5fd;
-    }
-
-    /* Mark-all btn */
-    .btn-mark-all {
-        background: rgba(255,255,255,.18);
-        border: 1.5px solid rgba(255,255,255,.4);
-        color: #fff;
-        border-radius: 20px;
-        font-size: 12.5px;
-        padding: 6px 16px;
-        font-weight: 600;
-        transition: all .15s;
-    }
-    .btn-mark-all:hover {
-        background: rgba(255,255,255,.3);
-        color: #fff;
+    @@media (max-width:576px) {
+        .notif-thumb { width:110px;min-width:110px;height:100px; }
+        .notif-info  { padding:12px 14px; }
+        .notif-info-title { font-size:13.5px; }
+        .notif-search-wrap { width:100%; }
     }
 </style>
 
-<div class="container my-4">
-    <div class="notif-page-wrap">
+<div class="notif-page-wrap py-2">
+    <div class="container">
 
-        <!-- Hero Banner -->
-        <div class="notif-hero">
-            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-                <div style="position:relative;z-index:1;">
-                    <h1 class="notif-hero-title"><i class="bi bi-bell-fill me-2"></i>Thông báo của tôi</h1>
-                    <p class="notif-hero-sub">Theo dõi các mốc quan trọng của cuộc thi bạn tham gia</p>
-                    <div class="d-flex gap-2 mt-3 flex-wrap">
-                        <span class="notif-stat-chip">
-                            <i class="bi bi-envelope"></i>@Model.TotalCount thông báo
-                        </span>
-                        @if (Model.UnreadCount > 0)
-                        {
-                            <span class="notif-stat-chip">
-                                <i class="bi bi-circle-fill" style="font-size:8px;"></i>@Model.UnreadCount chưa đọc
-                            </span>
-                        }
-                    </div>
-                </div>
-                @if (Model.UnreadCount > 0)
-                {
-                    <button class="btn btn-mark-all align-self-start" onclick="markAllAndRefresh()" style="position:relative;z-index:1;">
-                        <i class="bi bi-check-all me-1"></i>Đánh dấu tất cả đã đọc
-                    </button>
-                }
-            </div>
+        <!-- Breadcrumb + Search -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <nav class="notif-breadcrumb">
+                <a href="/"><i class="bi bi-house-door me-1"></i>Trang chủ</a>
+                <span class="mx-1">/</span>
+                <span class="text-dark fw-semibold">Thông báo</span>
+            </nav>
+            <form method="get" action="/Notifications" class="notif-search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" value="@search" placeholder="Tìm kiếm thông báo...">
+            </form>
         </div>
 
-        <!-- Filter bar -->
-        <div class="filter-bar">
-            <span class="text-muted small fw-semibold me-1">Lọc:</span>
+        <h4 class="fw-bold text-center mb-4" style="color:#1a1a2e;">
+            Thông báo mới nhất
+        </h4>
 
-            <a href="@BuildUrl(null, Model.UnreadOnly, 1)"
-               class="filter-chip @(string.IsNullOrEmpty(Model.TypeFilter) ? "active" : "")">
-                <i class="bi bi-grid-3x3-gap-fill"></i>Tất cả
-                <span class="chip-count">@Model.TotalCount</span>
-            </a>
-            <a href="@BuildUrl(null, true, 1)"
-               class="filter-chip @(Model.UnreadOnly && string.IsNullOrEmpty(Model.TypeFilter) ? "active" : "")">
-                <i class="bi bi-circle-fill" style="font-size:8px;color:@(Model.UnreadOnly ? "rgba(255,255,255,.7)" : "#6366f1");"></i>Chưa đọc
-                <span class="chip-count">@Model.UnreadCount</span>
-            </a>
-
-            <div style="width:1px;height:20px;background:#e5e7eb;margin:0 4px;"></div>
-
-            <a href="@BuildUrl("Info", Model.UnreadOnly, 1)"
-               class="filter-chip @(Model.TypeFilter == "Info" ? "active" : "")">
-                <i class="bi bi-info-circle-fill" style="color:@(Model.TypeFilter == "Info" ? "rgba(255,255,255,.8)" : "#2563eb");"></i>Thông tin
-                <span class="chip-count">@Model.InfoCount</span>
-            </a>
-            <a href="@BuildUrl("Success", Model.UnreadOnly, 1)"
-               class="filter-chip @(Model.TypeFilter == "Success" ? "active" : "")">
-                <i class="bi bi-check-circle-fill" style="color:@(Model.TypeFilter == "Success" ? "rgba(255,255,255,.8)" : "#16a34a");"></i>Thành công
-                <span class="chip-count">@Model.SuccessCount</span>
-            </a>
-            <a href="@BuildUrl("Warning", Model.UnreadOnly, 1)"
-               class="filter-chip @(Model.TypeFilter == "Warning" ? "active" : "")">
-                <i class="bi bi-exclamation-triangle-fill" style="color:@(Model.TypeFilter == "Warning" ? "rgba(0,0,0,.5)" : "#d97706");"></i>Cảnh báo
-                <span class="chip-count">@Model.WarningCount</span>
-            </a>
-            <a href="@BuildUrl("Error", Model.UnreadOnly, 1)"
-               class="filter-chip @(Model.TypeFilter == "Error" ? "active" : "")">
-                <i class="bi bi-x-circle-fill" style="color:@(Model.TypeFilter == "Error" ? "rgba(255,255,255,.8)" : "#dc2626");"></i>Khẩn cấp
-                <span class="chip-count">@Model.ErrorCount</span>
-            </a>
-        </div>
-
-        <!-- Result info row -->
-        @if (Model.Notifications.Any())
+        @if (Model == null || !Model.Any())
         {
-            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-                <span class="text-muted small">
-                    Hiển thị @(((Model.CurrentPage - 1) * Model.PageSize) + 1)–@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCount)
-                    trong <strong>@Model.TotalCount</strong> thông báo
-                </span>
-                @if (Model.UnreadOnly || !string.IsNullOrEmpty(Model.TypeFilter))
+            <div class="text-center py-5 text-secondary">
+                <i class="bi bi-megaphone fs-1 d-block mb-3 opacity-50"></i>
+                <h6 class="fw-semibold">Chưa có thông báo nào</h6>
+                @if (!string.IsNullOrEmpty(search))
                 {
-                    <a href="/Notifications" class="text-muted small text-decoration-none">
-                        <i class="bi bi-x-circle me-1"></i>Xóa bộ lọc
-                    </a>
+                    <p class="small">Không tìm thấy kết quả cho "<strong>@search</strong>"</p>
+                    <a href="/Notifications" class="btn btn-sm btn-outline-danger rounded-pill mt-2">Xem tất cả</a>
                 }
             </div>
         }
-
-        <!-- Notification list -->
-        @if (Model.Notifications.Any())
+        else
         {
-            @foreach (var n in Model.Notifications)
-            {
-                <div class="notif-card @(!n.IsRead ? "unread" : "")"
-                     id="card-@n.NotificationId"
-                     onclick="handleCardClick(@n.NotificationId, this)">
-
-                    @if (!n.IsRead)
-                    {
-                        <div class="unread-dot" title="Chưa đọc"></div>
-                    }
-
-                    <!-- Icon -->
-                    <div class="notif-icon-wrap @BgIconCss(n.Type)">
-                        <i class="bi @TypeIcon(n.Type)"></i>
-                    </div>
-
-                    <!-- Content -->
-                    <div class="flex-grow-1 overflow-hidden">
-                        <div class="d-flex align-items-start justify-content-between gap-2">
-                            <h6 class="notif-title">@n.Title</h6>
-                            <span class="badge @TypeBadgeCss(n.Type) rounded-pill flex-shrink-0" style="font-size:10px;">
-                                @TypeLabel(n.Type)
-                            </span>
+            <div class="d-flex flex-column gap-3 mb-4">
+                @foreach (var item in Model)
+                {
+                    var typeClass = item.Type switch {
+                        "Success" => "type-success",
+                        "Warning" => "type-warning",
+                        "Error"   => "type-error",
+                        _         => "type-info"
+                    };
+                    <a href="/Notifications/@item.AnnouncementId" class="notif-item-card">
+                        <div class="notif-thumb">
+                            <div class="notif-type-ribbon @typeClass"></div>
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" alt="@item.Title">
+                            }
+                            else
+                            {
+                                <div class="notif-thumb-placeholder">
+                                    <i class="bi bi-megaphone-fill"></i>
+                                </div>
+                            }
                         </div>
-                        <p class="notif-msg">@n.Message</p>
-                        <div class="notif-meta">
-                            <span><i class="bi bi-clock me-1"></i>@n.TimeAgo</span>
-                            @if (!string.IsNullOrEmpty(n.CategoryLabel) && n.CategoryLabel != "Thông báo chung")
-                            {
-                                <span><i class="bi bi-tag me-1"></i>@n.CategoryLabel</span>
-                            }
-                            @if (!string.IsNullOrEmpty(n.CompetitionName))
-                            {
-                                <span><i class="bi bi-trophy me-1"></i>@n.CompetitionName</span>
-                            }
-                            @if (!n.IsRead)
-                            {
-                                <span class="fw-semibold" style="color:#6366f1;font-size:11px;">
-                                    <i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Chưa đọc
+                        <div class="notif-info">
+                            <div class="notif-info-title">@item.Title</div>
+                            <div class="notif-info-meta">
+                                <span><i class="bi bi-calendar3 me-1 text-danger"></i>
+                                    @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
                                 </span>
-                            }
+                                @if (!string.IsNullOrEmpty(item.AttachmentUrl))
+                                {
+                                    <span class="text-primary"><i class="bi bi-paperclip me-1"></i>File đính kèm</span>
+                                }
+                            </div>
+                            <div class="notif-info-excerpt">@item.Content</div>
                         </div>
-                    </div>
-                </div>
-            }
+                    </a>
+                }
+            </div>
 
-            <!-- Pagination -->
-            @if (Model.TotalPages > 1)
+            @if (totalPages > 1)
             {
-                <nav class="mt-4" aria-label="Phân trang thông báo">
-                    <ul class="pagination justify-content-center pager">
-                        <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
-                            <a class="page-link" href="@BuildUrl(Model.TypeFilter, Model.UnreadOnly, Model.CurrentPage - 1)">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        @for (int p = Math.Max(1, Model.CurrentPage - 2); p <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); p++)
+                <nav class="d-flex justify-content-center mt-2">
+                    <ul class="pagination notif-pagination gap-1 flex-wrap">
+                        @if (currentPage > 1)
                         {
-                            <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
-                                <a class="page-link" href="@BuildUrl(Model.TypeFilter, Model.UnreadOnly, p)">@p</a>
+                            <li class="page-item">
+                                <a class="page-link" href="/Notifications?page=@(currentPage-1)@(!string.IsNullOrEmpty(search) ? $"&search={Uri.EscapeDataString(search)}" : "")">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
                             </li>
                         }
-                        <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
-                            <a class="page-link" href="@BuildUrl(Model.TypeFilter, Model.UnreadOnly, Model.CurrentPage + 1)">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
+                        @for (int p = 1; p <= totalPages; p++)
+                        {
+                            <li class="page-item @(p == currentPage ? "active" : "")">
+                                <a class="page-link" href="/Notifications?page=@p@(!string.IsNullOrEmpty(search) ? $"&search={Uri.EscapeDataString(search)}" : "")">@p</a>
+                            </li>
+                        }
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="/Notifications?page=@(currentPage+1)@(!string.IsNullOrEmpty(search) ? $"&search={Uri.EscapeDataString(search)}" : "")">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </nav>
             }
         }
-        else
-        {
-            <!-- Empty state -->
-            <div class="notif-empty">
-                @if (Model.UnreadOnly)
-                {
-                    <i class="bi bi-check-circle-fill notif-empty-icon text-success"></i>
-                    <h5 class="fw-bold">Tất cả đã đọc!</h5>
-                    <p class="small mb-3">Bạn không có thông báo chưa đọc nào.</p>
-                    <a href="/Notifications" class="btn btn-sm btn-outline-secondary rounded-pill">
-                        Xem tất cả thông báo
-                    </a>
-                }
-                else if (!string.IsNullOrEmpty(Model.TypeFilter))
-                {
-                    <i class="bi bi-funnel notif-empty-icon text-muted"></i>
-                    <h5 class="fw-bold">Không có thông báo</h5>
-                    <p class="small mb-3">Không có thông báo loại "@TypeLabel(Model.TypeFilter ?? "")" nào.</p>
-                    <a href="/Notifications" class="btn btn-sm btn-outline-secondary rounded-pill">
-                        Xóa bộ lọc
-                    </a>
-                }
-                else
-                {
-                    <i class="bi bi-bell-slash notif-empty-icon"></i>
-                    <h5 class="fw-bold text-muted">Chưa có thông báo nào</h5>
-                    <p class="small mb-3">
-                        Khi bạn đăng ký tham gia cuộc thi, các thông báo về mốc quan trọng sẽ hiển thị tại đây.
-                    </p>
-                    <a href="/Competitions" class="btn btn-sm btn-primary rounded-pill px-4">
-                        <i class="bi bi-trophy me-1"></i>Khám phá cuộc thi
-                    </a>
-                }
-            </div>
-        }
 
     </div>
 </div>
-
-@section Scripts {
-<script>
-async function handleCardClick(id, el) {
-    // Mark as read if unread
-    if (el.classList.contains('unread')) {
-        try {
-            await fetch(`/api/user/notifications/${id}/read`, { method: 'POST' });
-            el.classList.remove('unread');
-            const dot = el.querySelector('.unread-dot');
-            if (dot) dot.remove();
-            const badge = el.querySelector('.fw-semibold[style*="6366f1"]');
-            if (badge) badge.remove();
-            // Update bell badge count in header (subtract 1)
-            const bellBadge = document.getElementById('notifBadge');
-            if (bellBadge && bellBadge.classList.contains('visible')) {
-                const cur = parseInt(bellBadge.textContent) || 0;
-                if (cur <= 1) {
-                    bellBadge.classList.remove('visible');
-                } else {
-                    bellBadge.textContent = cur - 1;
-                }
-            }
-        } catch { /* silent */ }
-    }
-}
-
-async function markAllAndRefresh() {
-    try {
-        const res = await fetch('/api/user/notifications/read-all', { method: 'POST' });
-        const data = await res.json();
-        if (data.ok) location.reload();
-    } catch { /* silent */ }
-}
-</script>
-}

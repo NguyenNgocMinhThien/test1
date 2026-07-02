@@ -247,17 +247,90 @@
                 }
             }
 
-            /* Render nội dung block CSS của trang con nếu có */
-            
+            /* --- NOTIFICATION BELL --- */
+            .admin-notif-badge {
+                display: none; position: absolute; top: 1px; right: 1px;
+                background: #dc3545; color: #fff; border-radius: 50%;
+                min-width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+                align-items: center; justify-content: center;
+                border: 2px solid #fff; padding: 0 2px;
+            }
+            .admin-notif-badge.visible { display: flex; }
+
+            .admin-noti-dropdown {
+                width: 370px; max-height: 460px; overflow-y: auto;
+                padding: 0 !important;
+            }
+
+            .admin-noti-item {
+                padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+                cursor: pointer; transition: background 0.2s;
+            }
+            .admin-noti-item:hover { background: #f8fafc; }
+            .admin-noti-item.unread { background: #eff6ff; border-left: 3px solid var(--accent-blue); }
+            .admin-noti-item.unread:hover { background: #dbeafe; }
+
+            /* --- USER DROPDOWN --- */
+            .admin-user-btn {
+                display: flex; align-items: center; gap: 10px;
+                padding: 6px 12px; border-radius: 25px;
+                background: #f8f9fa; border: none; cursor: pointer;
+                transition: all 0.2s;
+            }
+            .admin-user-btn:hover { background: #e9ecef; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+            .admin-avatar-sm {
+                width: 36px; height: 36px; border-radius: 50%;
+                background: linear-gradient(135deg, #003d7a, #0d6efd);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-weight: 700; font-size: 13px; flex-shrink: 0;
+            }
+            .admin-avatar-lg {
+                width: 50px; height: 50px; border-radius: 50%;
+                background: rgba(255,255,255,0.25);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-weight: 700; font-size: 20px;
+                border: 2px solid rgba(255,255,255,0.6); flex-shrink: 0;
+            }
+
+            .admin-dropdown-header {
+                padding: 1.25rem;
+                background: linear-gradient(135deg, #003d7a 0%, #0d6efd 100%);
+                color: white;
+            }
+
+            .admin-dropdown-menu {
+                min-width: 300px; border: 1px solid #dee2e6;
+                border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+                margin-top: 8px; overflow: hidden; padding: 0 !important;
+            }
+
+            .admin-dropdown-item {
+                padding: 0.75rem 1.25rem !important; font-size: 13px;
+                display: flex; align-items: center; gap: 10px;
+                border-left: 3px solid transparent; transition: all 0.2s;
+                color: #212529; text-decoration: none;
+            }
+            .admin-dropdown-item:hover {
+                background: #f0f7ff; color: var(--accent-blue);
+                border-left-color: var(--accent-blue);
+                transform: translateX(2px);
+            }
+            .admin-dropdown-item i { width: 18px; font-size: 14px; color: var(--accent-blue); }
+
+            .admin-dropdown-item-logout { color: #dc3545 !important; }
+            .admin-dropdown-item-logout:hover { background: #ffe5e5 !important; color: #dc3545 !important; border-left-color: #dc3545 !important; }
+            .admin-dropdown-item-logout i { color: #dc3545 !important; }
+
     </style>
     @RenderSection("Styles", required: false)
 </head>
 
 @{
-    var userFullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Quản trị viên";
-    var userEmail     = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
-    var userInitials  = !string.IsNullOrEmpty(userFullName)
-        ? string.Concat(userFullName.Split(' ').Where(x => x.Length > 0).Select(x => x[0])).ToUpper()
+    var adminUserFullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Quản trị viên";
+    var adminUserEmail    = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+    var adminUserInitials = !string.IsNullOrEmpty(adminUserFullName)
+        ? string.Concat(adminUserFullName.Split(' ').Where(x => x.Length > 0).Select(x => x[0])).ToUpper()
         : "AD";
 }
 
@@ -351,64 +424,67 @@
                     </ul>
                 </div>
 
-                <!-- Notification Bell dropdown -->
-                <div class="dropdown" id="notifDropdownWrapper">
-                    <button class="notif-bell-btn"
-                            type="button"
+                <!-- Notification Bell -->
+                <div class="dropdown" id="adminNotifWrapper">
+                    <button class="btn btn-light border-0 position-relative rounded-circle p-2"
+                            style="width:38px;height:38px;"
                             data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            id="notifBellBtn"
-                            onclick="loadNotifications()"
+                            id="adminNotifBtn"
+                            onclick="adminLoadNotifications()"
                             title="Thông báo">
-                        <i class="bi bi-bell"></i>
-                        <span class="notif-badge" id="notifBadge"></span>
+                        <i class="bi bi-bell fs-6 text-muted"></i>
+                        <span id="adminNotifBadge" class="admin-notif-badge"></span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end notif-dropdown-menu" id="notifDropdownMenu">
-                        <li class="notif-hdr">
-                            <span class="notif-hdr-title"><i class="bi bi-bell-fill me-2"></i>Thông báo</span>
-                            <span class="notif-hdr-count" id="notifHdrCount">...</span>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 admin-noti-dropdown" style="padding:0!important;">
+                        <li class="px-3 py-2 border-bottom bg-light d-flex justify-content-between align-items-center sticky-top">
+                            <span class="fw-bold text-dark"><i class="bi bi-bell-fill me-2"></i>Thông báo</span>
+                            <span id="adminNotifHdrCount" class="small text-muted">...</span>
                         </li>
                         <li>
-                            <div id="notifList">
-                                <div class="notif-empty">
-                                    <i class="bi bi-bell-slash fs-4 d-block mb-2 text-muted"></i>
-                                    Chưa có thông báo
+                            <div id="adminNotifList">
+                                <div class="text-center py-4 text-muted" style="font-size:13px;">
+                                    <i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo
                                 </div>
                             </div>
                         </li>
-                        <li class="notif-footer">
-                            <button class="btn btn-sm btn-link p-0 me-3" onclick="markAllRead(event)" id="markAllBtn" style="color:var(--accent-blue);font-size:12px;display:none;">
+                        <li class="border-top d-flex align-items-center justify-content-between px-3 py-2">
+                            <button id="adminMarkAllBtn" onclick="adminMarkAllRead(event)"
+                                    class="btn btn-sm btn-link p-0"
+                                    style="color:var(--accent-blue);font-size:12px;display:none;">
                                 <i class="bi bi-check-all me-1"></i>Đánh dấu đã đọc
                             </button>
-                            <a href="/Notifications">Xem tất cả</a>
+                            <a href="/Notifications" class="small text-decoration-none fw-semibold"
+                               style="color:var(--accent-blue);">
+                                <i class="bi bi-arrow-right-circle me-1"></i>Xem tất cả
+                            </a>
                         </li>
                     </ul>
                 </div>
 
-                <!-- User Profile dropdown -->
+                <!-- User Profile Dropdown -->
                 <div class="dropdown">
                     <button type="button"
-                            class="user-profile-btn dropdown-toggle"
+                            class="admin-user-btn dropdown-toggle"
                             data-bs-toggle="dropdown"
                             data-bs-auto-close="outside"
                             aria-expanded="false">
-                        <div class="user-avatar-sm">@userInitials</div>
+                        <div class="admin-avatar-sm">@adminUserInitials</div>
                         <div class="d-none d-lg-block text-start lh-1">
-                            <div class="fw-bold small text-dark" style="font-size:13px;">@userFullName</div>
-                            <span class="text-muted" style="font-size: 0.7rem;">Quản trị viên</span>
+                            <div class="fw-bold small text-dark" style="font-size:13px;">@adminUserFullName</div>
+                            <span class="text-muted" style="font-size:0.68rem;">Quản trị viên</span>
                         </div>
                         <i class="bi bi-chevron-down text-muted d-none d-lg-block" style="font-size:11px;"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-user">
+                    <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu">
                         <!-- Header -->
-                        <li class="dropdown-header-admin">
+                        <li class="admin-dropdown-header">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="user-avatar-lg">@userInitials</div>
+                                <div class="admin-avatar-lg">@adminUserInitials</div>
                                 <div>
-                                    <div class="fw-bold" style="font-size:14px;">@userFullName</div>
-                                    <div style="font-size:12px; opacity:0.9;">@userEmail</div>
-                                    <div class="mt-1" style="font-size:11px; opacity:0.8;">
-                                        <i class="bi bi-shield-lock-fill me-1"></i>Quản trị viên (Admin)
+                                    <div class="fw-bold" style="font-size:14px;">@adminUserFullName</div>
+                                    <div style="font-size:12px;opacity:0.9;">@adminUserEmail</div>
+                                    <div class="mt-1" style="font-size:11px;opacity:0.8;">
+                                        <i class="bi bi-shield-fill-check me-1"></i>Quản trị viên hệ thống
                                     </div>
                                 </div>
                             </div>
@@ -417,31 +493,31 @@
                         <li><hr class="dropdown-divider m-0"></li>
 
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Account/Admin">
-                                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                            <a class="admin-dropdown-item" href="/Account/Admin">
+                                <i class="bi bi-speedometer2"></i><span>Dashboard quản trị</span>
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Account/UserManagement">
-                                <i class="bi bi-people-fill"></i><span>Quản lý tài khoản</span>
+                            <a class="admin-dropdown-item" href="/Account/UserManagement">
+                                <i class="bi bi-people-fill"></i><span>Quản lý người dùng</span>
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Account/SystemNotifications">
-                                <i class="bi bi-bell"></i><span>Thông báo hệ thống</span>
+                            <a class="admin-dropdown-item" href="/Account/Reports">
+                                <i class="bi bi-bar-chart-line"></i><span>Báo cáo & thống kê</span>
                             </a>
                         </li>
 
                         <li><hr class="dropdown-divider m-0"></li>
 
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Profile">
+                            <a class="admin-dropdown-item" href="/Profile">
                                 <i class="bi bi-person-circle"></i><span>Hồ sơ cá nhân</span>
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item dropdown-item-user" href="/Account/SystemSettings">
-                                <i class="bi bi-gear"></i><span>Cài đặt hệ thống</span>
+                            <a class="admin-dropdown-item" href="/HuongDan">
+                                <i class="bi bi-question-circle"></i><span>Trợ giúp</span>
                             </a>
                         </li>
 
@@ -450,7 +526,7 @@
                         <li>
                             <form asp-controller="Login" asp-action="Logout" method="post" class="m-0">
                                 <button type="submit"
-                                        class="dropdown-item dropdown-item-user dropdown-item-logout w-100 text-start border-0 bg-transparent"
+                                        class="admin-dropdown-item admin-dropdown-item-logout w-100 text-start border-0 bg-transparent"
                                         style="cursor:pointer;">
                                     <i class="bi bi-box-arrow-right"></i><span>Đăng xuất</span>
                                 </button>
@@ -472,6 +548,103 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+    // --- Notification Bell ---
+    (function () {
+        let _adminLoaded = false;
+
+        function adminIconClass(type) {
+            const m = { 'Success': ['bi-check-circle-fill','#16a34a','#dcfce7'], 'Warning': ['bi-exclamation-triangle-fill','#d97706','#fef3c7'], 'Error': ['bi-x-circle-fill','#dc2626','#fee2e2'] };
+            return m[type] ?? ['bi-info-circle-fill','#0d6efd','#dbeafe'];
+        }
+
+        window.adminLoadNotifications = async function (force = false) {
+            if (_adminLoaded && !force) return;
+            try {
+                const res = await fetch('/api/user/notifications?take=8');
+                if (!res.ok) return;
+                const data = await res.json();
+                _adminLoaded = true;
+                adminUpdateBadge(data.unread);
+                adminRenderList(data.items ?? []);
+            } catch { }
+        };
+
+        function adminUpdateBadge(count) {
+            const badge = document.getElementById('adminNotifBadge');
+            const markBtn = document.getElementById('adminMarkAllBtn');
+            const hdr = document.getElementById('adminNotifHdrCount');
+            if (!badge) return;
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.add('visible');
+                if (markBtn) markBtn.style.display = 'inline-block';
+            } else {
+                badge.classList.remove('visible');
+                if (markBtn) markBtn.style.display = 'none';
+            }
+            if (hdr) hdr.textContent = count > 0 ? count + ' chưa đọc' : 'Đã đọc hết';
+        }
+
+        function adminRenderList(items) {
+            const el = document.getElementById('adminNotifList');
+            if (!el) return;
+            if (items.length === 0) {
+                el.innerHTML = '<div class="text-center py-4 text-muted" style="font-size:13px;"><i class="bi bi-bell-slash fs-4 d-block mb-2"></i>Chưa có thông báo</div>';
+                return;
+            }
+            el.innerHTML = items.map(n => {
+                const [ic, color, bg] = adminIconClass(n.type);
+                const unreadCls = !n.isRead ? ' unread' : '';
+                return `<div class="admin-noti-item${unreadCls}" onclick="adminReadNotif(event,${n.notificationId})">
+                    <div class="d-flex gap-2 align-items-start">
+                        <div style="width:30px;height:30px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi ${ic}" style="color:${color};font-size:13px;"></i>
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="small fw-bold text-dark mb-1">${escHtml(n.title)}</div>
+                            <div class="text-muted" style="font-size:0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px;">${escHtml(n.message)}</div>
+                            <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>${escHtml(n.timeAgo)}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.adminReadNotif = async function (e, id) {
+            e.preventDefault();
+            await fetch(`/api/user/notifications/${id}/read`, { method: 'POST', headers: { 'RequestVerificationToken': getAdminAntiForgery() } });
+            _adminLoaded = false;
+            adminLoadNotifications(true);
+        };
+
+        window.adminMarkAllRead = async function (e) {
+            e.stopPropagation();
+            await fetch('/api/user/notifications/read-all', { method: 'POST', headers: { 'RequestVerificationToken': getAdminAntiForgery() } });
+            _adminLoaded = false;
+            adminLoadNotifications(true);
+        };
+
+        function getAdminAntiForgery() {
+            const el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        function escHtml(s) {
+            if (!s) return '';
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Load badge count on page load
+        fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && adminUpdateBadge(d.unread)).catch(() => {});
+
+        // Refresh every 3 minutes
+        setInterval(() => {
+            _adminLoaded = false;
+            fetch('/api/user/notifications?take=1').then(r => r.ok && r.json()).then(d => d && adminUpdateBadge(d.unread)).catch(() => {});
+        }, 180000);
+    })();
+    </script>
     <script>
         function handleQuickCreateContest() {
             if (typeof openCompModal === "function") {

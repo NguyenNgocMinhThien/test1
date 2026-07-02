@@ -42,6 +42,9 @@
         public DateTime? ApprovalDate { get; set; }
         public string Notes { get; set; } = string.Empty;
         public int RegistrationId_FK { get; set; }
+        public string? RegistrationType { get; set; }
+        public string? AdvisorName { get; set; }
+        public List<FormFieldValueDto> CustomFieldValues { get; set; } = new();
     }
 
     public class SubmissionDetailDto

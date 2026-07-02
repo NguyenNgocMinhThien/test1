@@ -70,29 +70,44 @@ public class CompetitiveController : Controller
         return Json(new { ok = true, count });
     }
 
-    // GET: /Notifications
+    // GET: /Notifications  — Public announcements list (no auth required)
     [HttpGet("/Notifications")]
-    public async Task<IActionResult> UserNotifications(
-        [FromQuery] string? type = null,
-        [FromQuery] bool unreadOnly = false,
+    [AllowAnonymous]
+    public async Task<IActionResult> PublicNotifications(
+        [FromQuery] string? search = null,
         [FromQuery] int page = 1)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out int userId))
-        {
-            // Unauthenticated — redirect to login
-            return Redirect("/Login?returnUrl=/Notifications");
-        }
-
         try
         {
-            var vm = await _notificationsService.GetUserNotificationsPageAsync(userId, type, unreadOnly, page, pageSize: 15);
-            return View("~/Views/Pages/Notifications.cshtml", vm);
+            var (total, items) = await _notificationsService.GetPublicAnnouncementsPagedAsync(search, page, pageSize: 12);
+            ViewBag.Search    = search;
+            ViewBag.Page      = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(total / 12.0);
+            ViewBag.Total     = total;
+            return View("~/Views/Pages/Notifications.cshtml", items);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading user notifications page");
-            return View("~/Views/Pages/Notifications.cshtml", new UserNotificationsPageViewModel());
+            _logger.LogError(ex, "Error loading public notifications page");
+            return View("~/Views/Pages/Notifications.cshtml", new List<Web_cham_diem.Models.ViewModels.PublicAnnouncementDto>());
+        }
+    }
+
+    // GET: /Notifications/{id}  — Detail page
+    [HttpGet("/Notifications/{id:int}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> AnnouncementDetail(int id)
+    {
+        try
+        {
+            var item = await _notificationsService.GetAnnouncementByIdAsync(id);
+            if (item is null) return NotFound();
+            return View("~/Views/Pages/AnnouncementDetail.cshtml", item);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading announcement detail {Id}", id);
+            return NotFound();
         }
     }
 
@@ -210,6 +225,7 @@ public class CompetitiveController : Controller
 
         var viewModel = BuildRegistrationViewModel(competition, user);
         viewModel.IsLecturerFlow = isLecturer;
+        viewModel.CustomFormFields = await LoadFormFieldsAsync(id);
         return View("~/Views/Pages/StudentCompetitionRegistration.cshtml", viewModel);
     }
 
@@ -273,6 +289,7 @@ public class CompetitiveController : Controller
                 vm.RegistrationType = model.RegistrationType;
                 vm.TeamName = model.TeamName;
                 vm.Notes = model.Notes;
+                vm.CustomFormFields = await LoadFormFieldsAsync(id);
                 return View("~/Views/Pages/StudentCompetitionRegistration.cshtml", vm);
             }
 
@@ -346,6 +363,29 @@ public class CompetitiveController : Controller
             }
         }
 
+        // ── Validate trường biểu mẫu bắt buộc ─────────────────────────────
+        var formFieldsForValidation = await LoadFormFieldsAsync(id);
+        foreach (var field in formFieldsForValidation.Where(f => f.IsActive && f.IsRequired))
+        {
+            bool missing;
+            if (field.FieldType == "File")
+            {
+                var file = Request.Form.Files.GetFile($"df_file_{field.FieldId}");
+                missing = file == null || file.Length == 0;
+            }
+            else if (field.FieldType == "Checkbox")
+            {
+                missing = Request.Form[$"df_{field.FieldId}"].ToString() != "true";
+            }
+            else
+            {
+                missing = string.IsNullOrWhiteSpace(Request.Form[$"df_{field.FieldId}"].ToString());
+            }
+
+            if (missing)
+                ModelState.AddModelError("", $"\"{field.FieldLabel}\" là trường bắt buộc.");
+        }
+
         if (!ModelState.IsValid)
         {
             var vm = BuildRegistrationViewModel(competition, currentUser);
@@ -356,6 +396,7 @@ public class CompetitiveController : Controller
             vm.AdvisorStudentId = model.AdvisorStudentId;
             vm.LeaderStudentId = model.LeaderStudentId;
             vm.MemberStudentIds = model.MemberStudentIds ?? new();
+            vm.CustomFormFields = formFieldsForValidation;
             return View("~/Views/Pages/StudentCompetitionRegistration.cshtml", vm);
         }
 
@@ -388,6 +429,7 @@ public class CompetitiveController : Controller
             ModelState.AddModelError("", ex.Message);
             var vm = BuildRegistrationViewModel(competition, currentUser);
             vm.IsLecturerFlow = isLecturer;
+            vm.CustomFormFields = await LoadFormFieldsAsync(id);
             return View("~/Views/Pages/StudentCompetitionRegistration.cshtml", vm);
         }
 
@@ -457,6 +499,55 @@ public class CompetitiveController : Controller
         registration.RegistrationCode = GenerateRegistrationCode(registration.RegistrationId);
         await _context.SaveChangesAsync();
 
+        // ── Lưu giá trị trường biểu mẫu động ─────────────────────────────
+        var formFields = formFieldsForValidation;
+        if (formFields.Any())
+        {
+            var dynUploadDir = Path.Combine(_environment.WebRootPath, "uploads", "registrations", registration.RegistrationId.ToString());
+            Directory.CreateDirectory(dynUploadDir);
+
+            foreach (var field in formFields.Where(f => f.IsActive))
+            {
+                string? value = null;
+                string? fileName = null;
+
+                if (field.FieldType == "File")
+                {
+                    var file = Request.Form.Files.GetFile($"df_file_{field.FieldId}");
+                    if (file != null && file.Length > 0)
+                    {
+                        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                        var saveName = $"{Guid.NewGuid():N}{ext}";
+                        await using var fs = new FileStream(Path.Combine(dynUploadDir, saveName), FileMode.Create);
+                        await file.CopyToAsync(fs);
+                        value    = $"/uploads/registrations/{registration.RegistrationId}/{saveName}";
+                        fileName = file.FileName;
+                    }
+                }
+                else if (field.FieldType == "Checkbox")
+                {
+                    value = Request.Form[$"df_{field.FieldId}"].ToString() == "true" ? "true" : "false";
+                }
+                else
+                {
+                    value = Request.Form[$"df_{field.FieldId}"].ToString();
+                }
+
+                if (!string.IsNullOrEmpty(value))
+                {
+                    _context.RegistrationFieldValues.Add(new Models.RegistrationFieldValues
+                    {
+                        RegistrationId = registration.RegistrationId,
+                        FieldId        = field.FieldId,
+                        Value          = value,
+                        FileName       = fileName,
+                        CreatedAt      = DateTime.UtcNow
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
+
         TempData["SuccessMessage"] = $"Đăng ký thành công! Mã số dự thi của bạn: {registration.RegistrationCode}";
         return RedirectToAction("RegistrationDetail", new { id = competition.CompetitionId });
     }
@@ -479,6 +570,8 @@ public class CompetitiveController : Controller
             .Include(r => r.User)
             .Include(r => r.Advisor)
             .Include(r => r.RegistrationRound)
+            .Include(r => r.FieldValues)
+                .ThenInclude(v => v.Field)
             .Include(r => r.Team)
                 .ThenInclude(t => t!.TeamMembers)
                     .ThenInclude(tm => tm.User)
@@ -506,6 +599,7 @@ public class CompetitiveController : Controller
         ViewBag.IsLecturerView = isLecturer;
         ViewBag.CurrentUserId  = currentUserId;
         ViewBag.EditHistory    = await _submissionService.GetRegistrationHistoryAsync(registration.RegistrationId);
+        ViewBag.CompetitionFormFields = await LoadFormFieldsAsync(registration.CompetitionId);
         return View("~/Views/Pages/RegistrationDetail.cshtml", registration);
     }
 
@@ -617,6 +711,79 @@ public class CompetitiveController : Controller
         registration.SubmissionDocument = currentFiles.Any() ? string.Join(";", currentFiles) : null;
         registration.UpdatedAt = nowUtc;
 
+        // ── Cập nhật trường biểu mẫu động ────────────────────────────────────
+        var dynFieldsUpdated = 0;
+        var formFieldsEdit = await LoadFormFieldsAsync(id);
+        if (formFieldsEdit.Any())
+        {
+            // Validate required fields
+            foreach (var field in formFieldsEdit.Where(f => f.IsActive && f.IsRequired))
+            {
+                bool missing = field.FieldType == "File"
+                    ? (Request.Form.Files.GetFile($"df_file_{field.FieldId}") == null || Request.Form.Files.GetFile($"df_file_{field.FieldId}")!.Length == 0)
+                        && !(await _context.RegistrationFieldValues.AnyAsync(v => v.RegistrationId == registration.RegistrationId && v.FieldId == field.FieldId))
+                    : field.FieldType == "Checkbox"
+                        ? Request.Form[$"df_{field.FieldId}"].ToString() != "true"
+                        : string.IsNullOrWhiteSpace(Request.Form[$"df_{field.FieldId}"].ToString());
+
+                if (missing)
+                    return BadRequest(new { message = $"Trường \"{field.FieldLabel}\" là bắt buộc." });
+            }
+
+            var dynUploadDir = Path.Combine(_environment.WebRootPath, "uploads", "registrations", registration.RegistrationId.ToString());
+            Directory.CreateDirectory(dynUploadDir);
+
+            foreach (var field in formFieldsEdit.Where(f => f.IsActive))
+            {
+                var existing = await _context.RegistrationFieldValues
+                    .FirstOrDefaultAsync(v => v.RegistrationId == registration.RegistrationId && v.FieldId == field.FieldId);
+
+                string? newValue = null;
+                string? newFileName = null;
+
+                if (field.FieldType == "File")
+                {
+                    var file = Request.Form.Files.GetFile($"df_file_{field.FieldId}");
+                    if (file != null && file.Length > 0)
+                    {
+                        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                        var saveName = $"{Guid.NewGuid():N}{ext}";
+                        await using var fs = new FileStream(Path.Combine(dynUploadDir, saveName), FileMode.Create);
+                        await file.CopyToAsync(fs);
+                        newValue    = $"/uploads/registrations/{registration.RegistrationId}/{saveName}";
+                        newFileName = file.FileName;
+                    }
+                    else { continue; } // Giữ nguyên file cũ nếu không upload mới
+                }
+                else if (field.FieldType == "Checkbox")
+                {
+                    newValue = Request.Form[$"df_{field.FieldId}"].ToString() == "true" ? "true" : "false";
+                }
+                else
+                {
+                    newValue = Request.Form[$"df_{field.FieldId}"].ToString();
+                }
+
+                if (existing != null)
+                {
+                    if (!string.IsNullOrEmpty(newValue)) { existing.Value = newValue; existing.FileName = newFileName; dynFieldsUpdated++; }
+                    else { _context.RegistrationFieldValues.Remove(existing); }
+                }
+                else if (!string.IsNullOrEmpty(newValue))
+                {
+                    _context.RegistrationFieldValues.Add(new Models.RegistrationFieldValues
+                    {
+                        RegistrationId = registration.RegistrationId,
+                        FieldId        = field.FieldId,
+                        Value          = newValue,
+                        FileName       = newFileName,
+                        CreatedAt      = nowUtc
+                    });
+                    dynFieldsUpdated++;
+                }
+            }
+        }
+
         // Reset về Pending nếu đã được duyệt/từ chối để ban tổ chức xem xét lại
         var previousStatus = registration.Status;
         if (registration.Status is "Approved" or "Rejected")
@@ -630,6 +797,7 @@ public class CompetitiveController : Controller
         if (model.RemoveFiles?.Any() == true) changes.Add($"Xóa {model.RemoveFiles.Count} file");
         var newFilesCount = new[] { model.NewFile1, model.NewFile2, model.NewFile3 }.Count(f => f != null && f.Length > 0);
         if (newFilesCount > 0) changes.Add($"Thêm {newFilesCount} file mới");
+        if (dynFieldsUpdated > 0) changes.Add($"Cập nhật {dynFieldsUpdated} trường bổ sung");
 
         _context.RegistrationEditHistories.Add(new Models.RegistrationEditHistory
         {
@@ -994,6 +1162,26 @@ public class CompetitiveController : Controller
     private static string GenerateTeamCode(int teamId)
         => $"DT-{DateTime.UtcNow.Year}-{teamId:D5}";
 
+    private async Task<List<Models.ViewModels.FormFieldReadDto>> LoadFormFieldsAsync(int competitionId)
+    {
+        return await _context.RegistrationFormFields
+            .Where(f => f.CompetitionId == competitionId && f.IsActive)
+            .OrderBy(f => f.DisplayOrder).ThenBy(f => f.FieldId)
+            .Select(f => new Models.ViewModels.FormFieldReadDto
+            {
+                FieldId      = f.FieldId,
+                FieldLabel   = f.FieldLabel,
+                FieldType    = f.FieldType,
+                IsRequired   = f.IsRequired,
+                Placeholder  = f.Placeholder,
+                Options      = f.Options,
+                HelpText     = f.HelpText,
+                DisplayOrder = f.DisplayOrder,
+                IsActive     = f.IsActive
+            })
+            .ToListAsync();
+    }
+
     private CompetitionRegistrationViewModel BuildRegistrationViewModel(Competitions competition, Users user)
     {
         var latestDeadline = competition.RegistrationRounds.Any()
@@ -1245,6 +1433,7 @@ public class CompetitiveController : Controller
                 .ThenInclude(t => t.Registrations)
             .Include(c => c.Teams)
                 .ThenInclude(t => t.Leader)
+            .Include(c => c.RegistrationFormFields.Where(f => f.IsActive).OrderBy(f => f.DisplayOrder))
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.CompetitionId == id);
 

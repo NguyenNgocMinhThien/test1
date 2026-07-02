@@ -4,58 +4,109 @@
 }
 
 <!-- ============================================================
-     1. HERO BANNER
+     1. HERO BANNER — Split panel style
      ============================================================ -->
-<section class="hero-section position-relative rounded-4 overflow-hidden mb-5 text-white shadow-lg"
-         style="background: linear-gradient(135deg, #b91c1c 0%, #dc3545 45%, #7f1d1d 100%); min-height: 420px;">
-    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10"
-         style="background-image: url('~/images/uef-students.png'); background-size: cover; background-position: center;"></div>
+<section class="hero-split-section mb-5 rounded-4 overflow-hidden shadow-lg" style="min-height: 460px;">
+    <div class="row g-0" style="min-height: 460px;">
 
-    <!-- Decorative circles -->
-    <div class="position-absolute rounded-circle opacity-10"
-         style="width:350px;height:350px;background:#fff;top:-80px;right:-80px;"></div>
-    <div class="position-absolute rounded-circle opacity-5"
-         style="width:200px;height:200px;background:#fff;bottom:-50px;left:10%;"></div>
+        <!-- LEFT PANEL: Dark info panel -->
+        <div class="col-12 col-lg-5 d-flex flex-column align-items-center justify-content-center p-4 p-xl-5"
+             style="background: #1a3559; min-height: 460px;">
 
-    <div class="container position-relative py-5 px-4 px-md-5">
-        <div class="row align-items-center g-4">
-            <div class="col-12 col-lg-7 text-center text-lg-start">
-                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mb-3 d-inline-block animate-pulse">
-                    <i class="bi bi-calendar-event me-1"></i>NĂM HỌC 2024 – 2025
-                </span>
-                <h1 class="display-4 fw-black text-white mb-3 lh-sm">
-                    HỆ THỐNG QUẢN LÝ<br>
-                    <span class="text-warning">CUỘC THI SINH VIÊN</span><br>
-                    <span style="font-size:0.65em;" class="text-white-75">CẤP TRƯỜNG TRỰC TUYẾN</span>
-                </h1>
-                <p class="lead text-white-75 mb-4 d-none d-md-block" style="font-size:1rem; line-height:1.7;">
-                    Nền tảng số hóa toàn bộ quy trình tổ chức cuộc thi — từ đăng ký, nộp bài đến chấm điểm
-                    và công bố kết quả, giúp sinh viên thể hiện tài năng và khẳng định bản thân.
-                </p>
-                <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
-                    <a href="/Competitions" class="btn btn-warning text-dark fw-bold px-4 py-3 rounded-pill shadow">
-                        <i class="bi bi-trophy-fill me-2"></i>Xem Cuộc Thi Ngay
-                    </a>
-                    <a href="/HuongDan" class="btn btn-outline-light fw-semibold px-4 py-3 rounded-pill">
-                        <i class="bi bi-play-circle me-2"></i>Hướng Dẫn Tham Gia
-                    </a>
+            <!-- Logo + School Name -->
+            <div class="text-center mb-4">
+                <img src="~/images/logo-uni.png" alt="Logo" width="64"
+                     style="filter: brightness(0) invert(1); opacity: 0.9;"
+                     onerror="this.style.display='none'">
+                <div class="text-white fw-bold mt-2" style="font-size: 11px; letter-spacing: 2.5px; opacity: 0.85;">
+                    TRƯỜNG ĐẠI HỌC
                 </div>
-                <div class="d-flex flex-wrap gap-4 mt-4 justify-content-center justify-content-lg-start text-white-75" style="font-size:13px;">
-                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Đăng ký miễn phí</span>
-                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Nộp bài trực tuyến 24/7</span>
-                    <span><i class="bi bi-check-circle-fill text-warning me-1"></i>Kết quả minh bạch</span>
+                <div style="font-size: 10px; letter-spacing: 1.5px; color: rgba(255,255,255,0.55);">
+                    HỆ THỐNG THI TRỰC TUYẾN
                 </div>
             </div>
-            <div class="col-12 col-lg-5 text-center d-none d-lg-block">
-                <div class="position-relative d-inline-block">
-                    <div class="position-absolute top-50 start-50 translate-middle rounded-circle opacity-20"
-                         style="width:320px;height:320px;background:#ffc107;filter:blur(60px);"></div>
-                    <img src="~/images/uef-students.png" alt="Sinh viên tham gia cuộc thi"
-                         class="img-fluid position-relative float-animation" style="max-height:360px;"
-                         onerror="this.style.display='none'">
+
+            <!-- Orange highlight title box -->
+            <div class="w-100 text-center text-white fw-black rounded-3 px-3 py-3 mb-3"
+                 style="background: #e87722; font-size: clamp(1.05rem, 2.8vw, 1.55rem); line-height: 1.35; letter-spacing: 0.5px;">
+                HỆ THỐNG QUẢN LÝ<br>CUỘC THI SINH VIÊN
+            </div>
+
+            <!-- Subtitle info lines -->
+            <p class="text-center mb-3" style="color: rgba(255,255,255,0.80); font-size: 13px; line-height: 1.9;">
+                Kết quả công bố sau khi kết thúc cuộc thi từ
+                <strong class="text-warning">1-2 ngày</strong><br>
+                Giấy chứng nhận dự kiến sau khi công bố kết quả
+                <strong class="text-warning">5-7 ngày</strong>
+            </p>
+
+            <!-- Contact block -->
+            <div class="text-center mb-3">
+                <div class="fw-bold mb-2" style="color: #e87722; font-size: 12px; letter-spacing: 1px;">
+                    BAN TỔ CHỨC CUỘC THI SINH VIÊN
+                </div>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.75); line-height: 2;">
+                    <div><span class="text-white fw-semibold">HOTLINE:</span> 1800.XXXX (Miễn phí)</div>
+                    <div><span class="text-white fw-semibold">EMAIL:</span> cuocthi&#64;university.edu.vn</div>
+                    <div><span class="text-white fw-semibold">ĐỊA CHỈ:</span> Phòng 302, Tòa nhà Trung tâm</div>
+                </div>
+            </div>
+
+            <!-- CTA Buttons -->
+            <div class="d-flex gap-2 flex-wrap justify-content-center mt-2">
+                <a href="/Competitions"
+                   class="btn fw-bold px-4 rounded-pill text-white"
+                   style="background: #e87722; border-color: #e87722; font-size: 13px;">
+                    <i class="bi bi-trophy-fill me-1"></i>Xem Cuộc Thi
+                </a>
+                <a href="/HuongDan"
+                   class="btn btn-outline-light rounded-pill px-4 fw-semibold"
+                   style="font-size: 13px;">
+                    <i class="bi bi-book me-1"></i>Hướng Dẫn
+                </a>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: Campus image with chevron overlays -->
+        <div class="col-lg-7 position-relative d-none d-lg-flex align-items-stretch"
+             style="overflow: hidden; min-height: 460px;">
+
+            <!-- Background image -->
+            <img src="~/images/uef-students.png" alt="Campus"
+                 class="position-absolute top-0 start-0 w-100 h-100"
+                 style="object-fit: cover; object-position: center;"
+                 onerror="this.parentElement.style.background='#546a7b'">
+
+            <!-- Tinted overlay for depth -->
+            <div class="position-absolute top-0 start-0 w-100 h-100"
+                 style="background: linear-gradient(to right, rgba(26,53,89,0.18) 0%, transparent 50%); z-index: 1;"></div>
+
+            <!-- Chevron decorations (left edge of image panel) -->
+            <div class="position-absolute top-0 start-0 h-100" style="z-index: 2; width: 130px;">
+                <svg viewBox="0 0 130 460" preserveAspectRatio="none" width="130" height="100%">
+                    <!-- White chevron -->
+                    <polygon points="0,0 90,230 0,460" fill="white" opacity="0.92"/>
+                    <!-- Orange chevron -->
+                    <polygon points="0,0 55,230 0,460" fill="#e87722" opacity="0.95"/>
+                </svg>
+            </div>
+
+            <!-- Stats pills floating top-right -->
+            <div class="position-absolute d-flex flex-column gap-2"
+                 style="top: 24px; right: 24px; z-index: 3;">
+                <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-white shadow-sm"
+                     style="font-size: 12px; font-weight: 600; color: #1a3559;">
+                    <i class="bi bi-trophy-fill text-warning"></i>
+                    @Model.ActiveCompetitionsCount+ Cuộc thi đang mở
+                </div>
+                <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-white shadow-sm"
+                     style="font-size: 12px; font-weight: 600; color: #1a3559;">
+                    <i class="bi bi-people-fill" style="color: #e87722;"></i>
+                    @Model.TotalParticipantsCount.ToString("N0")+ Sinh viên tham gia
                 </div>
             </div>
         </div>
+
     </div>
 </section>
 
@@ -146,7 +197,7 @@
 
 
 <!-- ============================================================
-     4. CUỘC THI ĐANG MỞ ĐĂNG KÝ
+     4. CUỘC THI NỔI BẬT
      ============================================================ -->
 <section class="open-competitions-section mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -160,14 +211,17 @@
     </div>
 
     @{
-        string[] _compGradients = {
-            "background: linear-gradient(135deg,#b91c1c,#dc3545);",
-            "background: linear-gradient(135deg,#0d6efd,#0a58ca);",
-            "background: linear-gradient(135deg,#198754,#157347);"
+        /* Header gradients & accent colors per card index */
+        string[] _hdrBg = {
+            "linear-gradient(135deg, #b91c1c 0%, #7f1d1d 60%, #450a0a 100%)",
+            "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #0c2461 100%)",
+            "linear-gradient(135deg, #14532d 0%, #166534 60%, #052e16 100%)"
         };
-        string[] _compBadgeColors  = { "text-danger",  "text-primary",  "text-success" };
-        string[] _compBtnStyles    = { "btn-danger",   "btn-primary",   "btn-success"  };
+        string[] _accentColor = { "#dc3545", "#2563eb", "#16a34a" };
+        string[] _catColor    = { "color:#dc3545;", "color:#2563eb;", "color:#16a34a;" };
+        string[] _btnPrimary  = { "btn-danger", "btn-primary", "btn-success" };
     }
+
     <div class="row g-4">
         @if (!Model.FeaturedCompetitions.Any())
         {
@@ -180,61 +234,134 @@
         {
             for (int _ci = 0; _ci < Model.FeaturedCompetitions.Count; _ci++)
             {
-                var _comp    = Model.FeaturedCompetitions[_ci];
-                var _idx     = _ci % 3;
-                var _grad    = _compGradients[_idx];
-                var _badge   = _compBadgeColors[_idx];
-                var _btn     = _compBtnStyles[_idx];
-                var _desc    = _comp.Description != null && _comp.Description.Length > 120
-                                ? _comp.Description[..120] + "…"
-                                : (_comp.Description ?? "Chưa có mô tả.");
+                var _comp   = Model.FeaturedCompetitions[_ci];
+                var _idx    = _ci % 3;
+                var _bg     = _hdrBg[_idx];
+                var _accent = _accentColor[_idx];
+                var _cat    = _catColor[_idx];
+                var _btn    = _btnPrimary[_idx];
+                var _desc   = _comp.Description != null && _comp.Description.Length > 80
+                                ? _comp.Description[..80] + "…"
+                                : (_comp.Description ?? "");
+
                 <div class="col-12 col-md-6 col-lg-4">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden card-hover-effect">
-                        <div class="card-header-custom p-3" style="@_grad">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <span class="badge bg-white @_badge fw-semibold">@(_comp.Category ?? "Chung")</span>
+                    <div class="comp-card card h-100 border-0 rounded-4 overflow-hidden shadow-sm">
+
+                        <!-- ── CARD IMAGE HEADER ── -->
+                        @{
+                            var _imgUrl = !string.IsNullOrEmpty(_comp.BannerImageUrl)
+                                ? _comp.BannerImageUrl
+                                : Url.Content("~/images/uef-students.png");
+                        }
+                        <div class="comp-card-img" style="height: 200px; overflow: hidden;">
+                            <div class="w-100 h-100"
+                                 style="background-image: url('@_imgUrl');
+                                        background-size: cover;
+                                        background-position: center;
+                                        transition: transform 0.35s ease;">
+                            </div>
+                        </div>
+
+                        <!-- ── CARD BODY ── -->
+                        <div class="card-body px-4 pt-3 pb-4 d-flex flex-column">
+
+                            <!-- Category label + status badge -->
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="fw-bold" style="font-size: 12px; @_cat letter-spacing: 0.3px;">
+                                    <i class="bi bi-tag-fill me-1"></i>@(_comp.Category ?? "Cuộc thi chung")
+                                </div>
                                 @if (_comp.DaysRemaining >= 0)
                                 {
-                                    <span class="badge bg-warning text-dark">
+                                    <span class="badge bg-warning text-dark" style="font-size: 11px;">
                                         <i class="bi bi-clock me-1"></i>Còn @_comp.DaysRemaining ngày
                                     </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-success text-white">Đang diễn ra</span>
+                                    <span class="badge bg-success text-white" style="font-size: 11px;">
+                                        <i class="bi bi-check-circle me-1"></i>Đang diễn ra
+                                    </span>
                                 }
                             </div>
-                            <h5 class="fw-bold mt-2 mb-0 text-white">@_comp.CompetitionName</h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <p class="text-secondary small mb-3">@_desc</p>
-                            <ul class="list-unstyled small text-secondary mb-3">
-                                <li class="mb-1">
-                                    <i class="bi bi-people me-2 @_badge"></i>
+
+                            <!-- Competition name row -->
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-mortarboard-fill mt-1 flex-shrink-0" style="color: @_accent; font-size: 15px;"></i>
+                                <span class="fw-bold text-dark" style="font-size: 14px; line-height: 1.4;">
+                                    @_comp.CompetitionName
+                                </span>
+                            </div>
+
+                            <!-- Description / team type -->
+                            <div class="d-flex align-items-start gap-2 mb-2 text-secondary" style="font-size: 12.5px;">
+                                <i class="bi bi-file-text mt-1 flex-shrink-0"></i>
+                                <span>
+                                    @if (!string.IsNullOrEmpty(_desc))
+                                    {
+                                        @_desc
+                                    }
+                                    else
+                                    {
+                                        @(_comp.IsTeamBased
+                                            ? $"Thi theo đội — tối đa {_comp.MaxTeamSize} thành viên/đội"
+                                            : "Thi cá nhân")
+                                    }
+                                </span>
+                            </div>
+
+                            <!-- Format: team or individual -->
+                            <div class="d-flex align-items-center gap-2 mb-2 text-secondary" style="font-size: 12px;">
+                                <i class="bi bi-people-fill flex-shrink-0" style="color: @_accent;"></i>
+                                <span>
                                     @(_comp.IsTeamBased
-                                        ? $"Thi theo đội, tối đa {_comp.MaxTeamSize} thành viên"
+                                        ? $"Đội thi — tối đa {_comp.MaxTeamSize} thành viên"
                                         : "Thi cá nhân")
-                                </li>
-                                @if (_comp.RegistrationDeadline.HasValue)
-                                {
-                                    <li class="mb-1">
-                                        <i class="bi bi-calendar-check me-2 @_badge"></i>
-                                        Hạn đăng ký: <strong>@_comp.RegistrationDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy")</strong>
-                                    </li>
-                                }
-                                @if (!string.IsNullOrEmpty(_comp.Prize))
-                                {
-                                    <li>
-                                        <i class="bi bi-gift me-2 @_badge"></i>
-                                        Giải thưởng: <strong class="@_badge">@_comp.Prize</strong>
-                                    </li>
-                                }
-                            </ul>
-                            <a href="/Competitions/Detail/@_comp.CompetitionId"
-                               class="btn @_btn btn-sm rounded-pill px-3 w-100">
-                                <i class="bi bi-arrow-right-circle me-1"></i>Xem & Đăng ký
-                            </a>
+                                    @if (_comp.TotalRegistrations > 0)
+                                    {
+                                        <span class="ms-1 text-muted">· @_comp.TotalRegistrations đã đăng ký</span>
+                                    }
+                                </span>
+                            </div>
+
+                            <!-- Deadline row -->
+                            @if (_comp.RegistrationDeadline.HasValue)
+                            {
+                                <div class="d-flex align-items-center gap-2 mb-3" style="font-size: 12px; color: #dc3545;">
+                                    <i class="bi bi-calendar-x-fill flex-shrink-0"></i>
+                                    <span>
+                                        Hạn đăng ký:
+                                        <strong>@_comp.RegistrationDeadline.Value.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</strong>
+                                    </span>
+                                </div>
+                            }
+
+                            <!-- Prize -->
+                            @if (!string.IsNullOrEmpty(_comp.Prize))
+                            {
+                                <div class="fw-bold mb-3" style="font-size: 18px; color: @_accent;">
+                                    <i class="bi bi-gift-fill me-1" style="font-size: 14px;"></i>@_comp.Prize
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3"></div>
+                            }
+
+                            <!-- Action buttons -->
+                            <div class="d-flex gap-2 mt-auto">
+                                <a href="/Competitions/@_comp.CompetitionId"
+                                   class="btn btn-sm rounded-pill px-3 fw-semibold flex-grow-1"
+                                   style="border: 1.5px solid @_accent; color: @_accent; font-size: 13px;">
+                                    Xem chi tiết <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                                <a href="/Competitions/@_comp.CompetitionId"
+                                   class="btn @_btn btn-sm rounded-pill px-3 fw-bold flex-grow-1"
+                                   style="font-size: 13px;">
+                                    Đăng ký ngay
+                                </a>
+                            </div>
                         </div>
+
                     </div>
                 </div>
             }
@@ -463,88 +590,6 @@
 </section>
 
 
-<!-- ============================================================
-     8. THÔNG BÁO MỚI NHẤT
-     ============================================================ -->
-<section class="news-section mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <span class="badge bg-info-subtle text-info fw-semibold px-3 py-2 rounded-pill mb-1">Cập nhật</span>
-            <h2 class="fw-bold text-dark mb-0 section-title">THÔNG BÁO MỚI NHẤT</h2>
-        </div>
-        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold d-none d-md-inline-flex align-items-center gap-1">
-            Tất cả thông báo <i class="bi bi-arrow-right"></i>
-        </a>
-    </div>
-
-    @{
-        var _notifIcon = new Dictionary<string, string> {
-            { "Error",   "bi-megaphone-fill" },
-            { "Warning", "bi-info-circle-fill" },
-            { "Success", "bi-file-earmark-check-fill" },
-            { "Info",    "bi-star-fill" }
-        };
-        var _notifIconBg = new Dictionary<string, string> {
-            { "Error",   "bg-danger-subtle text-danger" },
-            { "Warning", "bg-warning-subtle text-warning-emphasis" },
-            { "Success", "bg-success-subtle text-success" },
-            { "Info",    "bg-primary-subtle text-primary" }
-        };
-        var _notifBadge = new Dictionary<string, string> {
-            { "Error",   "bg-danger-subtle text-danger" },
-            { "Warning", "bg-warning-subtle text-warning-emphasis" },
-            { "Success", "bg-success-subtle text-success" },
-            { "Info",    "bg-primary-subtle text-primary" }
-        };
-    }
-    <div class="row g-3">
-        @if (!Model.LatestNotifications.Any())
-        {
-            <div class="col-12 py-5 text-center text-secondary">
-                <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-50"></i>
-                Chưa có thông báo nào.
-            </div>
-        }
-        else
-        {
-            foreach (var _n in Model.LatestNotifications)
-            {
-                var _icon    = _notifIcon.GetValueOrDefault(_n.Type, "bi-info-circle-fill");
-                var _iconBg  = _notifIconBg.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
-                var _bdg     = _notifBadge.GetValueOrDefault(_n.Type, "bg-primary-subtle text-primary");
-                var _href    = _n.RelatedEntityId.HasValue
-                                ? $"/Competitions/Detail/{_n.RelatedEntityId}"
-                                : "#";
-                var _msg     = _n.Message.Length > 110 ? _n.Message[..110] + "…" : _n.Message;
-                <div class="col-12 col-md-6">
-                    <a href="@_href" class="text-decoration-none">
-                        <div class="card border-0 shadow-sm rounded-4 p-3 h-100 card-hover-effect">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="flex-shrink-0 icon-circle-sm @_iconBg">
-                                    <i class="bi @_icon"></i>
-                                </div>
-                                <div>
-                                    <span class="badge @_bdg small mb-1">@_n.CategoryLabel</span>
-                                    <h6 class="fw-bold text-dark mb-1" style="font-size:14px;">@_n.Title</h6>
-                                    <p class="text-secondary small mb-1">@_msg</p>
-                                    <span class="text-muted" style="font-size:11px;">
-                                        <i class="bi bi-clock me-1"></i>@_n.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            }
-        }
-    </div>
-
-    <div class="text-center mt-3 d-md-none">
-        <a href="/Notifications" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-semibold">
-            Xem tất cả thông báo <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-    </div>
-</section>
 
 
 <!-- ============================================================
@@ -602,6 +647,28 @@
 <style>
     .fw-black { font-weight: 900; }
     .text-white-75 { color: rgba(255,255,255,0.75); }
+
+    /* Hero split section */
+    .hero-split-section .row { min-height: inherit; }
+
+    /* Competition card VLU-style */
+    .comp-card {
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+        cursor: pointer;
+    }
+    .comp-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.13) !important;
+    }
+    .comp-card-img { overflow: hidden; }
+    .comp-card-img div {
+        transition: transform 0.4s ease;
+    }
+    .comp-card:hover .comp-card-img div {
+        transform: scale(1.06);
+    }
+    .comp-card .btn { transition: opacity 0.15s ease; }
+    .comp-card .btn:hover { opacity: 0.88; }
 
     .section-title {
         font-size: clamp(1.1rem, 2.5vw, 1.4rem);
@@ -664,26 +731,14 @@
         background: #f8f9fa;
     }
 
-    /* Animations */
-    .animate-pulse {
-        animation: pulse-anim 2.2s ease-in-out infinite;
-    }
-    @@keyframes pulse-anim {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-    }
-
-    .float-animation {
-        animation: float-cycle 4s ease-in-out infinite;
-    }
-    @@keyframes float-cycle {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-14px); }
-    }
-
     /* Responsive border helper */
     @@media (min-width: 768px) {
         .border-end-md { border-right: 1px solid #dee2e6 !important; }
         .border-md-top-0 { border-top: none !important; }
+    }
+
+    /* Mobile hero */
+    @@media (max-width: 991px) {
+        .hero-split-section { min-height: auto !important; }
     }
 </style>
