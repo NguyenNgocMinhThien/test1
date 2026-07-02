@@ -1,5 +1,5 @@
 ﻿@model Web_cham_diem.Models.ViewModels.ActivityLogsViewModel
-@using System.Linq  @* ← Thêm dòng này để dùng .Any() *@
+@using System.Linq
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -8,226 +8,200 @@
 
 @section Styles {
     <style>
-        .log-wrapper {
-            background-color: var(--primary-bg);
-            min-height: calc(100vh - 70px);
-        }
+        .log-wrapper { background-color: var(--primary-bg); min-height: calc(100vh - 70px); }
 
         .log-stat-card {
-            background: #fff;
-            border-radius: 10px;
-            padding: 1.25rem;
-            border: 1px solid var(--border-color);
-            border-top: 4px solid var(--accent-blue);
+            background: #fff; border-radius: 10px; padding: 1.25rem;
+            border: 1px solid var(--border-color); border-top: 4px solid var(--accent-blue);
         }
-
-            .log-stat-card.danger {
-                border-top-color: #ef4444;
-            }
-
-            .log-stat-card.warning {
-                border-top-color: #f59e0b;
-            }
-
-            .log-stat-card.success {
-                border-top-color: #22c55e;
-            }
-
-        .stat-value {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--text-dark);
-            margin-top: 5px;
-        }
+        .log-stat-card.danger  { border-top-color: #ef4444; }
+        .log-stat-card.warning { border-top-color: #f59e0b; }
+        .log-stat-card.success { border-top-color: #22c55e; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); margin-top: 5px; }
 
         .panel-box {
-            background: #fff;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            margin-bottom: 24px;
+            background: #fff; border-radius: 12px;
+            border: 1px solid var(--border-color); padding: 20px; margin-bottom: 24px;
         }
 
         .audit-table th {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            background-color: #f8fafc;
-            border-bottom: 2px solid var(--border-color);
-            padding: 12px 15px;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            color: var(--text-muted); background-color: #f8fafc;
+            border-bottom: 2px solid var(--border-color); padding: 12px 15px;
         }
-
         .audit-table td {
-            font-size: 0.85rem;
-            vertical-align: middle;
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-dark);
+            font-size: 0.85rem; vertical-align: middle;
+            padding: 12px 15px; border-bottom: 1px solid var(--border-color); color: var(--text-dark);
         }
+        .audit-table tr:hover td { background-color: #f1f5f9; }
 
-        .audit-table tr:hover td {
-            background-color: #f1f5f9;
+        .log-badge { font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; font-weight: 600; }
+        .action-create  { background: #dcfce7; color: #166534; }
+        .action-update  { background: #e0f2fe; color: #075985; }
+        .action-delete  { background: #fee2e2; color: #991b1b; }
+        .action-login   { background: #f3e8ff; color: #6b21a8; }
+        .action-logout  { background: #f1f5f9; color: #475569; }
+
+        .timeline { position: relative; padding-left: 20px; list-style: none; }
+        .timeline::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+            width: 2px; background: var(--border-color);
         }
-
-        .log-badge {
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-
-        .action-create {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .action-update {
-            background: #e0f2fe;
-            color: #075985;
-        }
-
-        .action-delete {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .action-login {
-            background: #f3e8ff;
-            color: #6b21a8;
-        }
-
-        .timeline {
-            position: relative;
-            padding-left: 20px;
-            list-style: none;
-        }
-
-            .timeline::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: 2px;
-                background: var(--border-color);
-            }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
+        .timeline-item { position: relative; margin-bottom: 20px; }
         .timeline-indicator {
-            position: absolute;
-            left: -26px;
-            top: 2px;
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #fff;
-            border: 3px solid var(--accent-blue);
+            position: absolute; left: -26px; top: 2px;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #fff; border: 3px solid var(--accent-blue);
         }
+        .timeline-indicator.danger  { border-color: #ef4444; }
+        .timeline-indicator.warning { border-color: #f59e0b; }
 
-            .timeline-indicator.danger {
-                border-color: #ef4444;
-            }
-
-            .timeline-indicator.warning {
-                border-color: #f59e0b;
-            }
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 2.5rem; opacity: 0.3; }
     </style>
 }
 
 <div class="log-wrapper py-4">
     <div class="container-fluid">
-        <!-- Header -->
+
+        <!-- HEADER -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
             <div>
                 <h3 class="fw-bold mb-1 text-dark">Nhật ký Hoạt động (Audit Logs)</h3>
                 <p class="text-muted small mb-0">Giám sát bảo mật, truy xuất dữ liệu hệ thống và hoạt động của người dùng.</p>
             </div>
             <div class="mt-3 mt-md-0 d-flex gap-2">
-                <button class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</button>
-                <button class="btn btn-outline-success btn-sm fw-bold"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+                <button class="btn btn-outline-dark btn-sm fw-bold" disabled title="Tính năng sắp ra mắt">
+                    <i class="bi bi-file-earmark-pdf"></i> Xuất PDF
+                </button>
+                <button class="btn btn-outline-success btn-sm fw-bold" disabled title="Tính năng sắp ra mắt">
+                    <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                </button>
             </div>
         </div>
 
-        <!-- Statistics -->
+        <!-- THỐNG KÊ — data thật từ DB -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="log-stat-card">
                     <div class="text-muted small fw-bold text-uppercase">Log ghi nhận (24h)</div>
-                    <div class="stat-value">@Model.Stats.Logs24h</div>
+                    <div class="stat-value">@Model.Stats.Logs24h.ToString("N0")</div>
+                    <div class="small mt-1 text-success"><i class="bi bi-arrow-up-short"></i> Hệ thống hoạt động</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card success">
                     <div class="text-muted small fw-bold text-uppercase">Logins (Hôm nay)</div>
-                    <div class="stat-value">@Model.Stats.LoginsToday</div>
+                    <div class="stat-value">@Model.Stats.LoginsToday.ToString("N0")</div>
+                    <div class="small mt-1 text-muted"><i class="bi bi-people"></i> Active Users</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card warning">
                     <div class="text-muted small fw-bold text-uppercase">Cảnh báo Suspicious</div>
                     <div class="stat-value text-warning">@Model.Stats.SuspiciousCount</div>
+                    <div class="small mt-1 text-muted">Đăng nhập thất bại (24h)</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card danger">
-                    <div class="text-muted small fw-bold text-uppercase">Lỗi Hệ thống</div>
+                    <div class="text-muted small fw-bold text-uppercase">Hành động thất bại (hôm nay)</div>
                     <div class="stat-value text-danger">@Model.Stats.FailedActionsToday</div>
+                    @if (Model.Stats.FailedActionsToday > 0)
+                    {
+                        <div class="small mt-1 text-danger"><i class="bi bi-exclamation-circle"></i> Cần kiểm tra Logs</div>
+                    }
+                    else
+                    {
+                        <div class="small mt-1 text-success"><i class="bi bi-check-circle"></i> Không có lỗi</div>
+                    }
                 </div>
             </div>
         </div>
 
-        <!-- Filter -->
+        <!-- BỘ LỌC -->
         <form asp-action="ActivityLogs" method="get" class="panel-box shadow-sm mb-4">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm User / IP</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                        <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Nhập email, ID, hoặc IP...">
+                        <input type="text" name="search" value="@Model.Filter.Search"
+                               class="form-control" placeholder="Nhập email, ID, hoặc IP...">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Phân hệ</label>
+                    <label class="form-label small fw-bold text-muted mb-1">Phân hệ (Module)</label>
                     <select name="module" class="form-select form-select-sm">
                         <option value="">Tất cả Module</option>
-                        <option value="Auth" selected="@(Model.Filter.Module == "Auth")">Auth</option>
-                        <option value="UserManagement" selected="@(Model.Filter.Module == "UserManagement")">UserManagement</option>
-                        <option value="Contests" selected="@(Model.Filter.Module == "Contests")">Contests</option>
+                        @{
+                            var modules = new[] { "Auth", "UserManagement", "Contests", "Submissions", "Registrations", "Sponsors", "SystemSettings" };
+                            foreach (var m in modules)
+                            {
+                                if (Model.Filter.Module == m)
+                                {
+                                    <option value="@m" selected>@m</option>
+                                }
+                                else
+                                {
+                                    <option value="@m">@m</option>
+                                }
+                            }
+                        }
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Hành động</label>
+                    <label class="form-label small fw-bold text-muted mb-1">Loại hành động</label>
                     <select name="actionType" class="form-select form-select-sm">
                         <option value="">Tất cả</option>
-                        <option value="LOGIN" selected="@(Model.Filter.ActionType == "LOGIN")">LOGIN</option>
-                        <option value="CREATE" selected="@(Model.Filter.ActionType == "CREATE")">CREATE</option>
-                        <option value="UPDATE" selected="@(Model.Filter.ActionType == "UPDATE")">UPDATE</option>
-                        <option value="DELETE" selected="@(Model.Filter.ActionType == "DELETE")">DELETE</option>
+                        @{
+                            var actions = new[] { "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE" };
+                            foreach (var a in actions)
+                            {
+                                if (Model.Filter.ActionType == a)
+                                {
+                                    <option value="@a" selected>@a</option>
+                                }
+                                else
+                                {
+                                    <option value="@a">@a</option>
+                                }
+                            }
+                        }
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">Thời gian</label>
-                    <input type="date" name="date" value="@(Model.Filter.Date?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm">
+                    <input type="date" name="date"
+                           value="@(Model.Filter.Date?.ToString("yyyy-MM-dd"))"
+                           class="form-control form-control-sm">
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold"><i class="bi bi-funnel"></i> Lọc</button>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm flex-fill fw-bold">
+                        <i class="bi bi-funnel"></i> Lọc
+                    </button>
+                    <a asp-action="ActivityLogs" class="btn btn-outline-secondary btn-sm" title="Xóa bộ lọc">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
                 </div>
             </div>
         </form>
 
+        <!-- NỘI DUNG CHÍNH -->
         <div class="row g-4">
-            <!-- Table -->
+
+            <!-- BẢNG LOG — data thật -->
             <div class="col-lg-8">
                 <div class="panel-box shadow-sm h-100 p-0 overflow-hidden">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
-                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-card-list me-2"></i> Chi tiết Nhật ký</h6>
-                        <span class="badge bg-secondary">@Model.Logs.Count bản ghi</span>
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-card-list me-2"></i> Chi tiết Nhật ký (Audit Trails)
+                        </h6>
+                        <span class="badge bg-secondary">
+                            @Model.TotalRecords bản ghi · Trang @Model.Filter.Page / @(Model.TotalPages == 0 ? 1 : Model.TotalPages)
+                        </span>
                     </div>
+
                     <div class="table-responsive">
                         <table class="table audit-table mb-0">
                             <thead>
@@ -244,34 +218,88 @@
                                 @if (!Model.Logs.Any())
                                 {
                                     <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">Chưa có dữ liệu nhật ký hoạt động.</td>
+                                        <td colspan="6">
+                                            <div class="empty-state">
+                                                <i class="bi bi-journal-x d-block mb-2"></i>
+                                                <strong>Chưa có dữ liệu nhật ký</strong>
+                                                <p class="small mb-0 mt-1">
+                                                    @if (string.IsNullOrEmpty(Model.Filter.Search) &&
+                                                         string.IsNullOrEmpty(Model.Filter.Module) &&
+                                                         string.IsNullOrEmpty(Model.Filter.ActionType) &&
+                                                         !Model.Filter.Date.HasValue)
+                                                    {
+                                                        <span>Hệ thống sẽ tự động ghi lại khi người dùng đăng nhập, tạo/sửa/xóa dữ liệu.</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Không có bản ghi phù hợp với bộ lọc hiện tại.</span>
+                                                    }
+                                                </p>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                                 else
                                 {
                                     foreach (var log in Model.Logs)
                                     {
+                                        var localTime = log.CreatedAt.ToLocalTime();
+                                        var roleClass = log.UserRoleSnapshot switch {
+                                            "Admin"     => "bg-danger bg-opacity-10 text-danger",
+                                            "Organizer" => "bg-dark bg-opacity-10 text-dark",
+                                            "Judge"     => "bg-warning bg-opacity-10 text-warning",
+                                            "Student"   => "bg-primary bg-opacity-10 text-primary",
+                                            "Lecturer"  => "bg-success bg-opacity-10 text-success",
+                                            _           => "bg-secondary bg-opacity-10 text-secondary"
+                                        };
+
                                         <tr>
-                                            <td class="text-muted">@log.CreatedAt.ToLocalTime().ToString("HH:mm:ss")<br><small>@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
-                                            <td>
-                                                <div class="fw-bold text-dark">@log.UserEmailSnapshot</div>
-                                                <span class="badge bg-dark bg-opacity-10 text-dark">@log.UserRoleSnapshot</span>
+                                            <td class="text-muted">
+                                                @localTime.ToString("HH:mm:ss")
+                                                <br><small>@localTime.ToString("dd/MM/yyyy")</small>
                                             </td>
-                                            <td><span class="log-badge action-@log.ActionType.ToLower()">@log.ActionType</span></td>
+                                            <td>
+                                                <div class="fw-bold text-dark text-truncate" style="max-width:160px"
+                                                     title="@log.UserEmailSnapshot">
+                                                    @log.UserEmailSnapshot
+                                                </div>
+                                                <span class="badge @roleClass" style="font-size:0.65rem;">
+                                                    @log.UserRoleSnapshot
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="log-badge action-@log.ActionType.ToLower()">
+                                                    @log.ActionType
+                                                </span>
+                                            </td>
                                             <td class="fw-bold text-muted">@log.Module</td>
                                             <td>
-                                                <div class="small font-monospace">@log.IpAddress</div>
+                                                <div class="small font-monospace @(log.IsSuccess ? "" : "text-danger")">
+                                                    @log.IpAddress
+                                                </div>
                                                 @if (log.IsSuccess)
                                                 {
-                                                    <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
+                                                    <span class="text-success small fw-bold">
+                                                        <i class="bi bi-check-circle"></i> Success
+                                                    </span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-danger small fw-bold"><i class="bi bi-x-circle"></i> @log.StatusDetail</span>
+                                                    <span class="text-danger small fw-bold">
+                                                        <i class="bi bi-x-circle"></i> @log.StatusDetail
+                                                    </span>
                                                 }
                                             </td>
                                             <td class="text-end">
-                                                <button class="btn btn-sm btn-light text-primary" title="@log.Description"><i class="bi bi-info-circle"></i></button>
+                                                @if (!string.IsNullOrEmpty(log.Description))
+                                                {
+                                                    <button class="btn btn-sm btn-light text-primary"
+                                                            data-bs-toggle="tooltip"
+                                                            data-bs-placement="left"
+                                                            title="@log.Description">
+                                                        <i class="bi bi-info-circle"></i>
+                                                    </button>
+                                                }
                                             </td>
                                         </tr>
                                     }
@@ -279,32 +307,109 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
 
-            <!-- Alerts -->
+                    <!-- PHÂN TRANG -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        var dateStr = Model.Filter.Date?.ToString("yyyy-MM-dd") ?? "";
+                        <div class="p-3 bg-white border-top d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Hiển thị @Model.Logs.Count / @Model.TotalRecords bản ghi
+                            </small>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item @(Model.Filter.Page <= 1 ? "disabled" : "")">
+                                    <a class="page-link"
+                                       asp-action="ActivityLogs"
+                                       asp-route-page="@(Model.Filter.Page - 1)"
+                                       asp-route-search="@Model.Filter.Search"
+                                       asp-route-module="@Model.Filter.Module"
+                                       asp-route-actionType="@Model.Filter.ActionType"
+                                       asp-route-date="@dateStr">Trước</a>
+                                </li>
+                                @for (int p = Math.Max(1, Model.Filter.Page - 2); p <= Math.Min(Model.TotalPages, Model.Filter.Page + 2); p++)
+                                {
+                                    <li class="page-item @(p == Model.Filter.Page ? "active" : "")">
+                                        <a class="page-link"
+                                           asp-action="ActivityLogs"
+                                           asp-route-page="@p"
+                                           asp-route-search="@Model.Filter.Search"
+                                           asp-route-module="@Model.Filter.Module"
+                                           asp-route-actionType="@Model.Filter.ActionType"
+                                           asp-route-date="@dateStr">@p</a>
+                                    </li>
+                                }
+                                <li class="page-item @(Model.Filter.Page >= Model.TotalPages ? "disabled" : "")">
+                                    <a class="page-link"
+                                       asp-action="ActivityLogs"
+                                       asp-route-page="@(Model.Filter.Page + 1)"
+                                       asp-route-search="@Model.Filter.Search"
+                                       asp-route-module="@Model.Filter.Module"
+                                       asp-route-actionType="@Model.Filter.ActionType"
+                                       asp-route-date="@dateStr">Sau</a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+
+            <!-- CẢNH BÁO BẢO MẬT — data thật -->
             <div class="col-lg-4">
                 <div class="panel-box shadow-sm h-100">
                     <h6 class="fw-bold mb-4" style="color: var(--navy-blue);">
-                        <i class="bi bi-shield-lock text-danger me-2"></i> Cảnh báo Bảo mật
+                        <i class="bi bi-shield-lock text-danger me-2"></i> Cảnh báo Bảo mật (Real-time)
                     </h6>
-                    <ul class="timeline">
-                        @foreach (var alert in Model.Alerts)
-                        {
-                            <li class="timeline-item">
-                                <div class="timeline-indicator @(alert.Severity == "danger" ? "danger" : alert.Severity == "warning" ? "warning" : "")"></div>
-                                <div class="fw-bold text-dark">@alert.Title</div>
-                                <p class="small text-muted mb-1">@alert.Description</p>
-                                <small class="text-muted">@alert.OccurredAt.ToLocalTime().ToString("dd/MM HH:mm")</small>
-                            </li>
-                        }
-                        @if (!Model.Alerts.Any())
-                        {
-                            <li class="text-muted">Hiện không có cảnh báo bảo mật.</li>
-                        }
-                    </ul>
+
+                    @if (!Model.Alerts.Any())
+                    {
+                        <div class="empty-state py-4">
+                            <i class="bi bi-shield-check d-block mb-2 text-success"
+                               style="font-size:2rem; opacity:1"></i>
+                            <span class="small text-muted">
+                                Không phát hiện cảnh báo bảo mật trong 24h qua.
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="timeline">
+                            @foreach (var alert in Model.Alerts)
+                            {
+                                var diff = DateTime.UtcNow - alert.OccurredAt;
+                                var timeAgo = diff.TotalMinutes < 60
+                                    ? $"{(int)diff.TotalMinutes} phút trước"
+                                    : diff.TotalHours < 24
+                                        ? $"{(int)diff.TotalHours} giờ trước"
+                                        : alert.OccurredAt.ToLocalTime().ToString("dd/MM HH:mm");
+
+                                var timeClass = alert.Severity == "danger" ? "text-danger" : "text-muted";
+                                var indicatorClass = alert.Severity == "danger" ? "danger"
+                                                   : alert.Severity == "warning" ? "warning" : "";
+
+                                <li class="timeline-item">
+                                    <div class="timeline-indicator @indicatorClass"></div>
+                                    <div class="fw-bold text-dark" style="font-size:0.9rem;">@alert.Title</div>
+                                    <p class="small text-muted mb-1">@alert.Description</p>
+                                    <small class="@timeClass fw-bold">@timeAgo</small>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <hr class="my-3">
+                    <a asp-action="ActivityLogs" asp-route-actionType="LOGIN"
+                       class="btn btn-light border w-100 btn-sm fw-bold">
+                        <i class="bi bi-list-ul me-1"></i> Xem toàn bộ Login Logs
+                    </a>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            new bootstrap.Tooltip(el);
+        });
+    </script>
+}

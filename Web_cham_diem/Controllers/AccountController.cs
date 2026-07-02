@@ -69,7 +69,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         string ip = GetClientIp();
-        var emailTrim = request.Email?.ToLower().Trim() ?? "";
+        var emailTrim = (request.Email ?? "").ToLower().Trim();
 
         if (string.IsNullOrEmpty(emailTrim) || string.IsNullOrEmpty(request.Password))
         {
@@ -86,45 +86,41 @@ public class AccountController : Controller
 
             if (user == null)
             {
-                await _auditLogService.LogAsync(null, emailTrim, "-", "LOGIN", "Auth", null,
-                    "Email không tồn tại", ip, false);
-                return Json(new { success = false, message = "Tài khoản Email không tồn tại." });
+                await _auditLogService.LogAsync(null, emailTrim, "-", "LOGIN", "Auth", null, "Email không tồn tại", ip, false);
+                return Json(new { success = false, message = "Tài khoản không tồn tại." });
             }
 
             if (!user.IsActive)
             {
-                await _auditLogService.LogAsync(user.UserId, user.Email, "Locked", "LOGIN", "Auth", null,
-                    "Tài khoản bị khóa", ip, false);
+                await _auditLogService.LogAsync(user.UserId, user.Email, "Locked", "LOGIN", "Auth", null, "Tài khoản bị khóa", ip, false);
                 return Json(new { success = false, message = "Tài khoản bị khóa." });
             }
 
-            bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            bool isValidPassword = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
 
-            if (!isValid)
+            if (!isValidPassword)
             {
-                await _auditLogService.LogAsync(user.UserId, user.Email, "-", "LOGIN", "Auth", null,
-                    "Sai mật khẩu", ip, false);
+                await _auditLogService.LogAsync(user.UserId, user.Email, "-", "LOGIN", "Auth", null, "Sai mật khẩu", ip, false);
                 return Json(new { success = false, message = "Mật khẩu không chính xác." });
             }
 
             var roleName = user.UserRoles?.FirstOrDefault()?.Role?.RoleName ?? "Student";
 
-            // Sign in
+            // Đăng nhập
             var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new(ClaimTypes.Name, user.FullName ?? ""),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, roleName)
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName ?? ""),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, roleName)
         };
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
                 new AuthenticationProperties { IsPersistent = true });
 
-            // Log thành công
-            await _auditLogService.LogAsync(user.UserId, user.Email, roleName, "LOGIN", "Auth", null,
-                "Đăng nhập thành công", ip, true);
+            // GHI LOG LOGIN - quan trọng
+            await _auditLogService.LogAsync(user.UserId, user.Email, roleName, "LOGIN", "Auth", null, "Đăng nhập thành công", ip, true);
 
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
@@ -149,8 +145,7 @@ public class AccountController : Controller
             string email = User.FindFirst(ClaimTypes.Email)?.Value ?? "unknown";
             string role = User.FindFirst(ClaimTypes.Role)?.Value ?? "-";
 
-            await _auditLogService.LogAsync(userId, email, role, "LOGOUT", "Auth", null,
-                "Đăng xuất thành công", GetClientIp(), true);
+            await _auditLogService.LogAsync(userId, email, role, "LOGOUT", "Auth", null, "Đăng xuất thành công", GetClientIp(), true);
         }
         catch { }
 
@@ -813,6 +808,21 @@ public class AccountController : Controller
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ActivityLogs(string? search, string? module, string? actionType, DateTime? date, int page = 1)
     {
+        // Test log khi vào trang
+        try
+        {
+            int userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            string email = User.FindFirst(ClaimTypes.Email)?.Value ?? "admin@test.com";
+            string role = User.FindFirst(ClaimTypes.Role)?.Value ?? "Admin";
+
+            await _auditLogService.LogAsync(userId, email, role, "VIEW", "ActivityLogs", null,
+                "Truy cập trang Nhật ký", GetClientIp(), true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("TEST ERROR: " + ex.Message);
+        }
+
         var filter = new AuditLogFilter
         {
             Search = search,
