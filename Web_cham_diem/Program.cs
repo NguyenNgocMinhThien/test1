@@ -12,6 +12,8 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddHttpContextAccessor();  // Quan trọng để lấy IP
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

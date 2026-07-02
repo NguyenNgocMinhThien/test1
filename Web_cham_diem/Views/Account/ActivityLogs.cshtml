@@ -1,4 +1,7 @@
-﻿@{
+﻿@model Web_cham_diem.Models.ViewModels.ActivityLogsViewModel
+@using System.Linq  @* ← Thêm dòng này để dùng .Any() *@
+
+@{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Nhật ký Hoạt động Hệ thống";
 }
@@ -10,7 +13,6 @@
             min-height: calc(100vh - 70px);
         }
 
-        /* --- STAT CARDS --- */
         .log-stat-card {
             background: #fff;
             border-radius: 10px;
@@ -38,7 +40,6 @@
             margin-top: 5px;
         }
 
-        /* --- PANELS --- */
         .panel-box {
             background: #fff;
             border-radius: 12px;
@@ -47,7 +48,6 @@
             margin-bottom: 24px;
         }
 
-        /* --- AUDIT TABLE --- */
         .audit-table th {
             font-size: 0.75rem;
             font-weight: 600;
@@ -70,7 +70,6 @@
             background-color: #f1f5f9;
         }
 
-        /* --- BADGES & STATUS --- */
         .log-badge {
             font-size: 0.7rem;
             padding: 4px 8px;
@@ -98,7 +97,6 @@
             color: #6b21a8;
         }
 
-        /* --- TIMELINE --- */
         .timeline {
             position: relative;
             padding-left: 20px;
@@ -143,7 +141,6 @@
 
 <div class="log-wrapper py-4">
     <div class="container-fluid">
-
         <!-- Header -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
             <div>
@@ -156,86 +153,80 @@
             </div>
         </div>
 
-        <!-- 1. Statistics -->
+        <!-- Statistics -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="log-stat-card">
                     <div class="text-muted small fw-bold text-uppercase">Log ghi nhận (24h)</div>
-                    <div class="stat-value">5,420</div>
-                    <div class="small mt-1 text-success"><i class="bi bi-arrow-up-short"></i> Hệ thống ổn định</div>
+                    <div class="stat-value">@Model.Stats.Logs24h</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card success">
                     <div class="text-muted small fw-bold text-uppercase">Logins (Hôm nay)</div>
-                    <div class="stat-value">1,208</div>
-                    <div class="small mt-1 text-muted"><i class="bi bi-people"></i> Active Users</div>
+                    <div class="stat-value">@Model.Stats.LoginsToday</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card warning">
                     <div class="text-muted small fw-bold text-uppercase">Cảnh báo Suspicious</div>
-                    <div class="stat-value text-warning">14</div>
-                    <div class="small mt-1 text-muted">Truy cập khác IP thường dùng</div>
+                    <div class="stat-value text-warning">@Model.Stats.SuspiciousCount</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card danger">
-                    <div class="text-muted small fw-bold text-uppercase">Lỗi Hệ thống (Error 500)</div>
-                    <div class="stat-value text-danger">3</div>
-                    <div class="small mt-1 text-danger fw-bold"><i class="bi bi-exclamation-circle"></i> Cần kiểm tra Logs</div>
+                    <div class="text-muted small fw-bold text-uppercase">Lỗi Hệ thống</div>
+                    <div class="stat-value text-danger">@Model.Stats.FailedActionsToday</div>
                 </div>
             </div>
         </div>
 
-        <!-- 2. Search & Filter -->
-        <div class="panel-box shadow-sm mb-4">
+        <!-- Filter -->
+        <form asp-action="ActivityLogs" method="get" class="panel-box shadow-sm mb-4">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm User / IP</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Nhập email, ID, hoặc IP...">
+                        <input type="text" name="search" value="@Model.Filter.Search" class="form-control" placeholder="Nhập email, ID, hoặc IP...">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Phân hệ (Module)</label>
-                    <select class="form-select form-select-sm">
+                    <label class="form-label small fw-bold text-muted mb-1">Phân hệ</label>
+                    <select name="module" class="form-select form-select-sm">
                         <option value="">Tất cả Module</option>
-                        <option value="Auth">Đăng nhập / Auth</option>
-                        <option value="Contest">Cuộc thi</option>
-                        <option value="Submission">Bài dự thi</option>
-                        <option value="Settings">Cài đặt Hệ thống</option>
+                        <option value="Auth" selected="@(Model.Filter.Module == "Auth")">Auth</option>
+                        <option value="UserManagement" selected="@(Model.Filter.Module == "UserManagement")">UserManagement</option>
+                        <option value="Contests" selected="@(Model.Filter.Module == "Contests")">Contests</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small fw-bold text-muted mb-1">Loại hành động</label>
-                    <select class="form-select form-select-sm">
+                    <label class="form-label small fw-bold text-muted mb-1">Hành động</label>
+                    <select name="actionType" class="form-select form-select-sm">
                         <option value="">Tất cả</option>
-                        <option value="CREATE">Thêm mới (Create)</option>
-                        <option value="UPDATE">Cập nhật (Update)</option>
-                        <option value="DELETE">Xóa (Delete)</option>
-                        <option value="LOGIN">Đăng nhập</option>
+                        <option value="LOGIN" selected="@(Model.Filter.ActionType == "LOGIN")">LOGIN</option>
+                        <option value="CREATE" selected="@(Model.Filter.ActionType == "CREATE")">CREATE</option>
+                        <option value="UPDATE" selected="@(Model.Filter.ActionType == "UPDATE")">UPDATE</option>
+                        <option value="DELETE" selected="@(Model.Filter.ActionType == "DELETE")">DELETE</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">Thời gian</label>
-                    <input type="date" class="form-control form-control-sm">
+                    <input type="date" name="date" value="@(Model.Filter.Date?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-primary btn-sm w-100 fw-bold"><i class="bi bi-funnel"></i> Lọc Dữ liệu</button>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold"><i class="bi bi-funnel"></i> Lọc</button>
                 </div>
             </div>
-        </div>
+        </form>
 
-        <!-- Main Content -->
         <div class="row g-4">
-            <!-- Table Panel -->
+            <!-- Table -->
             <div class="col-lg-8">
                 <div class="panel-box shadow-sm h-100 p-0 overflow-hidden">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
-                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-card-list me-2"></i> Chi tiết Nhật ký (Audit Trails)</h6>
-                        <span class="badge bg-secondary">Hiển thị 50 bản ghi mới nhất</span>
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-card-list me-2"></i> Chi tiết Nhật ký</h6>
+                        <span class="badge bg-secondary">@Model.Logs.Count bản ghi</span>
                     </div>
                     <div class="table-responsive">
                         <table class="table audit-table mb-0">
@@ -250,115 +241,68 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td class="text-muted">10:45:22<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">khoait_admin@uni.edu</div>
-                                        <span class="badge bg-dark bg-opacity-10 text-dark" style="font-size: 0.65rem;">Ban Tổ Chức</span>
-                                    </td>
-                                    <td><span class="log-badge action-create">CREATE</span></td>
-                                    <td class="fw-bold text-muted">Contests</td>
-                                    <td>
-                                        <div class="small font-monospace">192.168.1.15</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">09:12:05<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">system_root</div>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">Super Admin</span>
-                                    </td>
-                                    <td><span class="log-badge action-update">UPDATE</span></td>
-                                    <td class="fw-bold text-muted">SystemSettings</td>
-                                    <td>
-                                        <div class="small font-monospace">10.0.0.5</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">08:30:11<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">sv_123456@student.edu</div>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">Sinh Viên</span>
-                                    </td>
-                                    <td><span class="log-badge action-login">LOGIN</span></td>
-                                    <td class="fw-bold text-muted">Auth</td>
-                                    <td>
-                                        <div class="small font-monospace text-danger">115.75.12.33</div>
-                                        <span class="text-danger small fw-bold"><i class="bi bi-x-circle"></i> Failed (Wrong Pass)</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">08:15:00<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">gv_nguyenvanb@uni.edu</div>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning" style="font-size: 0.65rem;">Giám Khảo</span>
-                                    </td>
-                                    <td><span class="log-badge action-delete">DELETE</span></td>
-                                    <td class="fw-bold text-muted">Submissions_Draft</td>
-                                    <td>
-                                        <div class="small font-monospace">192.168.1.188</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
+                                @if (!Model.Logs.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-5 text-muted">Chưa có dữ liệu nhật ký hoạt động.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var log in Model.Logs)
+                                    {
+                                        <tr>
+                                            <td class="text-muted">@log.CreatedAt.ToLocalTime().ToString("HH:mm:ss")<br><small>@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</small></td>
+                                            <td>
+                                                <div class="fw-bold text-dark">@log.UserEmailSnapshot</div>
+                                                <span class="badge bg-dark bg-opacity-10 text-dark">@log.UserRoleSnapshot</span>
+                                            </td>
+                                            <td><span class="log-badge action-@log.ActionType.ToLower()">@log.ActionType</span></td>
+                                            <td class="fw-bold text-muted">@log.Module</td>
+                                            <td>
+                                                <div class="small font-monospace">@log.IpAddress</div>
+                                                @if (log.IsSuccess)
+                                                {
+                                                    <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger small fw-bold"><i class="bi bi-x-circle"></i> @log.StatusDetail</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-light text-primary" title="@log.Description"><i class="bi bi-info-circle"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
                             </tbody>
                         </table>
-                    </div>
-                    <!-- Pagination -->
-                    <div class="p-3 bg-white d-flex justify-content-end">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">Trước</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">Sau</a></li>
-                        </ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Security & Alert Timeline Panel -->
+            <!-- Alerts -->
             <div class="col-lg-4">
                 <div class="panel-box shadow-sm h-100">
                     <h6 class="fw-bold mb-4" style="color: var(--navy-blue);">
-                        <i class="bi bi-shield-lock text-danger me-2"></i> Cảnh báo Bảo mật (Real-time)
+                        <i class="bi bi-shield-lock text-danger me-2"></i> Cảnh báo Bảo mật
                     </h6>
-
                     <ul class="timeline">
-                        <li class="timeline-item">
-                            <div class="timeline-indicator danger"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Brute Force Alert</div>
-                            <p class="small text-muted mb-1">Cảnh báo 10 lần đăng nhập thất bại từ IP <code>115.75.12.33</code> vào tài khoản Admin.</p>
-                            <small class="text-danger fw-bold">15 phút trước</small>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-indicator warning"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Xóa dữ liệu nhạy cảm</div>
-                            <p class="small text-muted mb-1">Người dùng <code>khoait_admin</code> vừa thực hiện lệnh XÓA (Delete) Cuộc thi ID #105.</p>
-                            <small class="text-muted">1 giờ trước</small>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-indicator"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Admin Config Update</div>
-                            <p class="small text-muted mb-1">Cấu hình Hệ thống (SystemSettings) đã được sửa đổi bởi Root Admin.</p>
-                            <small class="text-muted">3 giờ trước</small>
-                        </li>
+                        @foreach (var alert in Model.Alerts)
+                        {
+                            <li class="timeline-item">
+                                <div class="timeline-indicator @(alert.Severity == "danger" ? "danger" : alert.Severity == "warning" ? "warning" : "")"></div>
+                                <div class="fw-bold text-dark">@alert.Title</div>
+                                <p class="small text-muted mb-1">@alert.Description</p>
+                                <small class="text-muted">@alert.OccurredAt.ToLocalTime().ToString("dd/MM HH:mm")</small>
+                            </li>
+                        }
+                        @if (!Model.Alerts.Any())
+                        {
+                            <li class="text-muted">Hiện không có cảnh báo bảo mật.</li>
+                        }
                     </ul>
-
-                    <hr class="my-4">
-                    <button class="btn btn-light border w-100 btn-sm fw-bold">Xem toàn bộ Security Logs Mức cao</button>
                 </div>
             </div>
         </div>

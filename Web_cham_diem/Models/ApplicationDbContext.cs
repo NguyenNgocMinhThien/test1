@@ -30,6 +30,7 @@ namespace Web_cham_diem.Models
         public DbSet<TeamTasks> TeamTasks { get; set; }
         public DbSet<TaskCompletions> TaskCompletions { get; set; }
         public DbSet<RegistrationEditHistory> RegistrationEditHistories { get; set; }
+        public DbSet<AuditLogs> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -503,6 +504,45 @@ namespace Web_cham_diem.Models
                 .WithMany()
                 .HasForeignKey(h => h.EditedBy)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure AuditLogs
+            modelBuilder.Entity<AuditLogs>()
+                .HasKey(a => a.LogId);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.UserEmailSnapshot)
+                .IsRequired()
+                .HasMaxLength(150);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.UserRoleSnapshot)
+                .HasMaxLength(50);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.ActionType)
+                .IsRequired()
+                .HasMaxLength(20);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.Module)
+                .IsRequired()
+                .HasMaxLength(50);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.IpAddress)
+                .HasMaxLength(45);
+            modelBuilder.Entity<AuditLogs>()
+                .Property(a => a.StatusDetail)
+                .HasMaxLength(100);
+            modelBuilder.Entity<AuditLogs>()
+                .HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            // Index phục vụ truy vấn lọc theo thời gian, module, loại hành động
+            modelBuilder.Entity<AuditLogs>()
+                .HasIndex(a => a.CreatedAt);
+            modelBuilder.Entity<AuditLogs>()
+                .HasIndex(a => a.Module);
+            modelBuilder.Entity<AuditLogs>()
+                .HasIndex(a => a.ActionType);
+            modelBuilder.Entity<AuditLogs>()
+                .HasIndex(a => a.IpAddress);
 
             // Seed initial roles
             modelBuilder.Entity<Roles>().HasData(
