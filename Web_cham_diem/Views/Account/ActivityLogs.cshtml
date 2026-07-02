@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Nhật ký Hoạt động Hệ thống";
 }
@@ -148,11 +148,10 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
             <div>
                 <h3 class="fw-bold mb-1 text-dark">Nhật ký Hoạt động (Audit Logs)</h3>
-                <p class="text-muted small mb-0">Giám sát bảo mật, truy xuất dữ liệu hệ thống và hoạt động của người dùng.</p>
+                <p class="text-muted small mb-0">Tổng hợp hoạt động thực tế của các tài khoản trên hệ thống (tài khoản, phân quyền, cuộc thi, đăng ký, bài dự thi, nhiệm vụ nhóm, thông báo).</p>
             </div>
             <div class="mt-3 mt-md-0 d-flex gap-2">
-                <button class="btn btn-outline-dark btn-sm fw-bold"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</button>
-                <button class="btn btn-outline-success btn-sm fw-bold"><i class="bi bi-file-earmark-excel"></i> Xuất Excel</button>
+                <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportLogsToCsv()"><i class="bi bi-file-earmark-spreadsheet"></i> Xuất CSV</button>
             </div>
         </div>
 
@@ -160,30 +159,30 @@
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="log-stat-card">
-                    <div class="text-muted small fw-bold text-uppercase">Log ghi nhận (24h)</div>
-                    <div class="stat-value">5,420</div>
-                    <div class="small mt-1 text-success"><i class="bi bi-arrow-up-short"></i> Hệ thống ổn định</div>
+                    <div class="text-muted small fw-bold text-uppercase">Hoạt động (24h)</div>
+                    <div class="stat-value" id="statLast24h">--</div>
+                    <div class="small mt-1 text-muted"><i class="bi bi-activity"></i> Tổng hợp toàn hệ thống</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card success">
-                    <div class="text-muted small fw-bold text-uppercase">Logins (Hôm nay)</div>
-                    <div class="stat-value">1,208</div>
-                    <div class="small mt-1 text-muted"><i class="bi bi-people"></i> Active Users</div>
+                    <div class="text-muted small fw-bold text-uppercase">Đăng nhập hôm nay</div>
+                    <div class="stat-value" id="statLoginsToday">--</div>
+                    <div class="small mt-1 text-muted"><i class="bi bi-people"></i> Theo LastLogin</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card warning">
-                    <div class="text-muted small fw-bold text-uppercase">Cảnh báo Suspicious</div>
-                    <div class="stat-value text-warning">14</div>
-                    <div class="small mt-1 text-muted">Truy cập khác IP thường dùng</div>
+                    <div class="text-muted small fw-bold text-uppercase">Đăng ký chờ duyệt</div>
+                    <div class="stat-value text-warning" id="statPendingRegistrations">--</div>
+                    <div class="small mt-1 text-muted">Cần Ban tổ chức xử lý</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="log-stat-card danger">
-                    <div class="text-muted small fw-bold text-uppercase">Lỗi Hệ thống (Error 500)</div>
-                    <div class="stat-value text-danger">3</div>
-                    <div class="small mt-1 text-danger fw-bold"><i class="bi bi-exclamation-circle"></i> Cần kiểm tra Logs</div>
+                    <div class="text-muted small fw-bold text-uppercase">Tài khoản bị khóa</div>
+                    <div class="stat-value text-danger" id="statLockedAccounts">--</div>
+                    <div class="small mt-1 text-muted"><i class="bi bi-lock"></i> IsActive = false</div>
                 </div>
             </div>
         </div>
@@ -192,38 +191,42 @@
         <div class="panel-box shadow-sm mb-4">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm User / IP</label>
+                    <label class="form-label small fw-bold text-muted mb-1">Tìm kiếm User</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" placeholder="Nhập email, ID, hoặc IP...">
+                        <input type="text" id="filterSearch" class="form-control" placeholder="Nhập tên hoặc email...">
                     </div>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted mb-1">Phân hệ (Module)</label>
-                    <select class="form-select form-select-sm">
+                    <select id="filterModule" class="form-select form-select-sm">
                         <option value="">Tất cả Module</option>
-                        <option value="Auth">Đăng nhập / Auth</option>
-                        <option value="Contest">Cuộc thi</option>
-                        <option value="Submission">Bài dự thi</option>
-                        <option value="Settings">Cài đặt Hệ thống</option>
+                        <option value="Tài khoản">Tài khoản</option>
+                        <option value="Phân quyền">Phân quyền</option>
+                        <option value="Đăng nhập">Đăng nhập</option>
+                        <option value="Cuộc thi">Cuộc thi</option>
+                        <option value="Đăng ký">Đăng ký</option>
+                        <option value="Bài dự thi">Bài dự thi</option>
+                        <option value="Nhiệm vụ nhóm">Nhiệm vụ nhóm</option>
+                        <option value="Thông báo">Thông báo</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted mb-1">Loại hành động</label>
-                    <select class="form-select form-select-sm">
+                    <select id="filterAction" class="form-select form-select-sm">
                         <option value="">Tất cả</option>
                         <option value="CREATE">Thêm mới (Create)</option>
                         <option value="UPDATE">Cập nhật (Update)</option>
-                        <option value="DELETE">Xóa (Delete)</option>
+                        <option value="DELETE">Xóa / Từ chối</option>
                         <option value="LOGIN">Đăng nhập</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label small fw-bold text-muted mb-1">Thời gian</label>
-                    <input type="date" class="form-control form-control-sm">
+                    <input type="date" id="filterDate" class="form-control form-control-sm">
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-primary btn-sm w-100 fw-bold"><i class="bi bi-funnel"></i> Lọc Dữ liệu</button>
+                    <button class="btn btn-primary btn-sm w-100 fw-bold" onclick="reloadLogs(1)"><i class="bi bi-funnel"></i> Lọc Dữ liệu</button>
                 </div>
             </div>
         </div>
@@ -235,7 +238,7 @@
                 <div class="panel-box shadow-sm h-100 p-0 overflow-hidden">
                     <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
                         <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-card-list me-2"></i> Chi tiết Nhật ký (Audit Trails)</h6>
-                        <span class="badge bg-secondary">Hiển thị 50 bản ghi mới nhất</span>
+                        <span class="badge bg-secondary" id="totalRecordsBadge">Đang tải...</span>
                     </div>
                     <div class="table-responsive">
                         <table class="table audit-table mb-0">
@@ -245,122 +248,200 @@
                                     <th>Người dùng / Role</th>
                                     <th>Hành động</th>
                                     <th>Module</th>
-                                    <th>IP / Trạng thái</th>
-                                    <th></th>
+                                    <th>Nội dung</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="logsTableBody">
                                 <tr>
-                                    <td class="text-muted">10:45:22<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">khoait_admin@uni.edu</div>
-                                        <span class="badge bg-dark bg-opacity-10 text-dark" style="font-size: 0.65rem;">Ban Tổ Chức</span>
-                                    </td>
-                                    <td><span class="log-badge action-create">CREATE</span></td>
-                                    <td class="fw-bold text-muted">Contests</td>
-                                    <td>
-                                        <div class="small font-monospace">192.168.1.15</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">09:12:05<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">system_root</div>
-                                        <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.65rem;">Super Admin</span>
-                                    </td>
-                                    <td><span class="log-badge action-update">UPDATE</span></td>
-                                    <td class="fw-bold text-muted">SystemSettings</td>
-                                    <td>
-                                        <div class="small font-monospace">10.0.0.5</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">08:30:11<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">sv_123456@student.edu</div>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size: 0.65rem;">Sinh Viên</span>
-                                    </td>
-                                    <td><span class="log-badge action-login">LOGIN</span></td>
-                                    <td class="fw-bold text-muted">Auth</td>
-                                    <td>
-                                        <div class="small font-monospace text-danger">115.75.12.33</div>
-                                        <span class="text-danger small fw-bold"><i class="bi bi-x-circle"></i> Failed (Wrong Pass)</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="text-muted">08:15:00<br><small>Hôm nay</small></td>
-                                    <td>
-                                        <div class="fw-bold text-dark">gv_nguyenvanb@uni.edu</div>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning" style="font-size: 0.65rem;">Giám Khảo</span>
-                                    </td>
-                                    <td><span class="log-badge action-delete">DELETE</span></td>
-                                    <td class="fw-bold text-muted">Submissions_Draft</td>
-                                    <td>
-                                        <div class="small font-monospace">192.168.1.188</div>
-                                        <span class="text-success small fw-bold"><i class="bi bi-check-circle"></i> Success</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <button class="btn btn-sm btn-light text-primary"><i class="bi bi-info-circle"></i></button>
-                                    </td>
+                                    <td colspan="5" class="text-center text-muted py-4">Đang tải nhật ký hoạt động...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <!-- Pagination -->
                     <div class="p-3 bg-white d-flex justify-content-end">
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#">Trước</a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">Sau</a></li>
-                        </ul>
+                        <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
                     </div>
                 </div>
             </div>
 
-            <!-- Security & Alert Timeline Panel -->
+            <!-- Important Activity Panel -->
             <div class="col-lg-4">
                 <div class="panel-box shadow-sm h-100">
                     <h6 class="fw-bold mb-4" style="color: var(--navy-blue);">
-                        <i class="bi bi-shield-lock text-danger me-2"></i> Cảnh báo Bảo mật (Real-time)
+                        <i class="bi bi-shield-lock text-danger me-2"></i> Hoạt động quan trọng gần đây
                     </h6>
 
-                    <ul class="timeline">
-                        <li class="timeline-item">
-                            <div class="timeline-indicator danger"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Brute Force Alert</div>
-                            <p class="small text-muted mb-1">Cảnh báo 10 lần đăng nhập thất bại từ IP <code>115.75.12.33</code> vào tài khoản Admin.</p>
-                            <small class="text-danger fw-bold">15 phút trước</small>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-indicator warning"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Xóa dữ liệu nhạy cảm</div>
-                            <p class="small text-muted mb-1">Người dùng <code>khoait_admin</code> vừa thực hiện lệnh XÓA (Delete) Cuộc thi ID #105.</p>
-                            <small class="text-muted">1 giờ trước</small>
-                        </li>
-                        <li class="timeline-item">
-                            <div class="timeline-indicator"></div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">Admin Config Update</div>
-                            <p class="small text-muted mb-1">Cấu hình Hệ thống (SystemSettings) đã được sửa đổi bởi Root Admin.</p>
-                            <small class="text-muted">3 giờ trước</small>
-                        </li>
+                    <ul class="timeline" id="importantTimeline">
+                        <li class="text-muted small">Đang tải...</li>
                     </ul>
-
-                    <hr class="my-4">
-                    <button class="btn btn-light border w-100 btn-sm fw-bold">Xem toàn bộ Security Logs Mức cao</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        let lastLoadedItems = [];
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("filterSearch").addEventListener("input", debounce(function () { reloadLogs(1); }, 400));
+            document.getElementById("filterModule").addEventListener("change", function () { reloadLogs(1); });
+            document.getElementById("filterAction").addEventListener("change", function () { reloadLogs(1); });
+            document.getElementById("filterDate").addEventListener("change", function () { reloadLogs(1); });
+
+            reloadLogs(1);
+        });
+
+        function debounce(fn, delay) {
+            let timer = null;
+            return function (...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function reloadLogs(page) {
+            currentPage = page;
+            const search = document.getElementById("filterSearch").value;
+            const module = document.getElementById("filterModule").value;
+            const action = document.getElementById("filterAction").value;
+            const date = document.getElementById("filterDate").value;
+
+            const url = `/Account/GetActivityLogs?search=${encodeURIComponent(search)}&module=${encodeURIComponent(module)}&action=${encodeURIComponent(action)}&date=${encodeURIComponent(date)}&page=${page}&pageSize=15`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error("Lỗi API nhật ký hoạt động:", data.message);
+                        document.getElementById("logsTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">${data.message}</td></tr>`;
+                        return;
+                    }
+
+                    document.getElementById("statLast24h").innerText = data.stats.last24h;
+                    document.getElementById("statLoginsToday").innerText = data.stats.loginsToday;
+                    document.getElementById("statPendingRegistrations").innerText = data.stats.pendingRegistrations;
+                    document.getElementById("statLockedAccounts").innerText = data.stats.lockedAccounts;
+
+                    lastLoadedItems = data.items;
+                    renderTable(data.items);
+                    renderPagination(data.page, data.totalPages);
+                    renderImportantTimeline(data.important);
+
+                    document.getElementById("totalRecordsBadge").innerText = `${data.totalRecords} bản ghi`;
+                })
+                .catch(error => {
+                    console.error("Lỗi kết nối API nhật ký hoạt động:", error);
+                    document.getElementById("logsTableBody").innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">Không thể kết nối tới máy chủ.</td></tr>`;
+                });
+        }
+
+        function actionBadge(actionType) {
+            const map = {
+                CREATE: ["action-create", "CREATE"],
+                UPDATE: ["action-update", "UPDATE"],
+                DELETE: ["action-delete", "DELETE"],
+                LOGIN: ["action-login", "LOGIN"]
+            };
+            const [cls, label] = map[actionType] || ["action-update", actionType];
+            return `<span class="log-badge ${cls}">${label}</span>`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function renderTable(items) {
+            const tbody = document.getElementById("logsTableBody");
+            tbody.innerHTML = "";
+
+            if (!items || items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">Không tìm thấy hoạt động nào khớp bộ lọc.</td></tr>`;
+                return;
+            }
+
+            items.forEach(item => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="text-muted">${item.time}<br><small>${item.dateText}</small></td>
+                        <td>
+                            <div class="fw-bold text-dark">${escapeHtml(item.userName)}</div>
+                            <div class="small text-muted">${escapeHtml(item.userEmail)}</div>
+                            <span class="badge bg-dark bg-opacity-10 text-dark" style="font-size: 0.65rem;">${escapeHtml(item.roleName)}</span>
+                        </td>
+                        <td>${actionBadge(item.actionType)}</td>
+                        <td class="fw-bold text-muted">${escapeHtml(item.module)}</td>
+                        <td>${escapeHtml(item.description)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderPagination(page, totalPages) {
+            const el = document.getElementById("paginationControls");
+            el.innerHTML = "";
+
+            const prevDisabled = page <= 1 ? "disabled" : "";
+            el.innerHTML += `<li class="page-item ${prevDisabled}"><a class="page-link" href="#" onclick="event.preventDefault(); reloadLogs(${page - 1});">Trước</a></li>`;
+
+            const start = Math.max(1, page - 2);
+            const end = Math.min(totalPages, page + 2);
+            for (let i = start; i <= end; i++) {
+                const active = i === page ? "active" : "";
+                el.innerHTML += `<li class="page-item ${active}"><a class="page-link" href="#" onclick="event.preventDefault(); reloadLogs(${i});">${i}</a></li>`;
+            }
+
+            const nextDisabled = page >= totalPages ? "disabled" : "";
+            el.innerHTML += `<li class="page-item ${nextDisabled}"><a class="page-link" href="#" onclick="event.preventDefault(); reloadLogs(${page + 1});">Sau</a></li>`;
+        }
+
+        function renderImportantTimeline(important) {
+            const el = document.getElementById("importantTimeline");
+            el.innerHTML = "";
+
+            if (!important || important.length === 0) {
+                el.innerHTML = '<li class="text-muted small">Chưa ghi nhận hoạt động quan trọng nào (xóa/từ chối hoặc phân quyền).</li>';
+                return;
+            }
+
+            important.forEach(item => {
+                const indicatorClass = item.actionType === "DELETE" ? "danger" : "warning";
+                el.innerHTML += `
+                    <li class="timeline-item">
+                        <div class="timeline-indicator ${indicatorClass}"></div>
+                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">${escapeHtml(item.userName)}</div>
+                        <p class="small text-muted mb-1">${escapeHtml(item.description)}</p>
+                        <small class="text-muted">${escapeHtml(item.timeAgo)}</small>
+                    </li>
+                `;
+            });
+        }
+
+        function exportLogsToCsv() {
+            if (!lastLoadedItems || lastLoadedItems.length === 0) {
+                alert("Không có dữ liệu trên trang hiện tại để xuất.");
+                return;
+            }
+
+            const headers = ["Thời gian", "Ngày", "Người dùng", "Email", "Role", "Hành động", "Module", "Nội dung"];
+            const rows = lastLoadedItems.map(item => [
+                item.time, item.dateText, item.userName, item.userEmail, item.roleName, item.actionType, item.module, item.description
+            ]);
+
+            let csvContent = headers.join(",") + "\n";
+            rows.forEach(row => {
+                csvContent += row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",") + "\n";
+            });
+
+            const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `activity_logs_page_${currentPage}.csv`;
+            link.click();
+        }
+    </script>
+}
