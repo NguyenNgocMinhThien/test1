@@ -973,12 +973,12 @@
 
                         <div class="mt-4">
                             <h5 class="fw-bold mb-3">📄 Tài Liệu Luật Lệ (Không bắt buộc)</h5>
-                            <p style="color: #666; font-size: 0.9rem;">Cho phép ban tổ chức tải lên file PDF hoặc tài liệu để chia sẻ thể lệ với thí sinh</p>
+                            <p style="color: #666; font-size: 0.9rem;">Cho phép ban tổ chức tải lên file PDF để chia sẻ thể lệ với thí sinh</p>
                             <div class="file-upload-area" id="documentUploadArea" onclick="document.getElementById('documentInput').click()">
                                 <div class="file-upload-icon">📋</div>
                                 <p><strong>Kéo thả file hoặc nhấp để chọn</strong></p>
-                                <small style="color: #999;">Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 10MB)</small>
-                                <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" style="display:none" multiple onchange="handleDocumentSelect()">
+                                <small style="color: #999;">Chỉ chấp nhận: PDF (Max 10MB)</small>
+                                <input type="file" id="documentInput" accept=".pdf" style="display:none" multiple onchange="handleDocumentSelect()">
                             </div>
                             <div class="file-list" id="documentFileList" style="margin-top: 20px;"></div>
                         </div>
@@ -1755,6 +1755,7 @@
         function handleDocumentSelect() {
             const files = document.getElementById('documentInput').files;
             for (let file of files) {
+                if (!file.name.toLowerCase().endsWith('.pdf')) { alert(`❌ File ${file.name} không hợp lệ. Chỉ chấp nhận file PDF.`); continue; }
                 if (file.size > 10 * 1024 * 1024) { alert(`❌ File ${file.name} vượt quá 10MB`); continue; }
                 const reader = new FileReader();
                 reader.onload = (e) => {
