@@ -677,7 +677,11 @@
 
         fetch('/Account/UpdateUser', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify(data)
         })
         .then(res => res.json())
         .then(resData => {
@@ -709,9 +713,13 @@
         formData.append('roleName', newRole);
         formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
 
-        fetch('/Account/UpdateUserRole', {
+        fetch('/Account/UpdateRole', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ UserId: currentTargetUserId, RoleName: newRole })
         })
         .then(res => res.json())
         .then(data => {
@@ -736,18 +744,21 @@
 
         fetch('/Account/ToggleUserStatus', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ UserId: userId, Lock: isActive })
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
+            if(data.success) {
                 alert(data.message);
                 loadUserTable();
             } else {
-                alert("Thao tác thất bại: " + data.message);
+                alert('Lỗi: ' + data.message);
             }
-        })
-        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
+        });
     }
     function submitLogin(email, password) {
     if(!email || !password) {
@@ -823,26 +834,117 @@
         }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
     }
 
-    function deleteUser(userId) {
-        if (!confirm("Hành động này KHÔNG THỂ HOÀN TÁC!\nToàn bộ dữ liệu liên quan của tài khoản sẽ bị xóa.\n\nBạn có chắc chắn muốn xóa?")) return;
+    // --- Xử lý Xóa người dùng đơn lẻ ---
+                    function deleteUser(userId) {
+        if (!confirm("Bạn có chắc chắn muốn xóa người dùng này không?")) {
+            return;
+        }
 
+        // Đóng gói data dạng Form để đồng bộ với [FromForm] ở Backend
         const formData = new FormData();
-        formData.append("id", userId);
-        formData.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]').value);
+        formData.append('id', userId);
+
+        // Lấy Token chống giả mạo của ASP.NET Core gắn trong trang
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        if (token) {
+            formData.append('__RequestVerificationToken', token);
+        }
 
         fetch('/Account/DeleteUser', {
             method: 'POST',
             body: formData
         })
-        .then(res => res.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Lỗi kết nối từ Server (Mã lỗi ' + response.status + ')');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert(data.message);
                 location.reload();
             } else {
-                alert("Xóa thất bại: " + data.message);
+                alert("Thất bại: " + data.message);
             }
         })
-        .catch(() => alert("Lỗi kết nối, vui lòng thử lại."));
+        .catch(error => {
+            // CHÚ Ý: Đã sửa chữ "console" viết thường hoàn toàn để không bị lỗi ReferenceError
+            console.error('Lỗi khi xóa người dùng:', error);
+            alert('Đã xảy ra lỗi khi gửi yêu cầu xóa!');
+        });
+    }
+    function submitLogin(email, password) {
+    if(!email || !password) {
+        alert("Vui lòng điền đầy đủ Email và Mật khẩu!");
+        return;
+    }
+
+    fetch('/Account/Login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+            // Lưu ý: Ở trang công khai [AllowAnonymous] này, ta gửi JSON thẳng không cần Token chống giả mạo CSRF trong Header
+        },
+        body: JSON.stringify({
+            Email: email,
+            Password: password
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert(data.message);
+            // Dựa vào phân quyền trả về để điều hướng người dùng đến đúng trang đích
+            if(data.role === "Admin") {
+                window.location.href = '/Account/Admin';
+            } else {
+                window.location.href = '/Account/UserDashboard';
+            }
+        } else {
+            alert('Đăng nhập thất bại: ' + data.message);
+        }
+    })
+    .catch(err => console.error("Lỗi kết nối đăng nhập:", err));
+}
+    // --- Các hàm xử lý Hàng loạt (Bulk Actions) ---
+    function getSelectedUserIds() {
+        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => parseInt(cb.value));
+    }
+
+    function bulkLock() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Bạn có chắc muốn KHÓA ${ids.length} tài khoản đã chọn?`)) return;
+
+        fetch('/Account/BulkLock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
+    }
+
+    function bulkResetPassword() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`Đặt lại mật khẩu về mặc định (UEF@12345) cho ${ids.length} tài khoản?`)) return;
+
+        fetch('/Account/BulkResetPassword', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); });
+    }
+
+    function bulkDelete() {
+        const ids = getSelectedUserIds();
+        if(ids.length === 0) return;
+        if(!confirm(`CẢNH BÁO: Xóa hàng loạt ${ids.length} người dùng? Hành động này không thể hoàn tác.`)) return;
+
+        fetch('/Account/BulkDelete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value },
+            body: JSON.stringify({ UserIds: ids })
+        }).then(res => res.json()).then(data => { alert(data.message); loadUserTable(); document.getElementById('selectAll').checked = false; });
     }
 </script>
