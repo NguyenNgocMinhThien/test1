@@ -10,12 +10,13 @@
     bool hasSub      = Model.HasSubmissions;
     bool started     = Model.HasStarted;
 
-    bool canEditStructure = noReg;
-    bool canEditDates     = !started;
-    bool canEditRounds    = !started;
-    bool canEditCriteria  = !hasSub;
-    bool canChangeTeam    = noReg;
-    bool canDecreaseMax   = noReg;
+    bool canEditStructure     = noReg;
+    bool canEditDates         = !started;
+    bool canEditRounds        = !started;
+    bool canEditCriteria      = !hasSub;
+    bool canChangeTeam        = noReg;
+    bool canDecreaseMax       = noReg;
+    bool canEditFormStructure = noReg;
 
     // Chuyển UTC → giờ địa phương để hiển thị trong datetime-local inputs
     var tz       = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -825,8 +826,8 @@
 
                     <div class="upload-area mt-2" onclick="document.getElementById('docInput').click()">
                         <i class="bi bi-file-earmark-arrow-up fs-3 text-muted"></i>
-                        <p class="mb-0 mt-1 text-muted">Nhấp hoặc kéo thả tài liệu (PDF / DOCX / XLSX / PPTX, max 10MB)</p>
-                        <input type="file" id="docInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" multiple style="display:none" onchange="handleDocSelect()">
+                        <p class="mb-0 mt-1 text-muted">Nhấp hoặc kéo thả tài liệu (chỉ chấp nhận PDF, max 10MB)</p>
+                        <input type="file" id="docInput" accept=".pdf" multiple style="display:none" onchange="handleDocSelect()">
                     </div>
                     <div id="docPending" class="mt-2"></div>
                     <button type="button" class="btn btn-primary btn-sm mt-2" id="btnUploadDoc" onclick="uploadDocuments()" style="display:none">
@@ -899,7 +900,16 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
                             <div class="section-title mb-1"><i class="bi bi-ui-checks me-1"></i>Xem trước biểu mẫu đăng ký</div>
-                            <div class="text-muted" style="font-size:.82rem;">Trường cố định không thể xóa. Kéo thả <i class="bi bi-grip-vertical"></i> để sắp xếp trường tùy chỉnh.</div>
+                            @if (canEditFormStructure)
+                            {
+                                <div class="text-muted" style="font-size:.82rem;">Trường cố định không thể xóa. Kéo thả <i class="bi bi-grip-vertical"></i> để sắp xếp trường tùy chỉnh.</div>
+                            }
+                            else
+                            {
+                                <div class="text-warning" style="font-size:.82rem;">
+                                    <i class="bi bi-lock-fill me-1"></i>Đã có người đăng ký — chỉ có thể <strong>ẩn/hiện</strong> trường cũ, không thể sửa thông tin hoặc xóa. Vẫn thêm được trường mới.
+                                </div>
+                            }
                         </div>
                         <button type="button" class="btn btn-success btn-sm" onclick="openAddFieldModal()">
                             <i class="bi bi-plus-circle me-1"></i>Thêm trường
@@ -1142,6 +1152,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div id="ff-locked-hint" class="alert alert-warning py-2 px-3" style="display:none; font-size:.82rem;">
+                    <i class="bi bi-lock-fill me-1"></i>Cuộc thi đã có người đăng ký — chỉ có thể bật/tắt hiển thị trường này.
+                </div>
                 <input type="hidden" id="ff-fieldId" value="0">
                 <div class="mb-3">
                     <label class="form-label">Nhãn trường *</label>
@@ -1199,6 +1212,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     const CID = @cid;
+    const CAN_EDIT_FORM_STRUCTURE = @(canEditFormStructure ? "true" : "false");
 
     // ═══════════════════════════════════ SCHEDULE DATES ═════════════════════════
 
@@ -1706,6 +1720,7 @@
     function handleDocSelect() {
         const files = document.getElementById('docInput').files;
         for (const f of files) {
+            if (!f.name.toLowerCase().endsWith('.pdf')) { alert(`❌ File ${f.name} không hợp lệ. Chỉ chấp nhận file PDF.`); continue; }
             if (f.size > 10*1024*1024) { alert(`${f.name} vượt quá 10MB`); continue; }
             const reader = new FileReader();
             reader.onload = e => { pendingDocs.push({ name: f.name, data: e.target.result }); renderPendingDocs(); };
@@ -2080,6 +2095,13 @@
         const reqMark = f.isRequired ? '<span class="text-danger ms-1">*</span>' : '';
         const helpHtml = f.helpText
             ? `<div class="text-muted mt-1" style="font-size:.75rem;">${escHtml(f.helpText)}</div>` : '';
+        const deleteBtnHtml = CAN_EDIT_FORM_STRUCTURE
+            ? `<button type="button" class="fp-action-btn fp-action-del" onclick="deleteField(${f.fieldId})" title="Xóa">
+                    <i class="bi bi-trash"></i>
+               </button>`
+            : `<span class="fp-action-btn text-muted" title="Đã có người đăng ký — không thể xóa trường này" style="cursor:not-allowed;">
+                    <i class="bi bi-lock-fill"></i>
+               </span>`;
 
         wrap.innerHTML = `
             <div class="fp-custom-field-inner">
@@ -2091,9 +2113,7 @@
                         <button type="button" class="fp-action-btn fp-action-edit" onclick="openEditFieldModal(${f.fieldId})" title="Sửa">
                             <i class="bi bi-pencil me-1"></i>Sửa
                         </button>
-                        <button type="button" class="fp-action-btn fp-action-del" onclick="deleteField(${f.fieldId})" title="Xóa">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        ${deleteBtnHtml}
                     </div>
                 </div>
                 ${buildFieldInputPreview(f)}
@@ -2115,6 +2135,14 @@
         .then(d => { if (!d.success) showToast(d.message, 'warning'); });
     }
 
+    // Khóa/mở toàn bộ input của modal trường, ngoại trừ "Hiển thị" (luôn cho phép bật/tắt)
+    function setFormFieldModalLocked(locked) {
+        ['ff-label', 'ff-type', 'ff-required', 'ff-options', 'ff-placeholder', 'ff-helptext']
+            .forEach(id => document.getElementById(id).disabled = locked);
+        const hint = document.getElementById('ff-locked-hint');
+        if (hint) hint.style.display = locked ? '' : 'none';
+    }
+
     function openAddFieldModal() {
         document.getElementById('formFieldModalTitle').textContent = 'Thêm trường mới';
         document.getElementById('ff-fieldId').value = '0';
@@ -2125,12 +2153,12 @@
         document.getElementById('ff-options').value = '';
         document.getElementById('ff-placeholder').value = '';
         document.getElementById('ff-helptext').value = '';
+        setFormFieldModalLocked(false); // Luôn cho phép nhập đầy đủ khi thêm trường mới
         onFieldTypeChange();
         new bootstrap.Modal(document.getElementById('formFieldModal')).show();
     }
 
     function openEditFieldModal(fieldId) {
-        const row = document.querySelector(`.field-row[data-field-id="${fieldId}"]`);
         // Re-fetch fresh data
         fetch(`/Organizer/GetFormFields?competitionId=${CID}`)
             .then(r => r.json())
@@ -2152,6 +2180,8 @@
                 }
                 document.getElementById('ff-placeholder').value = f.placeholder || '';
                 document.getElementById('ff-helptext').value = f.helpText || '';
+                // Cuộc thi đã có người đăng ký: chỉ cho phép đổi trạng thái ẩn/hiện
+                setFormFieldModalLocked(!CAN_EDIT_FORM_STRUCTURE);
                 onFieldTypeChange();
                 new bootstrap.Modal(document.getElementById('formFieldModal')).show();
             });
@@ -2212,6 +2242,10 @@
     }
 
     async function deleteField(fieldId) {
+        if (!CAN_EDIT_FORM_STRUCTURE) {
+            showToast('Cuộc thi đã có người đăng ký — không thể xóa trường này, chỉ có thể ẩn.', 'warning');
+            return;
+        }
         if (!confirm('Xóa trường này? Dữ liệu thí sinh đã điền cũng sẽ bị xóa.')) return;
         const res = await fetch(`/Organizer/DeleteFormField?fieldId=${fieldId}&competitionId=${CID}`, {
             method: 'POST',

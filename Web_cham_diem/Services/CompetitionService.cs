@@ -624,7 +624,7 @@ public class CompetitionService : ICompetitionService
                     var base64       = dataUrl[(commaIdx + 1)..];
                     var originalName = i < fileNames.Count ? fileNames[i] : $"document_{i + 1}";
                     var ext          = Path.GetExtension(originalName).TrimStart('.');
-                    if (string.IsNullOrEmpty(ext)) ext = "pdf";
+                    if (!AllowedDocExtensions.Contains(ext)) continue;
 
                     var fileName = $"{Guid.NewGuid()}.{ext}";
                     var filePath = Path.Combine(docDir, fileName);
@@ -1554,7 +1554,7 @@ public class CompetitionService : ICompetitionService
     // ===== DOCUMENTS =====
 
     private static readonly HashSet<string> AllowedDocExtensions = new(StringComparer.OrdinalIgnoreCase)
-        { "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx" };
+        { "pdf" };
 
     public async Task<bool> UploadDocumentsAsync(int competitionId, List<string> base64DataList, List<string> fileNames)
     {
@@ -1950,6 +1950,15 @@ public class CompetitionService : ICompetitionService
             .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
         if (field == null) return (false, "Trường không tìm thấy.");
 
+        // Đã có người đăng ký: chỉ cho phép đổi trạng thái ẩn/hiện, không cho sửa thông tin trường
+        // (dữ liệu thí sinh đã điền gắn theo FieldId, sửa cấu trúc có thể làm sai lệch dữ liệu cũ)
+        if (await HasRegistrationsAsync(competitionId))
+        {
+            field.IsActive = dto.IsActive;
+            await _context.SaveChangesAsync();
+            return (true, "Đã cập nhật trạng thái hiển thị của trường!");
+        }
+
         if (string.IsNullOrWhiteSpace(dto.FieldLabel))
             return (false, "Nhãn trường không được để trống.");
 
@@ -1976,9 +1985,19 @@ public class CompetitionService : ICompetitionService
             .FirstOrDefaultAsync(f => f.FieldId == fieldId && f.CompetitionId == competitionId);
         if (field == null) return (false, "Trường không tìm thấy.");
 
+        if (await HasRegistrationsAsync(competitionId))
+            return (false, "Cuộc thi đã có người đăng ký — không thể xóa trường này. Bạn có thể ẩn trường thay vì xóa.");
+
         _context.RegistrationFormFields.Remove(field);
         await _context.SaveChangesAsync();
         return (true, "Đã xóa trường.");
+    }
+
+    // Cùng điều kiện với "canEditFormStructure" phía Edit.cshtml (khác Withdrawn/Rejected)
+    private async Task<bool> HasRegistrationsAsync(int competitionId)
+    {
+        return await _context.Registrations.AnyAsync(r => r.CompetitionId == competitionId
+            && r.Status != "Withdrawn" && r.Status != "Rejected");
     }
 
     public async Task<(bool ok, string message)> ReorderFormFieldsAsync(int competitionId, List<int> orderedFieldIds)
