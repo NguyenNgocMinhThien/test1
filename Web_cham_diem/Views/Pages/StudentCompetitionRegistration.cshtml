@@ -481,6 +481,13 @@
             return;
         }
 
+        const leaderMssv = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(isLecturer ? null : Model.StudentId));
+        const currentLeaderMssv = leaderMssv || document.getElementById('leaderStudentIdHidden')?.value;
+        if (currentLeaderMssv && mssv === currentLeaderMssv) {
+            showResult(resultEl, 'error', 'Đây là trưởng nhóm, không cần thêm vào danh sách thành viên.');
+            return;
+        }
+
         // Tổng = trưởng nhóm (1) + thành viên đã thêm
         if (MAX_TEAM_SIZE > 0 && (1 + memberCount + 1) > MAX_TEAM_SIZE) {
             showResult(resultEl, 'error', `Nhóm đã đủ tối đa ${MAX_TEAM_SIZE} người (bao gồm trưởng nhóm).`);

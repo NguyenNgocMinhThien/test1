@@ -360,6 +360,20 @@ public class CompetitiveController : Controller
                 if (notFound.Any())
                     ModelState.AddModelError(nameof(model.MemberStudentIds),
                         $"Không tìm thấy MSSV: {string.Join(", ", notFound)}");
+
+                // Trưởng nhóm không được thêm trùng vào danh sách thành viên
+                if (memberUsers.Any(u => u.UserId == registrant.UserId))
+                {
+                    ModelState.AddModelError(nameof(model.MemberStudentIds),
+                        "Trưởng nhóm đã có trong đội, không cần thêm lại vào danh sách thành viên.");
+                }
+
+                // Loại bỏ trưởng nhóm và trùng lặp để tránh vi phạm ràng buộc duy nhất khi lưu TeamMembers
+                memberUsers = memberUsers
+                    .Where(u => u.UserId != registrant.UserId)
+                    .GroupBy(u => u.UserId)
+                    .Select(g => g.First())
+                    .ToList();
             }
         }
 
