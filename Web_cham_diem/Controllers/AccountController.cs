@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Web_cham_diem.Models;
 using Web_cham_diem.Models.ViewModels;
+using Web_cham_diem.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
@@ -16,10 +17,12 @@ namespace Web_cham_diem.Controllers;
 public class AccountController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly INotificationsService _notificationsService;
 
-    public AccountController(ApplicationDbContext context)
+    public AccountController(ApplicationDbContext context, INotificationsService notificationsService)
     {
         _context = context;
+        _notificationsService = notificationsService;
     }
 
     // ==========================================
@@ -764,7 +767,96 @@ public class AccountController : Controller
     public IActionResult Reports() { return View(); }
 
     [Authorize(Roles = "Admin")]
-    public IActionResult SystemNotifications() { return View(); }
+    public async Task<IActionResult> SystemNotifications(string? search)
+    {
+        var (total, items) = await _notificationsService.GetPublicAnnouncementsPagedAsync(search, 1, 50);
+
+        ViewData["TotalBroadcasts"] = total.ToString("N0");
+        ViewData["Search"] = search;
+        // Cuộc thi để gán vào "Cuộc thi liên quan" (tuỳ chọn)
+        ViewData["Competitions"] = await _context.Competitions
+            .OrderByDescending(c => c.CreatedAt)
+            .Select(c => new { c.CompetitionId, c.CompetitionName })
+            .ToListAsync();
+
+        return View(items);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB
+    public async Task<IActionResult> CreateSystemAnnouncement(
+        [FromForm] string title,
+        [FromForm] string content,
+        [FromForm] string type,
+        [FromForm] int? relatedCompetitionId,
+        IFormFile? imageFile,
+        IFormFile? attachmentFile)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(content))
+                return Json(new { ok = false, message = "Tiêu đề và nội dung không được để trống." });
+
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "announcements");
+            Directory.CreateDirectory(uploadsDir);
+
+            string? imageUrl = null;
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var ext = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+                var allowedImg = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                if (!allowedImg.Contains(ext))
+                    return Json(new { ok = false, message = "Chỉ chấp nhận ảnh JPG, PNG, GIF, WEBP." });
+
+                var imgName = $"img_{Guid.NewGuid():N}{ext}";
+                var imgPath = Path.Combine(uploadsDir, imgName);
+                await using var fs = System.IO.File.Create(imgPath);
+                await imageFile.CopyToAsync(fs);
+                imageUrl = $"/uploads/announcements/{imgName}";
+            }
+
+            string? attachUrl = null;
+            string? attachName = null;
+            if (attachmentFile != null && attachmentFile.Length > 0)
+            {
+                var ext = Path.GetExtension(attachmentFile.FileName).ToLowerInvariant();
+                var allowedFile = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx" };
+                if (!allowedFile.Contains(ext))
+                    return Json(new { ok = false, message = "Chỉ chấp nhận file PDF, Word, Excel." });
+
+                var fileName = $"attach_{Guid.NewGuid():N}{ext}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+                await using var fs = System.IO.File.Create(filePath);
+                await attachmentFile.CopyToAsync(fs);
+                attachUrl  = $"/uploads/announcements/{fileName}";
+                attachName = attachmentFile.FileName;
+            }
+
+            var currentUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid) ? uid : (int?)null;
+
+            var announcement = new PublicAnnouncements
+            {
+                Title                = title.Trim(),
+                Content              = content.Trim(),
+                Type                 = string.IsNullOrEmpty(type) ? "Info" : type,
+                ImageUrl             = imageUrl,
+                AttachmentUrl        = attachUrl,
+                AttachmentFileName   = attachName,
+                RelatedCompetitionId = relatedCompetitionId,
+                CreatedByUserId      = currentUserId,
+                CreatedAt            = DateTime.UtcNow,
+                IsPublished          = true
+            };
+
+            var id = await _notificationsService.CreateAnnouncementAsync(announcement);
+            return Json(new { ok = true, message = "Đã đăng thông báo thành công.", id });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { ok = false, message = "Lỗi hệ thống khi tạo thông báo: " + ex.Message });
+        }
+    }
 
     [Authorize(Roles = "Admin")]
     public IActionResult ActivityLogs() { return View(); }
