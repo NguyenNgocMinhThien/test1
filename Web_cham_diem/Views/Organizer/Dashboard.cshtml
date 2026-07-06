@@ -199,6 +199,46 @@
     </div>
 </div>
 
+<!-- ===== 2 STAT CARDS: TỶ LỆ NỘP ĐÚNG HẠN & TỶ LỆ HỒ SƠ ĐƯỢC DUYỆT ===== -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Tỷ lệ nộp bài đúng hạn</span>
+                <div class="dash-icon" style="background:#f0fdfa; color:#0d9488;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.OnTimeSubmissionRate.ToString("0.#")%</h2>
+            <div class="text-muted small">
+                Đúng hạn: <span class="fw-bold text-success">@Model.OnTimeSubmissions</span>
+                &nbsp;|&nbsp; Trễ hạn: <span class="fw-bold text-danger">@Model.LateSubmissions</span>
+            </div>
+            <div class="progress mt-2 progress-bar-sm">
+                <div class="progress-bar" style="width:@Model.OnTimeSubmissionRate%; background:#0d9488;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6">
+        <div class="card dash-stat-card p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted fw-semibold small text-uppercase">Tỷ lệ hồ sơ được duyệt</span>
+                <div class="dash-icon" style="background:#f0fdf4; color:#16a34a;">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+            </div>
+            <h2 class="fw-bold mb-1 text-dark">@Model.ApprovalRatio.ApprovalRate.ToString("0.#")%</h2>
+            <div class="text-muted small">
+                Đã duyệt: <span class="fw-bold text-success">@Model.ApprovalRatio.ApprovedCount</span>
+                &nbsp;/&nbsp; @Model.ApprovalRatio.TotalProcessed hồ sơ đã xử lý
+            </div>
+            <div class="progress mt-2 progress-bar-sm">
+                <div class="progress-bar" style="width:@Model.ApprovalRatio.ApprovalRate%; background:#16a34a;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ===== COMPETITION STATUS MINI CARDS ===== -->
 <div class="row g-2 mb-4">
     <div class="col-6 col-md-3">
@@ -312,6 +352,67 @@
                 </span>
                 <span class="fw-bold text-dark">@Model.ActiveJudges người</span>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CHARTS ROW 2: NGƯỜI THAM GIA THEO CUỘC THI & PHÂN BỐ ĐIỂM SỐ ===== -->
+<div class="row g-4 mb-4">
+    <!-- Bar chart: Số lượng người tham gia theo cuộc thi -->
+    <div class="col-12 col-lg-6">
+        <div class="card dash-card-full p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0">
+                    <i class="bi bi-people-fill text-success me-2"></i>Số lượng người tham gia theo cuộc thi
+                </h6>
+                @if (Model.ParticipantsByCompetition.Count > 10)
+                {
+                    <span class="badge bg-secondary-subtle text-secondary px-2 py-1">Top 10</span>
+                }
+            </div>
+            @if (Model.ParticipantsByCompetition.Any())
+            {
+                <div style="height:260px;"><canvas id="participantsChart"></canvas></div>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center"
+                     style="height:220px; border:2px dashed #dee2e6; border-radius:8px; background:#fafafa; color:#6c757d;">
+                    <i class="bi bi-people fs-2 mb-2 text-black-50"></i>
+                    <p class="mb-0 small fw-medium">Chưa có dữ liệu đăng ký</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Bar chart: Phân bố điểm số -->
+    <div class="col-12 col-lg-6">
+        <div class="card dash-card-full p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-dark m-0">
+                    <i class="bi bi-bar-chart-fill text-primary me-2"></i>Phân bố điểm số
+                </h6>
+                <span class="badge bg-secondary-subtle text-secondary px-2 py-1">@Model.ScoreDistribution.TotalScored bài đã chấm</span>
+            </div>
+            @if (Model.ScoreDistribution.TotalScored > 0)
+            {
+                <div style="height:260px;"><canvas id="scoreDistChart"></canvas></div>
+                <div class="mt-3 d-flex flex-wrap gap-2 justify-content-center">
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 py-2 px-3">Dưới 50%: @Model.ScoreDistribution.Below50 bài</span>
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 py-2 px-3">50–65%: @Model.ScoreDistribution.From50To65 bài</span>
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 py-2 px-3">65–80%: @Model.ScoreDistribution.From65To80 bài</span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 py-2 px-3">80–90%: @Model.ScoreDistribution.From80To90 bài</span>
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 py-2 px-3">Trên 90%: @Model.ScoreDistribution.Above90 bài</span>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center"
+                     style="height:220px; border:2px dashed #dee2e6; border-radius:8px; background:#fafafa; color:#6c757d;">
+                    <i class="bi bi-bar-chart fs-2 mb-2 text-black-50"></i>
+                    <p class="mb-0 small fw-medium">Chưa có bài nào được chấm điểm</p>
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -642,6 +743,84 @@
                     cutout: '62%',
                     plugins: {
                         legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    // ─── Participants per Competition Bar Chart ────────────────────────────
+    @if (Model.ParticipantsByCompetition.Any())
+    {
+        <text>
+        (function () {
+            const ctx3 = document.getElementById('participantsChart');
+            if (!ctx3) return;
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParticipantsByCompetition.Select(p => p.Name.Length > 20 ? p.Name[..18] + "…" : p.Name))),
+                    datasets: [
+                        {
+                            label: 'Tổng đăng ký',
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParticipantsByCompetition.Select(p => p.RegistrationCount))),
+                            backgroundColor: '#0d6efd',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Đã duyệt',
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ParticipantsByCompetition.Select(p => p.ApprovedCount))),
+                            backgroundColor: '#16a34a',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 12 } } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, font: { size: 11 } } },
+                        x: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        })();
+        </text>
+    }
+
+    // ─── Score Distribution Bar Chart ───────────────────────────────────────
+    @if (Model.ScoreDistribution.TotalScored > 0)
+    {
+        <text>
+        (function () {
+            const ctx4 = document.getElementById('scoreDistChart');
+            if (!ctx4) return;
+            new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: ['Dưới 50%', '50 – 65%', '65 – 80%', '80 – 90%', 'Trên 90%'],
+                    datasets: [{
+                        label: 'Số bài',
+                        data: [@Model.ScoreDistribution.Below50, @Model.ScoreDistribution.From50To65, @Model.ScoreDistribution.From65To80, @Model.ScoreDistribution.From80To90, @Model.ScoreDistribution.Above90],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#06b6d4', '#3b82f6', '#10b981'],
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} bài` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });

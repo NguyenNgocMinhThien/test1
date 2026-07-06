@@ -21,6 +21,14 @@ namespace Web_cham_diem.Models.ViewModels
         public int UrgentCompetitions { get; set; }
         public decimal ScoringCompletionRate { get; set; }
 
+        // ===== ON-TIME SUBMISSION RATE =====
+        public int OnTimeSubmissions { get; set; }
+        public int LateSubmissions { get; set; }
+        public decimal OnTimeSubmissionRate { get; set; }
+
+        // ===== SCORE DISTRIBUTION =====
+        public ScoreDistributionData ScoreDistribution { get; set; } = new();
+
         // ===== ALERTS =====
         public List<AlertItem> Alerts { get; set; } = new();
 
@@ -29,6 +37,9 @@ namespace Web_cham_diem.Models.ViewModels
 
         // ===== TOP COMPETITIONS =====
         public List<TopCompetitionItem> TopCompetitionsByRegistrations { get; set; } = new();
+
+        // ===== PARTICIPANTS PER COMPETITION (biểu đồ) =====
+        public List<CompetitionParticipantsItem> ParticipantsByCompetition { get; set; } = new();
 
         // ===== CHART DATA =====
         public List<CompetitionProgressData> ProgressData { get; set; } = new();
@@ -91,6 +102,25 @@ namespace Web_cham_diem.Models.ViewModels
         public int PendingCount { get; set; }
         public int RejectedCount { get; set; }
         public int TotalProcessed => ApprovedCount + PendingCount + RejectedCount;
+        public decimal ApprovalRate => TotalProcessed > 0 ? Math.Round((decimal)ApprovedCount / TotalProcessed * 100, 1) : 0;
+    }
+
+    public class ScoreDistributionData
+    {
+        public int Below50 { get; set; }
+        public int From50To65 { get; set; }
+        public int From65To80 { get; set; }
+        public int From80To90 { get; set; }
+        public int Above90 { get; set; }
+        public int TotalScored => Below50 + From50To65 + From65To80 + From80To90 + Above90;
+    }
+
+    public class CompetitionParticipantsItem
+    {
+        public int CompetitionId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int RegistrationCount { get; set; }
+        public int ApprovedCount { get; set; }
     }
 
     public class DeadlineItem
