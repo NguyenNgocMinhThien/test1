@@ -1129,6 +1129,18 @@ public class CompetitionService : ICompetitionService
             .Where(j => competitionIds.Contains(j.CompetitionId))
             .ToListAsync();
 
+        // Submission.Status không bao giờ được cập nhật thành "Evaluated" trong luồng chấm điểm
+        // thực tế (JudgeController chỉ chuyển "Submitted" -> "Under Review"), nên "đã chấm" phải
+        // được xác định qua sự tồn tại của điểm số (Scores) đã được duyệt/không bị từ chối.
+        var allSubmissionIds = competitions.SelectMany(c => c.Submissions.Select(s => s.SubmissionId)).ToList();
+        var scoredSubmissionIds = allSubmissionIds.Any()
+            ? (await _context.Scores
+                .Where(s => allSubmissionIds.Contains(s.SubmissionId) && s.ApprovalStatus != "Rejected")
+                .Select(s => s.SubmissionId)
+                .Distinct()
+                .ToListAsync()).ToHashSet()
+            : new HashSet<int>();
+
         // ===== COMPETITION STATUS BREAKDOWN =====
         int totalCompetitions = competitions.Count;
         int draftCompetitions = competitions.Count(c => c.Status == "Draft");
@@ -1151,8 +1163,15 @@ public class CompetitionService : ICompetitionService
         var totalRegistrations   = competitions.Sum(c => c.Registrations.Count);
         var totalTeams           = competitions.Sum(c => c.Teams.Count);
         var totalSubmissions     = competitions.Sum(c => c.Submissions.Count);
-        var evaluatedSubmissions = competitions.Sum(c => c.Submissions.Count(s => s.Status == "Evaluated"));
+        var evaluatedSubmissions = competitions.Sum(c => c.Submissions.Count(s => scoredSubmissionIds.Contains(s.SubmissionId)));
         var activeJudges         = judges.Count(j => j.Status == "Active");
+
+        // ===== ON-TIME SUBMISSION RATE =====
+        var onTimeSubmissions = competitions.Sum(c => c.Submissions.Count(s => s.SubmissionDate <= c.SubmissionDeadline));
+        var lateSubmissions   = totalSubmissions - onTimeSubmissions;
+        var onTimeSubmissionRate = totalSubmissions > 0
+            ? Math.Round((decimal)onTimeSubmissions / totalSubmissions * 100, 1)
+            : 0m;
         var urgentCompetitions   = competitions.Count(c =>
             c.Status == "Active" && (c.EndDate - now).TotalDays < 7 && (c.EndDate - now).TotalDays >= 0);
         var scoringCompletionRate = totalSubmissions > 0
@@ -1174,7 +1193,7 @@ public class CompetitionService : ICompetitionService
                     .FirstOrDefault();
                 var approved   = c.Registrations.Count(r => r.Status == "Approved");
                 var pending    = c.Registrations.Count(r => r.Status == "Pending");
-                var graded     = c.Submissions.Count(s => s.Status == "Evaluated");
+                var graded     = c.Submissions.Count(s => scoredSubmissionIds.Contains(s.SubmissionId));
                 var total      = c.Submissions.Count;
 
                 return new CompetitionProgressRow
@@ -1278,6 +1297,57 @@ public class CompetitionService : ICompetitionService
                 Phase            = DetermineCurrentPhase(c)
             }).ToList();
 
+        // ===== SỐ LƯỢNG NGƯỜI THAM GIA THEO CUỘC THI (biểu đồ, top 10 để dễ đọc) =====
+        var participantsByCompetition = competitions
+            .OrderByDescending(c => c.Registrations.Count)
+            .Take(10)
+            .Select(c => new CompetitionParticipantsItem
+            {
+                CompetitionId     = c.CompetitionId,
+                Name              = c.CompetitionName,
+                RegistrationCount = c.Registrations.Count,
+                ApprovedCount     = c.Registrations.Count(r => r.Status == "Approved")
+            }).ToList();
+
+        // ===== PHÂN BỐ ĐIỂM SỐ (theo % so với điểm tối đa của vòng thi tương ứng) =====
+        var scoreDistribution = new ScoreDistributionData();
+        if (allSubmissionIds.Any())
+        {
+            var scoresForDist = await _context.Scores
+                .Where(s => allSubmissionIds.Contains(s.SubmissionId) && s.ApprovalStatus != "Rejected")
+                .ToListAsync();
+
+            var roundsForCriteria = await _context.CompetitionRounds
+                .Include(r => r.ScoringCriteria)
+                .Where(r => competitionIds.Contains(r.CompetitionId))
+                .ToListAsync();
+            var maxPossibleByRound = roundsForCriteria.ToDictionary(
+                r => r.RoundId,
+                r => r.ScoringCriteria.Any() ? r.ScoringCriteria.Sum(c => c.MaxScore) : 100m);
+
+            var submissionRoundMap = competitions
+                .SelectMany(c => c.Submissions)
+                .ToDictionary(s => s.SubmissionId, s => s.CompetitionRoundId);
+
+            foreach (var group in scoresForDist.GroupBy(s => s.SubmissionId))
+            {
+                submissionRoundMap.TryGetValue(group.Key, out var roundId);
+                decimal maxPossible = roundId.HasValue && maxPossibleByRound.TryGetValue(roundId.Value, out var mp)
+                    ? mp : 100m;
+                if (maxPossible <= 0) continue;
+
+                var criteriaAvgs = group.GroupBy(s => s.CriteriaId).Select(g => g.Average(s => s.Score));
+                decimal total = criteriaAvgs.Sum();
+                decimal pct = total / maxPossible * 100;
+
+                if (pct < 50) scoreDistribution.Below50++;
+                else if (pct < 65) scoreDistribution.From50To65++;
+                else if (pct < 80) scoreDistribution.From65To80++;
+                else if (pct < 90) scoreDistribution.From80To90++;
+                else scoreDistribution.Above90++;
+            }
+        }
+
         // ===== PROGRESS CHART (4 tuần gần nhất, cuộc thi Active đầu tiên) =====
         var progressData      = new List<CompetitionProgressData>();
         var activeCompetition = competitions.FirstOrDefault(c => c.Status == "Active");
@@ -1355,7 +1425,7 @@ public class CompetitionService : ICompetitionService
 
             if (comp.EndDate > now && comp.Submissions.Count > 0)
             {
-                var graded      = comp.Submissions.Count(s => s.Status == "Evaluated");
+                var graded      = comp.Submissions.Count(s => scoredSubmissionIds.Contains(s.SubmissionId));
                 var pct         = (decimal)graded / comp.Submissions.Count * 100;
                 var daysUntil   = (comp.EndDate - now).TotalDays;
                 deadlines.Add(new DeadlineItem
@@ -1444,6 +1514,11 @@ public class CompetitionService : ICompetitionService
             ActiveJudges                 = activeJudges,
             UrgentCompetitions           = urgentCompetitions,
             ScoringCompletionRate        = scoringCompletionRate,
+            OnTimeSubmissions            = onTimeSubmissions,
+            LateSubmissions              = lateSubmissions,
+            OnTimeSubmissionRate         = onTimeSubmissionRate,
+            ScoreDistribution            = scoreDistribution,
+            ParticipantsByCompetition    = participantsByCompetition,
             Alerts                       = alerts,
             CompetitionProgressTable     = progressTable,
             TopCompetitionsByRegistrations = topCompetitions,
