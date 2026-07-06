@@ -628,6 +628,15 @@
         window.location.href = '/Account/ExportUsers'; // Bạn có thể cấu hình route tải file tại đây
     }
 
+    function toggleAddPassword(btn) {
+        const input = document.getElementById('addUserPassword');
+        const icon = btn.querySelector('i');
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        icon.classList.toggle('bi-eye', !isHidden);
+        icon.classList.toggle('bi-eye-slash', isHidden);
+    }
+
     // --- Xử lý Chi tiết & Chỉnh sửa Người dùng ---
     function openUserModal(userId, mode) {
         currentTargetUserId = userId;

@@ -1059,6 +1059,10 @@ public class AccountController : Controller
             }
 
             // 6. Bài dự thi
+            // Với bài nộp theo đội, người bấm nộp/cập nhật có thể là bất kỳ thành viên nào,
+            // không nhất thiết là người đứng tên Registration (đội trưởng) → ưu tiên
+            // CreatedByUserId/UpdatedByUserId (người thực hiện thao tác thực sự); chỉ dùng
+            // Registration/Team làm phương án dự phòng cho dữ liệu cũ chưa có 2 cột này.
             var submissions = await _context.Submissions
                 .Select(s => new
                 {
@@ -1066,20 +1070,34 @@ public class AccountController : Controller
                     s.SubmissionDate,
                     s.UpdatedAt,
                     CompetitionName = s.Competition.CompetitionName,
-                    SubmitterUserId = s.Registration != null ? (int?)s.Registration.UserId : null,
-                    SubmitterName = s.Registration != null ? s.Registration.User.FullName : (s.Team != null ? s.Team.TeamName : "Không rõ"),
-                    SubmitterEmail = s.Registration != null ? s.Registration.User.Email : ""
+                    CreatedByUserId = s.CreatedByUserId
+                        ?? (s.Registration != null ? (int?)s.Registration.UserId : null)
+                        ?? (s.Team != null ? (int?)s.Team.LeaderId : null),
+                    CreatedByName = s.CreatedByUser != null ? s.CreatedByUser.FullName
+                        : (s.Registration != null ? s.Registration.User.FullName
+                        : (s.Team != null ? s.Team.Leader.FullName : "Không rõ")),
+                    CreatedByEmail = s.CreatedByUser != null ? s.CreatedByUser.Email
+                        : (s.Registration != null ? s.Registration.User.Email
+                        : (s.Team != null ? s.Team.Leader.Email : "")),
+                    UpdatedByUserId = s.UpdatedByUserId
+                        ?? (s.Registration != null ? (int?)s.Registration.UserId : null)
+                        ?? (s.Team != null ? (int?)s.Team.LeaderId : null),
+                    UpdatedByName = s.UpdatedByUser != null ? s.UpdatedByUser.FullName
+                        : (s.Registration != null ? s.Registration.User.FullName
+                        : (s.Team != null ? s.Team.Leader.FullName : "Không rõ")),
+                    UpdatedByEmail = s.UpdatedByUser != null ? s.UpdatedByUser.Email
+                        : (s.Registration != null ? s.Registration.User.Email
+                        : (s.Team != null ? s.Team.Leader.Email : ""))
                 })
                 .ToListAsync();
             foreach (var s in submissions)
             {
-                var role = s.SubmitterUserId.HasValue ? RoleOf(s.SubmitterUserId.Value) : "";
                 events.Add(new ActivityLogEntry
                 {
                     Timestamp = s.SubmissionDate,
-                    UserName = s.SubmitterName,
-                    UserEmail = s.SubmitterEmail,
-                    RoleName = role,
+                    UserName = s.CreatedByName,
+                    UserEmail = s.CreatedByEmail,
+                    RoleName = s.CreatedByUserId.HasValue ? RoleOf(s.CreatedByUserId.Value) : "",
                     ActionType = "CREATE",
                     Module = "Bài dự thi",
                     Description = $"Nộp bài dự thi '{s.Title}' cho cuộc thi '{s.CompetitionName}'"
@@ -1090,9 +1108,9 @@ public class AccountController : Controller
                     events.Add(new ActivityLogEntry
                     {
                         Timestamp = s.UpdatedAt.Value,
-                        UserName = s.SubmitterName,
-                        UserEmail = s.SubmitterEmail,
-                        RoleName = role,
+                        UserName = s.UpdatedByName,
+                        UserEmail = s.UpdatedByEmail,
+                        RoleName = s.UpdatedByUserId.HasValue ? RoleOf(s.UpdatedByUserId.Value) : "",
                         ActionType = "UPDATE",
                         Module = "Bài dự thi",
                         Description = $"Cập nhật bài dự thi '{s.Title}'"
