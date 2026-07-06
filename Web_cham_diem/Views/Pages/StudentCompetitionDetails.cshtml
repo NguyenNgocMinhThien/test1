@@ -48,13 +48,28 @@
         : now <= Model.EndDate ? "evaluation"
         : "completed";
 
-    var stages = new[]
+    var stagesList = new List<(string Title, DateTime Date, string Description)>
     {
-        new { Title = "Mở cuộc thi", Date = Model.StartDate, Description = "Chính thức khởi động" },
-        new { Title = "Hạn chót đăng ký", Date = latestRegDeadline ?? Model.StartDate, Description = "Đóng cổng tiếp nhận đăng ký" },
-        new { Title = "Hạn chót nộp bài", Date = Model.SubmissionDeadline, Description = "Hệ thống khóa chức năng nộp bài" },
-        new { Title = "Kết thúc & Công bố", Date = Model.EndDate, Description = "Trao giải và tổng kết" }
+        ("Mở cuộc thi", Model.StartDate, "Chính thức khởi động"),
+        ("Hạn chót đăng ký", latestRegDeadline ?? Model.StartDate, "Đóng cổng tiếp nhận đăng ký"),
+        ("Hạn chót nộp bài", Model.SubmissionDeadline, "Hệ thống khóa chức năng nộp bài")
     };
+
+    // Chèn mốc từng vòng thi (sơ khảo, bán kết, chung kết...) vào lộ trình theo đúng thời gian thực tế của vòng
+    if (Model.CompetitionRounds != null && Model.CompetitionRounds.Any())
+    {
+        foreach (var round in Model.CompetitionRounds.OrderBy(r => r.RoundOrder))
+        {
+            var roundDesc = round.SubmissionDeadline.HasValue
+                ? $"Hạn nộp bài vòng: {round.SubmissionDeadline.Value.ToLocalTime():dd/MM/yyyy HH:mm}"
+                : $"Diễn ra đến {round.EndDate.ToLocalTime():dd/MM/yyyy HH:mm}";
+            stagesList.Add(($"Vòng {round.RoundOrder}: {round.RoundName}", round.StartDate, roundDesc));
+        }
+    }
+
+    stagesList.Add(("Kết thúc & Công bố", Model.EndDate, "Trao giải và tổng kết"));
+
+    var stages = stagesList.OrderBy(s => s.Date).ToArray();
 
     var currentIndex = Array.FindIndex(stages, s => now <= s.Date);
     if (currentIndex < 0)

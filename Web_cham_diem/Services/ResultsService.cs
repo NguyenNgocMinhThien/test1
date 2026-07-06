@@ -131,6 +131,100 @@ public class ResultsService : IResultsService
             : $"Đã ẩn kết quả vòng '{round.RoundName}' khỏi trang công khai.");
     }
 
+    public async Task<OrganizerStatisticsViewModel> GetOrganizerStatisticsAsync(int organizerId, int? competitionId = null)
+    {
+        var allComps = await _context.Competitions
+            .Where(c => c.CreatedByUserId == organizerId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+
+        var vm = new OrganizerStatisticsViewModel
+        {
+            SelectedCompetitionId = competitionId,
+            Competitions = allComps.Select(c => new CompetitionSelectorDto
+            {
+                CompetitionId = c.CompetitionId,
+                CompetitionName = c.CompetitionName,
+                Status = c.Status
+            }).ToList(),
+            TotalCompetitions = allComps.Count,
+            ActiveCompetitions = allComps.Count(c => c.Status == "Active"),
+            CompletedCompetitions = allComps.Count(c => c.Status == "Completed"),
+            DraftCompetitions = allComps.Count(c => c.Status == "Draft")
+        };
+
+        var targetComps = competitionId.HasValue
+            ? allComps.Where(c => c.CompetitionId == competitionId.Value).ToList()
+            : allComps;
+
+        foreach (var comp in targetComps)
+        {
+            var detail = await BuildDetailAsync(comp);
+
+            vm.TotalRegistrations += detail.TotalRegistrations;
+            vm.ApprovedRegistrations += detail.ApprovedRegistrations;
+            vm.TotalSubmissions += detail.TotalSubmissions;
+            vm.EvaluatedSubmissions += detail.EvaluatedSubmissions;
+            vm.TotalAwardedEntries += detail.TotalAwardedEntries;
+
+            foreach (var round in detail.Rounds)
+            {
+                vm.RoundResults.Add(new StatCompetitionRoundRow
+                {
+                    CompetitionId = comp.CompetitionId,
+                    CompetitionName = comp.CompetitionName,
+                    CompetitionStatus = comp.Status,
+                    RoundName = round.RoundName,
+                    RoundOrder = round.RoundOrder,
+                    IsResultsPublished = round.IsResultsPublished,
+                    SubmissionCount = round.SubmissionCount,
+                    EvaluatedCount = round.EvaluatedCount,
+                    GradingProgress = round.SubmissionCount > 0
+                        ? Math.Round(round.EvaluatedCount * 100.0 / round.SubmissionCount, 1)
+                        : 0,
+                    AverageScore = round.AverageScore,
+                    MaxPossibleScore = round.MaxPossibleScore,
+                    AwardedCount = round.Rankings.Count(r => !string.IsNullOrEmpty(r.AwardLevel))
+                });
+
+                foreach (var r in round.Rankings.Where(r => !string.IsNullOrEmpty(r.AwardLevel)))
+                {
+                    vm.AwardWinners.Add(new StatAwardRow
+                    {
+                        CompetitionId = comp.CompetitionId,
+                        CompetitionName = comp.CompetitionName,
+                        RoundName = round.RoundName,
+                        Rank = r.Rank,
+                        AwardLevel = r.AwardLevel,
+                        ParticipantName = r.ParticipantName,
+                        StudentId = r.StudentId,
+                        IsTeam = r.IsTeam,
+                        Title = r.Title,
+                        TotalScore = r.TotalScore,
+                        ScorePercentage = r.ScorePercentage
+                    });
+                }
+            }
+        }
+
+        vm.GradingCompletionRate = vm.TotalSubmissions > 0
+            ? Math.Round((decimal)vm.EvaluatedSubmissions / vm.TotalSubmissions * 100, 1)
+            : 0;
+
+        vm.RoundResults = vm.RoundResults
+            .OrderBy(r => r.CompetitionName)
+            .ThenBy(r => r.RoundOrder)
+            .ToList();
+
+        vm.AwardWinners = vm.AwardWinners
+            .OrderBy(a => a.CompetitionName)
+            .ThenBy(a => a.RoundName)
+            .ThenBy(a => a.Rank)
+            .ToList();
+
+        return vm;
+    }
+
     private async Task<CompetitionResultDetailDto> BuildDetailAsync(Competitions comp)
     {
         int cid = comp.CompetitionId;

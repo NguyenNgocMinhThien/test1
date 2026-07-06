@@ -6,4 +6,5 @@ public interface IResultsService
 {
     Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId);
     Task<(bool ok, string msg)> SetRoundResultsPublishedAsync(int roundId, int competitionId, bool publish);
+    Task<OrganizerStatisticsViewModel> GetOrganizerStatisticsAsync(int organizerId, int? competitionId = null);
 }
