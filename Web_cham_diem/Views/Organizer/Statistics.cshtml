@@ -289,5 +289,72 @@
         }
     </div>
 
+    <!-- Lịch sử công bố & chỉnh sửa kết quả -->
+    <div class="report-box shadow-sm mt-4">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span class="fw-bold"><i class="bi bi-clock-history me-1 text-muted"></i>Lịch sử công bố &amp; chỉnh sửa kết quả</span>
+            <span class="text-muted small">@Model.HistoryLog.Count sự kiện</span>
+        </div>
+        @if (!Model.HistoryLog.Any())
+        {
+            <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <div class="fw-semibold">Chưa có lịch sử nào</div>
+                <div class="small mt-1">Lịch sử công bố kết quả, giám khảo chấm lại điểm, và trưởng ban duyệt/từ chối điểm sẽ hiển thị tại đây.</div>
+            </div>
+        }
+        else
+        {
+            <div class="p-3">
+                @foreach (var h in Model.HistoryLog)
+                {
+                    string historyIcon = h.ActionType switch
+                    {
+                        "Publish"       => "bi-broadcast text-success",
+                        "Unpublish"     => "bi-eye-slash text-secondary",
+                        "ScoreEdited"   => "bi-pencil-square text-warning",
+                        "ScoreApproved" => "bi-check-circle-fill text-success",
+                        "ScoreRejected" => "bi-x-circle-fill text-danger",
+                        _               => "bi-info-circle text-muted"
+                    };
+                    string historyLabel = h.ActionType switch
+                    {
+                        "Publish"       => "Công bố kết quả",
+                        "Unpublish"     => "Ẩn kết quả",
+                        "ScoreEdited"   => "Giám khảo chấm lại điểm",
+                        "ScoreApproved" => "Trưởng ban duyệt điểm",
+                        "ScoreRejected" => "Trưởng ban từ chối điểm",
+                        _               => h.ActionType
+                    };
+                    <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                        <div class="flex-shrink-0 mt-1"><i class="bi @historyIcon fs-5"></i></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <span class="fw-bold">@historyLabel</span>
+                                <span class="badge bg-light text-dark border">@h.CompetitionName</span>
+                                @if (!string.IsNullOrEmpty(h.RoundName))
+                                {
+                                    <span class="badge bg-light text-dark border">@h.RoundName</span>
+                                }
+                                @if (h.OldValue != null && h.NewValue != null)
+                                {
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25">
+                                        @h.OldValue → @h.NewValue điểm
+                                    </span>
+                                }
+                            </div>
+                            <div class="text-muted small">@h.ChangesSummary</div>
+                            <div class="text-muted mt-1" style="font-size:.75rem;">
+                                <i class="bi bi-person me-1"></i>@h.EditorName
+                                &nbsp;·&nbsp;
+                                <i class="bi bi-clock me-1"></i>@h.EditedAt.ToLocalTime().ToString("HH:mm dd/MM/yyyy")
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
 </div>
 </div>

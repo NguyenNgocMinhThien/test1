@@ -115,7 +115,7 @@ public class ResultsService : IResultsService
         return vm;
     }
 
-    public async Task<(bool ok, string msg)> SetRoundResultsPublishedAsync(int roundId, int competitionId, bool publish)
+    public async Task<(bool ok, string msg)> SetRoundResultsPublishedAsync(int roundId, int competitionId, bool publish, int performedByUserId)
     {
         var round = await _context.CompetitionRounds
             .FirstOrDefaultAsync(r => r.RoundId == roundId && r.CompetitionId == competitionId);
@@ -124,11 +124,55 @@ public class ResultsService : IResultsService
         round.IsResultsPublished = publish;
         round.ResultsPublishedAt = publish ? DateTime.UtcNow : null;
         round.UpdatedAt = DateTime.UtcNow;
+
+        _context.ResultEditHistories.Add(new ResultEditHistory
+        {
+            CompetitionId = competitionId,
+            RoundId = roundId,
+            EditedBy = performedByUserId,
+            ActionType = publish ? "Publish" : "Unpublish",
+            ChangesSummary = publish
+                ? $"Công bố kết quả vòng '{round.RoundName}' ra trang công khai."
+                : $"Ẩn kết quả vòng '{round.RoundName}' khỏi trang công khai."
+        });
+
         await _context.SaveChangesAsync();
 
         return (true, publish
             ? $"Đã công bố kết quả vòng '{round.RoundName}' ra trang công khai."
             : $"Đã ẩn kết quả vòng '{round.RoundName}' khỏi trang công khai.");
+    }
+
+    public async Task<List<ResultHistoryItemDto>> GetResultHistoryAsync(int organizerId, int? competitionId)
+    {
+        // Chỉ trả về lịch sử của (các) cuộc thi thuộc organizer hiện tại.
+        // competitionId == null → lịch sử của TOÀN BỘ cuộc thi organizer sở hữu.
+        var query = _context.ResultEditHistories
+            .Include(h => h.Competition)
+            .Include(h => h.Round)
+            .Include(h => h.Submission)
+            .Include(h => h.Editor)
+            .Where(h => h.Competition.CreatedByUserId == organizerId);
+
+        if (competitionId.HasValue)
+            query = query.Where(h => h.CompetitionId == competitionId.Value);
+
+        return await query
+            .OrderByDescending(h => h.EditedAt)
+            .Select(h => new ResultHistoryItemDto
+            {
+                HistoryId = h.HistoryId,
+                EditedAt = h.EditedAt,
+                ActionType = h.ActionType,
+                ChangesSummary = h.ChangesSummary,
+                OldValue = h.OldValue,
+                NewValue = h.NewValue,
+                EditorName = h.Editor.FullName,
+                CompetitionName = h.Competition.CompetitionName,
+                RoundName = h.Round != null ? h.Round.RoundName : null,
+                SubmissionTitle = h.Submission != null ? h.Submission.Title : null
+            })
+            .ToListAsync();
     }
 
     public async Task<OrganizerStatisticsViewModel> GetOrganizerStatisticsAsync(int organizerId, int? competitionId = null)
@@ -221,6 +265,8 @@ public class ResultsService : IResultsService
             .ThenBy(a => a.RoundName)
             .ThenBy(a => a.Rank)
             .ToList();
+
+        vm.HistoryLog = await GetResultHistoryAsync(organizerId, competitionId);
 
         return vm;
     }
