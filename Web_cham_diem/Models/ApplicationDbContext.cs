@@ -226,6 +226,16 @@ namespace Web_cham_diem.Models
                 .WithMany(r => r.Submissions)
                 .HasForeignKey(s => s.CompetitionRoundId)
                 .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Submissions>()
+                .HasOne(s => s.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.CreatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Submissions>()
+                .HasOne(s => s.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.UpdatedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Configure Judges
             modelBuilder.Entity<Judges>()

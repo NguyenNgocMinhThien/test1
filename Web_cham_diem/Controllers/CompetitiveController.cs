@@ -1084,6 +1084,7 @@ public class CompetitiveController : Controller
             existing.CompetitionRoundId = model.SelectedRoundId;
             existing.Status = newStatus;
             existing.UpdatedAt = DateTime.UtcNow;
+            existing.UpdatedByUserId = currentUserId;
             if (newStatus == "Submitted") existing.SubmissionDate = DateTime.UtcNow;
         }
         else
@@ -1100,7 +1101,9 @@ public class CompetitiveController : Controller
                 VideoUrl = string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim(),
                 ProjectLink = string.IsNullOrWhiteSpace(model.ProjectLink) ? null : model.ProjectLink.Trim(),
                 Status = newStatus,
-                SubmissionDate = DateTime.UtcNow
+                SubmissionDate = DateTime.UtcNow,
+                CreatedByUserId = currentUserId,
+                UpdatedByUserId = currentUserId
             };
             _context.Submissions.Add(submission);
         }

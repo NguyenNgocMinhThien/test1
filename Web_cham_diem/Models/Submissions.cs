@@ -15,12 +15,16 @@
         public string Status { get; set; } = "Draft"; // Draft, Submitted, Under Review, Evaluated
         public DateTime SubmissionDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public int? CreatedByUserId { get; set; } // Người tạo bài nộp đầu tiên (có thể là thành viên bất kỳ trong đội)
+        public int? UpdatedByUserId { get; set; }  // Người thực hiện lần cập nhật gần nhất
 
         // Foreign Keys
         public Competitions Competition { get; set; } = null!;
         public Registrations? Registration { get; set; }
         public Teams? Team { get; set; }
         public CompetitionRounds? CompetitionRound { get; set; }
+        public Users? CreatedByUser { get; set; }
+        public Users? UpdatedByUser { get; set; }
 
         // Navigation properties
         public ICollection<Scores> Scores { get; set; } = new List<Scores>();

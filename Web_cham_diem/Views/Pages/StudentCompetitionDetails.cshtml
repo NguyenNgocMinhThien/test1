@@ -492,10 +492,10 @@
                             </button>
                         }
 
-                        <button class="btn bg-white border px-4 py-2 rounded-pill text-academic fw-medium shadow-sm hover-shadow">
+                        <button type="button" class="btn bg-white border px-4 py-2 rounded-pill text-academic fw-medium shadow-sm hover-shadow" onclick="showComingSoonToast()">
                             <i class="bi bi-journals me-2"></i>Bài dự thi mẫu
                         </button>
-                        <button class="btn bg-white border px-4 py-2 rounded-pill text-dark fw-medium shadow-sm hover-shadow">
+                        <button type="button" class="btn bg-white border px-4 py-2 rounded-pill text-dark fw-medium shadow-sm hover-shadow" onclick="showComingSoonToast()">
                             <i class="bi bi-chat-dots me-2"></i>Liên hệ BTC
                         </button>
                     </div>
@@ -585,3 +585,24 @@
         </div>
     </div>
 </div>
+
+<!-- Toast: chức năng đang phát triển -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="comingSoonToast" class="toast align-items-center text-white border-0" style="background-color: var(--academic-blue);" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body fw-medium">
+                <i class="bi bi-cone-striped me-2"></i>Chức năng đang phát triển, vui lòng quay lại sau.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function showComingSoonToast() {
+        const toastEl = document.getElementById('comingSoonToast');
+        bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3000 }).show();
+    }
+</script>
+}
