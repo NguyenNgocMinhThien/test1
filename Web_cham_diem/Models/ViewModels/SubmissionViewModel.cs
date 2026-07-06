@@ -59,5 +59,10 @@ namespace Web_cham_diem.Models.ViewModels
         public DateTime? SubmissionDeadline { get; set; }
         public string Status { get; set; } = string.Empty;
         public int RoundOrder { get; set; }
+
+        // Xác định theo mốc thời gian thực tế (StartDate..SubmissionDeadline/EndDate),
+        // vì trường Status ở trên không được hệ thống tự động cập nhật.
+        public bool IsCurrent { get; set; }
+        public bool IsUpcoming { get; set; }
     }
 }

@@ -842,20 +842,48 @@ string ScoreTextCss(decimal pct) => pct >= 90 ? "text-success" : pct >= 75 ? "te
 
                         @if (detail != null)
                         {
-                            <div class="d-grid gap-2">
+                            <div class="d-flex flex-column gap-2">
                                 @foreach (var round in detail.Rounds)
                                 {
-                                    <a href="@Url.Action("ExportResultsCsv", "Organizer", new { competitionId = detail.CompetitionId, roundId = round.RoundId == 0 ? (int?)null : round.RoundId })"
-                                       class="btn btn-outline-success fw-semibold">
-                                        <i class="bi bi-file-earmark-spreadsheet me-2"></i>
-                                        Xuất CSV — @round.RoundName
-                                        <span class="badge bg-success ms-1">@round.Rankings.Count bài</span>
-                                    </a>
+                                    var rid = round.RoundId == 0 ? (int?)null : round.RoundId;
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 px-3 rounded border">
+                                        <div>
+                                            <div class="fw-semibold">@round.RoundName</div>
+                                            <div class="text-muted" style="font-size:.78rem;">@round.Rankings.Count bài đã chấm</div>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <a href="@Url.Action("ExportResultsExcel", "Organizer", new { competitionId = detail.CompetitionId, roundId = rid })"
+                                               class="btn btn-sm btn-success" title="Xuất Excel (.xlsx)">
+                                                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                                            </a>
+                                            <a href="@Url.Action("ExportResultsPdf", "Organizer", new { competitionId = detail.CompetitionId, roundId = rid })"
+                                               class="btn btn-sm btn-danger" title="Xuất PDF">
+                                                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                            </a>
+                                            <a href="@Url.Action("ExportResultsCsv", "Organizer", new { competitionId = detail.CompetitionId, roundId = rid })"
+                                               class="btn btn-sm btn-outline-secondary" title="Xuất CSV">
+                                                <i class="bi bi-filetype-csv me-1"></i>CSV
+                                            </a>
+                                        </div>
+                                    </div>
                                 }
-                                <a href="@Url.Action("ExportResultsCsv", "Organizer", new { competitionId = detail.CompetitionId })"
-                                   class="btn btn-success fw-semibold">
-                                    <i class="bi bi-filetype-csv me-2"></i> Xuất CSV Toàn bộ (tất cả vòng)
-                                </a>
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 px-3 rounded border bg-light">
+                                    <div class="fw-bold">Toàn bộ (tất cả vòng thi)</div>
+                                    <div class="d-flex gap-2">
+                                        <a href="@Url.Action("ExportResultsExcel", "Organizer", new { competitionId = detail.CompetitionId })"
+                                           class="btn btn-sm btn-success" title="Xuất Excel (.xlsx)">
+                                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                                        </a>
+                                        <a href="@Url.Action("ExportResultsPdf", "Organizer", new { competitionId = detail.CompetitionId })"
+                                           class="btn btn-sm btn-danger" title="Xuất PDF">
+                                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                                        </a>
+                                        <a href="@Url.Action("ExportResultsCsv", "Organizer", new { competitionId = detail.CompetitionId })"
+                                           class="btn btn-sm btn-outline-secondary" title="Xuất CSV">
+                                            <i class="bi bi-filetype-csv me-1"></i>CSV
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         }
                         else
@@ -875,7 +903,9 @@ string ScoreTextCss(decimal pct) => pct >= 90 ? "text-success" : pct >= 75 ? "te
                             <li class="mb-2"><strong>Chi tiết điểm số</strong> — Bảng điểm chi tiết từng tiêu chí đánh giá, điểm trung bình từ các giám khảo.</li>
                             <li class="mb-2"><strong>Phân tích thống kê</strong> — Biểu đồ phổ điểm và cơ cấu giải thưởng của cuộc thi đang chọn.</li>
                             <li class="mb-2"><strong>Tổng kết tất cả</strong> — Bảng tổng hợp số liệu toàn bộ các cuộc thi phục vụ công tác tổng kết.</li>
-                            <li class="mb-2"><strong>Xuất CSV</strong> — Tải file bảng điểm đầy đủ định dạng CSV (Excel-compatible, UTF-8 BOM).</li>
+                            <li class="mb-2"><strong>Excel (.xlsx)</strong> — Khuyến nghị dùng để lưu trữ/in ấn: mỗi vòng 1 sheet, có định dạng, tô màu top 3, đóng băng dòng tiêu đề.</li>
+                            <li class="mb-2"><strong>PDF</strong> — Phù hợp để gửi/in báo cáo trực tiếp, không cần mở bằng Excel.</li>
+                            <li class="mb-2"><strong>CSV</strong> — File văn bản thô, dùng dấu <code>;</code> để tương thích Excel bản tiếng Việt (UTF-8 BOM).</li>
                         </ul>
                         <hr class="my-3">
                         <p class="small text-muted mb-0">

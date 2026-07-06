@@ -1068,6 +1068,13 @@ public class CompetitiveController : Controller
 
         var newStatus = model.SubmitAction == "submit" ? "Submitted" : "Draft";
 
+        // Chỉ chấp nhận vòng thi thuộc đúng cuộc thi này; nếu client gửi giá trị không hợp lệ
+        // (hoặc không chọn), rơi về gợi ý theo mốc thời gian hiện tại thay vì lưu null vô điều kiện.
+        var roundId = model.SelectedRoundId.HasValue
+            && competition.CompetitionRounds.Any(r => r.RoundId == model.SelectedRoundId.Value)
+            ? model.SelectedRoundId
+            : DetermineCurrentRoundId(competition.CompetitionRounds, DateTime.UtcNow);
+
         if (existing != null)
         {
             if (existing.Status is "Under Review" or "Evaluated")
@@ -1081,7 +1088,7 @@ public class CompetitiveController : Controller
             existing.FileUrl = fileUrl;
             existing.VideoUrl = string.IsNullOrWhiteSpace(model.VideoUrl) ? null : model.VideoUrl.Trim();
             existing.ProjectLink = string.IsNullOrWhiteSpace(model.ProjectLink) ? null : model.ProjectLink.Trim();
-            existing.CompetitionRoundId = model.SelectedRoundId;
+            existing.CompetitionRoundId = roundId;
             existing.Status = newStatus;
             existing.UpdatedAt = DateTime.UtcNow;
             existing.UpdatedByUserId = currentUserId;
@@ -1094,7 +1101,7 @@ public class CompetitiveController : Controller
                 CompetitionId = id,
                 RegistrationId = registration.TeamId.HasValue ? null : registration.RegistrationId,
                 TeamId = registration.TeamId,
-                CompetitionRoundId = model.SelectedRoundId,
+                CompetitionRoundId = roundId,
                 Title = model.Title.Trim(),
                 Description = model.Description?.Trim(),
                 FileUrl = fileUrl,
@@ -1123,9 +1130,22 @@ public class CompetitiveController : Controller
             s.CompetitionId == competitionId && s.RegistrationId == registration.RegistrationId);
     }
 
+    // Vòng thi được xem là "đang diễn ra" khi thời điểm hiện tại nằm trong khoảng
+    // StartDate..(SubmissionDeadline ?? EndDate). Không dùng CompetitionRounds.Status
+    // vì trường này chỉ được set 1 lần lúc tạo vòng và không tự động cập nhật theo thời gian.
+    private static int? DetermineCurrentRoundId(IEnumerable<CompetitionRounds> rounds, DateTime nowUtc)
+    {
+        return rounds
+            .Where(r => nowUtc >= r.StartDate && nowUtc <= (r.SubmissionDeadline ?? r.EndDate))
+            .OrderBy(r => r.RoundOrder)
+            .Select(r => (int?)r.RoundId)
+            .FirstOrDefault();
+    }
+
     private SubmissionViewModel BuildSubmissionViewModel(
         Competitions competition, Registrations registration, Users user, Submissions? existing)
     {
+        var nowUtc = DateTime.UtcNow;
         var rounds = competition.CompetitionRounds
             .OrderBy(r => r.RoundOrder)
             .Select(r => new SubmissionRoundDto
@@ -1134,8 +1154,15 @@ public class CompetitiveController : Controller
                 RoundName = r.RoundName,
                 SubmissionDeadline = r.SubmissionDeadline,
                 Status = r.Status,
-                RoundOrder = r.RoundOrder
+                RoundOrder = r.RoundOrder,
+                IsCurrent = nowUtc >= r.StartDate && nowUtc <= (r.SubmissionDeadline ?? r.EndDate),
+                IsUpcoming = nowUtc < r.StartDate
             }).ToList();
+
+        // Nếu bài nộp đã gắn vòng từ trước thì giữ nguyên; nếu chưa (bài mới) thì gợi ý
+        // vòng đang diễn ra theo thời gian hiện tại làm giá trị mặc định trên form.
+        var suggestedRoundId = existing?.CompetitionRoundId
+            ?? DetermineCurrentRoundId(competition.CompetitionRounds, nowUtc);
 
         var members = registration.Team?.TeamMembers
             .Select(tm => new SubmissionTeamMemberDto
@@ -1165,7 +1192,7 @@ public class CompetitiveController : Controller
             ExistingFileUrl = existing?.FileUrl,
             Title = existing?.Title ?? string.Empty,
             Description = existing?.Description,
-            SelectedRoundId = existing?.CompetitionRoundId,
+            SelectedRoundId = suggestedRoundId,
             VideoUrl = existing?.VideoUrl,
             ProjectLink = existing?.ProjectLink,
             UserFullName = user.FullName,
