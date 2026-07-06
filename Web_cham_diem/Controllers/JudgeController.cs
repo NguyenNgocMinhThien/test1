@@ -323,6 +323,25 @@ public class JudgeController : Controller
 
             if (existing != null)
             {
+                // Giám khảo chấm lại một bài đã có điểm trước đó — ghi log vì đây là hành động
+                // thực sự làm thay đổi kết quả (tổng điểm/thứ hạng) đã tính ra trước đó.
+                if (existing.Score != clampedScore)
+                {
+                    _context.ResultEditHistories.Add(new ResultEditHistory
+                    {
+                        CompetitionId = assignment.CompetitionId,
+                        RoundId = assignment.RoundId,
+                        SubmissionId = assignment.SubmissionId,
+                        JudgeId = assignment.JudgeId,
+                        CriteriaId = input.CriteriaId,
+                        EditedBy = userId,
+                        ActionType = "ScoreEdited",
+                        ChangesSummary = $"Giám khảo chấm lại tiêu chí #{input.CriteriaId} cho bài #{assignment.SubmissionId}",
+                        OldValue = existing.Score.ToString("F2"),
+                        NewValue = clampedScore.ToString("F2")
+                    });
+                }
+
                 existing.Score     = clampedScore;
                 existing.Comment   = input.Comment?.Trim();
                 existing.UpdatedAt = now;
@@ -672,6 +691,18 @@ public class JudgeController : Controller
                 score.RejectionReason = null;
                 score.UpdatedAt      = now;
             }
+
+            _context.ResultEditHistories.Add(new ResultEditHistory
+            {
+                CompetitionId = targetJudge.CompetitionId,
+                RoundId = targetJudge.RoundId,
+                SubmissionId = dto.SubmissionId,
+                JudgeId = dto.JudgeId,
+                EditedBy = userId,
+                ActionType = "ScoreApproved",
+                ChangesSummary = $"Trưởng ban duyệt điểm của giám khảo cho bài #{dto.SubmissionId}"
+            });
+
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã duyệt điểm thành công." });
         }
@@ -697,6 +728,19 @@ public class JudgeController : Controller
                 assignment.CompletedAt = null;
                 assignment.UpdatedAt   = now;
             }
+
+            // Điểm bị từ chối sẽ bị loại khỏi kết quả tính toán — đây là thay đổi trực tiếp
+            // đến thứ hạng/giải thưởng nên bắt buộc phải ghi log.
+            _context.ResultEditHistories.Add(new ResultEditHistory
+            {
+                CompetitionId = targetJudge.CompetitionId,
+                RoundId = targetJudge.RoundId,
+                SubmissionId = dto.SubmissionId,
+                JudgeId = dto.JudgeId,
+                EditedBy = userId,
+                ActionType = "ScoreRejected",
+                ChangesSummary = $"Trưởng ban từ chối điểm của giám khảo cho bài #{dto.SubmissionId}. Lý do: {dto.RejectionReason.Trim()}"
+            });
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Đã từ chối điểm. Giám khảo sẽ cần chấm lại." });

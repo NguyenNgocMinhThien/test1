@@ -920,7 +920,7 @@ namespace Web_cham_diem.Controllers
 
             try
             {
-                var (ok, msg) = await _resultsService.SetRoundResultsPublishedAsync(roundId, competitionId, publish);
+                var (ok, msg) = await _resultsService.SetRoundResultsPublishedAsync(roundId, competitionId, publish, GetCurrentUserId());
                 TempData[ok ? "SuccessMessage" : "ErrorMessage"] = msg;
             }
             catch (Exception ex)

@@ -123,3 +123,18 @@ public class SubmissionRankingDetailDto
     public int JudgeCount { get; set; }
     public string AwardLevel { get; set; } = "";
 }
+
+// Một dòng trong lịch sử công bố / chỉnh sửa kết quả (mục "Lịch sử" trên trang Thống kê & Báo cáo)
+public class ResultHistoryItemDto
+{
+    public int HistoryId { get; set; }
+    public DateTime EditedAt { get; set; }
+    public string ActionType { get; set; } = string.Empty; // Publish | Unpublish | ScoreEdited | ScoreApproved | ScoreRejected
+    public string ChangesSummary { get; set; } = string.Empty;
+    public string? OldValue { get; set; }
+    public string? NewValue { get; set; }
+    public string EditorName { get; set; } = string.Empty;
+    public string CompetitionName { get; set; } = string.Empty;
+    public string? RoundName { get; set; }
+    public string? SubmissionTitle { get; set; }
+}

@@ -30,6 +30,7 @@ namespace Web_cham_diem.Models
         public DbSet<TeamTasks> TeamTasks { get; set; }
         public DbSet<TaskCompletions> TaskCompletions { get; set; }
         public DbSet<RegistrationEditHistory> RegistrationEditHistories { get; set; }
+        public DbSet<ResultEditHistory> ResultEditHistories { get; set; }
         public DbSet<PublicAnnouncements> PublicAnnouncements { get; set; }
         public DbSet<RegistrationFormFields> RegistrationFormFields { get; set; }
         public DbSet<RegistrationFieldValues> RegistrationFieldValues { get; set; }
@@ -517,6 +518,44 @@ namespace Web_cham_diem.Models
                 .HasForeignKey(h => h.RegistrationId)
                 .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<RegistrationEditHistory>()
+                .HasOne(h => h.Editor)
+                .WithMany()
+                .HasForeignKey(h => h.EditedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Configure ResultEditHistory — chỉ cascade theo Competition, các liên kết còn lại
+            // (Round/Submission/Judge/Criteria) dùng NoAction để tránh nhiều đường cascade chồng chéo.
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasKey(h => h.HistoryId);
+            modelBuilder.Entity<ResultEditHistory>()
+                .Property(h => h.ActionType)
+                .HasMaxLength(30);
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasOne(h => h.Competition)
+                .WithMany()
+                .HasForeignKey(h => h.CompetitionId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasOne(h => h.Round)
+                .WithMany()
+                .HasForeignKey(h => h.RoundId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasOne(h => h.Submission)
+                .WithMany()
+                .HasForeignKey(h => h.SubmissionId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasOne(h => h.Judge)
+                .WithMany()
+                .HasForeignKey(h => h.JudgeId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ResultEditHistory>()
+                .HasOne(h => h.Criteria)
+                .WithMany()
+                .HasForeignKey(h => h.CriteriaId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ResultEditHistory>()
                 .HasOne(h => h.Editor)
                 .WithMany()
                 .HasForeignKey(h => h.EditedBy)

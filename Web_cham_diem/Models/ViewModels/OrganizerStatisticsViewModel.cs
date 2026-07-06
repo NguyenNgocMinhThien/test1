@@ -24,6 +24,9 @@ public class OrganizerStatisticsViewModel
 
     // ===== DANH SÁCH ĐẠT GIẢI =====
     public List<StatAwardRow> AwardWinners { get; set; } = new();
+
+    // ===== LỊCH SỬ CÔNG BỐ & CHỈNH SỬA KẾT QUẢ =====
+    public List<ResultHistoryItemDto> HistoryLog { get; set; } = new();
 }
 
 public class StatCompetitionRoundRow
