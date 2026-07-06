@@ -34,10 +34,15 @@ public class ResultsService : IResultsService
         }).ToList();
 
         // Overall aggregate stats (chỉ trong phạm vi cuộc thi của organizer)
+        // Lưu ý: Submissions.Status không bao giờ được cập nhật thành "Evaluated" trong luồng chấm điểm
+        // thực tế (JudgeController chỉ chuyển "Submitted" -> "Under Review"), nên "đã chấm" phải được
+        // xác định qua sự tồn tại của điểm số (Scores) đã được duyệt/không bị từ chối, giống cách
+        // BuildRankings xác định bài nào có điểm để xếp hạng.
         vm.TotalCompetitions = allComps.Count;
         vm.TotalRegistrations = await _context.Registrations.CountAsync(r => ownedIds.Contains(r.CompetitionId));
         vm.TotalSubmissions = await _context.Submissions.CountAsync(s => ownedIds.Contains(s.CompetitionId));
-        vm.TotalEvaluatedSubmissions = await _context.Submissions.CountAsync(s => ownedIds.Contains(s.CompetitionId) && s.Status == "Evaluated");
+        vm.TotalEvaluatedSubmissions = await _context.Submissions
+            .CountAsync(s => ownedIds.Contains(s.CompetitionId) && s.Scores.Any(sc => sc.ApprovalStatus != "Rejected"));
         vm.TotalRankedRounds = await _context.CompetitionRounds.CountAsync(r => ownedIds.Contains(r.CompetitionId) && r.Status == "Completed");
 
         // Per-competition stats for summary tab
@@ -50,7 +55,12 @@ public class ResultsService : IResultsService
         var subCounts = await _context.Submissions
             .Where(s => ownedIds.Contains(s.CompetitionId))
             .GroupBy(s => s.CompetitionId)
-            .Select(g => new { CompId = g.Key, Total = g.Count(), Evaluated = g.Count(s => s.Status == "Evaluated") })
+            .Select(g => new
+            {
+                CompId = g.Key,
+                Total = g.Count(),
+                Evaluated = g.Count(s => s.Scores.Any(sc => sc.ApprovalStatus != "Rejected"))
+            })
             .ToListAsync();
 
         var roundCounts = await _context.CompetitionRounds
@@ -139,6 +149,9 @@ public class ResultsService : IResultsService
                 .ToListAsync()
             : new List<Scores>();
 
+        // Bài được xem là "đã chấm" khi có ít nhất 1 điểm hợp lệ (không bị từ chối)
+        var evaluatedSubmissionIds = allScores.Select(s => s.SubmissionId).ToHashSet();
+
         var rounds = await _context.CompetitionRounds
             .Include(r => r.ScoringCriteria)
             .Where(r => r.CompetitionId == cid)
@@ -161,7 +174,7 @@ public class ResultsService : IResultsService
             TotalRegistrations = regCount,
             ApprovedRegistrations = approvedRegCount,
             TotalSubmissions = submissions.Count,
-            EvaluatedSubmissions = submissions.Count(s => s.Status == "Evaluated"),
+            EvaluatedSubmissions = submissions.Count(s => evaluatedSubmissionIds.Contains(s.SubmissionId)),
             TotalJudges = judgesCount
         };
 
@@ -197,7 +210,7 @@ public class ResultsService : IResultsService
                     StartDate = round.StartDate,
                     EndDate = round.EndDate,
                     SubmissionCount = roundSubs.Count,
-                    EvaluatedCount = roundSubs.Count(s => s.Status == "Evaluated"),
+                    EvaluatedCount = roundSubs.Count(s => evaluatedSubmissionIds.Contains(s.SubmissionId)),
                     AverageScore = rankings.Any() ? Math.Round(rankings.Average(r => r.TotalScore), 1) : 0,
                     MaxPossibleScore = maxPossible,
                     Criteria = criteria.Select(c => new ScoringCriteriaResultDto
@@ -227,7 +240,7 @@ public class ResultsService : IResultsService
                 StartDate = comp.StartDate,
                 EndDate = comp.EndDate,
                 SubmissionCount = submissions.Count,
-                EvaluatedCount = submissions.Count(s => s.Status == "Evaluated"),
+                EvaluatedCount = submissions.Count(s => evaluatedSubmissionIds.Contains(s.SubmissionId)),
                 AverageScore = rankings.Any() ? Math.Round(rankings.Average(r => r.TotalScore), 1) : 0,
                 MaxPossibleScore = 100,
                 Criteria = new(),

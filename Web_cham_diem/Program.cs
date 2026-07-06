@@ -10,6 +10,9 @@ using System.Globalization;
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
+// QuestPDF Community license: miễn phí cho cá nhân/tổ chức có doanh thu < 1 triệu USD/năm
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

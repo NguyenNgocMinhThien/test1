@@ -550,7 +550,7 @@
                                           placeholder="Tóm tắt nội dung, phương pháp nghiên cứu và kết quả nổi bật của sản phẩm...">@Model.Description</textarea>
                             </div>
 
-                            @* @if (Model.AvailableRounds.Any())
+                            @if (Model.AvailableRounds.Any())
                             {
                                 <div class="mb-1">
                                     <label class="form-label" for="SelectedRoundId">
@@ -563,18 +563,22 @@
                                             var deadlineStr = r.SubmissionDeadline.HasValue
                                                 ? $" · Hạn nộp: {r.SubmissionDeadline.Value.ToLocalTime():dd/MM/yyyy}"
                                                 : "";
+                                            var currentTag = r.IsCurrent ? " (đang diễn ra)" : "";
                                             if (Model.SelectedRoundId == r.RoundId)
                                             {
-                                                <option value="@r.RoundId" selected="selected">Vòng @r.RoundOrder — @r.RoundName@deadlineStr</option>
+                                                <option value="@r.RoundId" selected="selected">Vòng @r.RoundOrder — @r.RoundName@deadlineStr@currentTag</option>
                                             }
                                             else
                                             {
-                                                <option value="@r.RoundId">Vòng @r.RoundOrder — @r.RoundName@deadlineStr</option>
+                                                <option value="@r.RoundId">Vòng @r.RoundOrder — @r.RoundName@deadlineStr@currentTag</option>
                                             }
                                         }
                                     </select>
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>Hệ thống đã tự chọn vòng thi đang diễn ra theo thời gian hiện tại — bạn có thể đổi lại nếu cần.
+                                    </div>
                                 </div>
-                            } *@
+                            }
                         </div>
                     </div>
 
@@ -849,8 +853,8 @@
                     <div class="card-body p-3">
                         @foreach (var r in Model.AvailableRounds)
                         {
-                            var dotColor = r.Status == "Active" ? "text-success" :
-                                           r.Status == "Upcoming" ? "text-info" : "text-secondary";
+                            var dotColor = r.IsCurrent ? "text-success" :
+                                           r.IsUpcoming ? "text-info" : "text-secondary";
                             <div class="d-flex align-items-start gap-2 mb-2 p-2 rounded"
                                  style="background:#f9fafb;font-size:12px;">
                                 <i class="bi bi-circle-fill @dotColor mt-1" style="font-size:7px;"></i>
@@ -862,9 +866,9 @@
                                             Hạn nộp: @r.SubmissionDeadline.Value.ToLocalTime().ToString("dd/MM/yyyy")
                                         </div>
                                     }
-                                    <span class="badge @(r.Status == "Active" ? "bg-success" : r.Status == "Upcoming" ? "bg-info text-dark" : "bg-secondary") mt-1"
+                                    <span class="badge @(r.IsCurrent ? "bg-success" : r.IsUpcoming ? "bg-info text-dark" : "bg-secondary") mt-1"
                                           style="font-size:10px;">
-                                        @(r.Status == "Active" ? "Đang diễn ra" : r.Status == "Upcoming" ? "Sắp mở" : "Đã kết thúc")
+                                        @(r.IsCurrent ? "Đang diễn ra" : r.IsUpcoming ? "Sắp mở" : "Đã kết thúc")
                                     </span>
                                 </div>
                             </div>

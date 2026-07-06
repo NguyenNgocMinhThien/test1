@@ -51,19 +51,20 @@ public class SubmissionService : ISubmissionService
             var registrationsQuery = _context.Registrations
                 .Include(r => r.User)
                 .Include(r => r.Team)
+                .Include(r => r.Competition)
                 .Where(r => ownedIds.Contains(r.CompetitionId))
                 .AsQueryable();
 
             if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
                 registrationsQuery = registrationsQuery.Where(r => r.CompetitionId == competitionId.Value);
 
+            // Tìm kiếm theo: tên cuộc thi, tên đội dự thi, tên bài dự thi (Submission.Title liên kết qua RegistrationId)
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 registrationsQuery = registrationsQuery.Where(r =>
-                    r.User.FullName.Contains(searchQuery) ||
+                    r.Competition.CompetitionName.Contains(searchQuery) ||
                     (r.Team != null && r.Team.TeamName.Contains(searchQuery)) ||
-                    (r.User.StudentId != null && r.User.StudentId.Contains(searchQuery)) ||
-                    r.User.Email.Contains(searchQuery));
+                    _context.Submissions.Any(s => s.RegistrationId == r.RegistrationId && s.Title.Contains(searchQuery)));
             }
 
             if (!string.IsNullOrWhiteSpace(statusFilter) && statusFilter != "all")
@@ -118,6 +119,15 @@ public class SubmissionService : ISubmissionService
 
             if (competitionId.HasValue && ownedIds.Contains(competitionId.Value))
                 submissionsQuery = submissionsQuery.Where(s => s.CompetitionId == competitionId.Value);
+
+            // Tìm kiếm theo: tên cuộc thi, tên đội dự thi, tên bài dự thi
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                submissionsQuery = submissionsQuery.Where(s =>
+                    s.Title.Contains(searchQuery) ||
+                    (s.Competition != null && s.Competition.CompetitionName.Contains(searchQuery)) ||
+                    (s.Team != null && s.Team.TeamName.Contains(searchQuery)));
+            }
 
             var submissions = await submissionsQuery
                 .OrderByDescending(s => s.SubmissionDate)
