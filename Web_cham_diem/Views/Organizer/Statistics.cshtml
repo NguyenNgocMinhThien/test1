@@ -1,0 +1,293 @@
+@model Web_cham_diem.Models.ViewModels.OrganizerStatisticsViewModel
+@{
+    Layout = "~/Views/Shared/_OrganizerLayout.cshtml";
+    ViewData["Title"] = "Thống kê & Báo cáo";
+
+    string AwardBadgeCss(string level) => level switch
+    {
+        "Nhất" => "award-gold",
+        "Nhì" => "award-silver",
+        "Ba" => "award-bronze",
+        "Khuyến khích" => "award-encourage",
+        _ => ""
+    };
+}
+
+@section Styles {
+<style>
+    .stat-wrapper { background: var(--primary-bg); min-height: calc(100vh - 70px); }
+
+    .stat-card {
+        background: #fff; padding: 20px 22px; border-radius: 12px;
+        border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;
+    }
+    .stat-card .stat-value { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+    .stat-card .stat-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+
+    .filter-bar { background: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 20px; }
+
+    .report-box { background: #fff; border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden; }
+    .report-table th {
+        font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+        color: var(--text-muted); background: #f8fafc; padding: 12px 14px; border-bottom: 2px solid var(--border-color); white-space: nowrap;
+    }
+    .report-table td { padding: 12px 14px; vertical-align: middle; font-size: .87rem; border-bottom: 1px solid #f1f5f9; }
+    .report-table tbody tr:last-child td { border-bottom: none; }
+    .report-table tbody tr:hover { background: #fafbfd; }
+
+    .award-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+    .award-gold      { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+    .award-silver    { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .award-bronze    { background: #ffedd5; color: #92400e; border: 1px solid #fed7aa; }
+    .award-encourage { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+    .prog-bar-wrap { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+    .prog-bar-fill { height: 100%; border-radius: 3px; background: var(--organizer-accent); }
+
+    .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 3rem; opacity: .3; display: block; margin-bottom: 12px; }
+</style>
+}
+
+<div class="stat-wrapper py-4">
+<div class="container-fluid">
+
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1 text-dark">Thống kê & Báo cáo</h3>
+            <p class="text-muted small mb-0">Tổng hợp số liệu cuộc thi, đăng ký, bài dự thi, kết quả chấm điểm theo từng vòng và danh sách đạt giải.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("ExportStatisticsExcel", "Organizer", new { competitionId = Model.SelectedCompetitionId })"
+               class="btn btn-success fw-semibold">
+                <i class="bi bi-file-earmark-excel me-1"></i>Xuất Excel
+            </a>
+            <a href="@Url.Action("ExportStatisticsPdf", "Organizer", new { competitionId = Model.SelectedCompetitionId })"
+               class="btn btn-danger fw-semibold">
+                <i class="bi bi-file-earmark-pdf me-1"></i>Xuất PDF
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Bộ lọc theo cuộc thi -->
+    <div class="filter-bar mb-4">
+        <form method="get" asp-action="Statistics" asp-controller="Organizer" class="d-flex align-items-center gap-3 flex-wrap">
+            <label class="fw-bold text-muted small text-uppercase mb-0" style="letter-spacing:.4px;">Lọc theo cuộc thi:</label>
+            <select name="competitionId" class="form-select fw-semibold" style="max-width:380px;" onchange="this.form.submit()">
+                <option value="">Tất cả cuộc thi</option>
+                @foreach (var c in Model.Competitions)
+                {
+                    if (Model.SelectedCompetitionId == c.CompetitionId)
+                    {
+                        <option value="@c.CompetitionId" selected>@c.CompetitionName</option>
+                    }
+                    else
+                    {
+                        <option value="@c.CompetitionId">@c.CompetitionName</option>
+                    }
+                }
+            </select>
+            @if (!Model.Competitions.Any())
+            {
+                <span class="text-muted small fst-italic">Chưa có cuộc thi nào.</span>
+            }
+        </form>
+    </div>
+
+    <!-- Thẻ tổng quan -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-2">
+            <div class="stat-card" style="border-left: 4px solid #6366f1;">
+                <div>
+                    <div class="stat-label mb-1">Tổng cuộc thi</div>
+                    <div class="stat-value" style="color:#6366f1;">@Model.TotalCompetitions</div>
+                    <div class="text-muted" style="font-size:.75rem;">@Model.ActiveCompetitions đang diễn ra</div>
+                </div>
+                <i class="bi bi-trophy-fill" style="font-size:2.2rem;color:#6366f1;opacity:.18;"></i>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="stat-card" style="border-left: 4px solid #10b981;">
+                <div>
+                    <div class="stat-label mb-1">Thí sinh đăng ký</div>
+                    <div class="stat-value" style="color:#10b981;">@Model.TotalRegistrations</div>
+                    <div class="text-muted" style="font-size:.75rem;">@Model.ApprovedRegistrations đã duyệt</div>
+                </div>
+                <i class="bi bi-people-fill" style="font-size:2.2rem;color:#10b981;opacity:.18;"></i>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                <div>
+                    <div class="stat-label mb-1">Bài dự thi</div>
+                    <div class="stat-value" style="color:#f59e0b;">@Model.TotalSubmissions</div>
+                    <div class="text-muted" style="font-size:.75rem;">Tổng bài nộp</div>
+                </div>
+                <i class="bi bi-file-earmark-text-fill" style="font-size:2.2rem;color:#f59e0b;opacity:.18;"></i>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card" style="border-left: 4px solid #0d6efd;">
+                <div>
+                    <div class="stat-label mb-1">Đã chấm điểm</div>
+                    <div class="stat-value" style="color:#0d6efd;">@Model.GradingCompletionRate.ToString("0.#")%</div>
+                    <div class="text-muted" style="font-size:.75rem;">@Model.EvaluatedSubmissions / @Model.TotalSubmissions bài</div>
+                    <div class="prog-bar-wrap mt-1"><div class="prog-bar-fill" style="width:@Model.GradingCompletionRate%;"></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card" style="border-left: 4px solid #d97706;">
+                <div>
+                    <div class="stat-label mb-1">Đạt giải</div>
+                    <div class="stat-value" style="color:#d97706;">@Model.TotalAwardedEntries</div>
+                    <div class="text-muted" style="font-size:.75rem;">lượt trao giải</div>
+                </div>
+                <i class="bi bi-award-fill" style="font-size:2.2rem;color:#d97706;opacity:.18;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kết quả chấm điểm theo cuộc thi & vòng thi -->
+    <div class="report-box shadow-sm mb-4">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span class="fw-bold"><i class="bi bi-layers-fill me-1 text-muted"></i>Kết quả chấm điểm theo cuộc thi &amp; vòng thi</span>
+            <span class="text-muted small">@Model.RoundResults.Count vòng thi</span>
+        </div>
+        @if (!Model.RoundResults.Any())
+        {
+            <div class="empty-state"><i class="bi bi-layers"></i><div class="fw-semibold">Chưa có dữ liệu vòng thi</div></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table report-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Cuộc thi</th>
+                            <th>Vòng thi</th>
+                            <th class="text-center">Công bố</th>
+                            <th class="text-center">Bài nộp</th>
+                            <th class="text-center">Đã chấm</th>
+                            <th style="min-width:120px;">Tiến độ</th>
+                            <th class="text-center">Điểm TB</th>
+                            <th class="text-center">Số giải</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.RoundResults)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="@Url.Action("Results", "Organizer", new { competitionId = row.CompetitionId })"
+                                       class="fw-semibold text-decoration-none text-dark">@row.CompetitionName</a>
+                                </td>
+                                <td class="text-muted">@row.RoundName</td>
+                                <td class="text-center">
+                                    @if (row.IsResultsPublished)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">Đã công bố</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">Chưa công bố</span>
+                                    }
+                                </td>
+                                <td class="text-center">@row.SubmissionCount</td>
+                                <td class="text-center text-success fw-semibold">@row.EvaluatedCount</td>
+                                <td>
+                                    <div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:@row.GradingProgress.ToString("0")%;"></div></div>
+                                    <div class="text-muted text-center" style="font-size:.72rem;">@row.GradingProgress.ToString("0.#")%</div>
+                                </td>
+                                <td class="text-center fw-bold text-primary">
+                                    @(row.AverageScore > 0 ? row.AverageScore.ToString("F1") : "—")
+                                    @if (row.MaxPossibleScore > 0) { <span class="text-muted fw-normal">/@row.MaxPossibleScore</span> }
+                                </td>
+                                <td class="text-center">
+                                    @if (row.AwardedCount > 0)
+                                    {
+                                        <span class="award-badge award-gold">@row.AwardedCount</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <!-- Danh sách đạt giải -->
+    <div class="report-box shadow-sm">
+        <div class="p-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span class="fw-bold"><i class="bi bi-award-fill me-1 text-warning"></i>Danh sách đạt giải</span>
+            <span class="text-muted small">@Model.AwardWinners.Count thí sinh/đội</span>
+        </div>
+        @if (!Model.AwardWinners.Any())
+        {
+            <div class="empty-state"><i class="bi bi-award"></i><div class="fw-semibold">Chưa có thí sinh đạt giải</div></div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table report-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">Hạng</th>
+                            <th style="width:130px;">Giải</th>
+                            <th>Cuộc thi</th>
+                            <th>Vòng thi</th>
+                            <th>Thí sinh / Đội</th>
+                            <th>Tên đề tài</th>
+                            <th class="text-center">Tổng điểm</th>
+                            <th class="text-center">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.AwardWinners)
+                        {
+                            <tr>
+                                <td class="text-center fw-bold text-muted">@row.Rank</td>
+                                <td>
+                                    <span class="award-badge @AwardBadgeCss(row.AwardLevel)">
+                                        @if (row.AwardLevel == "Khuyến khích") { <i class="bi bi-patch-check-fill"></i> } else { <i class="bi bi-award-fill"></i> }
+                                        Giải @row.AwardLevel
+                                    </span>
+                                </td>
+                                <td class="text-muted small">@row.CompetitionName</td>
+                                <td class="text-muted small">@row.RoundName</td>
+                                <td>
+                                    <div class="fw-semibold">
+                                        @if (row.IsTeam) { <i class="bi bi-people-fill text-primary me-1" title="Đội thi"></i> }
+                                        @row.ParticipantName
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(row.StudentId))
+                                    {
+                                        <div class="text-muted small">MSSV: @row.StudentId</div>
+                                    }
+                                </td>
+                                <td class="fw-semibold small">@row.Title</td>
+                                <td class="text-center fw-bold">@row.TotalScore.ToString("F1")</td>
+                                <td class="text-center text-muted small">@row.ScorePercentage%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+</div>
+</div>

@@ -1279,6 +1279,281 @@ namespace Web_cham_diem.Controllers
             }
         }
 
+        // ====== THỐNG KÊ & BÁO CÁO ======
+
+        public async Task<IActionResult> Statistics(int? competitionId = null)
+        {
+            try
+            {
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading statistics page");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải trang thống kê.";
+                return View(new OrganizerStatisticsViewModel());
+            }
+        }
+
+        private static string BuildStatisticsFileName(string extension) => $"thongke_baocao_{DateTime.Now:yyyyMMdd}.{extension}";
+
+        [HttpGet]
+        public async Task<IActionResult> ExportStatisticsExcel(int? competitionId = null)
+        {
+            try
+            {
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+
+                using var workbook = new XLWorkbook();
+                var usedSheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                // Sheet 1: Tổng quan
+                var ov = workbook.Worksheets.Add(SanitizeSheetName("Tong quan", usedSheetNames));
+                ov.Cell(1, 1).Value = "BÁO CÁO THỐNG KÊ TỔ CHỨC CUỘC THI";
+                ov.Cell(1, 1).Style.Font.Bold = true;
+                ov.Cell(1, 1).Style.Font.FontSize = 14;
+                ov.Cell(2, 1).Value = $"Xuất ngày: {DateTime.Now:dd/MM/yyyy HH:mm}";
+                ov.Cell(2, 1).Style.Font.Italic = true;
+
+                var kpis = new (string Label, string Value)[]
+                {
+                    ("Tổng số cuộc thi", vm.TotalCompetitions.ToString()),
+                    ("Cuộc thi đang diễn ra", vm.ActiveCompetitions.ToString()),
+                    ("Cuộc thi đã hoàn thành", vm.CompletedCompetitions.ToString()),
+                    ("Tổng thí sinh đăng ký", vm.TotalRegistrations.ToString()),
+                    ("Hồ sơ đã duyệt", vm.ApprovedRegistrations.ToString()),
+                    ("Tổng bài dự thi", vm.TotalSubmissions.ToString()),
+                    ("Bài đã chấm điểm", vm.EvaluatedSubmissions.ToString()),
+                    ("Tỷ lệ hoàn thành chấm điểm", $"{vm.GradingCompletionRate}%"),
+                    ("Tổng số lượt đạt giải", vm.TotalAwardedEntries.ToString())
+                };
+                int kr = 4;
+                foreach (var (label, value) in kpis)
+                {
+                    ov.Cell(kr, 1).Value = label;
+                    ov.Cell(kr, 1).Style.Font.Bold = true;
+                    ov.Cell(kr, 2).Value = value;
+                    kr++;
+                }
+                ov.Columns().AdjustToContents();
+
+                // Sheet 2: Kết quả chấm điểm theo vòng
+                var rs = workbook.Worksheets.Add(SanitizeSheetName("Ket qua theo vong", usedSheetNames));
+                string[] rHeaders = { "Cuộc thi", "Vòng thi", "Công bố", "Bài nộp", "Đã chấm", "Tiến độ", "Điểm TB", "Điểm tối đa", "Số giải" };
+                for (int i = 0; i < rHeaders.Length; i++) StyleHeaderCell(rs.Cell(1, i + 1), rHeaders[i]);
+                int rr = 2;
+                foreach (var row in vm.RoundResults)
+                {
+                    rs.Cell(rr, 1).Value = row.CompetitionName;
+                    rs.Cell(rr, 2).Value = row.RoundName;
+                    rs.Cell(rr, 3).Value = row.IsResultsPublished ? "Đã công bố" : "Chưa công bố";
+                    rs.Cell(rr, 4).Value = row.SubmissionCount;
+                    rs.Cell(rr, 5).Value = row.EvaluatedCount;
+                    rs.Cell(rr, 6).Value = row.GradingProgress / 100.0;
+                    rs.Cell(rr, 6).Style.NumberFormat.Format = "0.0%";
+                    rs.Cell(rr, 7).Value = row.AverageScore;
+                    rs.Cell(rr, 7).Style.NumberFormat.Format = "0.0";
+                    rs.Cell(rr, 8).Value = row.MaxPossibleScore;
+                    rs.Cell(rr, 9).Value = row.AwardedCount;
+                    rr++;
+                }
+                if (rr > 2)
+                {
+                    rs.Range(1, 1, rr - 1, rHeaders.Length).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    rs.SheetView.FreezeRows(1);
+                }
+                rs.Columns().AdjustToContents();
+
+                // Sheet 3: Danh sách đạt giải
+                var aw = workbook.Worksheets.Add(SanitizeSheetName("Danh sach dat giai", usedSheetNames));
+                string[] aHeaders = { "Hạng", "Giải", "Cuộc thi", "Vòng thi", "Thí sinh/Đội", "MSSV", "Đề tài", "Tổng điểm", "% điểm" };
+                for (int i = 0; i < aHeaders.Length; i++) StyleHeaderCell(aw.Cell(1, i + 1), aHeaders[i]);
+                int ar = 2;
+                foreach (var row in vm.AwardWinners)
+                {
+                    aw.Cell(ar, 1).Value = row.Rank;
+                    aw.Cell(ar, 2).Value = $"Giải {row.AwardLevel}";
+                    aw.Cell(ar, 3).Value = row.CompetitionName;
+                    aw.Cell(ar, 4).Value = row.RoundName;
+                    aw.Cell(ar, 5).Value = row.ParticipantName;
+                    aw.Cell(ar, 6).Value = row.StudentId ?? "";
+                    aw.Cell(ar, 7).Value = row.Title;
+                    aw.Cell(ar, 8).Value = row.TotalScore;
+                    aw.Cell(ar, 8).Style.NumberFormat.Format = "0.0";
+                    aw.Cell(ar, 9).Value = row.ScorePercentage / 100m;
+                    aw.Cell(ar, 9).Style.NumberFormat.Format = "0.0%";
+                    if (row.Rank <= 3)
+                        aw.Range(ar, 1, ar, aHeaders.Length).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF7E0");
+                    ar++;
+                }
+                if (ar > 2)
+                {
+                    aw.Range(1, 1, ar - 1, aHeaders.Length).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                    aw.SheetView.FreezeRows(1);
+                }
+                aw.Columns().AdjustToContents();
+
+                using var ms = new MemoryStream();
+                workbook.SaveAs(ms);
+                return File(ms.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    BuildStatisticsFileName("xlsx"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting statistics Excel");
+                return StatusCode(500, "Có lỗi xảy ra khi xuất dữ liệu Excel.");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportStatisticsPdf(int? competitionId = null)
+        {
+            try
+            {
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+                var exportedAt = DateTime.Now;
+
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4);
+                        page.Margin(30);
+                        page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(9));
+
+                        page.Header().Column(col =>
+                        {
+                            col.Item().Text("BÁO CÁO THỐNG KÊ TỔ CHỨC CUỘC THI").FontSize(16).Bold();
+                            col.Item().Text($"Xuất ngày: {exportedAt:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            col.Item().PaddingTop(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten1);
+                        });
+
+                        page.Content().PaddingTop(10).Column(col =>
+                        {
+                            col.Spacing(14);
+
+                            col.Item().Text("Tổng quan").FontSize(12).Bold();
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c => { c.RelativeColumn(); c.RelativeColumn(); c.RelativeColumn(); });
+
+                                void Kpi(string label, string value)
+                                {
+                                    table.Cell().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(8).Column(kc =>
+                                    {
+                                        kc.Item().Text(label).FontSize(8).FontColor(Colors.Grey.Darken1);
+                                        kc.Item().Text(value).FontSize(14).Bold();
+                                    });
+                                }
+
+                                Kpi("Tổng cuộc thi", vm.TotalCompetitions.ToString());
+                                Kpi("Đang diễn ra", vm.ActiveCompetitions.ToString());
+                                Kpi("Đã hoàn thành", vm.CompletedCompetitions.ToString());
+                                Kpi("Thí sinh đăng ký", vm.TotalRegistrations.ToString());
+                                Kpi("Bài dự thi", vm.TotalSubmissions.ToString());
+                                Kpi("Đã chấm điểm", $"{vm.EvaluatedSubmissions} ({vm.GradingCompletionRate}%)");
+                            });
+
+                            col.Item().PaddingTop(6).Text("Kết quả chấm điểm theo vòng thi").FontSize(12).Bold();
+                            col.Item().Table(table =>
+                            {
+                                table.ColumnsDefinition(c =>
+                                {
+                                    c.RelativeColumn(2.4f); c.RelativeColumn(1.6f); c.ConstantColumn(60);
+                                    c.ConstantColumn(50); c.ConstantColumn(50); c.ConstantColumn(55); c.ConstantColumn(45);
+                                });
+                                string[] headers = { "Cuộc thi", "Vòng thi", "Công bố", "Bài nộp", "Đã chấm", "Điểm TB", "Số giải" };
+                                table.Header(h =>
+                                {
+                                    foreach (var hd in headers)
+                                        h.Cell().Background(Colors.Blue.Darken2).Padding(4).Text(hd).FontColor(Colors.White).Bold().FontSize(8);
+                                });
+                                foreach (var row in vm.RoundResults)
+                                {
+                                    table.Cell().Padding(4).Text(row.CompetitionName);
+                                    table.Cell().Padding(4).Text(row.RoundName);
+                                    table.Cell().Padding(4).AlignCenter().Text(row.IsResultsPublished ? "Có" : "Chưa");
+                                    table.Cell().Padding(4).AlignCenter().Text(row.SubmissionCount.ToString());
+                                    table.Cell().Padding(4).AlignCenter().Text(row.EvaluatedCount.ToString());
+                                    table.Cell().Padding(4).AlignCenter().Text(row.AverageScore.ToString("F1"));
+                                    table.Cell().Padding(4).AlignCenter().Text(row.AwardedCount.ToString());
+                                }
+                                if (!vm.RoundResults.Any())
+                                    table.Cell().ColumnSpan(7).Padding(10).AlignCenter().Text("Chưa có dữ liệu.").Italic();
+                            });
+                        });
+
+                        page.Footer().AlignCenter().Text(x =>
+                        {
+                            x.Span("Trang "); x.CurrentPageNumber(); x.Span(" / "); x.TotalPages();
+                        });
+                    });
+
+                    // Trang riêng, khổ ngang: Danh sách đạt giải
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.A4.Landscape());
+                        page.Margin(25);
+                        page.DefaultTextStyle(x => x.FontFamily("Arial").FontSize(9));
+
+                        page.Header().Column(col =>
+                        {
+                            col.Item().Text("DANH SÁCH ĐẠT GIẢI").FontSize(15).Bold();
+                            col.Item().Text($"Xuất ngày: {exportedAt:dd/MM/yyyy HH:mm}").FontSize(9).FontColor(Colors.Grey.Darken1);
+                            col.Item().PaddingTop(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten1);
+                        });
+
+                        page.Content().PaddingTop(10).Table(table =>
+                        {
+                            table.ColumnsDefinition(c =>
+                            {
+                                c.ConstantColumn(32); c.ConstantColumn(70); c.RelativeColumn(2f); c.RelativeColumn(1.3f);
+                                c.RelativeColumn(1.8f); c.ConstantColumn(70); c.RelativeColumn(2f); c.ConstantColumn(55); c.ConstantColumn(45);
+                            });
+                            string[] headers = { "#", "Giải", "Cuộc thi", "Vòng thi", "Thí sinh/Đội", "MSSV", "Đề tài", "Điểm", "%" };
+                            table.Header(h =>
+                            {
+                                foreach (var hd in headers)
+                                    h.Cell().Background(Colors.Blue.Darken2).Padding(4).Text(hd).FontColor(Colors.White).Bold().FontSize(8);
+                            });
+
+                            foreach (var row in vm.AwardWinners)
+                            {
+                                var bg = row.Rank <= 3 ? Colors.Amber.Lighten4 : Colors.White;
+                                table.Cell().Background(bg).Padding(4).AlignCenter().Text(row.Rank.ToString());
+                                table.Cell().Background(bg).Padding(4).AlignCenter().Text($"Giải {row.AwardLevel}");
+                                table.Cell().Background(bg).Padding(4).Text(row.CompetitionName);
+                                table.Cell().Background(bg).Padding(4).Text(row.RoundName);
+                                table.Cell().Background(bg).Padding(4).Text(row.ParticipantName);
+                                table.Cell().Background(bg).Padding(4).Text(row.StudentId ?? "");
+                                table.Cell().Background(bg).Padding(4).Text(row.Title);
+                                table.Cell().Background(bg).Padding(4).AlignCenter().Text(row.TotalScore.ToString("F1")).Bold();
+                                table.Cell().Background(bg).Padding(4).AlignCenter().Text($"{row.ScorePercentage}%");
+                            }
+
+                            if (!vm.AwardWinners.Any())
+                                table.Cell().ColumnSpan(9).Padding(10).AlignCenter().Text("Chưa có thí sinh đạt giải.").Italic();
+                        });
+
+                        page.Footer().AlignCenter().Text(x =>
+                        {
+                            x.Span("Trang "); x.CurrentPageNumber(); x.Span(" / "); x.TotalPages();
+                        });
+                    });
+                });
+
+                var bytes = document.GeneratePdf();
+                return File(bytes, "application/pdf", BuildStatisticsFileName("pdf"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting statistics PDF");
+                return StatusCode(500, "Có lỗi xảy ra khi xuất dữ liệu PDF.");
+            }
+        }
+
         public async Task<IActionResult> Notifications(int? competitionId = null)
         {
             try

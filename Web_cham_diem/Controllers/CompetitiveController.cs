@@ -1359,46 +1359,7 @@ public class CompetitiveController : Controller
                             .ToList()
                         : new List<Submissions>();  // Ban tổ chức chưa công bố kết quả vòng này
 
-                    var rankings = roundSubmissions.Select(submission =>
-                    {
-                        var approvedScores = submission.Scores.ToList();
-                        var criteriaScores = new Dictionary<int, decimal>();
-                        var criteriaAvg = approvedScores
-                            .GroupBy(s => s.CriteriaId)
-                            .ToDictionary(g => g.Key, g => g.Average(s => s.Score));
-
-                        decimal totalWeighted = 0;
-                        decimal maxPossible = 0;
-                        foreach (var c in criteria)
-                        {
-                            var avg = criteriaAvg.GetValueOrDefault(c.CriteriaId, 0);
-                            criteriaScores[c.CriteriaId] = Math.Round(avg, 2);
-                            totalWeighted += avg * c.Weight;
-                            maxPossible += c.MaxScore * c.Weight;
-                        }
-
-                        return new PublicSubmissionRankingDto
-                        {
-                            SubmissionId = submission.SubmissionId,
-                            Title = submission.Title,
-                            IsTeam = submission.TeamId.HasValue,
-                            ParticipantName = submission.Team?.TeamName
-                                ?? submission.Registration?.User?.FullName
-                                ?? "N/A",
-                            StudentId = submission.Team?.Leader?.StudentId
-                                ?? submission.Registration?.User?.StudentId,
-                            TotalScore = Math.Round(totalWeighted, 2),
-                            MaxPossibleScore = Math.Round(maxPossible, 2),
-                            ScorePercentage = maxPossible > 0 ? Math.Round(totalWeighted / maxPossible * 100, 1) : 0,
-                            CriteriaScores = criteriaScores,
-                            JudgeCount = approvedScores.Select(s => s.JudgeId).Distinct().Count()
-                        };
-                    })
-                    .OrderByDescending(r => r.TotalScore)
-                    .ToList();
-
-                    for (int i = 0; i < rankings.Count; i++)
-                        rankings[i].Rank = i + 1;
+                    var rankings = ComputePublicRankings(roundSubmissions, criteria);
 
                     return new PublicRoundResultDto
                     {
@@ -1440,6 +1401,177 @@ public class CompetitiveController : Controller
         };
 
         return View("~/Views/Pages/Results.cshtml", vm);
+    }
+
+    // Tính xếp hạng công khai cho một danh sách bài dự thi trong cùng 1 vòng thi
+    // (dùng chung cho /Results và /TraCuuKetQua để đảm bảo cách tính nhất quán)
+    private static List<PublicSubmissionRankingDto> ComputePublicRankings(
+        List<Submissions> roundSubmissions, List<PublicScoringCriteriaDto> criteria)
+    {
+        var rankings = roundSubmissions.Select(submission =>
+        {
+            var approvedScores = submission.Scores.ToList();
+            var criteriaScores = new Dictionary<int, decimal>();
+            var criteriaAvg = approvedScores
+                .GroupBy(s => s.CriteriaId)
+                .ToDictionary(g => g.Key, g => g.Average(s => s.Score));
+
+            decimal totalWeighted = 0;
+            decimal maxPossible = 0;
+            foreach (var c in criteria)
+            {
+                var avg = criteriaAvg.GetValueOrDefault(c.CriteriaId, 0);
+                criteriaScores[c.CriteriaId] = Math.Round(avg, 2);
+                totalWeighted += avg * c.Weight;
+                maxPossible += c.MaxScore * c.Weight;
+            }
+
+            return new PublicSubmissionRankingDto
+            {
+                SubmissionId = submission.SubmissionId,
+                Title = submission.Title,
+                IsTeam = submission.TeamId.HasValue,
+                ParticipantName = submission.Team?.TeamName
+                    ?? submission.Registration?.User?.FullName
+                    ?? "N/A",
+                StudentId = submission.Team?.Leader?.StudentId
+                    ?? submission.Registration?.User?.StudentId,
+                TotalScore = Math.Round(totalWeighted, 2),
+                MaxPossibleScore = Math.Round(maxPossible, 2),
+                ScorePercentage = maxPossible > 0 ? Math.Round(totalWeighted / maxPossible * 100, 1) : 0,
+                CriteriaScores = criteriaScores,
+                JudgeCount = approvedScores.Select(s => s.JudgeId).Distinct().Count()
+            };
+        })
+        .OrderByDescending(r => r.TotalScore)
+        .ToList();
+
+        for (int i = 0; i < rankings.Count; i++)
+            rankings[i].Rank = i + 1;
+
+        return rankings;
+    }
+
+    private static string ComputePublicAwardLevel(int rank, int total)
+    {
+        if (rank == 1) return "Nhất";
+        if (rank == 2) return "Nhì";
+        if (rank == 3) return "Ba";
+        int encourageCutoff = Math.Max(6, (int)Math.Ceiling(total * 0.2));
+        return rank <= encourageCutoff ? "Khuyến khích" : "";
+    }
+
+    // GET: /TraCuuKetQua — Tra cứu kết quả cá nhân/đội thi bằng mã dự thi (Mã hồ sơ TS-... hoặc Mã đội DT-...)
+    [HttpGet("/TraCuuKetQua")]
+    public async Task<IActionResult> LookupResult([FromQuery] string? code)
+    {
+        var vm = new LookupResultViewModel { Code = code };
+
+        if (string.IsNullOrWhiteSpace(code))
+            return View("~/Views/Pages/LookupResult.cshtml", vm);
+
+        vm.Searched = true;
+        var trimmed = code.Trim().ToUpperInvariant();
+
+        var registration = await _context.Registrations
+            .Include(r => r.User)
+            .Include(r => r.Team)
+            .Include(r => r.Competition)
+            .Where(r => r.Status != "Withdrawn")
+            .FirstOrDefaultAsync(r =>
+                (r.RegistrationCode != null && r.RegistrationCode.ToUpper() == trimmed)
+                || (r.Team != null && r.Team.TeamCode != null && r.Team.TeamCode.ToUpper() == trimmed));
+
+        if (registration == null)
+            return View("~/Views/Pages/LookupResult.cshtml", vm);
+
+        vm.Found = true;
+        vm.CompetitionId = registration.CompetitionId;
+        vm.CompetitionName = registration.Competition.CompetitionName;
+        vm.IsTeam = registration.TeamId.HasValue;
+        vm.ParticipantName = registration.Team?.TeamName ?? registration.User.FullName;
+        vm.RegistrationCode = registration.RegistrationCode;
+        vm.TeamCode = registration.Team?.TeamCode;
+        vm.RegistrationStatus = registration.Status;
+
+        var submission = registration.TeamId.HasValue
+            ? await _context.Submissions
+                .Include(s => s.Scores.Where(sc => sc.ApprovalStatus == "Approved")).ThenInclude(sc => sc.Criteria)
+                .Include(s => s.Team).ThenInclude(t => t!.Leader)
+                .Include(s => s.Registration).ThenInclude(r => r!.User)
+                .FirstOrDefaultAsync(s => s.TeamId == registration.TeamId)
+            : await _context.Submissions
+                .Include(s => s.Scores.Where(sc => sc.ApprovalStatus == "Approved")).ThenInclude(sc => sc.Criteria)
+                .Include(s => s.Team).ThenInclude(t => t!.Leader)
+                .Include(s => s.Registration).ThenInclude(r => r!.User)
+                .FirstOrDefaultAsync(s => s.RegistrationId == registration.RegistrationId);
+
+        if (submission == null)
+            return View("~/Views/Pages/LookupResult.cshtml", vm);
+
+        vm.HasSubmission = true;
+        vm.SubmissionTitle = submission.Title;
+        vm.SubmissionStatus = submission.Status;
+        vm.SubmissionDate = submission.SubmissionDate;
+
+        var rounds = await _context.CompetitionRounds
+            .Include(r => r.ScoringCriteria)
+            .Where(r => r.CompetitionId == registration.CompetitionId)
+            .OrderBy(r => r.RoundOrder)
+            .ToListAsync();
+
+        vm.CompetitionHasRounds = rounds.Any();
+
+        // Bài dự thi chỉ gắn với 1 vòng tại một thời điểm (CompetitionRoundId) — tìm đúng vòng đó
+        var matchedRound = rounds.FirstOrDefault(r => r.RoundId == submission.CompetitionRoundId);
+        if (matchedRound == null)
+            return View("~/Views/Pages/LookupResult.cshtml", vm);
+
+        var criteria = matchedRound.ScoringCriteria.OrderBy(c => c.Order).Select(c => new PublicScoringCriteriaDto
+        {
+            CriteriaId = c.CriteriaId,
+            CriteriaName = c.CriteriaName,
+            MaxScore = c.MaxScore,
+            Weight = c.Weight
+        }).ToList();
+
+        var roundDto = new LookupRoundResultDto
+        {
+            RoundName = matchedRound.RoundName,
+            RoundOrder = matchedRound.RoundOrder,
+            IsPublished = matchedRound.IsResultsPublished,
+            Criteria = criteria
+        };
+
+        if (matchedRound.IsResultsPublished)
+        {
+            // Cần xếp hạng trong toàn bộ vòng để biết đúng vị trí/giải thưởng của bài này
+            var roundSubmissions = await _context.Submissions
+                .Include(s => s.Scores.Where(sc => sc.ApprovalStatus == "Approved")).ThenInclude(sc => sc.Criteria)
+                .Include(s => s.Team).ThenInclude(t => t!.Leader)
+                .Include(s => s.Registration).ThenInclude(r => r!.User)
+                .Where(s => s.CompetitionRoundId == matchedRound.RoundId && s.Status != "Draft")
+                .ToListAsync();
+
+            var rankings = ComputePublicRankings(roundSubmissions.Where(s => s.Scores.Any()).ToList(), criteria);
+            var mine = rankings.FirstOrDefault(r => r.SubmissionId == submission.SubmissionId);
+            if (mine != null)
+            {
+                roundDto.HasEntry = true;
+                roundDto.Rank = mine.Rank;
+                roundDto.TotalParticipants = rankings.Count;
+                roundDto.AwardLevel = ComputePublicAwardLevel(mine.Rank, rankings.Count);
+                roundDto.TotalScore = mine.TotalScore;
+                roundDto.MaxPossibleScore = mine.MaxPossibleScore;
+                roundDto.ScorePercentage = mine.ScorePercentage;
+                roundDto.CriteriaScores = mine.CriteriaScores;
+                roundDto.JudgeCount = mine.JudgeCount;
+            }
+        }
+
+        vm.Rounds.Add(roundDto);
+
+        return View("~/Views/Pages/LookupResult.cshtml", vm);
     }
 
     // GET: /HuongDan
