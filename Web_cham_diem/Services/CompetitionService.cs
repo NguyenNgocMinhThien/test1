@@ -194,10 +194,10 @@ public class CompetitionService : ICompetitionService
     }
 
     public async Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(
-        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId)
+        string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId, bool isAdmin = false)
     {
         var query = _context.Competitions
-            .Where(c => c.CreatedByUserId == organizerId)
+            .Where(c => isAdmin || c.CreatedByUserId == organizerId)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchQuery))
@@ -647,7 +647,7 @@ public class CompetitionService : ICompetitionService
 
     // ===== GET FOR EDIT =====
 
-    public async Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId)
+    public async Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId, bool isAdmin = false)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
@@ -658,7 +658,7 @@ public class CompetitionService : ICompetitionService
             .Include(c => c.CompetitionDocuments)
             .Include(c => c.CompetitionSponsors)
                 .ThenInclude(cs => cs.Sponsor)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && (isAdmin || c.CreatedByUserId == organizerId));
 
         if (competition == null) return null;
 
@@ -776,12 +776,12 @@ public class CompetitionService : ICompetitionService
 
     // ===== UPDATE =====
 
-    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId)
+    public async Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId, bool isAdmin = false)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
                 .ThenInclude(r => r.Registrations)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && (isAdmin || c.CreatedByUserId == organizerId));
 
         if (competition == null) return false;
 
@@ -899,11 +899,11 @@ public class CompetitionService : ICompetitionService
 
     // ===== UPDATE SCHEDULE DATES (AJAX) =====
 
-    public async Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId)
+    public async Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId, bool isAdmin = false)
     {
         var competition = await _context.Competitions
             .Include(c => c.RegistrationRounds)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && (isAdmin || c.CreatedByUserId == organizerId));
 
         if (competition == null) return (false, "Cuộc thi không tìm thấy.");
 
@@ -1036,14 +1036,14 @@ public class CompetitionService : ICompetitionService
 
     // ===== DELETE =====
 
-    public async Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId)
+    public async Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId, bool isAdmin = false)
     {
         var competition = await _context.Competitions
             .Include(c => c.Registrations)
             .Include(c => c.Teams)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && (isAdmin || c.CreatedByUserId == organizerId));
 
         if (competition == null) return false;
 
@@ -1093,10 +1093,10 @@ public class CompetitionService : ICompetitionService
 
     // ===== CHANGE STATUS =====
 
-    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId)
+    public async Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId, bool isAdmin = false)
     {
         var competition = await _context.Competitions
-            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && c.CreatedByUserId == organizerId);
+            .FirstOrDefaultAsync(c => c.CompetitionId == competitionId && (isAdmin || c.CreatedByUserId == organizerId));
 
         if (competition == null) return false;
 
@@ -1112,12 +1112,12 @@ public class CompetitionService : ICompetitionService
 
     // ===== DASHBOARD =====
 
-    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId)
+    public async Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId, bool isAdmin = false)
     {
         var now = DateTime.UtcNow;
 
         var competitions = await _context.Competitions
-            .Where(c => c.CreatedByUserId == organizerId)
+            .Where(c => isAdmin || c.CreatedByUserId == organizerId)
             .Include(c => c.Registrations)
             .Include(c => c.Submissions)
             .Include(c => c.RegistrationRounds)

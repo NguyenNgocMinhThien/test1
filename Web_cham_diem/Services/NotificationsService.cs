@@ -28,12 +28,12 @@ public class NotificationsService : INotificationsService
 
     // ───────── organizer page ─────────
 
-    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int organizerId, int? competitionId)
+    public async Task<OrganizerNotificationsViewModel> GetOrganizerViewAsync(int organizerId, int? competitionId, bool isAdmin = false)
     {
         var vm = new OrganizerNotificationsViewModel();
 
         var allComps = await _context.Competitions
-            .Where(c => c.CreatedByUserId == organizerId)
+            .Where(c => isAdmin || c.CreatedByUserId == organizerId)
             .Include(c => c.RegistrationRounds)
             .Include(c => c.CompetitionRounds)
             .Include(c => c.Registrations)
@@ -142,13 +142,13 @@ public class NotificationsService : INotificationsService
 
     // ───────── send notification ─────────
 
-    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req, int organizerId)
+    public async Task<(bool Ok, string Message, int Count)> SendNotificationAsync(SendNotificationRequest req, int organizerId, bool isAdmin = false)
     {
         if (string.IsNullOrWhiteSpace(req.Title))
             return (false, "Tiêu đề không được để trống.", 0);
 
         // Xác nhận cuộc thi thuộc organizer này
-        if (req.CompetitionId > 0)
+        if (req.CompetitionId > 0 && !isAdmin)
         {
             var isOwner = await _context.Competitions
                 .AnyAsync(c => c.CompetitionId == req.CompetitionId && c.CreatedByUserId == organizerId);

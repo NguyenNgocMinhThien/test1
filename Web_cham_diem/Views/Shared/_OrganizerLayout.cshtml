@@ -335,6 +335,7 @@
         ? string.Concat(userFullName.Split(' ').Where(x => x.Length > 0).Select(x => x[0])).ToUpper()
         : "BTC";
     var currentAction = ViewContext.RouteData.Values["Action"]?.ToString() ?? "";
+    var isAdminViewing = User.IsInRole("Admin");
 }
 
 <body>
@@ -350,6 +351,15 @@
                 <small class="text-muted" style="font-size: 0.68rem;">Ban Tổ Chức Cuộc thi</small>
             </div>
         </div>
+
+        @if (isAdminViewing)
+        {
+            <div class="px-3 pt-3">
+                <a href="/Account/Admin" class="btn btn-sm btn-outline-secondary w-100">
+                    <i class="bi bi-arrow-left-circle me-1"></i>Quay lại Admin
+                </a>
+            </div>
+        }
 
         <div class="overflow-y-auto flex-grow-1">
             <div class="nav-section-title">Tổng quan</div>
@@ -527,7 +537,7 @@
                         <div class="user-avatar-sm">@userInitials</div>
                         <div class="d-none d-lg-block text-start lh-1">
                             <div class="fw-bold small text-dark" style="font-size:13px;">@userFullName</div>
-                            <span class="text-muted" style="font-size: 0.68rem;">Ban Tổ Chức</span>
+                            <span class="text-muted" style="font-size: 0.68rem;">@(isAdminViewing ? "Quản trị viên" : "Ban Tổ Chức")</span>
                         </div>
                         <i class="bi bi-chevron-down text-muted d-none d-lg-block" style="font-size:11px;"></i>
                     </button>
@@ -540,7 +550,7 @@
                                     <div class="fw-bold" style="font-size:14px;">@userFullName</div>
                                     <div style="font-size:12px; opacity:0.9;">@userEmail</div>
                                     <div class="mt-1" style="font-size:11px; opacity:0.8;">
-                                        <i class="bi bi-shield-check me-1"></i>Ban Tổ Chức (Organizer)
+                                        <i class="bi bi-shield-check me-1"></i>@(isAdminViewing ? "Quản trị viên (Admin)" : "Ban Tổ Chức (Organizer)")
                                     </div>
                                 </div>
                             </div>
@@ -563,6 +573,15 @@
                                 <i class="bi bi-bell"></i><span>Thông báo cuộc thi</span>
                             </a>
                         </li>
+
+                        @if (isAdminViewing)
+                        {
+                            <li>
+                                <a class="dropdown-item dropdown-item-user" href="/Account/Admin">
+                                    <i class="bi bi-arrow-left-circle"></i><span>Quay lại Admin</span>
+                                </a>
+                            </li>
+                        }
 
                         <li><hr class="dropdown-divider m-0"></li>
 

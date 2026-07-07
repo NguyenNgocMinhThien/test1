@@ -13,7 +13,8 @@ public interface ISubmissionService
         string? searchQuery = null,
         string? statusFilter = null,
         string? departmentFilter = null,
-        string? registrationTypeFilter = null);
+        string? registrationTypeFilter = null,
+        bool isAdmin = false);
 
     /// <summary>
     /// Duyệt hồ sơ đăng ký
