@@ -11,7 +11,7 @@ using QuestPDF.Infrastructure;
 
 namespace Web_cham_diem.Controllers
 {
-    [Authorize(Roles = "Organizer")]
+    [Authorize(Roles = "Organizer,Admin")]
     public class OrganizerController : Controller
     {
         private readonly ICompetitionService _competitionService;
@@ -43,9 +43,14 @@ namespace Web_cham_diem.Controllers
             return int.TryParse(value, out var id) ? id : 0;
         }
 
+        // Admin có quyền truy cập toàn bộ dữ liệu, không bị giới hạn theo quyền sở hữu như Organizer
+        private bool IsAdmin => User.IsInRole("Admin");
+
         // Kiểm tra quyền sở hữu cuộc thi; nếu không phải chủ trả về Json lỗi
         private async Task<IActionResult?> RequireOwnerJson(int competitionId)
         {
+            if (IsAdmin) return null;
+
             var isOwner = await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId());
             if (!isOwner)
                 return Json(new { success = false, message = "Bạn không có quyền thực hiện thao tác này." });
@@ -59,7 +64,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var data = await _competitionService.GetOrganizerDashboardDataAsync(GetCurrentUserId());
+                var data = await _competitionService.GetOrganizerDashboardDataAsync(GetCurrentUserId(), IsAdmin);
                 return View(data);
             }
             catch (Exception ex)
@@ -73,7 +78,7 @@ namespace Web_cham_diem.Controllers
         // 2. Danh sách cuộc thi
         public async Task<IActionResult> Contests(string? search, string? status, string? category, int page = 1)
         {
-            var viewModel = await _competitionService.GetOrganizerContestsAsync(search, status, category, page, GetCurrentUserId());
+            var viewModel = await _competitionService.GetOrganizerContestsAsync(search, status, category, page, GetCurrentUserId(), IsAdmin);
             return View(viewModel);
         }
 
@@ -130,7 +135,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var model = await _competitionService.GetCompetitionForEditAsync(id, GetCurrentUserId());
+                var model = await _competitionService.GetCompetitionForEditAsync(id, GetCurrentUserId(), IsAdmin);
                 if (model == null) return NotFound();
                 return View(model);
             }
@@ -157,7 +162,7 @@ namespace Web_cham_diem.Controllers
 
             try
             {
-                var result = await _competitionService.UpdateCompetitionAsync(id, model, organizerId);
+                var result = await _competitionService.UpdateCompetitionAsync(id, model, organizerId, IsAdmin);
                 if (!result) return NotFound();
 
                 TempData["SuccessMessage"] = "Cập nhật cuộc thi thành công!";
@@ -183,7 +188,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var fresh = await _competitionService.GetCompetitionForEditAsync(competitionId, organizerId);
+                var fresh = await _competitionService.GetCompetitionForEditAsync(competitionId, organizerId, IsAdmin);
                 if (fresh == null) return;
                 model.ExistingRounds              = fresh.ExistingRounds;
                 model.Images                      = fresh.Images;
@@ -207,7 +212,7 @@ namespace Web_cham_diem.Controllers
             try
             {
                 if (dto == null) return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
-                var (ok, msg) = await _competitionService.UpdateScheduleDatesAsync(competitionId, dto, GetCurrentUserId());
+                var (ok, msg) = await _competitionService.UpdateScheduleDatesAsync(competitionId, dto, GetCurrentUserId(), IsAdmin);
                 return Json(new { success = ok, message = msg });
             }
             catch (Exception ex)
@@ -281,7 +286,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _competitionService.DeleteCompetitionAsync(id, GetCurrentUserId());
+                var result = await _competitionService.DeleteCompetitionAsync(id, GetCurrentUserId(), IsAdmin);
                 if (!result) return NotFound();
 
                 TempData["SuccessMessage"] = "Xóa cuộc thi thành công!";
@@ -307,7 +312,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var result = await _competitionService.ChangeCompetitionStatusAsync(id, status, GetCurrentUserId());
+                var result = await _competitionService.ChangeCompetitionStatusAsync(id, status, GetCurrentUserId(), IsAdmin);
                 if (!result) return NotFound();
                 return Json(new { success = true, message = "Cập nhật trạng thái thành công!" });
             }
@@ -343,7 +348,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var viewModel = await _submissionService.GetSubmissionsViewAsync(GetCurrentUserId(), competitionId, search, status, department, type);
+                var viewModel = await _submissionService.GetSubmissionsViewAsync(GetCurrentUserId(), competitionId, search, status, department, type, IsAdmin);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -716,7 +721,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _gradingService.GetGradingViewAsync(GetCurrentUserId(), competitionId);
+                var vm = await _gradingService.GetGradingViewAsync(GetCurrentUserId(), competitionId, IsAdmin);
                 return View(vm);
             }
             catch (Exception ex)
@@ -897,7 +902,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId);
+                var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId, IsAdmin);
                 return View(vm);
             }
             catch (Exception ex)
@@ -912,7 +917,7 @@ namespace Web_cham_diem.Controllers
         [HttpPost]
         public async Task<IActionResult> PublishRoundResults(int roundId, int competitionId, bool publish)
         {
-            if (!await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
+            if (!IsAdmin && !await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
             {
                 TempData["ErrorMessage"] = "Bạn không có quyền thực hiện thao tác này.";
                 return RedirectToAction("Results", new { competitionId });
@@ -936,10 +941,10 @@ namespace Web_cham_diem.Controllers
         private async Task<(CompetitionResultDetailDto? Detail, List<RoundResultDetailDto> Rounds, IActionResult? Error)>
             LoadExportDataAsync(int competitionId, int? roundId)
         {
-            if (!await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
+            if (!IsAdmin && !await _competitionService.IsCompetitionOwnerAsync(competitionId, GetCurrentUserId()))
                 return (null, new(), Forbid());
 
-            var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId);
+            var vm = await _resultsService.GetResultsViewAsync(GetCurrentUserId(), competitionId, IsAdmin);
             var detail = vm.SelectedDetail;
             if (detail == null) return (null, new(), NotFound());
 
@@ -1285,7 +1290,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId, IsAdmin);
                 return View(vm);
             }
             catch (Exception ex)
@@ -1303,7 +1308,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId, IsAdmin);
 
                 using var workbook = new XLWorkbook();
                 var usedSheetNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -1412,7 +1417,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId);
+                var vm = await _resultsService.GetOrganizerStatisticsAsync(GetCurrentUserId(), competitionId, IsAdmin);
                 var exportedAt = DateTime.Now;
 
                 var document = Document.Create(container =>
@@ -1558,7 +1563,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var vm = await _notificationsService.GetOrganizerViewAsync(GetCurrentUserId(), competitionId);
+                var vm = await _notificationsService.GetOrganizerViewAsync(GetCurrentUserId(), competitionId, IsAdmin);
                 return View(vm);
             }
             catch (Exception ex)
@@ -1574,7 +1579,7 @@ namespace Web_cham_diem.Controllers
         {
             try
             {
-                var (ok, msg, count) = await _notificationsService.SendNotificationAsync(req, GetCurrentUserId());
+                var (ok, msg, count) = await _notificationsService.SendNotificationAsync(req, GetCurrentUserId(), IsAdmin);
                 return Json(new { ok, message = msg, count });
             }
             catch (Exception ex)

@@ -15,12 +15,12 @@ public class ResultsService : IResultsService
         _logger = logger;
     }
 
-    public async Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId)
+    public async Task<ResultsPageViewModel> GetResultsViewAsync(int organizerId, int? competitionId, bool isAdmin = false)
     {
         var vm = new ResultsPageViewModel();
 
         var allComps = await _context.Competitions
-            .Where(c => c.CreatedByUserId == organizerId)
+            .Where(c => isAdmin || c.CreatedByUserId == organizerId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
@@ -143,7 +143,7 @@ public class ResultsService : IResultsService
             : $"Đã ẩn kết quả vòng '{round.RoundName}' khỏi trang công khai.");
     }
 
-    public async Task<List<ResultHistoryItemDto>> GetResultHistoryAsync(int organizerId, int? competitionId)
+    public async Task<List<ResultHistoryItemDto>> GetResultHistoryAsync(int organizerId, int? competitionId, bool isAdmin = false)
     {
         // Chỉ trả về lịch sử của (các) cuộc thi thuộc organizer hiện tại.
         // competitionId == null → lịch sử của TOÀN BỘ cuộc thi organizer sở hữu.
@@ -152,7 +152,7 @@ public class ResultsService : IResultsService
             .Include(h => h.Round)
             .Include(h => h.Submission)
             .Include(h => h.Editor)
-            .Where(h => h.Competition.CreatedByUserId == organizerId);
+            .Where(h => isAdmin || h.Competition.CreatedByUserId == organizerId);
 
         if (competitionId.HasValue)
             query = query.Where(h => h.CompetitionId == competitionId.Value);
@@ -175,10 +175,10 @@ public class ResultsService : IResultsService
             .ToListAsync();
     }
 
-    public async Task<OrganizerStatisticsViewModel> GetOrganizerStatisticsAsync(int organizerId, int? competitionId = null)
+    public async Task<OrganizerStatisticsViewModel> GetOrganizerStatisticsAsync(int organizerId, int? competitionId = null, bool isAdmin = false)
     {
         var allComps = await _context.Competitions
-            .Where(c => c.CreatedByUserId == organizerId)
+            .Where(c => isAdmin || c.CreatedByUserId == organizerId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
@@ -266,7 +266,7 @@ public class ResultsService : IResultsService
             .ThenBy(a => a.Rank)
             .ToList();
 
-        vm.HistoryLog = await GetResultHistoryAsync(organizerId, competitionId);
+        vm.HistoryLog = await GetResultHistoryAsync(organizerId, competitionId, isAdmin);
 
         return vm;
     }

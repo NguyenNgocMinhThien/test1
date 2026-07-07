@@ -10,15 +10,15 @@ public interface ICompetitionService
     Task<List<Teams>> GetCompetitionTeamsAsync(int competitionId);
     Task<List<Registrations>> GetCompetitionRegistrationsAsync(int competitionId);
 
-    Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId);
+    Task<OrganizerContestsViewModel> GetOrganizerContestsAsync(string? searchQuery, string? statusFilter, string? categoryFilter, int pageNumber, int organizerId, bool isAdmin = false);
     Task<CompetitionDetailViewModel> GetCompetitionDetailAsync(int competitionId);
     Task<int> CreateCompetitionAsync(CreateCompetitionViewModel model, int organizerId);
-    Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId);
-    Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId);
-    Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId);
-    Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId);
-    Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId);
-    Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId);
+    Task<EditCompetitionViewModel?> GetCompetitionForEditAsync(int competitionId, int organizerId, bool isAdmin = false);
+    Task<bool> UpdateCompetitionAsync(int competitionId, EditCompetitionViewModel model, int organizerId, bool isAdmin = false);
+    Task<(bool ok, string message)> UpdateScheduleDatesAsync(int competitionId, UpdateScheduleDatesDto dto, int organizerId, bool isAdmin = false);
+    Task<bool> DeleteCompetitionAsync(int competitionId, int organizerId, bool isAdmin = false);
+    Task<bool> ChangeCompetitionStatusAsync(int competitionId, string newStatus, int organizerId, bool isAdmin = false);
+    Task<OrganizerDashboardViewModel> GetOrganizerDashboardDataAsync(int organizerId, bool isAdmin = false);
     Task<bool> IsCompetitionOwnerAsync(int competitionId, int organizerId);
 
     /// <summary>Thêm đợt đăng ký mới. Chỉ được gọi khi cuộc thi chưa bắt đầu.</summary>

@@ -339,8 +339,12 @@
         <!-- Header Page -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h3 class="fw-bold mb-1 text-dark">Cuộc thi của tôi</h3>
-                <p class="text-muted small mb-0">Thiết lập, theo dõi và quản lý các cuộc thi do bạn tổ chức.</p>
+                <h3 class="fw-bold mb-1 text-dark">@(User.IsInRole("Admin") ? "Tất cả cuộc thi" : "Cuộc thi của tôi")</h3>
+                <p class="text-muted small mb-0">
+                    @(User.IsInRole("Admin")
+                        ? "Thiết lập, theo dõi và quản lý toàn bộ cuộc thi trong hệ thống."
+                        : "Thiết lập, theo dõi và quản lý các cuộc thi do bạn tổ chức.")
+                </p>
             </div>
             <a href="/Organizer/Create" class="btn text-white fw-bold shadow-sm" style="background-color: var(--organizer-accent);">
                 <i class="bi bi-plus-lg me-1"></i> Tạo Cuộc thi

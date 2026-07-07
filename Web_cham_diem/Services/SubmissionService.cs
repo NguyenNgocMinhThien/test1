@@ -21,13 +21,14 @@ public class SubmissionService : ISubmissionService
         string? searchQuery = null,
         string? statusFilter = null,
         string? departmentFilter = null,
-        string? registrationTypeFilter = null)
+        string? registrationTypeFilter = null,
+        bool isAdmin = false)
     {
         try
         {
             // 1. Lấy danh sách cuộc thi của organizer hiện tại
             var competitions = await _context.Competitions
-                .Where(c => c.CreatedByUserId == organizerId)
+                .Where(c => isAdmin || c.CreatedByUserId == organizerId)
                 .OrderByDescending(c => c.CreatedAt)
                 .Select(c => new CompetitionBasicDto
                 {
